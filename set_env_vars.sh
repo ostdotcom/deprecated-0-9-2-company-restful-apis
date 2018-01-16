@@ -1,0 +1,7 @@
+export CR_ENVIRONMENT='development'
+export CR_SUB_ENV='sandbox'
+export CR_NO_OF_POOLS='5'
+export CR_TIMEZONE='+05:30'
+export CR_MYSQL_HOST='127.0.0.1'
+export CR_MYSQL_USER='root'
+export CR_MYSQL_PASSWORD=''
