@@ -15,9 +15,8 @@ const express = require('express')
   , sanitizer = require('express-sanitized')
   , app = express()
   , responseHelper = require('./lib/formatter/response')
+  , transactionRoutes = require('./routes/transaction')
   ;
-// add event listeners
-require('./events/subscribe');
 
 // uncomment after placing your favicon in /public
 app.use(logger('combined'));
@@ -27,11 +26,22 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+const assignParams = function (req, res, next) {
+  if (req.method == 'POST') {
+    req.decodedParams = req.body;
+  } else if (req.method == 'GET') {
+    req.decodedParams = req.query;
+  }
+  return next();
+};
+
 /*
   The below peice of code should always be before routes.
   Docs: https://www.npmjs.com/package/express-sanitized
 */
 app.use(sanitizer());
+
+app.use('/transaction', assignParams, transactionRoutes);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -45,4 +55,6 @@ app.use(function (err, req, res, next) {
   return responseHelper.error('500', 'Something went wrong').renderResponse(res, 500);
 });
 
-module.exports = app;
+app.listen(3000, () => console.log('Example app listening on port 3000!'))
+
+//module.exports = app;
