@@ -32,6 +32,7 @@ const assignParams = function (req, res, next) {
   } else if (req.method == 'GET') {
     req.decodedParams = req.query;
   }
+  console.log("req.body--decodedParams--", req.body);
   return next();
 };
 

@@ -20,11 +20,17 @@ const clientTransaction = {
     return QueryDB.read("SELECT * FROM client_transactions WHERE client_id=?", [params['clientId']]);
   },
 
-  getTransaction: function (clientId, tName) {
-    return QueryDB.read("SELECT * FROM client_transactions WHERE client_id=? AND name=?", [clientId, tName]);
+  getTransaction: function (params) {
+    return QueryDB.read("SELECT * FROM client_transactions WHERE client_id=? AND name=?", [params['clientId'], params['tName']]);
   },
 
-  createTransaction: function (clientId, tName) {
+  create: function (params) {
+
+    return QueryDB.insert(
+      'client_transactions',
+      params['fields'],
+      params['values']
+    );
 
   }
 

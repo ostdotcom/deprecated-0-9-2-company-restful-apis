@@ -32,7 +32,29 @@ QueryDB.prototype.read = function(q, queryArgs) {
       // get a timestamp before running the query
       var pre_query = Date.now();
       var qry = oThis.onReadConnection().query(q, queryArgs, function (err, result, fields) {
-        //logger.debug("(%s ms) %s", (Date.now() - pre_query), qry.sql);
+        console.log("(%s ms) %s", (Date.now() - pre_query), qry.sql);
+        if (err) {
+          onReject(err);
+        } else {
+          onResolve(result);
+        }
+      });
+
+    }
+  );
+};
+
+QueryDB.prototype.insert = function(tableName, fields, queryArgs) {
+  var oThis = this
+    , q = 'INSERT INTO '+tableName+' ('+fields+') VALUES (?)'
+    ;
+
+  return new Promise(
+    function (onResolve, onReject) {
+      // get a timestamp before running the query
+      var pre_query = Date.now();
+      var qry = oThis.onWriteConnection().query(q, queryArgs, function (err, result, fields) {
+        console.log("(%s ms) %s", (Date.now() - pre_query), qry.sql);
         if (err) {
           onReject(err);
         } else {
