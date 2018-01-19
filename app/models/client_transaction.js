@@ -7,8 +7,6 @@ const rootPrefix = '../..'
 
 const dbName = "company_client_economy_"+coreConstants.SUB_ENV+"_"+coreConstants.ENVIRONMENT
   , QueryDB = new QueryDBKlass(dbName)
-  , kind = {'1':'user_to_user', '2':'user_to_company', '3':'company_to_user'}
-  , value_currency_type = {'1':'usd', '2':'bt'}
   ;
 
 /*
@@ -16,12 +14,16 @@ const dbName = "company_client_economy_"+coreConstants.SUB_ENV+"_"+coreConstants
  */
 const clientTransaction = {
 
+  kinds: {'1':'user_to_user', '2':'user_to_company', '3':'company_to_user'},
+
+  valueCurrencyTypes: {'1':'usd', '2':'bt'},
+
   getAll: function (params) {
-    return QueryDB.read("SELECT * FROM client_transactions WHERE client_id=?", [params['clientId']]);
+    return QueryDB.read('client_transactions', [], 'client_id=?', [params['clientId']]);
   },
 
   getTransaction: function (params) {
-    return QueryDB.read("SELECT * FROM client_transactions WHERE client_id=? AND name=?", [params['clientId'], params['tName']]);
+    return QueryDB.read('client_transactions', [], 'client_id=? AND name=?', [params['clientId'], params['tName']]);
   },
 
   create: function (params) {
