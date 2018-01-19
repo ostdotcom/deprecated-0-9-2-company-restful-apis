@@ -16,6 +16,8 @@ const express = require('express')
   , app = express()
   , responseHelper = require('./lib/formatter/response')
   , transactionRoutes = require('./routes/transaction')
+  , inputValidator = require("./lib/authentication/validate_signature")
+  , customUrlParser = require('url');
   ;
 
 // uncomment after placing your favicon in /public
@@ -26,14 +28,29 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const assignParams = function (req, res, next) {
+const assignParams = function (req) {
   if (req.method == 'POST') {
     req.decodedParams = req.body;
   } else if (req.method == 'GET') {
     req.decodedParams = req.query;
   }
-  console.log("req.body--decodedParams--", req.body);
-  return next();
+};
+
+const validateParams = function (req, res, next){
+  assignParams(req);
+
+  const handleParamValidationResult = function(result) {
+    if(result.isSuccess()){
+      console.log("Request Valid");
+      req.decodedParams["clientId"] = result.data["clientId"];
+      next();
+    } else {
+      return responseHelper.error('401', 'Unauthorized').renderResponse(res, 401);
+    }
+  };
+
+  return inputValidator.perform(req.decodedParams, customUrlParser.parse(req.originalUrl).pathname)
+    .then(handleParamValidationResult);
 };
 
 /*
@@ -42,7 +59,7 @@ const assignParams = function (req, res, next) {
 */
 app.use(sanitizer());
 
-app.use('/transaction', assignParams, transactionRoutes);
+app.use('/transaction', validateParams, transactionRoutes);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

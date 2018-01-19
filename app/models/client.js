@@ -18,7 +18,10 @@ const dbName = "company_client_"+coreConstants.ENVIRONMENT
 const clientDetail = {
 
   get: function (clientId) {
-    return QueryDB.read("SELECT * FROM clients WHERE id=?", [clientId]);
+    return QueryDB.read('clients',
+      [],
+      'id=?',
+      [clientId]);
   }
 
 };
