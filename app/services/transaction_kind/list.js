@@ -5,14 +5,61 @@ var rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response.js')
 ;
 
-const List = module.exports = function(params){
+const List = function(params){
 
-  this.params = params
+  this.params = params;
 
 };
 
-List.prototype.perform = async function () {
-  var oThis = this;
-  var result = await clientTransaction.getAll({clientId: oThis.params.clientId});
-  return Promise.resolve(responseHelper.successWithData(result));
+List.prototype = {
+
+  constructor: List,
+
+  perform: async function() {
+    var oThis = this;
+
+    oThis.validateAssignParams();
+
+    await oThis.getTransactionKinds(oThis);
+
+    return Promise.resolve(responseHelper.successWithData(oThis.apiResponse));
+  },
+
+  validateAssignParams: function(){
+
+    var oThis = this;
+
+    oThis.clientId = oThis.params.clientId;
+
+    oThis.apiResponse = {
+      client_id: oThis.params.clientId,
+      transactions: []
+    }
+
+  },
+
+  getTransactionKinds: async function (oThis) {
+    var result = await clientTransaction.getAll({clientId: oThis.clientId});
+
+    for (var i = 0; i < result.length; i++) {
+      var res = result[i];
+
+      oThis.apiResponse.transactions.push(
+        {
+          'name': res.name,
+          'kind': res.kind,
+          'value_currency_type': res.value_currency_type,
+          'value_in_usd': res.value_in_usd,
+          'value_in_bt': res.value_in_bt,
+          'commission_percent': res.commission_percent
+        }
+      );
+
+    }
+    return Promise.resolve();
+
+  }
+
 };
+
+module.exports = List;

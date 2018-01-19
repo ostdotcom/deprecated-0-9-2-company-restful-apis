@@ -19,7 +19,10 @@ const clientTransaction = {
   valueCurrencyTypes: {'1':'usd', '2':'bt'},
 
   getAll: function (params) {
-    return QueryDB.read('client_transactions', [], 'client_id=?', [params['clientId']]);
+    return QueryDB.read('client_transactions',
+      ['client_id','name', 'kind', 'value_currency_type', 'value_in_usd', 'value_in_bt', 'commission_percent'],
+      'client_id=?',
+      [params['clientId']]);
   },
 
   getTransaction: function (params) {
