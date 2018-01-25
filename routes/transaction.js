@@ -50,4 +50,27 @@ router.post('/kind/new', function (req, res, next) {
   });
 });
 
+router.post('/kind/edit', function (req, res, next) {
+  const performer = function() {
+    const decodedParams = req.decodedParams
+      , editTransactionKlass = require(rootPrefix + '/app/services/transaction_kind/edit')
+      , editTransaction = new editTransactionKlass(decodedParams)
+    ;
+
+    console.log("decodedParams--", decodedParams);
+
+    const renderResult = function(result) {
+      return result.renderResponse(res);
+    };
+
+    return editTransaction.perform()
+      .then(renderResult);
+  };
+
+  Promise.resolve(performer()).catch(function (err) {
+    console.error(err);
+    responseHelper.error('r_t_1', 'Something went wrong').renderResponse(res)
+  });
+});
+
 module.exports = router;

@@ -1,7 +1,7 @@
 "use strict";
 
 var rootPrefix = '../../..'
-  , clientTransaction = require(rootPrefix + '/app/models/client_transaction')
+  , clientTransactionKind = require(rootPrefix + '/app/models/client_transaction')
   , responseHelper = require(rootPrefix + '/lib/formatter/response.js')
 ;
 
@@ -33,18 +33,18 @@ List.prototype = {
 
     oThis.apiResponse = {
       client_id: oThis.params.clientId,
-      transactions: []
+      transaction_kinds: []
     }
 
   },
 
   getTransactionKinds: async function (oThis) {
-    var result = await clientTransaction.getAll({clientId: oThis.clientId});
+    var result = await clientTransactionKind.getAll({clientId: oThis.clientId});
 
     for (var i = 0; i < result.length; i++) {
       var res = result[i];
 
-      oThis.apiResponse.transactions.push(
+      oThis.apiResponse.transaction_kinds.push(
         {
           'name': res.name,
           'kind': res.kind,
