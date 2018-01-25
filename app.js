@@ -14,11 +14,13 @@ const express = require('express')
   , helmet = require('helmet')
   , sanitizer = require('express-sanitized')
   , app = express()
+  , jwtAuth = require('./lib/jwt/jwt_auth')
   , responseHelper = require('./lib/formatter/response')
   , transactionRoutes = require('./routes/transaction')
+  , onBoardingRoutes = require('./routes/on_boarding')
   , inputValidator = require("./lib/authentication/validate_signature")
-  , customUrlParser = require('url');
-  ;
+  , customUrlParser = require('url')
+;
 
 // uncomment after placing your favicon in /public
 app.use(logger('combined'));
@@ -36,7 +38,7 @@ const assignParams = function (req) {
   }
 };
 
-const validateParams = function (req, res, next){
+const validateApiSignature = function (req, res, next){
   assignParams(req);
 
   const handleParamValidationResult = function(result) {
@@ -53,13 +55,54 @@ const validateParams = function (req, res, next){
     .then(handleParamValidationResult);
 };
 
+// before action for verifying the jwt token and setting the decoded info in req obj
+const decodeJwt = function(req, res, next) {
+
+  var token = null;
+  if (req.method == 'POST') {
+    token = req.body.token;
+  } else if (req.method == 'GET') {
+    token = req.query.token;
+  } else {
+    return next();
+  }
+
+  // Set the decoded params in the re and call the next in control flow.
+  const jwtOnResolve = function (reqParams) {
+    req.decodedParams = reqParams.data;
+    // Validation passed.
+    return next();
+  };
+
+  // send error, if token is invalid
+  const jwtOnReject = function (err) {
+    console.error(err);
+    return responseHelper.error('a_1', 'Invalid token or expired').renderResponse(res);
+  };
+
+  // Verify token
+  Promise.resolve(
+    jwtAuth.verifyToken(token, 'saasApi')
+      .then(
+        jwtOnResolve,
+        jwtOnReject
+      )
+  ).catch(function (err) {
+    console.error(err);
+    responseHelper.error('a_2', 'Something went wrong').renderResponse(res)
+  });
+
+};
+
 /*
   The below peice of code should always be before routes.
   Docs: https://www.npmjs.com/package/express-sanitized
 */
 app.use(sanitizer());
 
-app.use('/transaction', validateParams, transactionRoutes);
+app.use('/transaction', validateApiSignature, transactionRoutes);
+
+app.use('/on-boarding', decodeJwt, onBoardingRoutes);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -73,6 +116,6 @@ app.use(function (err, req, res, next) {
   return responseHelper.error('500', 'Something went wrong').renderResponse(res, 500);
 });
 
-app.listen(3000, () => console.log('Example app listening on port 3000!'))
+app.listen(3000, function(){console.log('Example app listening on port 3000!')});
 
 //module.exports = app;

@@ -10,3 +10,4 @@ export CR_AWS_SECRET_KEY= 'qS0sJZCPQ5t2WnpJymxyGQjX62Wf13kjs80MYhML'
 export CR_AWS_REGION="us-east-1"
 export CR_INFO_KMS_ARN='arn:aws:kms:us-east-1:604850698061:key'
 export CR_INFO_KMS_ID='eab8148d-fd9f-451d-9eb9-16c115645635'
+export CA_SAAS_API_SECRET_KEY='1somethingsarebetterkeptinenvironemntvariables'
