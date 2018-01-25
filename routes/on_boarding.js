@@ -39,4 +39,27 @@ router.post('/propose-branded-token', function (req, res, next) {
   });
 });
 
+/* Propose a branded token */
+router.get('/registration-status', function (req, res, next) {
+  const performer = function() {
+    const decodedParams = req.decodedParams
+      , proposeTransactionHash = decodedParams.transaction_hash
+    ;
+
+    // handle final response
+    const handleOpenStPlatformSuccess = function (registrationStatus) {
+      return responseHelper.successWithData({registration_status: registrationStatus}).renderResponse(res);
+    };
+
+    return openStPlatform.services.onBoarding.getRegistrationStatus(
+      proposeTransactionHash
+    ).then(handleOpenStPlatformSuccess);
+  };
+
+  Promise.resolve(performer()).catch(function (err) {
+    console.error(err);
+    responseHelper.error('r_ob_2', 'Something went wrong').renderResponse(res)
+  });
+});
+
 module.exports = router;
