@@ -4,8 +4,8 @@ const express = require('express')
 
 const rootPrefix = '..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  // TODO - change the following
-  , openStPlatform = require('/Users/kedarchandrayan/workspace/openst-platform/index')
+  , coreConstants = require(rootPrefix + 'config/core_constants')
+  , openStPlatform = require(coreConstants.OST_PLATFORM_PATH)
 ;
 
 /* Propose a branded token */

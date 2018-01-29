@@ -20,3 +20,4 @@ define("AWS_REGION", process.env.CR_AWS_REGION);
 define("KMS_INFO_ARN", process.env.CR_INFO_KMS_ARN);
 define("KMS_INFO_ID", process.env.CR_INFO_KMS_ID);
 define('SAAS_API_SECRET_KEY', process.env.CA_SAAS_API_SECRET_KEY);
+define('OST_PLATFORM_PATH', process.env.CA_OST_PLATFORM_PATH);

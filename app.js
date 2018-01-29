@@ -13,13 +13,19 @@ const express = require('express')
   , bodyParser = require('body-parser')
   , helmet = require('helmet')
   , sanitizer = require('express-sanitized')
-  , app = express()
-  , jwtAuth = require('./lib/jwt/jwt_auth')
-  , responseHelper = require('./lib/formatter/response')
-  , transactionRoutes = require('./routes/transaction')
-  , onBoardingRoutes = require('./routes/on_boarding')
-  , inputValidator = require("./lib/authentication/validate_signature")
   , customUrlParser = require('url')
+;
+
+const rootPrefix = '.'
+  , jwtAuth = require(rootPrefix + '/lib/jwt/jwt_auth')
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , transactionRoutes = require(rootPrefix + '/routes/transaction')
+  , onBoardingRoutes = require(rootPrefix + '/routes/on_boarding')
+  , stakeUnstakeRoutes = require(rootPrefix + '/routes/stake_unstake')
+  , inputValidator = require(rootPrefix + '/lib/authentication/validate_signature')
+;
+
+const app = express()
 ;
 
 // uncomment after placing your favicon in /public
@@ -103,6 +109,8 @@ app.use(sanitizer());
 app.use('/transaction', validateApiSignature, transactionRoutes);
 
 app.use('/on-boarding', decodeJwt, onBoardingRoutes);
+
+app.use('/stake-unstake', decodeJwt, stakeUnstakeRoutes);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
