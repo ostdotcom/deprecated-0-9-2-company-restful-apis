@@ -27,7 +27,7 @@ router.post('/approve-for-stake', function (req, res, next) {
 });
 
 /* Propose a branded token */
-router.get('/approval-status', function (req, res, next) {
+router.get('/stake-approval-status', function (req, res, next) {
   const performer = function() {
     const decodedParams = req.decodedParams
       , approveTransactionHash = decodedParams.transaction_hash
@@ -49,24 +49,26 @@ router.get('/approval-status', function (req, res, next) {
 });
 
 /* Propose a branded token */
-router.get('/start-stake', function (req, res, next) {
+router.post('/start-stake', function (req, res, next) {
   const performer = function() {
     const decodedParams = req.decodedParams
-      , approveTransactionHash = decodedParams.transaction_hash
+      , beneficiary = decodedParams.beneficiary
+      , toStakeAmount = decodedParams.to_stake_amount
+      , uuid = decodedParams.uuid
     ;
 
     // handle final response
-    const handleOpenStPlatformSuccess = function (result) {
-      return result.renderResponse(res);
+    const handleOpenStPlatformSuccess = function (transaction_hash) {
+      return responseHelper.successWithData({transaction_hash: transaction_hash}).renderResponse(res);
     };
 
-    return openStPlatform.services.stake.getApprovalStatus(approveTransactionHash)
+    return openStPlatform.services.stake.start(beneficiary, toStakeAmount, uuid)
       .then(handleOpenStPlatformSuccess);
   };
 
   Promise.resolve(performer()).catch(function (err) {
     console.error(err);
-    responseHelper.error('r_su_2', 'Something went wrong').renderResponse(res)
+    responseHelper.error('r_su_3', 'Something went wrong').renderResponse(res)
   });
 });
 
