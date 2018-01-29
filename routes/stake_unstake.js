@@ -9,7 +9,7 @@ const rootPrefix = '..'
 ;
 
 /* Propose a branded token */
-router.post('/approve-for-stake', function (req, res, next) {
+router.post('/approve', function (req, res, next) {
   const performer = function() {
 
     // handle final response
@@ -27,7 +27,7 @@ router.post('/approve-for-stake', function (req, res, next) {
 });
 
 /* Propose a branded token */
-router.get('/stake-approval-status', function (req, res, next) {
+router.get('/approval-status', function (req, res, next) {
   const performer = function() {
     const decodedParams = req.decodedParams
       , approveTransactionHash = decodedParams.transaction_hash
@@ -49,7 +49,7 @@ router.get('/stake-approval-status', function (req, res, next) {
 });
 
 /* Propose a branded token */
-router.post('/start-stake', function (req, res, next) {
+router.post('/start', function (req, res, next) {
   const performer = function() {
     const decodedParams = req.decodedParams
       , beneficiary = decodedParams.beneficiary

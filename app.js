@@ -21,7 +21,7 @@ const rootPrefix = '.'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , transactionRoutes = require(rootPrefix + '/routes/transaction')
   , onBoardingRoutes = require(rootPrefix + '/routes/on_boarding')
-  , stakeUnstakeRoutes = require(rootPrefix + '/routes/stake_unstake')
+  , stakeRoutes = require(rootPrefix + '/routes/stake')
   , inputValidator = require(rootPrefix + '/lib/authentication/validate_signature')
 ;
 
@@ -110,7 +110,7 @@ app.use('/transaction', validateApiSignature, transactionRoutes);
 
 app.use('/on-boarding', decodeJwt, onBoardingRoutes);
 
-app.use('/stake-unstake', decodeJwt, stakeUnstakeRoutes);
+app.use('/stake', decodeJwt, stakeRoutes);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
