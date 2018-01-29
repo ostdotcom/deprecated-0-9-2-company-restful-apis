@@ -37,6 +37,7 @@ AddNew.prototype = {
       , value_currency_type = oThis.params.value_currency_type
       , value_in_usd = oThis.params.value_in_usd
       , value_in_bt = oThis.params.value_in_bt
+      , commission_percent = oThis.params.commission_percent
     ;
 
     if(!clientId || clientId==0 || !name || !kind){
@@ -59,9 +60,13 @@ AddNew.prototype = {
       return Promise.resolve(responseHelper.error('tk_an_5', 'Atleast one currency type to mention'));
     }
 
+    if(!commission_percent || commission_percent < 0){
+      return Promise.resolve(responseHelper.error('tk_an_6', 'invalid commission_percent'));
+    }
+
     var existingTKind = await clientTransactionKind.getTransactionByName({clientId: clientId, name: name});
     if(existingTKind.length > 0){
-      return Promise.resolve(responseHelper.error('tk_an_6', "Transaction kind name '"+ name +"' already present."));
+      return Promise.resolve(responseHelper.error('tk_an_7', "Transaction kind name '"+ name +"' already present."));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));

@@ -50,7 +50,7 @@ const validateApiSignature = function (req, res, next){
   const handleParamValidationResult = function(result) {
     if(result.isSuccess()){
       console.log("Request Valid");
-      req.decodedParams["clientId"] = result.data["clientId"];
+      req.decodedParams["client_id"] = result.data["clientId"];
       next();
     } else {
       return responseHelper.error('401', 'Unauthorized').renderResponse(res, 401);

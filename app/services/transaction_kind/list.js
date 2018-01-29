@@ -27,12 +27,13 @@ List.prototype = {
 
   validateAssignParams: function(){
 
-    var oThis = this;
+    var oThis = this
+        , clientId = oThis.params.client_id;
 
-    oThis.clientId = oThis.params.clientId;
+    oThis.clientId = clientId;
 
     oThis.apiResponse = {
-      client_id: oThis.params.clientId,
+      client_id: clientId,
       transaction_kinds: []
     }
 
