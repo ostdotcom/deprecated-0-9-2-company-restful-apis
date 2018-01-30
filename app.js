@@ -23,6 +23,7 @@ const rootPrefix = '.'
   , onBoardingRoutes = require(rootPrefix + '/routes/on_boarding')
   , stakeRoutes = require(rootPrefix + '/routes/stake')
   , clientUsersRoutes = require(rootPrefix + '/routes/client_users')
+  , addressRoutes = require(rootPrefix + '/routes/address')
   , inputValidator = require(rootPrefix + '/lib/authentication/validate_signature')
 ;
 
@@ -110,6 +111,8 @@ app.use(sanitizer());
 app.use('/transaction', validateApiSignature, transactionRoutes);
 
 app.use('/users', validateApiSignature, clientUsersRoutes);
+
+app.use('/addresses', validateApiSignature, addressRoutes);
 
 app.use('/on-boarding', decodeJwt, onBoardingRoutes);
 
