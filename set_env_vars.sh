@@ -11,4 +11,5 @@ export CR_AWS_REGION="us-east-1"
 export CR_INFO_KMS_ARN='arn:aws:kms:us-east-1:604850698061:key'
 export CR_INFO_KMS_ID='eab8148d-fd9f-451d-9eb9-16c115645635'
 export CA_SAAS_API_SECRET_KEY='1somethingsarebetterkeptinenvironemntvariables'
-export CA_OST_PLATFORM_PATH='/Users/kedarchandrayan/workspace/openst-platform/index'
+export CA_GENERIC_SHA_KEY='9fa6baa9f1ab7a805b80721b65d34964170b1494'
+export CA_OST_PLATFORM_PATH='/Users/pankajkeswani/simpleToken-workspace/openst-platform/index'

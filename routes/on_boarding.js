@@ -62,4 +62,30 @@ router.get('/registration-status', function (req, res, next) {
   });
 });
 
+/* Generate Ethereum address using given passphrase */
+router.get('/generate-eth-address', function (req, res, next) {
+  const performer = function() {
+    const decodedParams = req.decodedParams
+      , generateEthAddress = require(rootPrefix + '/app/services/generate_ethereum_address')
+    ;
+
+    console.log("decodedParams--", decodedParams);
+    var passphrase = decodedParams["passphrase"];
+    if(!passphrase){
+      return responseHelper.error("r_ob_3", "Mandatory parameters missing").renderResponse(res);
+    }
+
+    // handle final response
+    const handleResponse = function (data) {
+      return responseHelper.successWithData(data).renderResponse(res);
+    };
+    return generateEthAddress.perform(passphrase).then(handleResponse);
+  };
+
+  Promise.resolve(performer()).catch(function (err) {
+    console.error(err);
+    responseHelper.error('r_t_1', 'Something went wrong').renderResponse(res)
+  });
+});
+
 module.exports = router;

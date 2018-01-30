@@ -22,6 +22,7 @@ const rootPrefix = '.'
   , transactionRoutes = require(rootPrefix + '/routes/transaction')
   , onBoardingRoutes = require(rootPrefix + '/routes/on_boarding')
   , stakeRoutes = require(rootPrefix + '/routes/stake')
+  , clientUsersRoutes = require(rootPrefix + '/routes/client_users')
   , inputValidator = require(rootPrefix + '/lib/authentication/validate_signature')
 ;
 
@@ -107,6 +108,8 @@ const decodeJwt = function(req, res, next) {
 app.use(sanitizer());
 
 app.use('/transaction', validateApiSignature, transactionRoutes);
+
+app.use('/users', validateApiSignature, clientUsersRoutes);
 
 app.use('/on-boarding', decodeJwt, onBoardingRoutes);
 
