@@ -7,7 +7,7 @@ var rootPrefix = '../../..'
   , localCipher = require(rootPrefix + '/lib/authentication/local_cipher')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , crypto = require('crypto')
-  , generateEthAddress = require('../generate_ethereum_address')
+  , generateEthAddress = require('../generate_address')
 ;
 
 const _private = {

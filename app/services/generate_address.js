@@ -6,7 +6,7 @@ const rootPrefix = '../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , openStPlatform = require(coreConstants.OST_PLATFORM_PATH);
 
-const generateEthAddress = {
+const generateAddress = {
 
   callOpenST: function(passphrase){
     // handle final response
@@ -31,4 +31,4 @@ const generateEthAddress = {
 
 };
 
-module.exports = generateEthAddress;
+module.exports = generateAddress;

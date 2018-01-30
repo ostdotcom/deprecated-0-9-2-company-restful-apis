@@ -63,10 +63,10 @@ router.get('/registration-status', function (req, res, next) {
 });
 
 /* Generate Ethereum address using given passphrase */
-router.get('/generate-eth-address', function (req, res, next) {
+router.post('/generate-address', function (req, res, next) {
   const performer = function() {
     const decodedParams = req.decodedParams
-      , generateEthAddress = require(rootPrefix + '/app/services/generate_ethereum_address')
+      , generateAddress = require(rootPrefix + '/app/services/generate_address')
     ;
 
     console.log("decodedParams--", decodedParams);
@@ -79,7 +79,7 @@ router.get('/generate-eth-address', function (req, res, next) {
     const handleResponse = function (data) {
       return responseHelper.successWithData(data).renderResponse(res);
     };
-    return generateEthAddress.perform(passphrase).then(handleResponse);
+    return generateAddress.perform(passphrase).then(handleResponse);
   };
 
   Promise.resolve(performer()).catch(function (err) {
