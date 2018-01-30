@@ -72,28 +72,4 @@ router.post('/start', function (req, res, next) {
   });
 });
 
-/* Propose a branded token */
-router.get('/get-staker-params', function (req, res, next) {
-
-  const performer = function() {
-
-    const decodedParams = req.decodedParams;
-
-    // handle final response
-    const handleOpenStPlatformSuccess = function (credentials) {
-      console.log(credentials);
-      return responseHelper.successWithData(credentials).renderResponse(res);
-    };
-
-    return openStPlatform.services.stake.getStakerCredentials()
-        .then(handleOpenStPlatformSuccess);
-  };
-
-  Promise.resolve(performer()).catch(function (err) {
-    console.error(err);
-    responseHelper.error('r_su_4', 'Something went wrong').renderResponse(res)
-  });
-
-});
-
 module.exports = router;
