@@ -17,8 +17,8 @@ router.post('/create', function (req, res, next) {
     }
 
     // handle final response
-    const handleResponse = function (data) {
-      return responseHelper.successWithData(data).renderResponse(res);
+    const handleResponse = function (response) {
+      return response.renderResponse(res);
     };
     return generateAddress.perform(passphrase).then(handleResponse);
   };
