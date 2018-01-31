@@ -12,8 +12,6 @@ const rootPrefix = '..'
 router.post('/propose-branded-token', function (req, res, next) {
   const performer = function() {
     const decodedParams = req.decodedParams
-      , senderAddress = decodedParams.sender_address
-      , senderPassphrase = decodedParams.sender_passphrase
       , tokenSymbol = decodedParams.token_symbol
       , tokenName = decodedParams.token_name
       , tokenConversionRate = decodedParams.token_conversion_rate
@@ -25,8 +23,6 @@ router.post('/propose-branded-token', function (req, res, next) {
     };
 
     return openStPlatform.services.onBoarding.proposeBt(
-      senderAddress,
-      senderPassphrase,
       tokenSymbol,
       tokenName,
       tokenConversionRate
