@@ -3,8 +3,7 @@
 const rootPrefix = '../..'
   , coreConstants = require(rootPrefix + '/config/core_constants')
   , QueryDBKlass = require(rootPrefix + '/app/models/queryDb')
-  , util = require(rootPrefix + '/lib/util')
-  , statuses = {'1':'active', '2':'inactive', '3':'blocked'}
+  , localCipher = require(rootPrefix + '/lib/authentication/local_cipher')
 ;
 
 const dbName = "company_client_economy_"+coreConstants.SUB_ENV+"_"+coreConstants.ENVIRONMENT
@@ -14,36 +13,33 @@ const dbName = "company_client_economy_"+coreConstants.SUB_ENV+"_"+coreConstants
 /*
  * Public methods
  */
-const clientUser = {
+const address = {
 
-  getUser: function(clientUserId){
-    return QueryDB.read('client_users',
+  get: function(ethAddress){
+    var hashedAddr = localCipher.getShaHashedText(ethAddress);
+    return QueryDB.read('company_managed_addresses',
       [],
-      'id=?',
-      [clientUserId]);
+      'hashed_ethereum_address=?',
+      [hashedAddr]);
   },
 
   create: function (params) {
 
     var oThis = this
-      , creatableFields = ['client_id', 'name', 'company_managed_address_id', 'total_tokens_in_wei', 'status']
+      , creatableFields = ['ethereum_address', 'hashed_ethereum_address', 'passphrase']
       , createFields = []
       , setFieldsValues = []
     ;
 
-    var invertedStatuses = util.invert(statuses);
-    params["status"] = invertedStatuses[params["status"]] || 0;
-
     for(var i=0; i<creatableFields.length; i++){
       if(params[creatableFields[i]]){
-        console.log("------$$$$$----", creatableFields[i], "=>",params[creatableFields[i]]);
         createFields.push(creatableFields[i]);
         setFieldsValues.push(params[creatableFields[i]])
       }
     }
 
     return QueryDB.insert(
-      'client_users',
+      'company_managed_addresses',
       createFields,
       setFieldsValues
     );
@@ -52,4 +48,4 @@ const clientUser = {
 
 };
 
-module.exports = clientUser;
+module.exports = address;

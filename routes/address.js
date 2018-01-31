@@ -9,18 +9,13 @@ router.post('/create', function (req, res, next) {
     const decodedParams = req.decodedParams
       , generateAddress = require(rootPrefix + '/app/services/generate_address')
     ;
-
-    console.log("decodedParams--", decodedParams);
-    var passphrase = decodedParams["passphrase"];
-    if(!passphrase){
-      return responseHelper.error("r_adc_2", "Mandatory parameters missing").renderResponse(res);
-    }
+    var clientId = decodedParams.client_id;
 
     // handle final response
     const handleResponse = function (response) {
       return response.renderResponse(res);
     };
-    return generateAddress.perform(passphrase).then(handleResponse);
+    return generateAddress.perform(clientId).then(handleResponse);
   };
 
   Promise.resolve(performer()).catch(function (err) {

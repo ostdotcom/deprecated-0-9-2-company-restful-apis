@@ -3,30 +3,15 @@
 var rootPrefix = '../../..'
   , clientUserModel = require(rootPrefix + '/app/models/client_user')
   , clientModel = require(rootPrefix + '/app/models/client')
-  , kmsWrapper = require(rootPrefix + '/lib/authentication/kms_wrapper')
-  , localCipher = require(rootPrefix + '/lib/authentication/local_cipher')
+  , companyAddressModel = require(rootPrefix + '/app/models/company_managed_address')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , crypto = require('crypto')
   , generateEthAddress = require('../generate_address')
 ;
-
-const _private = {
-
-  generatePassphrase: function(){
-    var iv = new Buffer(crypto.randomBytes(16));
-    return (iv.toString('hex').slice(0, 16));
-  }
-
-};
 
 const AddUser = function(params){
 
   this.clientId = params.client_id;
   this.name = params.name;
-  this.passphrase = _private.generatePassphrase();
-  this.infoSalt = null;
-  this.eth_address = null;
-  this.hashedEthAddress = null;
 
 };
 
@@ -43,16 +28,15 @@ AddUser.prototype = {
       return r;
     }
 
-    var r1 = await generateEthAddress.perform(oThis.passphrase);
+    var r1 = await generateEthAddress.perform(oThis.clientId);
     if(r1.isFailure()){
       return r1;
     }
     oThis.eth_address = r1.data.ethereum_address;
-    oThis.hashedEthAddress = r1.data.hashed_ethereum_address;
 
     var result = await oThis.insertUserInDb();
 
-    return Promise.resolve(responseHelper.successWithData(result));
+    return responseHelper.successWithData({id: result.insertId, ethereum_address: oThis.eth_address});
   },
 
   validateParams: async function(){
@@ -61,25 +45,14 @@ AddUser.prototype = {
       , name = oThis.name
     ;
 
-    if(!clientId || clientId==0 || !name){
+    if(!clientId || clientId==0){
       return Promise.resolve(responseHelper.error('cum_cu_1', 'Mandatory params missing'));
-    }
-
-    //TODO: check if any characters to be blocked
-    if(!name){
-      return Promise.resolve(responseHelper.error('cum_cu_2', 'Invalid name'));
     }
 
     var clientRecords = await clientModel.get(clientId);
     if (!clientRecords[0]) {
-      return Promise.resolve(responseHelper.error("cum_cu_3", "Invalid client details."));
+      return Promise.resolve(responseHelper.error("cum_cu_2", "Invalid client details."));
     }
-
-    var decryptedSalt = await kmsWrapper.decrypt(clientRecords[0]["info_salt"]);
-    if(!decryptedSalt["Plaintext"]){
-      return Promise.resolve(responseHelper.error("cum_cu_4", "Client Salt invalid."));
-    }
-    oThis.infoSalt = decryptedSalt["Plaintext"];
 
     return Promise.resolve(responseHelper.successWithData({}));
 
@@ -88,12 +61,14 @@ AddUser.prototype = {
   insertUserInDb: async function(){
     var oThis = this;
 
-    var encryptedPassphrase = await localCipher.encrypt(oThis.infoSalt, oThis.passphrase);
-    var encryptedEth = await localCipher.encrypt(oThis.infoSalt, oThis.eth_address);
+    var records = await companyAddressModel.get(oThis.eth_address);
+    if (!records[0]) {
+      return Promise.resolve(responseHelper.error("cum_cu_3", "Ethereum address issue."));
+    }
+    var company_addr_id = records[0]["id"];
 
     return clientUserModel.create({client_id: oThis.clientId, name: oThis.name,
-      passphrase: encryptedPassphrase, ethereum_address: encryptedEth,
-      hashed_ethereum_address: oThis.hashedEthAddress, status: "active"});
+      company_managed_address_id: company_addr_id, status: "active"});
   }
 
 };
