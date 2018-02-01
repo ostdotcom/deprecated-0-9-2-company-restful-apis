@@ -7,6 +7,7 @@ const rootPrefix = '../..'
 
 const dbName = "company_client_economy_"+coreConstants.SUB_ENV+"_"+coreConstants.ENVIRONMENT
   , QueryDB = new QueryDBKlass(dbName)
+  , tableName = 'client_api_credentials'
 ;
 
 /*
@@ -15,7 +16,8 @@ const dbName = "company_client_economy_"+coreConstants.SUB_ENV+"_"+coreConstants
 const clientApiCredential = {
 
   getClientApi: function(apiKey){
-    return QueryDB.read('client_api_credentials',
+    return QueryDB.read(
+      tableName,
       ['client_id','api_key', 'api_secret'],
       'api_key=?',
       [apiKey]);

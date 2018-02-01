@@ -1,7 +1,7 @@
 "use strict";
 
 var rootPrefix = '../../..'
-  , clientTransactionKind = require(rootPrefix + '/app/models/client_transaction')
+  , clientTransactionType = require(rootPrefix + '/app/models/client_transaction_type')
   , responseHelper = require(rootPrefix + '/lib/formatter/response.js')
 ;
 
@@ -48,7 +48,7 @@ AddNew.prototype = {
     if(!name){
       return Promise.resolve(responseHelper.error('tk_an_1', 'invalid name'));
     }
-    if(!clientTransactionKind.invertedKinds[kind]){
+    if(!clientTransactionType.invertedKinds[kind]){
       return Promise.resolve(responseHelper.error('tk_an_2', 'invalid kind'));
     }
 
@@ -56,7 +56,7 @@ AddNew.prototype = {
       return Promise.resolve(responseHelper.error('tk_an_3', 'Value in USD is required'));
     } else if (value_currency_type == 'bt' && (!value_in_bt || value_in_bt<=0 ) ){
       return Promise.resolve(responseHelper.error('tk_an_4', 'Value in BT is required'));
-    } else if (!clientTransactionKind.invertedValueCurrencyTypes[value_currency_type]){
+    } else if (!clientTransactionType.invertedValueCurrencyTypes[value_currency_type]){
       return Promise.resolve(responseHelper.error('tk_an_5', 'Atleast one currency type to mention'));
     }
 
@@ -64,7 +64,7 @@ AddNew.prototype = {
       return Promise.resolve(responseHelper.error('tk_an_6', 'invalid commission_percent'));
     }
 
-    var existingTKind = await clientTransactionKind.getTransactionByName({clientId: clientId, name: name});
+    var existingTKind = await clientTransactionType.getTransactionByName({clientId: clientId, name: name});
     if(existingTKind.length > 0){
       return Promise.resolve(responseHelper.error('tk_an_7', "Transaction kind name '"+ name +"' already present."));
     }
@@ -76,7 +76,7 @@ AddNew.prototype = {
   createTransactionKind: function(){
     var oThis = this;
 
-    return clientTransactionKind.create({qParams: oThis.params});
+    return clientTransactionType.create({qParams: oThis.params});
   }
 
 };

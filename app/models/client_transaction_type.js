@@ -8,6 +8,7 @@ const rootPrefix = '../..'
 
 const dbName = "company_client_economy_"+coreConstants.SUB_ENV+"_"+coreConstants.ENVIRONMENT
   , QueryDB = new QueryDBKlass(dbName)
+  , tableName = 'client_transaction_types'
   , kinds = {'1':'user_to_user', '2':'user_to_company', '3':'company_to_user'}
   , invertedKinds = util.invert(kinds)
   , valueCurrencyTypes = {'1':'usd', '2':'bt'}
@@ -18,7 +19,7 @@ const dbName = "company_client_economy_"+coreConstants.SUB_ENV+"_"+coreConstants
 /*
  * Public methods
  */
-const clientTransactionKind = {
+const clientTransactionType = {
 
   kinds: kinds,
 
@@ -56,7 +57,7 @@ const clientTransactionKind = {
     ;
 
     var results = await QueryDB.read(
-      'client_transactions',
+      tableName,
       ['client_id','name', 'kind', 'value_currency_type', 'value_in_usd', 'value_in_bt', 'commission_percent'],
       'client_id=?',
       [params['clientId']]
@@ -71,11 +72,11 @@ const clientTransactionKind = {
   },
 
   getTransactionById: function (params) {
-    return QueryDB.read('client_transactions', [], 'id=?', [params['clientTransactionId']]);
+    return QueryDB.read(tableName, [], 'id=?', [params['clientTransactionId']]);
   },
 
   getTransactionByName: function (params) {
-    return QueryDB.read('client_transactions', [], 'client_id=? AND name=?', [params['clientId'], params['name']]);
+    return QueryDB.read(tableName, [], 'client_id=? AND name=?', [params['clientId'], params['name']]);
   },
 
   create: function (params) {
@@ -100,7 +101,7 @@ const clientTransactionKind = {
     }
 
     return QueryDB.insert(
-      'client_transactions',
+      tableName,
       createFields,
       setFieldsValues
     );
@@ -132,7 +133,7 @@ const clientTransactionKind = {
     }
 
     return QueryDB.edit(
-      'client_transactions',
+      tableName,
       editFields,
       setFieldsValues,
       whereCondFields,
@@ -143,4 +144,4 @@ const clientTransactionKind = {
 
 };
 
-module.exports = clientTransactionKind;
+module.exports = clientTransactionType;

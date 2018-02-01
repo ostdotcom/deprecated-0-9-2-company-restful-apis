@@ -10,6 +10,7 @@ var rootPrefix = '../..'
  */
 const dbName = "company_client_"+coreConstants.ENVIRONMENT
   , QueryDB = new QueryDBKlass(dbName)
+  , tableName = 'clients'
   ;
 
 /*
@@ -18,7 +19,8 @@ const dbName = "company_client_"+coreConstants.ENVIRONMENT
 const clientDetail = {
 
   get: function (clientId) {
-    return QueryDB.read('clients',
+    return QueryDB.read(
+      tableName,
       [],
       'id=?',
       [clientId]);

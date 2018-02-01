@@ -9,6 +9,7 @@ const rootPrefix = '../..'
 
 const dbName = "company_client_economy_"+coreConstants.SUB_ENV+"_"+coreConstants.ENVIRONMENT
   , QueryDB = new QueryDBKlass(dbName)
+  , tableName = 'client_users'
 ;
 
 /*
@@ -17,7 +18,8 @@ const dbName = "company_client_economy_"+coreConstants.SUB_ENV+"_"+coreConstants
 const clientUser = {
 
   getUser: function(clientUserId){
-    return QueryDB.read('client_users',
+    return QueryDB.read(
+      tableName,
       [],
       'id=?',
       [clientUserId]);
@@ -43,7 +45,7 @@ const clientUser = {
     }
 
     return QueryDB.insert(
-      'client_users',
+      tableName,
       createFields,
       setFieldsValues
     );

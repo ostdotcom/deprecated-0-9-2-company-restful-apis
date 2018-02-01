@@ -1,7 +1,7 @@
 "use strict";
 
 var rootPrefix = '../../..'
-  , clientTransactionKind = require(rootPrefix + '/app/models/client_transaction')
+  , clientTransactionType = require(rootPrefix + '/app/models/client_transaction_type')
   , responseHelper = require(rootPrefix + '/lib/formatter/response.js')
 ;
 
@@ -47,7 +47,7 @@ Edit.prototype = {
       return Promise.resolve(responseHelper.error('tk_e_1', 'invalid params'));
     }
 
-    if(kind && !clientTransactionKind.invertedKinds[kind]){
+    if(kind && !clientTransactionType.invertedKinds[kind]){
       return Promise.resolve(responseHelper.error('tk_e_2', 'invalid kind'));
     }
 
@@ -69,7 +69,7 @@ Edit.prototype = {
     }
 
     if(name && oThis.currentTransactionKind['name'].toLowerCase() != name.toLowerCase()){
-      var existingTKind = await clientTransactionKind.getTransactionByName({clientId: clientId, name: name});
+      var existingTKind = await clientTransactionType.getTransactionByName({clientId: clientId, name: name});
       if(existingTKind.length > 0){
         return Promise.resolve(responseHelper.error('tk_e_7', "Transaction kind name '"+ name +"' already present."));
       }
@@ -81,13 +81,13 @@ Edit.prototype = {
 
   getCurrentTransactionKind: function(){
     var oThis = this;
-    return clientTransactionKind.getTransactionById({clientTransactionId: oThis.clientTransactionId});
+    return clientTransactionType.getTransactionById({clientTransactionId: oThis.clientTransactionId});
   },
 
   editTransactionKind: function(){
     var oThis = this;
 
-    return clientTransactionKind.edit(
+    return clientTransactionType.edit(
       {
         qParams: oThis.params,
         whereCondition: {id: oThis.clientTransactionId}

@@ -8,6 +8,7 @@ const rootPrefix = '../..'
 
 const dbName = "company_client_economy_"+coreConstants.SUB_ENV+"_"+coreConstants.ENVIRONMENT
   , QueryDB = new QueryDBKlass(dbName)
+  , tableName = 'company_managed_addresses'
 ;
 
 /*
@@ -17,7 +18,8 @@ const address = {
 
   get: function(ethAddress){
     var hashedAddr = localCipher.getShaHashedText(ethAddress);
-    return QueryDB.read('company_managed_addresses',
+    return QueryDB.read(
+      tableName,
       [],
       'hashed_ethereum_address=?',
       [hashedAddr]);
@@ -39,7 +41,7 @@ const address = {
     }
 
     return QueryDB.insert(
-      'company_managed_addresses',
+      tableName,
       createFields,
       setFieldsValues
     );
