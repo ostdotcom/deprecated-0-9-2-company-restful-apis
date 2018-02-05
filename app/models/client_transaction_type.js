@@ -58,7 +58,7 @@ const clientTransactionType = {
 
     var results = await QueryDB.read(
       tableName,
-      ['client_id','name', 'kind', 'value_currency_type', 'value_in_usd', 'value_in_bt', 'commission_percent'],
+      ['id', 'client_id','name', 'kind', 'value_currency_type', 'value_in_usd', 'value_in_bt', 'commission_percent'],
       'client_id=?',
       [params['clientId']]
     );
