@@ -48,6 +48,7 @@ List.prototype = {
 
       oThis.apiResponse.transaction_kinds.push(
         {
+          'id': res.id,
           'name': res.name,
           'kind': res.kind,
           'value_currency_type': res.value_currency_type,
