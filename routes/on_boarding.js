@@ -58,4 +58,32 @@ router.get('/registration-status', function (req, res, next) {
   });
 });
 
+/* Create User for a client */
+router.post('/grant-test-ost', function (req, res, next) {
+  const performer = function() {
+    const decodedParams = req.decodedParams
+      , allocateOstKlass = require(rootPrefix + '/app/services/client_economy_management/allocate_test_ost')
+      , grantOst = new allocateOstKlass(decodedParams)
+    ;
+
+    if(coreConstants.SUB_ENV != 'sandbox'){
+      return responseHelper.error('r_t_1', 'Something went wrong').renderResponse(res);
+    }
+
+    console.log("decodedParams--", decodedParams);
+
+    const renderResult = function(result) {
+      return result.renderResponse(res);
+    };
+
+    return grantOst.perform()
+      .then(renderResult);
+  };
+
+  Promise.resolve(performer()).catch(function (err) {
+    console.error(err);
+    responseHelper.error('r_t_1', 'Something went wrong').renderResponse(res)
+  });
+});
+
 module.exports = router;
