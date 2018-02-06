@@ -34,7 +34,7 @@ List.prototype = {
 
     oThis.apiResponse = {
       client_id: clientId,
-      transaction_kinds: []
+      transaction_kinds: {}
     }
 
   },
@@ -46,19 +46,18 @@ List.prototype = {
     for (var i = 0; i < result.length; i++) {
       var res = result[i];
 
-      oThis.apiResponse.transaction_kinds.push(
-        {
-          'id': res.id,
-          'name': res.name,
-          'kind': res.kind,
-          'value_currency_type': res.value_currency_type,
-          'value_in_usd': res.value_in_usd,
-          'value_in_bt': res.value_in_bt,
-          'commission_percent': res.commission_percent
-        }
-      );
+      oThis.apiResponse.transaction_kinds[res.id] = {
+        'id': res.id,
+        'name': res.name,
+        'kind': res.kind,
+        'value_currency_type': res.value_currency_type,
+        'value_in_usd': res.value_in_usd,
+        'value_in_bt': res.value_in_bt,
+        'commission_percent': res.commission_percent
+      };
 
     }
+
     return Promise.resolve();
 
   }
