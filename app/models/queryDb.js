@@ -49,6 +49,28 @@ QueryDB.prototype = {
     );
   },
 
+  readByIds: function(tableName, fields, ids) {
+    var oThis = this
+      , selectFields = ((!fields || fields.length==0) ? '*' : fields.join(','))
+      , q = 'SELECT '+selectFields+' FROM '+tableName+' WHERE id IN ('+ ids.join(',')+')';
+
+    return new Promise(
+      function (onResolve, onReject) {
+        // get a timestamp before running the query
+        var pre_query = Date.now();
+        var qry = oThis.onReadConnection().query(q, function (err, result, fields) {
+          console.log("(%s ms) %s", (Date.now() - pre_query), qry.sql);
+          if (err) {
+            onReject(err);
+          } else {
+            onResolve(result);
+          }
+        });
+
+      }
+    );
+  },
+
   insert: function(tableName, fields, queryArgs) {
 
     console.log("=1=========fields=====", fields);

@@ -16,13 +16,20 @@ const dbName = "company_client_economy_"+coreConstants.SUB_ENV+"_"+coreConstants
  */
 const address = {
 
-  get: function(ethAddress){
+  getByEthAddress: function(ethAddress){
     var hashedAddr = localCipher.getShaHashedText(ethAddress);
     return QueryDB.read(
       tableName,
       [],
       'hashed_ethereum_address=?',
       [hashedAddr]);
+  },
+
+  getByIds: function(ids){
+    return QueryDB.readByIds(
+      tableName,
+      ['id', 'ethereum_address'],
+      ids);
   },
 
   create: function (params) {
