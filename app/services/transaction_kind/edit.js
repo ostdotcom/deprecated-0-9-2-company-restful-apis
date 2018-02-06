@@ -39,6 +39,7 @@ Edit.prototype = {
       , value_currency_type = oThis.params.value_currency_type
       , value_in_usd = oThis.params.value_in_usd
       , value_in_bt = oThis.params.value_in_bt
+      , use_price_oracle = parseInt(oThis.params.use_price_oracle)
     ;
 
     oThis.clientTransactionId = oThis.params.client_transaction_id;
@@ -68,10 +69,14 @@ Edit.prototype = {
       return Promise.resolve(responseHelper.error('tk_e_6', 'Unauthorised access.'));
     }
 
+    if(use_price_oracle != 1 && use_price_oracle != 0){
+      return Promise.resolve(responseHelper.error('tk_e_7', 'Invalid value for use_price_oracle: ' + use_price_oracle));
+    }
+
     if(name && oThis.currentTransactionKind['name'].toLowerCase() != name.toLowerCase()){
       var existingTKind = await clientTransactionType.getTransactionByName({clientId: clientId, name: name});
       if(existingTKind.length > 0){
-        return Promise.resolve(responseHelper.error('tk_e_7', "Transaction kind name '"+ name +"' already present."));
+        return Promise.resolve(responseHelper.error('tk_e_8', "Transaction kind name '"+ name +"' already present."));
       }
     }
 

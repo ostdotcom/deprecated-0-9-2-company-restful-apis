@@ -32,9 +32,12 @@ List.prototype = {
 
     oThis.clientId = clientId;
 
+    //TODO: handle pagination here
     oThis.apiResponse = {
       client_id: clientId,
-      transaction_kinds: []
+      transaction_kinds: [],
+      next_page_payload: {},
+      result_type: 'transaction_kinds'
     }
 
   },
@@ -54,7 +57,8 @@ List.prototype = {
             'value_currency_type': res.value_currency_type,
             'value_in_usd': res.value_in_usd,
             'value_in_bt': res.value_in_bt,
-            'commission_percent': res.commission_percent
+            'commission_percent': res.commission_percent,
+            'use_price_oracle': res.use_price_oracle
           }
       );
 

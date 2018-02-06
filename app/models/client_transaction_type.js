@@ -58,7 +58,8 @@ const clientTransactionType = {
 
     var results = await QueryDB.read(
       tableName,
-      ['id', 'client_id','name', 'kind', 'value_currency_type', 'value_in_usd', 'value_in_bt', 'commission_percent'],
+      ['id', 'client_id','name', 'kind', 'value_currency_type', 'value_in_usd',
+        'value_in_bt', 'commission_percent', 'use_price_oracle'],
       'client_id=?',
       [params['clientId']]
     );
@@ -82,7 +83,8 @@ const clientTransactionType = {
   create: function (params) {
 
     var oThis = this
-      , creatableFields = ['client_id', 'name', 'kind', 'value_currency_type', 'value_in_usd', 'value_in_bt', 'commission_percent']
+      , creatableFields = ['client_id', 'name', 'kind', 'value_currency_type', 'value_in_usd',
+                'value_in_bt', 'commission_percent', 'use_price_oracle']
       , createFields = []
       , setFieldsValues = []
     ;
@@ -111,7 +113,8 @@ const clientTransactionType = {
   edit: function (params) {
 
     var oThis = this
-      , editableFields = ['name', 'kind', 'value_currency_type', 'value_in_usd', 'value_in_bt', 'commission_percent']
+      , editableFields = ['name', 'kind', 'value_currency_type', 'value_in_usd',
+                            'value_in_bt', 'commission_percent', 'use_price_oracle']
       , editFields = []
       , setFieldsValues = []
       , whereCondFields = []

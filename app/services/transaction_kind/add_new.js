@@ -38,6 +38,7 @@ AddNew.prototype = {
       , value_in_usd = oThis.params.value_in_usd
       , value_in_bt = oThis.params.value_in_bt
       , commission_percent = oThis.params.commission_percent
+      , use_price_oracle = parseInt(oThis.params.use_price_oracle)
     ;
 
     if(!clientId || clientId==0 || !name || !kind){
@@ -64,9 +65,13 @@ AddNew.prototype = {
       return Promise.resolve(responseHelper.error('tk_an_6', 'invalid commission_percent'));
     }
 
+    if(use_price_oracle != 1 && use_price_oracle != 0){
+      return Promise.resolve(responseHelper.error('tk_an_7', 'Invalid value for use_price_oracle: ' + use_price_oracle));
+    }
+
     var existingTKind = await clientTransactionType.getTransactionByName({clientId: clientId, name: name});
     if(existingTKind.length > 0){
-      return Promise.resolve(responseHelper.error('tk_an_7', "Transaction kind name '"+ name +"' already present."));
+      return Promise.resolve(responseHelper.error('tk_an_8', "Transaction kind name '"+ name +"' already present."));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
