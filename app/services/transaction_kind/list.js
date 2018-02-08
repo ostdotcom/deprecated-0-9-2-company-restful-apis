@@ -35,9 +35,9 @@ List.prototype = {
     //TODO: handle pagination here
     oThis.apiResponse = {
       client_id: clientId,
-      transaction_kinds: [],
+      transaction_types: [],
       next_page_payload: {},
-      result_type: 'transaction_kinds'
+      result_type: 'transaction_types'
     }
 
   },
@@ -49,7 +49,7 @@ List.prototype = {
     for (var i = 0; i < result.length; i++) {
       var res = result[i];
 
-      oThis.apiResponse.transaction_kinds.push(
+      oThis.apiResponse.transaction_types.push(
           {
             'id': res.id,
             'name': res.name,
