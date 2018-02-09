@@ -7,7 +7,7 @@ const express = require('express')
 router.post('/create', function (req, res, next) {
   const performer = function() {
     const decodedParams = req.decodedParams
-      , generateAddress = require(rootPrefix + '/app/services/generate_address')
+      , generateAddress = require(rootPrefix + '/app/services/address/generate')
     ;
     var clientId = decodedParams.client_id;
 

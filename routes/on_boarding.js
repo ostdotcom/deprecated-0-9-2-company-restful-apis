@@ -5,7 +5,7 @@ const express = require('express')
 const rootPrefix = '..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , coreConstants = require(rootPrefix + '/config/core_constants')
-  , openStPlatform = require(coreConstants.OST_PLATFORM_PATH)
+  , openStPlatform = require('@openstfoundation/openst-platform')
 ;
 
 /* Propose a branded token */

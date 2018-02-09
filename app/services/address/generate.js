@@ -1,12 +1,12 @@
 "use strict";
 
-const rootPrefix = '../..'
+const rootPrefix = '../../..'
   , coreConstants = require(rootPrefix + '/config/core_constants')
   , localCipher = require(rootPrefix + '/lib/authentication/local_cipher')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , kmsWrapper = require(rootPrefix + '/lib/authentication/kms_wrapper')
   , crypto = require('crypto')
-  , openStPlatform = require(coreConstants.OST_PLATFORM_PATH)
+  , openStPlatform = require('@openstfoundation/openst-platform')
   , clientModel = require(rootPrefix + '/app/models/client')
   , companyAddressModel = require(rootPrefix + '/app/models/company_managed_address');
 
@@ -53,7 +53,7 @@ const _private = {
 
 };
 
-const generateAddress = {
+const generate = {
 
   perform: async function(clientId){
     var r = await _private.fetchClientSalt(clientId);
@@ -77,4 +77,4 @@ const generateAddress = {
 
 };
 
-module.exports = generateAddress;
+module.exports = generate;

@@ -5,7 +5,7 @@ var rootPrefix = '../../..'
   , clientModel = require(rootPrefix + '/app/models/client')
   , companyAddressModel = require(rootPrefix + '/app/models/company_managed_address')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , generateEthAddress = require('../generate_address')
+  , generateEthAddress = require('../address/generate')
 ;
 
 const AddUser = function(params){
