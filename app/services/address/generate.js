@@ -1,7 +1,6 @@
 "use strict";
 
 const rootPrefix = '../../..'
-  , coreConstants = require(rootPrefix + '/config/core_constants')
   , localCipher = require(rootPrefix + '/lib/authentication/local_cipher')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , kmsWrapper = require(rootPrefix + '/lib/authentication/kms_wrapper')

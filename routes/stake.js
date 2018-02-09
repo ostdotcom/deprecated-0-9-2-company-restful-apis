@@ -4,7 +4,6 @@ const express = require('express')
 
 const rootPrefix = '..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , coreConstants = require(rootPrefix + '/config/core_constants')
   , openStPlatform = require('@openstfoundation/openst-platform')
 ;
 
@@ -13,22 +12,28 @@ router.post('/approve', function (req, res, next) {
   const performer = function() {
 
     // handle final response
-    const handleOpenStPlatformSuccess = function (transaction_hash) {
-      return responseHelper.successWithData({transaction_hash: transaction_hash}).renderResponse(res);
+    const handleOpenStPlatformSuccess = function (approveResponse) {
+      return approveResponse.renderResponse(res);
     };
 
-    return openStPlatform.services.stake.approveForStake().then(handleOpenStPlatformSuccess);
+    const object = new openStPlatform.services.stake.approveForStake();
+
+    return object.perform().then(handleOpenStPlatformSuccess);
+
   };
 
   Promise.resolve(performer()).catch(function (err) {
     console.error(err);
     responseHelper.error('r_su_1', 'Something went wrong').renderResponse(res)
   });
+
 });
 
 /* Propose a branded token */
 router.get('/approval-status', function (req, res, next) {
+
   const performer = function() {
+
     const decodedParams = req.decodedParams
       , approveTransactionHash = decodedParams.transaction_hash
     ;
@@ -38,14 +43,19 @@ router.get('/approval-status', function (req, res, next) {
       return result.renderResponse(res);
     };
 
-    return openStPlatform.services.stake.getApprovalStatus(approveTransactionHash)
-      .then(handleOpenStPlatformSuccess);
+    const object = new openStPlatform.services.stake.getApprovalStatus({
+      'transaction_hash': approveTransactionHash
+    });
+
+    return object.perform().then(handleOpenStPlatformSuccess);
+
   };
 
   Promise.resolve(performer()).catch(function (err) {
     console.error(err);
     responseHelper.error('r_su_2', 'Something went wrong').renderResponse(res)
   });
+
 });
 
 /* Propose a branded token */
@@ -58,18 +68,25 @@ router.post('/start', function (req, res, next) {
     ;
 
     // handle final response
-    const handleOpenStPlatformSuccess = function (transaction_hash) {
-      return responseHelper.successWithData({transaction_hash: transaction_hash}).renderResponse(res);
+    const handleOpenStPlatformSuccess = function (stakeResponse) {
+      return stakeResponse.renderResponse(res);
     };
 
-    return openStPlatform.services.stake.start(beneficiary, toStakeAmount, uuid)
-      .then(handleOpenStPlatformSuccess);
+    const object = new openStPlatform.services.stake.start({
+      'beneficiary': beneficiary,
+      'to_stake_amount': toStakeAmount,
+      'uuid': uuid
+    });
+
+    return object.perform().then(handleOpenStPlatformSuccess);
+
   };
 
   Promise.resolve(performer()).catch(function (err) {
     console.error(err);
     responseHelper.error('r_su_3', 'Something went wrong').renderResponse(res)
   });
+
 });
 
 module.exports = router;
