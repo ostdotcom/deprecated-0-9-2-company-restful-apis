@@ -43,7 +43,7 @@ AllocateOst.prototype = {
 
     var result = oThis.insertInDb();
 
-    return responseHelper.successWithData({id: result.insertId, ethereum_address: oThis.eth_address});
+    return responseHelper.successWithData({id: result.insertId});
   },
 
   validateParams: async function(){
