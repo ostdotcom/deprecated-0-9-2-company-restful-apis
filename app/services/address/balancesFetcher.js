@@ -5,6 +5,7 @@ const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , ethBalanceCacheKlass = require(rootPrefix + '/lib/cache_management/ethBalance')
   , ostBalanceCacheKlass = require(rootPrefix + '/lib/cache_management/ostBalance')
+  , logger = require(rootPrefix+'/lib/logger/custom_console_logger')
   , bigNumber = require('bignumber.js')
 ;
 
@@ -40,10 +41,12 @@ balancesFetcherKlass.prototype = {
     });
 
     if (validBalanceTypes.length != balanceTypes.length) {
-      return Promise.resolve(responseHelper.error(
+      r =  Promise.resolve(responseHelper.error(
         'bf_1', "invalid balanceTypes"
         )
-      )
+      );
+      logger.error(r);
+      return r;
     }
 
     var promiseResolvers = []
@@ -62,7 +65,7 @@ balancesFetcherKlass.prototype = {
           , response = promiseResolverResponses[i];
 
       if (response.isFailure()) {
-        console.error(response.toHash())
+        logger.error(response);
       } else {
         var data = response.data;
         if (data && data.balance) {
