@@ -13,12 +13,13 @@ const rootPrefix = '../../..'
 const _private = {
 
   callOpenST: function(passphrase){
-    // handle final response
-    const handleOpenStPlatformSuccess = function (ethereum_address) {
-      return responseHelper.successWithData({ethereum_address: ethereum_address});
-    };
 
-    return openStPlatform.services.address.create("utility", passphrase).then(handleOpenStPlatformSuccess);
+    const obj = new openStPlatform.services.utils.generateAddress(
+        {'passphrase': passphrase, 'chain': 'utility'}
+    );
+
+    return obj.perform();
+
   },
 
   generatePassphrase: function(){
@@ -68,11 +69,13 @@ const generate = {
     if(r1.isFailure()){
       return r1;
     }
-    var eth_address = r1.data.ethereum_address;
+
+    var eth_address = r1.data.address;
 
     await _private.insertInDb(eth_address, passphrase, infoSalt);
 
     return responseHelper.successWithData({ethereum_address: eth_address});
+
   }
 
 };
