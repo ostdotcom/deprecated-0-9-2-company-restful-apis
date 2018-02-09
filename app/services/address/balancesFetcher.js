@@ -2,44 +2,158 @@
 
 const rootPrefix = '../../..'
   , openStPlatform = require('@openstfoundation/openst-platform')
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , ethBalanceCacheKlass = require(rootPrefix + '/lib/cache_management/ethBalance')
+  , ostBalanceCacheKlass = require(rootPrefix + '/lib/cache_management/ostBalance')
+  , bigNumber = require('bignumber.js')
 ;
 
-const balancesFetcher = {
+/**
+ * constructor
+ *
+ * @param {Object} params - cache key generation & expiry related params
+ *
+ * @constructor
+ */
+const balancesFetcherKlass = function(params) {
 
-  fetchEthBalance: function(address){
+  const oThis = this;
 
-    const obj = new openStPlatform.services.balance.eth({'address': address});
+  oThis.address = params['address'];
+  oThis.erc20Address = params['erc20_address'];
+
+};
+
+balancesFetcherKlass.prototype = {
+
+  /**
+   * fetch data from source and return eth balance from VC in Wei
+   *
+   * @return {Result}
+   */
+  perform: async function(balanceTypes){
+
+    const oThis = this;
+
+    const validBalanceTypes = balanceTypes.filter(function(n) {
+      return oThis._supportedBalanceTypes().indexOf(n) >= 0;
+    });
+
+    if (validBalanceTypes.length != balanceTypes.length) {
+      return Promise.resolve(responseHelper.error(
+        'bf_1', "invalid balanceTypes"
+        )
+      )
+    }
+
+    var promiseResolvers = []
+        , balances = {};
+
+    for (var i=0; i < balanceTypes.length; i++) {
+      var promise = oThis["_fetch"+balanceTypes[i]+"Balance"].apply(oThis);
+      promiseResolvers.push(promise);
+    }
+
+    const promiseResolverResponses = await Promise.all(promiseResolvers);
+
+    for (var i=0; i < balanceTypes.length; i++) {
+
+      var balanceType = balanceTypes[i]
+          , response = promiseResolverResponses[i];
+
+      if (response.isFailure()) {
+        console.error(response.toHash())
+      } else {
+        var data = response.data;
+        if (data && data.balance) {
+          balances[balanceType] = new bigNumber(data.balance);
+        } else {
+          balances[balanceType] = new bigNumber(data);
+        }
+      }
+
+    }
+
+    return Promise.resolve(responseHelper.successWithData(balances));
+
+  },
+
+  /**
+   * fetchsupported types
+   *
+   * @return {Array}
+   */
+  _supportedBalanceTypes: function() {
+    return [
+      'ost',
+      'ostPrime',
+      'brandedToken',
+      'eth'
+    ]
+  },
+
+  /**
+   * fetch eth balance
+   *
+   * @return {Promise}
+   */
+  _fetchethBalance: function(){
+
+    const oThis = this;
+
+    const obj = new ethBalanceCacheKlass({'address': oThis.address});
+
+    return obj.fetch();
+
+  },
+
+  /**
+   * fetch OST balance
+   *
+   * @return {Promise}
+   */
+  _fetchostBalance: function(){
+
+    const oThis = this;
+
+    const obj = new ostBalanceCacheKlass({'address': oThis.address});
+
+    return obj.fetch();
+
+  },
+
+  /**
+   * fetch OST Prime balance
+   *
+   * @return {Promise}
+   */
+  _fetchostPrimeBalance: function(){
+
+    const oThis = this;
+
+    const obj = new openStPlatform.services.balance.simpleTokenPrime({'address': oThis.address});
 
     return obj.perform();
 
   },
 
-  fetchOstBalance: function(address){
+  /**
+   * fetch BT balance
+   *
+   * @return {Promise}
+   */
+  _fetchbrandedTokenBalance: function(){
 
-    const obj = new openStPlatform.services.balance.simpleToken({'address': address});
-
-    return obj.perform();
-
-  },
-
-  fetchOstPrimeBalance: function(address){
-
-    const obj = new openStPlatform.services.balance.simpleTokenPrime({'address': address});
-
-    return obj.perform();
-
-  },
-
-  fetchBrandedTokenBalance: function(erc20_address, address){
+    const oThis = this;
 
     const obj = new openStPlatform.services.balance.brandedToken(
-          {'address': address, 'erc20_address': erc20_address}
-        );
+        {'address': oThis.address, 'erc20_address': oThis.erc20Address}
+    );
 
     return obj.perform();
 
   }
 
-};
+}
 
-module.exports = balancesFetcher;
+module.exports = balancesFetcherKlass;
