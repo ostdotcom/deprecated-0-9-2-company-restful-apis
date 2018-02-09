@@ -10,7 +10,9 @@ const rootPrefix = '..'
 
 /* Propose a branded token */
 router.post('/propose-branded-token', function (req, res, next) {
+
   const performer = function() {
+
     const decodedParams = req.decodedParams
       , tokenSymbol = decodedParams.token_symbol
       , tokenName = decodedParams.token_name
@@ -18,44 +20,53 @@ router.post('/propose-branded-token', function (req, res, next) {
     ;
 
     // handle final response
-    const handleOpenStPlatformSuccess = function (transaction_hash) {
-      return responseHelper.successWithData({transaction_hash: transaction_hash}).renderResponse(res);
+    const handleOpenStPlatformSuccess = function (proposeResponse) {
+      return proposeResponse.renderResponse(res);
     };
 
-    return openStPlatform.services.onBoarding.proposeBt(
-      tokenSymbol,
-      tokenName,
-      tokenConversionRate
-    ).then(handleOpenStPlatformSuccess);
+    const object = new openStPlatform.services.onBoarding.proposeBrandedToken({
+      'symbol': tokenSymbol,
+      'name': tokenName,
+      'conversion_rate': tokenConversionRate
+    });
+
+    return object.perform().then(handleOpenStPlatformSuccess);
+
   };
 
   Promise.resolve(performer()).catch(function (err) {
     console.error(err);
     responseHelper.error('r_ob_1', 'Something went wrong').renderResponse(res)
   });
+
 });
 
 /* Propose a branded token */
 router.get('/registration-status', function (req, res, next) {
   const performer = function() {
+
     const decodedParams = req.decodedParams
       , proposeTransactionHash = decodedParams.transaction_hash
     ;
 
     // handle final response
-    const handleOpenStPlatformSuccess = function (registrationStatus) {
-      return responseHelper.successWithData({registration_status: registrationStatus}).renderResponse(res);
+    const handleOpenStPlatformSuccess = function (registrationResponse) {
+      return registrationResponse.renderResponse(res);
     };
 
-    return openStPlatform.services.onBoarding.getRegistrationStatus(
-      proposeTransactionHash
-    ).then(handleOpenStPlatformSuccess);
+    const object = new openStPlatform.services.onBoarding.getRegistrationStatus({
+      'transaction_hash': proposeTransactionHash
+    });
+
+    return object.perform().then(handleOpenStPlatformSuccess);
+
   };
 
   Promise.resolve(performer()).catch(function (err) {
     console.error(err);
     responseHelper.error('r_ob_2', 'Something went wrong').renderResponse(res)
   });
+
 });
 
 /* Create User for a client */
