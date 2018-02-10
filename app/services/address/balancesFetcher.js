@@ -41,12 +41,11 @@ balancesFetcherKlass.prototype = {
     });
 
     if (validBalanceTypes.length != balanceTypes.length) {
-      r =  Promise.resolve(responseHelper.error(
-        'bf_1', "invalid balanceTypes"
-        )
+      var r = responseHelper.error(
+          'bf_1', "invalid balanceTypes"
       );
       logger.error(r);
-      return r;
+      return Promise.resolve(r);
     }
 
     var promiseResolvers = []
