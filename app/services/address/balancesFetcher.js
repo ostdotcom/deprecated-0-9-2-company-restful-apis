@@ -21,7 +21,7 @@ const balancesFetcherKlass = function(params) {
   const oThis = this;
 
   oThis.address = params['address'];
-  oThis.erc20Address = params['erc20_address'];
+  oThis.erc20Address = params['erc20Address'];
 
 };
 
