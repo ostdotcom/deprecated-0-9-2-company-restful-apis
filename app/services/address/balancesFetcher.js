@@ -77,7 +77,10 @@ balancesFetcherKlass.prototype = {
 
     }
 
-    return Promise.resolve(responseHelper.successWithData(balances));
+    //TODO: append conversion rates here
+    return Promise.resolve(responseHelper.successWithData({
+      'balances': balances
+    }));
 
   },
 
