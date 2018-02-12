@@ -9,10 +9,11 @@
 
   const request = require('request-promise')
   , exchangeUrl = "https://api.coinmarketcap.com/v1/ticker/simple-token"
-  , OSTPriceOracle = require('ost-price-oracle')
+  , OSTPriceOracle = require('@ostdotcom/ost-price-oracle')
   , priceOracle = OSTPriceOracle.priceOracle
   , BigNumber = require('bignumber.js')
   , gasPrice = '0x12A05F200'
+  , chainId = 1
   ;
 
   const rootPrefix = "../../.."
@@ -62,11 +63,22 @@ FetchCurrentOSTPriceKlass.prototype = {
 
     // Insert current ost value in database
     var insertResponse = await currencyConversionRateModel.create(oThis.currentOstValue);
-    logger.info(insertResponse);
+    oThis.dbRowId = insertResponse.insertId;
 
     // Set current price in contract
-    var response = await oThis.setPriceInContract();
-    logger.info(response);
+    var contractResponse = await oThis.setPriceInContract();
+    if(contractResponse.isFailure()){
+      logger.error("Error while setting price in contract." + response);
+      return;
+    }
+    var transactionHash = contractResponse.data.transactionHash;
+
+    // Update transaction hash
+    var updateTransactionResponse = await currencyConversionRateModel.updateTransactionHash(oThis.dbRowId, transactionHash);
+    logger.info(updateTransactionResponse);
+
+    //Keep on checking for a price in contract whether its set to new value.
+    oThis.compareContractPrice();
 
   },
 
@@ -107,10 +119,33 @@ FetchCurrentOSTPriceKlass.prototype = {
   setPriceInContract: function(){
     const oThis = this;
 
+    logger.info("Price Input for contract:" + oThis.currentOstValue.conversion_rate);
     var num = new BigNumber(oThis.currentOstValue.conversion_rate);
-    var amountInWei = priceOracle.fixedPointIntegerPrice(num.toNumber());
-    return priceOracle.setPrice(conversionRateConstants.ost_currency(), oThis.quoteCurrency,
+    logger.info("Quote Currency for contract:" + oThis.quoteCurrency);
+    var priceResponse = priceOracle.fixedPointIntegerPrice(num.toNumber());
+    if(priceResponse.isFailure()){
+      return Promise.resolve(priceResponse);
+    }
+    var amountInWei = priceResponse.data.price.toNumber();
+    logger.info("Price Point in Wei for contract:" + amountInWei);
+    return priceOracle.setPrice(chainId, conversionRateConstants.ost_currency(), oThis.quoteCurrency,
       amountInWei, gasPrice);
+  },
+
+  // Compare price from coin market cap with contract price.
+  compareContractPrice: async function(){
+    const oThis = this;
+    var priceInDecimal = await priceOracle.decimalPrice(chainId, conversionRateConstants.ost_currency(), oThis.quoteCurrency);
+    if(priceInDecimal.isFailure()){
+      logger.error("Error while getting price from contract." + priceInDecimal);
+      return;
+    }else if(priceInDecimal.isSuccess() && priceInDecimal.data.price == oThis.currentOstValue.conversion_rate){
+      logger.error("Price point updated in contract.");
+      currencyConversionRateModel.updateStatus(oThis.dbRowId, conversionRateConstants.active_status());
+      return;
+    } else {
+      return setTimeout(oThis.compareContractPrice, 10000);
+    }
   }
 
 };

@@ -6,10 +6,9 @@
     "start": "node ./bin/wwws"
   },
   "dependencies": {
-    "@openstfoundation/openst-cache": "0.9.4",
+    "@openstfoundation/openst-cache": "1.0.0",
     "@openstfoundation/openst-platform": "0.9.2-beta.7",
-    "@openstfoundation/ost-price-oracle": "file:../ost-price-oracle",
-    "@ostdotcom/ost-price-oracle": "^1.0.0-beta.1",
+    "@ostdotcom/ost-price-oracle": "file:../ost-price-oracle",
     "aws-sdk": "^2.183.0",
     "bignumber.js": "^4.1.0",
     "body-parser": "~1.18.2",
@@ -23,13 +22,10 @@
     "jsonwebtoken": "^8.1.0",
     "morgan": "~1.9.0",
     "mysql": "^2.14.1",
-    "ost-price-oracle": "file:../ost-price-oracle",
     "request-promise": "^4.2.2",
     "sha256": "^0.2.0",
     "shortid": "^2.2.8",
     "underscore": "^1.8.3",
-    "@openstfoundation/openst-platform": "0.9.2-beta.7",
-    "@openstfoundation/openst-cache": "1.0.0",
     "web3": "^1.0.0-beta.24"
   }
 }

@@ -134,6 +134,26 @@ QueryDB.prototype = {
 
       }
     );
+  },
+
+  executeQuery: function(query){
+    var oThis = this;
+    return new Promise(
+      function (onResolve, onReject) {
+        if(!query){
+          return onReject('Invalid query');
+        }
+        var pre_query = Date.now();
+        var qry = oThis.onWriteConnection().query(query, [], function (err, result, fields) {
+          console.log("(%s ms) %s", (Date.now() - pre_query), qry.sql);
+          if (err) {
+            onReject(err);
+          } else {
+            onResolve(result);
+          }
+        });
+      }
+    );
   }
 
 };

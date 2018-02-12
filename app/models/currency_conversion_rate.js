@@ -10,6 +10,7 @@
   const dbName = "company_big_"+coreConstants.ENVIRONMENT
   , QueryDB = new QueryDBKlass(dbName)
   , tableName = 'currency_conversion_rates'
+  , tableColumns = ['base_currency', 'quote_currency', 'conversion_rate', 'timestamp', 'transaction_hash', 'status']
   ;
 
 
@@ -35,7 +36,7 @@ const currencyConversionRate = {
   create: function (params) {
 
     var oThis = this
-      , creatableFields = ['base_currency', 'quote_currency', 'conversion_rate', 'timestamp', 'transaction_hash', 'status']
+      , creatableFields = tableColumns
       , createFields = []
       , setFieldsValues = []
     ;
@@ -64,6 +65,26 @@ const currencyConversionRate = {
       setFieldsValues
     );
 
+  },
+
+  // Update transaction hash for a record
+  updateTransactionHash: function(id, transactionHash){
+    var currentTime = utils.formatDbDate(new Date());
+    var query = "UPDATE "+tableName+" set transaction_hash='"+transactionHash+"', updated_at='"+currentTime+"' where id="+id;
+    return QueryDB.executeQuery(query);
+  },
+
+  // Update Status for a record
+  updateStatus: function(id, status){
+    var oThis = this;
+    var currentTime = utils.formatDbDate(new Date());
+    // Check if inverted data is present in input then use enumValues key
+    var invertedStatus = utils.invert(oThis.status);
+    if(invertedStatus[status]){
+      status = invertedStatus[status];
+    }
+    var query = "UPDATE "+tableName+" set status='"+status+"', updated_at='"+currentTime+"' where id="+id;
+    return QueryDB.executeQuery(query);
   }
 
 };
