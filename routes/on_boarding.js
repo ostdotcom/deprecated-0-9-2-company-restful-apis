@@ -78,7 +78,7 @@ router.post('/grant-test-ost', function (req, res, next) {
     ;
 
     if(coreConstants.SUB_ENV != 'sandbox'){
-      return responseHelper.error('r_t_1', 'Something went wrong').renderResponse(res);
+      return responseHelper.error('r_ob_1', 'Something went wrong').renderResponse(res);
     }
 
     console.log("decodedParams--", decodedParams);
@@ -93,7 +93,7 @@ router.post('/grant-test-ost', function (req, res, next) {
 
   Promise.resolve(performer()).catch(function (err) {
     console.error(err);
-    responseHelper.error('r_t_1', 'Something went wrong').renderResponse(res)
+    responseHelper.error('r_ob_1', 'Something went wrong').renderResponse(res)
   });
 });
 

@@ -23,7 +23,7 @@ router.post('/create', function (req, res, next) {
 
   Promise.resolve(performer()).catch(function (err) {
     console.error(err);
-    responseHelper.error('r_t_1', 'Something went wrong').renderResponse(res)
+    responseHelper.error('r_cu_1', 'Something went wrong').renderResponse(res)
   });
 });
 

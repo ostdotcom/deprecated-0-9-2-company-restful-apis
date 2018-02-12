@@ -46,7 +46,7 @@ router.post('/kind/new', function (req, res, next) {
 
   Promise.resolve(performer()).catch(function (err) {
     console.error(err);
-    responseHelper.error('r_t_1', 'Something went wrong').renderResponse(res)
+    responseHelper.error('r_t_2', 'Something went wrong').renderResponse(res)
   });
 });
 
@@ -69,7 +69,7 @@ router.post('/kind/edit', function (req, res, next) {
 
   Promise.resolve(performer()).catch(function (err) {
     console.error(err);
-    responseHelper.error('r_t_1', 'Something went wrong').renderResponse(res)
+    responseHelper.error('r_t_3', 'Something went wrong').renderResponse(res)
   });
 });
 

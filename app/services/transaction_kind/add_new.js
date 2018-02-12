@@ -26,7 +26,7 @@ AddNew.prototype = {
 
     var result = await oThis.createTransactionKind();
 
-    return Promise.resolve(responseHelper.successWithData(result));
+    return Promise.resolve(result);
   },
 
   validateParams: async function(){
@@ -39,49 +39,57 @@ AddNew.prototype = {
       , value_in_bt = oThis.params.value_in_bt
       , commission_percent = oThis.params.commission_percent
       , use_price_oracle = parseInt(oThis.params.use_price_oracle)
+      , errors_object = {}
     ;
 
-    if(!clientId || clientId==0 || !name || !kind){
-      return Promise.resolve(responseHelper.error('tk_an_1', 'invalid kind'));
+    if(!clientId || clientId==0){
+      return Promise.resolve(responseHelper.error('tk_an_3', 'invalid Client'));
     }
 
     //TODO: check if any charactors to be blocked
     if(!name){
-      return Promise.resolve(responseHelper.error('tk_an_1', 'invalid name'));
+      errors_object['name'] = 'invalid name';
     }
-    if(!clientTransactionType.invertedKinds[kind]){
-      return Promise.resolve(responseHelper.error('tk_an_2', 'invalid kind'));
+    if(!kind || !clientTransactionType.invertedKinds[kind]){
+      errors_object['kind'] = 'invalid kind';
     }
 
     if (value_currency_type == 'usd' && (!value_in_usd || value_in_usd<=0 ) ) {
-      return Promise.resolve(responseHelper.error('tk_an_3', 'Value in USD is required'));
+      errors_object['value_in_usd'] = 'Value in USD is required';
     } else if (value_currency_type == 'bt' && (!value_in_bt || value_in_bt<=0 ) ){
-      return Promise.resolve(responseHelper.error('tk_an_4', 'Value in BT is required'));
+      errors_object['value_in_bt'] = 'Value in BT is required';
     } else if (!clientTransactionType.invertedValueCurrencyTypes[value_currency_type]){
-      return Promise.resolve(responseHelper.error('tk_an_5', 'Atleast one currency type to mention'));
+      errors_object['value_currency_type'] = 'Atleast one currency type to mention';
     }
 
     if(!commission_percent || commission_percent < 0){
-      return Promise.resolve(responseHelper.error('tk_an_6', 'invalid commission_percent'));
+      errors_object['commission_percent'] = 'invalid commission_percent';
     }
 
     if(use_price_oracle != 1 && use_price_oracle != 0){
-      return Promise.resolve(responseHelper.error('tk_an_7', 'Invalid value for use_price_oracle: ' + use_price_oracle));
+      errors_object['use_price_oracle'] = 'Invalid value for use_price_oracle: ' + use_price_oracle;
     }
 
     var existingTKind = await clientTransactionType.getTransactionByName({clientId: clientId, name: name});
     if(existingTKind.length > 0){
-      return Promise.resolve(responseHelper.error('tk_an_8', "Transaction kind name '"+ name +"' already present."));
+      errors_object['name'] = 'Transaction kind name "'+ name +'" already present.';
+    }
+
+    if(Object.keys(errors_object).length > 0){
+      console.log("errors_object------------------", errors_object);
+      return Promise.resolve(responseHelper.error('tk_e_1', 'invalid params', '', errors_object));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
 
   },
 
-  createTransactionKind: function(){
+  createTransactionKind: async function(){
     var oThis = this;
 
-    return clientTransactionType.create({qParams: oThis.params});
+    const clientTransactionKind = await clientTransactionType.create({qParams: oThis.params});
+
+    return Promise.resolve(responseHelper.successWithData({client_transaction_kind_id: clientTransactionKind.insertId}));
   }
 
 };

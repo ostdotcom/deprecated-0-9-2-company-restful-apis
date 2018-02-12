@@ -95,7 +95,11 @@ QueryDB.prototype = {
           if (err) {
             onReject(err);
           } else {
-            onResolve(result);
+            onResolve({
+              fieldCount: result.fieldCount,
+              affectedRows: result.affectedRows,
+              insertId: result.insertId
+            });
           }
         });
 
