@@ -24,6 +24,7 @@ const rootPrefix = '.'
   , jwtAuth = require(rootPrefix + '/lib/jwt/jwt_auth')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , transactionRoutes = require(rootPrefix + '/routes/transaction')
+  , transactionKindRoutes = require(rootPrefix + '/routes/transaction_kind')
   , onBoardingRoutes = require(rootPrefix + '/routes/on_boarding')
   , stakeRoutes = require(rootPrefix + '/routes/stake')
   , clientUsersRoutes = require(rootPrefix + '/routes/client_users')
@@ -185,6 +186,8 @@ if (cluster.isMaster) {
 
   // Following are the routes
   app.use('/transaction', validateApiSignature, transactionRoutes);
+
+  app.use('/transaction/kind', validateApiSignature, transactionKindRoutes);
 
   app.use('/users', validateApiSignature, clientUsersRoutes);
 
