@@ -1,6 +1,7 @@
 "use strict";
 
 var openStPlatform = require('@openstfoundation/openst-platform')
+  , responseHelper = require('../../../lib/formatter/response')
   ;
 
 
@@ -36,9 +37,11 @@ GetReceiptKlass.prototype = {
     );
 
     var response = await obj.perform();
-    console.log(response);
-
-    return response;
+    if(response.isSuccess()){
+      return responseHelper.successWithData(response.data)
+    } else {
+      return responseHelper.error(response.err.code, response.err.message)
+    }
   }
 
 };
