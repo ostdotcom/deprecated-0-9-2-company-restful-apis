@@ -25,8 +25,9 @@ Edit.prototype = {
       return r;
     }
 
-    return Promise.resolve(await oThis.editTransactionKind());
+    await oThis.editTransactionKind();
 
+    return oThis.returnResponse();
   },
 
   validateParams: async function(){
@@ -80,7 +81,7 @@ Edit.prototype = {
     }
 
     if(Object.keys(errors_object).length > 0){
-      return Promise.resolve(responseHelper.error('tk_e_2', 'invalid params', '', errors_object));
+      return Promise.resolve(responseHelper.error('tk_e_2', 'invalid params', '', [errors_object]));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -102,7 +103,27 @@ Edit.prototype = {
       }
     );
 
-    return Promise.resolve(responseHelper.successWithData({client_transaction_kind_id: oThis.clientTransactionId}));
+    return Promise.resolve(responseHelper.successWithData({}));
+  },
+
+  returnResponse: function(){
+    var oThis = this;
+    return Promise.resolve(responseHelper.successWithData(
+      {
+        result_type: "transactions",
+        transactions: [{
+          id: oThis.clientTransactionId,
+          client_id: oThis.params.client_id,
+          name: oThis.params.name,
+          kind: oThis.params.kind,
+          value_currency_type: oThis.params.value_currency_type,
+          value_in_usd: oThis.params.value_in_usd,
+          value_in_bt: oThis.params.value_in_bt,
+          use_price_oracle: parseInt(oThis.params.use_price_oracle),
+          uts: Date.now()
+        }]
+      }
+    ));
   }
 
 };

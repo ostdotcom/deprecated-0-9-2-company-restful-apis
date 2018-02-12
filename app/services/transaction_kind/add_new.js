@@ -24,9 +24,9 @@ AddNew.prototype = {
       return r;
     }
 
-    var result = await oThis.createTransactionKind();
+    await oThis.createTransactionKind();
 
-    return Promise.resolve(result);
+    return oThis.returnResponse();
   },
 
   validateParams: async function(){
@@ -77,7 +77,7 @@ AddNew.prototype = {
 
     if(Object.keys(errors_object).length > 0){
       console.log("errors_object------------------", errors_object);
-      return Promise.resolve(responseHelper.error('tk_e_1', 'invalid params', '', errors_object));
+      return Promise.resolve(responseHelper.error('tk_e_1', 'invalid params', '', [errors_object]));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -89,7 +89,27 @@ AddNew.prototype = {
 
     const clientTransactionKind = await clientTransactionType.create({qParams: oThis.params});
 
-    return Promise.resolve(responseHelper.successWithData({client_transaction_kind_id: clientTransactionKind.insertId}));
+    return Promise.resolve(responseHelper.successWithData({}));
+  },
+
+  returnResponse: function(){
+    var oThis = this;
+    return Promise.resolve(responseHelper.successWithData(
+      {
+        result_type: "transactions",
+        transactions: [{
+          id: oThis.clientTransactionId,
+          client_id: oThis.params.client_id,
+          name: oThis.params.name,
+          kind: oThis.params.kind,
+          value_currency_type: oThis.params.value_currency_type,
+          value_in_usd: oThis.params.value_in_usd,
+          value_in_bt: oThis.params.value_in_bt,
+          use_price_oracle: parseInt(oThis.params.use_price_oracle),
+          uts: Date.now()
+        }]
+      }
+    ));
   }
 
 };
