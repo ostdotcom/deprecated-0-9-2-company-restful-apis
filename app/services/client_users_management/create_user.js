@@ -34,7 +34,7 @@ AddUser.prototype = {
       return r;
     }
 
-    var r1 = await generateEthAddress.saveUuid(oThis.clientId, oThis.addrUuid);
+    var r1 = await generateEthAddress.perform(oThis.clientId, oThis.addrUuid);
     if(r1.isFailure()){
       return r1;
     }
