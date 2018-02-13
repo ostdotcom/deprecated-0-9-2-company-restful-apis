@@ -34,17 +34,13 @@ const address = {
 
   create: function (params) {
 
-    var oThis = this
-      , creatableFields = ['ethereum_address', 'hashed_ethereum_address', 'passphrase']
-      , createFields = []
+    var createFields = []
       , setFieldsValues = []
     ;
 
-    for(var i=0; i<creatableFields.length; i++){
-      if(params[creatableFields[i]]){
-        createFields.push(creatableFields[i]);
-        setFieldsValues.push(params[creatableFields[i]])
-      }
+    for(var key in params){
+      createFields.push(key);
+      setFieldsValues.push(params[key])
     }
 
     return QueryDB.insert(
@@ -53,6 +49,32 @@ const address = {
       setFieldsValues
     );
 
+  },
+
+  edit: function (params) {
+    var editFields = []
+      , setFieldsValues = []
+      , whereCondFields = []
+      , whereCondFieldsValues = []
+    ;
+
+    for(var key in params['qParams']){
+      editFields.push(key+'=?');
+      setFieldsValues.push(params['qParams'][key])
+    }
+
+    for(var key in params['whereCondition']){
+      whereCondFields.push(key+'=?');
+      whereCondFieldsValues.push(params['whereCondition'][key]);
+    }
+
+    return QueryDB.edit(
+      tableName,
+      editFields,
+      setFieldsValues,
+      whereCondFields,
+      whereCondFieldsValues
+    );
   }
 
 };

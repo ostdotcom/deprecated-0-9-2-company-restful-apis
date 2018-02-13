@@ -73,18 +73,12 @@ QueryDB.prototype = {
 
   insert: function(tableName, fields, queryArgs) {
 
-    console.log("=1=========fields=====", fields);
-    console.log("=1=========queryArgs=====", queryArgs);
-
     var oThis = this
       , currentDateTime = util.formatDbDate(new Date())
       , fields = fields.concat(['created_at', 'updated_at'])
       , queryArgs = queryArgs.concat([currentDateTime, currentDateTime])
       , q = 'INSERT INTO '+tableName+' ('+fields+') VALUES (?)'
     ;
-
-    console.log("=2=========fields=====", fields);
-    console.log("=2=========queryArgs=====", queryArgs);
 
     return new Promise(
       function (onResolve, onReject) {
