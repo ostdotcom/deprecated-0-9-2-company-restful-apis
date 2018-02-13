@@ -9,7 +9,7 @@ var rootPrefix = '../..'
  * Table configuration methods
  */
 
-const dbName = "company_client_economy_"+"_"+coreConstants.ENVIRONMENT
+const dbName = "company_client_"+coreConstants.ENVIRONMENT
 
   , QueryDB = new QueryDBKlass(dbName)
   , tableName = 'clients'
