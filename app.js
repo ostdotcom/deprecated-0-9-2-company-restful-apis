@@ -9,7 +9,7 @@
 const express = require('express')
   , path = require('path')
   , createNamespace = require('continuation-local-storage').createNamespace
-  , requestSharedNameSpace = createNamespace('company-Saas-NameSpace')
+  , requestSharedNameSpace = createNamespace('openST-Platform-NameSpace')
   , morgan = require('morgan')
   , cookieParser = require('cookie-parser')
   , bodyParser = require('body-parser')
@@ -20,22 +20,28 @@ const express = require('express')
   , http = require('http')
 ;
 
+// Load internal libs
 const rootPrefix = '.'
   , jwtAuth = require(rootPrefix + '/lib/jwt/jwt_auth')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , transactionRoutes = require(rootPrefix + '/routes/transaction')
-  , onBoardingRoutes = require(rootPrefix + '/routes/on_boarding')
-  , stakeRoutes = require(rootPrefix + '/routes/stake')
-  , clientUsersRoutes = require(rootPrefix + '/routes/client_users')
-  , addressRoutes = require(rootPrefix + '/routes/address')
   , inputValidator = require(rootPrefix + '/lib/authentication/validate_signature')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
+// Load routes
+const transactionRoutes = require(rootPrefix + '/routes/transaction')
+  , onBoardingRoutes = require(rootPrefix + '/routes/on_boarding')
+  , stakeRoutes = require(rootPrefix + '/routes/stake')
+  , clientUsersRoutes = require(rootPrefix + '/routes/client_users')
+  , addressRoutes = require(rootPrefix + '/routes/address')
+;
+
+// Set request id
 morgan.token('id', function getId (req) {
   return req.id;
 });
 
+// Assign params and start loggers
 const assignParams = function (req) {
   logger.requestStartLog(customUrlParser.parse(req.originalUrl).pathname, req.method);
   if (req.method == 'POST') {
@@ -45,6 +51,7 @@ const assignParams = function (req) {
   }
 };
 
+// Validate partner signature
 const validateApiSignature = function (req, res, next){
   assignParams(req);
 
@@ -57,10 +64,13 @@ const validateApiSignature = function (req, res, next){
     }
   };
 
-  return inputValidator.perform(req.decodedParams, customUrlParser.parse(req.originalUrl).pathname)
+  return inputValidator
+    .perform(req.decodedParams, customUrlParser.parse(req.originalUrl).pathname)
     .then(handleParamValidationResult);
 };
 
+// Validate OST Dashboard signature
+// TODO: Remove JWT and use signature in next release - Sunil
 // before action for verifying the jwt token and setting the decoded info in req obj
 const decodeJwt = function(req, res, next) {
   assignParams(req);
@@ -79,19 +89,15 @@ const decodeJwt = function(req, res, next) {
 
   // send error, if token is invalid
   const jwtOnReject = function (err) {
-    console.error(err);
+    logger.error(err);
     return responseHelper.error('a_1', 'Invalid token or expired').renderResponse(res);
   };
 
   // Verify token
   Promise.resolve(
-    jwtAuth.verifyToken(token, 'saasApi')
-      .then(
-        jwtOnResolve,
-        jwtOnReject
-      )
+    jwtAuth.verifyToken(token, 'saasApi').then(jwtOnResolve, jwtOnReject)
   ).catch(function (err) {
-    console.error(err);
+    logger.error(err);
     responseHelper.error('a_2', 'Something went wrong').renderResponse(res)
   });
 
@@ -177,52 +183,49 @@ if (cluster.isMaster) {
   app.use(cookieParser());
   app.use(express.static(path.join(__dirname, 'public')));
 
+  // TODO: Check for CSRF solutions
+
   /*
     The below piece of code should always be before routes.
     Docs: https://www.npmjs.com/package/express-sanitized
   */
   app.use(sanitizer());
 
-  // Following are the routes
+  // Following routes are for Member companies
   app.use('/transaction', validateApiSignature, transactionRoutes);
-
   app.use('/users', validateApiSignature, clientUsersRoutes);
-
   app.use('/addresses', validateApiSignature, addressRoutes);
 
+  // Following routes are for OST dashboard
   app.use('/on-boarding', decodeJwt, onBoardingRoutes);
-
   app.use('/stake', decodeJwt, stakeRoutes);
 
-// catch 404 and forward to error handler
+  // catch 404 and forward to error handler
   app.use(function (req, res, next) {
     return responseHelper.error('404', 'Not Found').renderResponse(res, 404);
   });
 
-// error handler
+  // error handler
   app.use(function (err, req, res, next) {
     // set locals, only providing error in development
-    console.error(err);
+    logger.error(err);
     return responseHelper.error('500', 'Something went wrong').renderResponse(res, 500);
   });
 
   /**
    * Get port from environment and store in Express.
    */
-
   var port = normalizePort(process.env.PORT || '3000');
   app.set('port', port);
 
   /**
    * Create HTTP server.
    */
-
   var server = http.createServer(app);
 
   /**
    * Listen on provided port, on all network interfaces.
    */
-
   server.listen(port, 443);
   server.on('error', onError);
   server.on('listening', onListening);
@@ -232,7 +235,6 @@ if (cluster.isMaster) {
 /**
  * Normalize a port into a number, string, or false.
  */
-
 function normalizePort(val) {
   var port = parseInt(val, 10);
 
@@ -252,7 +254,6 @@ function normalizePort(val) {
 /**
  * Event listener for HTTP server "error" event.
  */
-
 function onError(error) {
   if (error.syscall !== 'listen') {
     throw error;
@@ -280,7 +281,6 @@ function onError(error) {
 /**
  * Event listener for HTTP server "listening" event.
  */
-
 function onListening() {
   var addr = server.address();
   var bind = typeof addr === 'string'

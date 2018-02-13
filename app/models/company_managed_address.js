@@ -6,7 +6,7 @@ const rootPrefix = '../..'
   , localCipher = require(rootPrefix + '/lib/authentication/local_cipher')
 ;
 
-const dbName = "company_client_economy_"+coreConstants.SUB_ENV+"_"+coreConstants.ENVIRONMENT
+const dbName = "company_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
   , QueryDB = new QueryDBKlass(dbName)
   , tableName = 'company_managed_addresses'
 ;

@@ -7,7 +7,7 @@ const rootPrefix = '../..'
   , statuses = {'1':'active', '2':'inactive', '3':'blocked'}
 ;
 
-const dbName = "company_client_economy_"+coreConstants.SUB_ENV+"_"+coreConstants.ENVIRONMENT
+const dbName = "company_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
   , QueryDB = new QueryDBKlass(dbName)
   , tableName = 'client_users'
 ;

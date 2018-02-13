@@ -5,9 +5,9 @@ const rootPrefix = '..'
 
 const mysqlConfig = {
   "commonNodeConfig": {
-    "connectionLimit": coreConstants.NO_OF_POOLS,
+    "connectionLimit": coreConstants.MYSQL_CONNECTION_POOL_SIZE,
     "charset": "UTF8_UNICODE_CI",
-    "timezone": coreConstants.TIMEZONE,
+    "timezone": coreConstants.MYSQL_TIMEZONE,
     "bigNumberStrings": true,
     "supportBigNumbers": true,
     "dateStrings": true,
@@ -34,6 +34,6 @@ const mysqlConfig = {
 };
 mysqlConfig["databases"]["company_client_"+coreConstants.ENVIRONMENT] = ["cluster1"];
 mysqlConfig["databases"]["company_big_"+coreConstants.ENVIRONMENT] = ["cluster1"];
-mysqlConfig["databases"]["company_client_economy_"+coreConstants.SUB_ENV+"_"+coreConstants.ENVIRONMENT] = ["cluster1"];
+mysqlConfig["databases"]["company_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT] = ["cluster1"];
 
 module.exports = mysqlConfig;

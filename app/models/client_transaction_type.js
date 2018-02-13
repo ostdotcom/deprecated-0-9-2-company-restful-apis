@@ -6,7 +6,7 @@ const rootPrefix = '../..'
   , util = require(rootPrefix + '/lib/util.js')
   ;
 
-const dbName = "company_client_economy_"+coreConstants.SUB_ENV+"_"+coreConstants.ENVIRONMENT
+const dbName = "company_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
   , QueryDB = new QueryDBKlass(dbName)
   , tableName = 'client_transaction_types'
   , kinds = {'1':'user_to_user', '2':'user_to_company', '3':'company_to_user'}

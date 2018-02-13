@@ -5,7 +5,7 @@ const rootPrefix = '../..'
   , QueryDBKlass = require(rootPrefix + '/app/models/queryDb')
 ;
 
-const dbName = "company_client_economy_"+coreConstants.SUB_ENV+"_"+coreConstants.ENVIRONMENT
+const dbName = "company_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
   , QueryDB = new QueryDBKlass(dbName)
   , tableName = 'client_api_credentials'
 ;
