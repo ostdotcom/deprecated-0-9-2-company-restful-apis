@@ -1,0 +1,59 @@
+"use strict";
+
+const rootPrefix = '../..'
+  , coreConstants = require(rootPrefix + '/config/core_constants')
+  , QueryDBKlass = require(rootPrefix + '/app/models/queryDb')
+  , localCipher = require(rootPrefix + '/lib/authentication/local_cipher')
+  , util = require(rootPrefix + '/lib/util')
+  , ModelBaseKlass = require(rootPrefix + '/app/models/base')
+;
+
+const dbName = "saas_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
+  , QueryDBObj = new QueryDBKlass(dbName)
+  , statuses = {'1':'active', '2':'inactive'}
+  , invertedStatuses = util.invert(statuses)
+;
+
+const ManagedAddressKlass = function () {};
+
+ManagedAddressKlass.prototype = Object.create(ModelBaseKlass.prototype);
+
+const ManagedAddressKlassPrototype = {
+
+  QueryDB: QueryDBObj,
+
+  tableName: 'managed_addresses',
+
+  statuses: statuses,
+
+  invertedStatuses: invertedStatuses,
+
+  enums: {
+    'status': {
+      val: statuses,
+      inverted: invertedStatuses
+    }
+  },
+
+  getByEthAddress: function (ethAddress) {
+    var oThis = this;
+    var hashedAddr = localCipher.getShaHashedText(ethAddress);
+    return oThis.QueryDB.read(
+      oThis.tableName,
+      [],
+      'hashed_ethereum_address=?',
+      [hashedAddr]);
+  },
+
+  getByIds: function (ids) {
+    var oThis = this;
+    return oThis.QueryDB.readByIds(
+      oThis.tableName,
+      ['id', 'ethereum_address'],
+      ids);
+  }
+};
+
+Object.assign(ManagedAddressKlass.prototype, ManagedAddressKlassPrototype);
+
+module.exports = ManagedAddressKlass;

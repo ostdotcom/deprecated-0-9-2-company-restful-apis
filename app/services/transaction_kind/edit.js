@@ -1,7 +1,8 @@
 "use strict";
 
 var rootPrefix = '../../..'
-  , clientTransactionType = require(rootPrefix + '/app/models/client_transaction_type')
+  , ClientTransactionTypeKlass = require(rootPrefix + '/app/models/client_transaction_type')
+  , clientTransactionTypeObj = new ClientTransactionTypeKlass()
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
 ;
 
@@ -48,7 +49,7 @@ Edit.prototype = {
       return Promise.resolve(responseHelper.error('tk_e_4', 'client_transaction_id not present.'));
     }
 
-    if(kind && !clientTransactionType.invertedKinds[kind]){
+    if(kind && !clientTransactionTypeObj.invertedKinds[kind]){
       errors_object['kind'] = 'invalid kind';
     }
 
@@ -74,7 +75,7 @@ Edit.prototype = {
     }
 
     if(name && oThis.currentTransactionKind && oThis.currentTransactionKind['name'].toLowerCase() != name.toLowerCase()){
-      var existingTKind = await clientTransactionType.getTransactionByName({clientId: clientId, name: name});
+      var existingTKind = await clientTransactionTypeObj.getTransactionByName({clientId: clientId, name: name});
       if(existingTKind.length > 0 && oThis.clientTransactionId != existingTKind.id){
         errors_object['name'] = "Transaction kind name '"+ name +"' already present.";
       }
@@ -90,13 +91,13 @@ Edit.prototype = {
 
   getCurrentTransactionKind: function(){
     var oThis = this;
-    return clientTransactionType.getTransactionById({clientTransactionId: oThis.clientTransactionId});
+    return clientTransactionTypeObj.getTransactionById({clientTransactionId: oThis.clientTransactionId});
   },
 
   editTransactionKind: async function(){
     var oThis = this;
 
-    var editedTransactionType = await clientTransactionType.edit(
+    var editedTransactionType = await clientTransactionTypeObj.edit(
       {
         qParams: oThis.params,
         whereCondition: {id: oThis.clientTransactionId}
@@ -115,6 +116,7 @@ Edit.prototype = {
           id: oThis.clientTransactionId,
           client_id: oThis.params.client_id,
           name: oThis.params.name,
+          // TODO: read kind key from enum
           kind: oThis.params.kind,
           value_currency_type: oThis.params.value_currency_type,
           value_in_usd: oThis.params.value_in_usd,

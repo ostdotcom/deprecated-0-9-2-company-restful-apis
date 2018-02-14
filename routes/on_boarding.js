@@ -1,14 +1,35 @@
 const express = require('express')
   , router = express.Router()
-;
-
-const rootPrefix = '..'
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , coreConstants = require(rootPrefix + '/config/core_constants')
   , BigNumber = require('bignumber.js')
   , openStPlatform = require('@openstfoundation/openst-platform')
   , transactionLog = require(rootPrefix + '/app/models/transaction_log')
 ;
+
+const rootPrefix = '..'
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , SetupTokenKlass = require(rootPrefix + '/app/services/on_boarding/setup_token')
+;
+
+/* Propose a branded token */
+router.post('/setup-token', function (req, res, next) {
+  const performer = function() {
+
+    // handle final response
+    const handleResponse = function (response) {
+      response.renderResponse(res);
+    };
+
+    const object = new SetupTokenKlass(req.decodedParams);
+
+    return object.perform().then(handleResponse);
+
+  };
+
+  Promise.resolve(performer()).catch(function (err) {
+    console.error(err);
+    responseHelper.error('r_ob_3', 'Something went wrong').renderResponse(res)
+  });
+});
 
 /* Propose a branded token */
 router.post('/propose-branded-token', function (req, res, next) {

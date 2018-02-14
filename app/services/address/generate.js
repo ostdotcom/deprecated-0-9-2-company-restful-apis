@@ -9,7 +9,11 @@ const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , kmsWrapper = require(rootPrefix + '/lib/authentication/kms_wrapper')
   , clientModel = require(rootPrefix + '/app/models/client')
-  , companyAddressModel = require(rootPrefix + '/app/models/company_managed_address');
+  , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
+  , managedAddressObj = new ManagedAddressKlass()
+  , ManagedAddressSaltKlass = require(rootPrefix + '/app/models/managed_address_salt')
+  , managedAddressSaltObj = new ManagedAddressSaltKlass()
+;
 
 const _private = {
 
@@ -29,12 +33,12 @@ const _private = {
   },
 
   fetchClientSalt: async function(clientId){
-    var clientRecords = await clientModel.get(clientId);
-    if (!clientRecords[0]) {
+    var managedAddrSalts = await managedAddressSaltObj.getByClientId(clientId);
+    if (!managedAddrSalts[0]) {
       return responseHelper.error("ga_fcs_1", "Invalid client details.");
     }
 
-    var decryptedSalt = await kmsWrapper.decrypt(clientRecords[0]["info_salt"]);
+    var decryptedSalt = await kmsWrapper.decrypt(managedAddrSalts[0]["managed_address_salt"]);
     if(!decryptedSalt["Plaintext"]){
       return responseHelper.error("ga_fcs_2", "Client Salt invalid.");
     }
@@ -47,7 +51,7 @@ const _private = {
     var encryptedEth = await localCipher.encrypt(salt, eth_address);
     var hashedEthAddress = await localCipher.getShaHashedText(eth_address);
 
-    var updateQueryResponse = companyAddressModel.edit({
+    var updateQueryResponse = managedAddressObj.edit({
       qParams: {
         passphrase: encryptedPassphrase,
         ethereum_address: encryptedEth,
@@ -65,14 +69,16 @@ const _private = {
 
 const generate = {
 
-  perform: async function(clientId, addrUuid){
+  perform: async function(clientId, addrUuid, saltPlainText){
 
     var oThis = this
       , addrUuid = addrUuid || uuid.v4();
 
-    const insertedRec = await companyAddressModel.create({uuid: addrUuid});
+    const insertedRec = await managedAddressObj.create({client_id: clientId, uuid: addrUuid, status: 'active'});
 
-    oThis.updateAddress(insertedRec.insertId, clientId);
+    if(insertedRec.affectedRows > 0){
+      oThis.updateAddress(insertedRec.insertId, clientId, saltPlainText);
+    }
 
     return responseHelper.successWithData(
       {
@@ -83,13 +89,15 @@ const generate = {
 
   },
 
-  updateAddress: async function(company_managed_address_id, clientId){
+  updateAddress: async function(company_managed_address_id, clientId, infoSalt){
 
-    var r = await _private.fetchClientSalt(clientId);
-    if(r.isFailure()){
-      return r;
+    if(!infoSalt){
+      var r = await _private.fetchClientSalt(clientId);
+      if(r.isFailure()){
+        return r;
+      }
+      infoSalt = r.data.info_salt;
     }
-    var infoSalt = r.data.info_salt;
 
     var passphrase = _private.generatePassphrase();
 

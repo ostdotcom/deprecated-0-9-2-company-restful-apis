@@ -54,26 +54,6 @@ AddUser.prototype = {
 
   },
 
-  perform2: async function () {
-    var oThis = this
-      , r = null;
-
-    r = await oThis.validateParams();
-    if(r.isFailure()){
-      return r;
-    }
-
-    var r1 = await generateEthAddress.perform(oThis.clientId);
-    if(r1.isFailure()){
-      return r1;
-    }
-    oThis.eth_address = r1.data.ethereum_address;
-
-    var result = await oThis.insertUserInDb();
-
-    return responseHelper.successWithData({id: result.insertId, ethereum_address: oThis.eth_address});
-  },
-
   validateParams: async function(){
     var oThis = this
       , clientId = oThis.clientId

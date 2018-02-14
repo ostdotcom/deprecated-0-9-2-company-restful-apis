@@ -32,6 +32,7 @@ QueryDB.prototype = {
       , whereClauseValues = (!whereClauseValues) ? [] : whereClauseValues
       , q = 'SELECT '+selectFields+' FROM '+tableName+' '+selectWhereClause;
 
+    console.log(q);
     return new Promise(
       function (onResolve, onReject) {
         // get a timestamp before running the query
