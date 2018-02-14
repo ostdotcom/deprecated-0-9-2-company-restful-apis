@@ -35,5 +35,6 @@ const mysqlConfig = {
 mysqlConfig["databases"]["company_client_"+coreConstants.ENVIRONMENT] = ["cluster1"];
 mysqlConfig["databases"]["company_big_"+coreConstants.ENVIRONMENT] = ["cluster1"];
 mysqlConfig["databases"]["company_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT] = ["cluster1"];
+mysqlConfig["databases"]["company_transaction_"+coreConstants.SUB_ENV+"_"+coreConstants.ENVIRONMENT] = ["cluster1"];
 
 module.exports = mysqlConfig;

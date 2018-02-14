@@ -7,6 +7,7 @@ const rootPrefix = '..'
   , coreConstants = require(rootPrefix + '/config/core_constants')
   , BigNumber = require('bignumber.js')
   , openStPlatform = require('@openstfoundation/openst-platform')
+  , transactionLog = require(rootPrefix + '/app/models/transaction_log')
 ;
 
 /* Propose a branded token */
@@ -83,6 +84,8 @@ router.post('/grant-test-ost', function (req, res, next) {
     // handle final response
     const handleResponse = function (response) {
       if(response.isSuccess()){
+        transactionLog.create({uuid: response.data.transaction_uuid,
+            chain: "value"});
         return responseHelper.successWithData(response.data).renderResponse(res);
       } else {
         return responseHelper.error(response.err.code, response.err.message).renderResponse(res);
@@ -93,7 +96,7 @@ router.post('/grant-test-ost', function (req, res, next) {
       sender_name: "foundation",
       recipient_address: ethAddress,
       amount_in_wei: (new BigNumber(amount)).mul(weiConversion).toNumber(),
-      options: {tag: "testOST", returnType: "uuid"}
+      options: {tag: "testOST", returnType: "txHash"}
     });
 
     return object.perform().then(handleResponse);
