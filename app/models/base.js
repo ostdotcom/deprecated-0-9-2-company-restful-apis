@@ -51,7 +51,7 @@ ModelBaseKlass.prototype = {
       , whereCondFieldsValues = []
     ;
 
-    var params['qParams'] = oThis.convertEnumForDB(params['qParams']);
+    params['qParams'] = oThis.convertEnumForDB(params['qParams']);
     for (var key in params['qParams']) {
       editFields.push(key + '=?');
       setFieldsValues.push(params['qParams'][key])
