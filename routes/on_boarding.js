@@ -2,12 +2,12 @@ const express = require('express')
   , router = express.Router()
   , BigNumber = require('bignumber.js')
   , openStPlatform = require('@openstfoundation/openst-platform')
-  , transactionLog = require(rootPrefix + '/app/models/transaction_log')
 ;
 
 const rootPrefix = '..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , SetupTokenKlass = require(rootPrefix + '/app/services/on_boarding/setup_token')
+  , transactionLog = require(rootPrefix + '/app/models/transaction_log')
 ;
 
 /* Propose a branded token */
