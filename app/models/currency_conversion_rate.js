@@ -7,7 +7,7 @@
   , conversionRates = require(rootPrefix + '/lib/global_constant/conversion_rates')
   ;
 
-  const dbName = "company_big_"+coreConstants.ENVIRONMENT
+  const dbName = "company_saas_shared_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
   , QueryDB = new QueryDBKlass(dbName)
   , tableName = 'currency_conversion_rates'
   , tableColumns = ['base_currency', 'quote_currency', 'conversion_rate', 'timestamp', 'transaction_hash', 'status']
