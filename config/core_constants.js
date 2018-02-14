@@ -10,6 +10,8 @@ function define(name, value) {
 // Core details
 define("ENVIRONMENT", process.env.CR_ENVIRONMENT);
 define("SUB_ENVIRONMENT", process.env.CR_SUB_ENVIRONMENT);
+define("ENVIRONMENT_SHORT", process.env.CR_ENVIRONMENT.substring(0,2));
+define("SUB_ENVIRONMENT_SHORT", process.env.CR_SUB_ENVIRONMENT.substring(0,2));
 
 // MySQL details
 define("MYSQL_HOST", process.env.CR_MYSQL_HOST);
@@ -32,3 +34,6 @@ define('SAAS_API_SECRET_KEY', process.env.CA_SAAS_API_SECRET_KEY);
 
 // SHA256 details
 define('GENERIC_SHA_KEY', process.env.CA_GENERIC_SHA_KEY);
+
+// Cache data key
+define('CACHE_SHA_KEY', process.env.CR_CACHE_DATA_SHA_KEY);

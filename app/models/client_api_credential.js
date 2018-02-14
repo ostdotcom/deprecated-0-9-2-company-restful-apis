@@ -5,7 +5,7 @@ const rootPrefix = '../..'
   , QueryDBKlass = require(rootPrefix + '/app/models/queryDb')
 ;
 
-const dbName = "company_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
+const dbName = "company_saas_shared_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
   , QueryDB = new QueryDBKlass(dbName)
   , tableName = 'client_api_credentials'
 ;
@@ -18,7 +18,7 @@ const clientApiCredential = {
   getClientApi: function(apiKey){
     return QueryDB.read(
       tableName,
-      ['client_id','api_key', 'api_secret'],
+      ['client_id','api_key', 'api_secret', 'api_salt'],
       'api_key=?',
       [apiKey]);
   }
