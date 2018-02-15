@@ -174,7 +174,8 @@ SetupToken.prototype = {
           uuid: oThis.addrUuid,
           name: oThis.name,
           client_id: oThis.clientId
-        }]
+        }],
+        'reserveUuid': oThis.addrUuid //TODO: Alpesh why this is an array of result types should be atleast a hash
       }
     ));
   }
