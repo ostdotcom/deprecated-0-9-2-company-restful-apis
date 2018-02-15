@@ -28,12 +28,14 @@ const rootPrefix = '../../..'
  * @param {object} params - external passed parameters
  * @param {number} params.client_id - client id for whom setup is to be made.
  * @param {number} params.symbol - unique(across system) symbol.
+ * @param {String} params.name - unique(across system) name of branded token.
  *
  */
 const SetupToken = function(params){
 
   this.clientId = params.client_id;
   this.symbol = params.symbol;
+  this.name = params.name;
 
 };
 
@@ -98,7 +100,6 @@ SetupToken.prototype = {
     const newKey = await kmsWrapper.generateDataKey();
 
     const addressSalt = newKey["CiphertextBlob"];
-    oThis.saltPlainText = newKey["Plaintext"];
 
     try {
       await managedAddressSaltObj.create({
@@ -107,7 +108,6 @@ SetupToken.prototype = {
       });
     } catch(err){
       //console.log("eeeerrrrooooorrr-------", err);
-      oThis.saltPlainText = null;
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -151,7 +151,8 @@ SetupToken.prototype = {
     oThis.clientTokenObj = {
       client_id: oThis.clientId,
       symbol: oThis.symbol,
-      reserve_managed_address_id: oThis.reserve_managed_address_id
+      reserve_managed_address_id: oThis.reserve_managed_address_id,
+      name: oThis.name
     };
 
     // create entry in client token

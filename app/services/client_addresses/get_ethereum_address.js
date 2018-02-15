@@ -4,7 +4,7 @@ var rootPrefix = '../../..'
   , clientModel = require(rootPrefix + '/app/models/client')
   , companyAddressModel = require(rootPrefix + '/app/models/company_managed_address')
   , kmsWrapper = require(rootPrefix + '/lib/authentication/kms_wrapper')
-  , localCipher = require(rootPrefix + '/lib/authentication/local_cipher')
+  , localCipher = require(rootPrefix + '/lib/encryptors/local_cipher')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   ;
 

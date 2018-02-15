@@ -3,10 +3,9 @@
 const rootPrefix = '../..'
   , coreConstants = require(rootPrefix + '/config/core_constants')
   , QueryDBKlass = require(rootPrefix + '/app/models/queryDb')
-  , localCipher = require(rootPrefix + '/lib/authentication/local_cipher')
+  , localCipher = require(rootPrefix + '/lib/encryptors/local_cipher')
   , util = require(rootPrefix + '/lib/util')
   , ModelBaseKlass = require(rootPrefix + '/app/models/base')
-  , addressSaltCacheKlass = require(rootPrefix + '/lib/cache_management/managedAddressesSalt')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
 ;
 
@@ -62,16 +61,6 @@ const ManagedAddressKlassPrototype = {
         ['client_id', 'name','ethereum_address', 'hashed_ethereum_address', 'passphrase', 'status'],
         'uuid=?',
         [uuid]);
-  },
-
-  getDecryptedSalt: async function(clientId){
-    var obj = new addressSaltCacheKlass({client_id: clientId});
-    var saltObj = await obj.fetch();
-    if(saltObj.isFailure()){
-      return saltObj;
-    }
-    var salt = await localCipher.decrypt(coreConstants.CACHE_SHA_KEY, saltObj.data.addressSalt);
-    return responseHelper.successWithData({addressSalt: salt});
   }
 
 };

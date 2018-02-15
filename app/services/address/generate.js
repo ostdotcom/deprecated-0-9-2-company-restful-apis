@@ -5,10 +5,11 @@ const uuid = require('uuid')
   , openStPlatform = require('@openstfoundation/openst-platform')
 ;
 const rootPrefix = '../../..'
-  , localCipher = require(rootPrefix + '/lib/authentication/local_cipher')
+  , localCipher = require(rootPrefix + '/lib/encryptors/local_cipher')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
   , managedAddressObj = new ManagedAddressKlass()
+  , AddressesEncryptorKlass = require(rootPrefix + '/lib/encryptors/addresses_encryptor')
 ;
 
 const _private = {
@@ -28,15 +29,22 @@ const _private = {
     return (iv.toString('hex').slice(0, 16));
   },
 
-  updateInDb: async function(company_managed_address_id, eth_address, passphrase, salt){
-    var encryptedPassphrase = await localCipher.encrypt(salt, passphrase);
-    var encryptedEth = await localCipher.encrypt(salt, eth_address);
+  updateInDb: async function(company_managed_address_id, eth_address, passphrase, clientId){
+    var obj = new AddressesEncryptorKlass(clientId);
+    var passPhraseEncr = await obj.encrypt(passphrase);
+    if(!passPhraseEncr){
+      return Promise.resolve(responseHelper.error("s_ad_g_1", "Error while generating user address."));
+    }
+    var ethResp = await obj.encrypt(eth_address);
+    if(!ethResp){
+      return Promise.resolve(responseHelper.error("s_ad_g_2", "Error while generating user address."));
+    }
     var hashedEthAddress = await localCipher.getShaHashedText(eth_address);
 
     var updateQueryResponse = managedAddressObj.edit({
       qParams: {
-        passphrase: encryptedPassphrase,
-        ethereum_address: encryptedEth,
+        passphrase: passPhraseEncr,
+        ethereum_address: ethResp,
         hashed_ethereum_address: hashedEthAddress
       },
       whereCondition: {
@@ -75,12 +83,6 @@ const generate = {
 
   updateAddress: async function(company_managed_address_id, clientId){
 
-    var resp = await managedAddressObj.getDecryptedSalt(clientId);
-    if(resp.isFailure()){
-      return responseHelper.error("s_ad_g_1", "Client not setup.");
-    }
-    var infoSalt = resp.data.addressSalt;
-
     var passphrase = _private.generatePassphrase();
 
     var r1 = await _private.callOpenST(passphrase);
@@ -89,7 +91,7 @@ const generate = {
     }
     var eth_address = r1.data.address;
 
-    await _private.updateInDb(company_managed_address_id, eth_address, passphrase, infoSalt);
+    await _private.updateInDb(company_managed_address_id, eth_address, passphrase, clientId);
 
     return responseHelper.successWithData({ethereum_address: eth_address});
   }
