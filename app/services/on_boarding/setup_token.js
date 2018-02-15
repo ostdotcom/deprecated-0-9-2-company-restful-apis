@@ -168,14 +168,10 @@ SetupToken.prototype = {
     const oThis = this;
     return Promise.resolve(responseHelper.successWithData(
       {
-        'result_type': 'managed_users',
-        'managed_users': [{
-          id: oThis.reserve_managed_address_id,
-          uuid: oThis.addrUuid,
-          name: oThis.name,
-          client_id: oThis.clientId
-        }],
-        'reserveUuid': oThis.addrUuid //TODO: Alpesh why this is an array of result types should be atleast a hash
+        id: oThis.reserve_managed_address_id,
+        reserveUuid: oThis.addrUuid
+        name: oThis.name,
+        client_id: oThis.clientId
       }
     ));
   }
