@@ -7,6 +7,7 @@ const express = require('express')
 const rootPrefix = '..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , SetupTokenKlass = require(rootPrefix + '/app/services/on_boarding/setup_token')
+  , EditTokenKlass = require(rootPrefix + '/app/services/token_management/edit')
   , transactionLog = require(rootPrefix + '/app/models/transaction_log')
 ;
 
@@ -16,11 +17,7 @@ router.post('/setup-token', function (req, res, next) {
 
     // handle final response
     const handleResponse = function (response) {
-      if(response.isSuccess()){
-        return responseHelper.successWithData(response.data).renderResponse(res);
-      } else {
-        return responseHelper.error(response.err.code, response.err.message).renderResponse(res);
-      }
+      return response.renderResponse(res);
     };
 
     const object = new SetupTokenKlass(req.decodedParams);
@@ -31,7 +28,29 @@ router.post('/setup-token', function (req, res, next) {
 
   Promise.resolve(performer()).catch(function (err) {
     console.error(err);
-    responseHelper.error('r_ob_3', 'Something went wrong').renderResponse(res)
+    responseHelper.error('r_ob_4', 'Something went wrong').renderResponse(res)
+  });
+
+});
+
+/* Propose a branded token */
+router.post('/edit-token', function (req, res, next) {
+  const performer = function() {
+
+    // handle final response
+    const handleResponse = function (response) {
+      return response.renderResponse(res);
+    };
+
+    const object = new EditTokenKlass(req.decodedParams);
+
+    return object.perform().then(handleResponse);
+
+  };
+
+  Promise.resolve(performer()).catch(function (err) {
+    console.error(err);
+    responseHelper.error('r_ob_5', 'Something went wrong').renderResponse(res)
   });
 
 });
