@@ -7,18 +7,16 @@ const express = require('express')
 router.post('/create', function (req, res, next) {
   const performer = function() {
     const decodedParams = req.decodedParams
-      , userCreateKlass = require(rootPrefix + '/app/services/client_users_management/create_user')
-      , createUser = new userCreateKlass(decodedParams)
-      ;
+      , generateAddress = require(rootPrefix + '/app/services/address/generate')
+    ;
+    var clientId = decodedParams.client_id;
+    var name = decodedParams.name;
 
-    console.log("decodedParams--", decodedParams);
-
-    const renderResult = function(result) {
-      return result.renderResponse(res);
+    // handle final response
+    const handleResponse = function (response) {
+      return response.renderResponse(res);
     };
-
-    return createUser.perform()
-      .then(renderResult);
+    return generateAddress.perform(clientId, name).then(handleResponse);
   };
 
   Promise.resolve(performer()).catch(function (err) {

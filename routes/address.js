@@ -3,7 +3,7 @@ const express = require('express')
   , rootPrefix = '..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response');
 
-/* Create Ethereum address with given passphrase */
+/* Create Ethereum address with random passphrase */
 router.post('/create', function (req, res, next) {
   const performer = function() {
     const decodedParams = req.decodedParams

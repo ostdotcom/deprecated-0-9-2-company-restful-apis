@@ -7,12 +7,8 @@ const uuid = require('uuid')
 const rootPrefix = '../../..'
   , localCipher = require(rootPrefix + '/lib/authentication/local_cipher')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , kmsWrapper = require(rootPrefix + '/lib/authentication/kms_wrapper')
-  , clientModel = require(rootPrefix + '/app/models/client')
   , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
   , managedAddressObj = new ManagedAddressKlass()
-  , ManagedAddressSaltKlass = require(rootPrefix + '/app/models/managed_address_salt')
-  , managedAddressSaltObj = new ManagedAddressSaltKlass()
 ;
 
 const _private = {
@@ -30,20 +26,6 @@ const _private = {
   generatePassphrase: function(){
     var iv = new Buffer(crypto.randomBytes(16));
     return (iv.toString('hex').slice(0, 16));
-  },
-
-  fetchClientSalt: async function(clientId){
-    var managedAddrSalts = await managedAddressSaltObj.getByClientId(clientId);
-    if (!managedAddrSalts[0]) {
-      return responseHelper.error("ga_fcs_1", "Invalid client details.");
-    }
-
-    var decryptedSalt = await kmsWrapper.decrypt(managedAddrSalts[0]["managed_address_salt"]);
-    if(!decryptedSalt["Plaintext"]){
-      return responseHelper.error("ga_fcs_2", "Client Salt invalid.");
-    }
-
-    return responseHelper.successWithData({info_salt: decryptedSalt["Plaintext"]});
   },
 
   updateInDb: async function(company_managed_address_id, eth_address, passphrase, salt){
@@ -69,15 +51,17 @@ const _private = {
 
 const generate = {
 
-  perform: async function(clientId, addrUuid, saltPlainText){
+  perform: async function(clientId, name){
 
     var oThis = this
-      , addrUuid = addrUuid || uuid.v4();
+      , name = name || ""
+      , addrUuid = uuid.v4();
 
-    const insertedRec = await managedAddressObj.create({client_id: clientId, uuid: addrUuid, status: 'active'});
+    const insertedRec = await managedAddressObj.create({client_id: clientId, name: name,
+      uuid: addrUuid, status: 'active'});
 
     if(insertedRec.affectedRows > 0){
-      oThis.updateAddress(insertedRec.insertId, clientId, saltPlainText);
+      oThis.updateAddress(insertedRec.insertId, clientId);
     }
 
     return responseHelper.successWithData(
@@ -89,15 +73,13 @@ const generate = {
 
   },
 
-  updateAddress: async function(company_managed_address_id, clientId, infoSalt){
+  updateAddress: async function(company_managed_address_id, clientId){
 
-    if(!infoSalt){
-      var r = await _private.fetchClientSalt(clientId);
-      if(r.isFailure()){
-        return r;
-      }
-      infoSalt = r.data.info_salt;
+    var resp = await managedAddressObj.getDecryptedSalt(clientId);
+    if(resp.isFailure()){
+      return responseHelper.error("s_ad_g_1", "Client not setup.");
     }
+    var infoSalt = resp.data.addressSalt;
 
     var passphrase = _private.generatePassphrase();
 
