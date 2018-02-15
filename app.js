@@ -30,6 +30,7 @@ const rootPrefix = '.'
   , addressRoutes = require(rootPrefix + '/routes/address')
   , inputValidator = require(rootPrefix + '/lib/authentication/validate_signature')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , customMiddleware = require(rootPrefix + '/helpers/custom_middleware')
 ;
 
 morgan.token('id', function getId (req) {
@@ -79,7 +80,7 @@ const decodeJwt = function(req, res, next) {
 
   // send error, if token is invalid
   const jwtOnReject = function (err) {
-    console.error(err);
+    logger.error(err);
     return responseHelper.error('a_1', 'Invalid token or expired').renderResponse(res);
   };
 
@@ -91,7 +92,7 @@ const decodeJwt = function(req, res, next) {
         jwtOnReject
       )
   ).catch(function (err) {
-    console.error(err);
+    logger.error(err);
     responseHelper.error('a_2', 'Something went wrong').renderResponse(res)
   });
 
@@ -157,6 +158,8 @@ if (cluster.isMaster) {
   // Create express application instance
   const app = express();
 
+  // Load custom middleware and set the worker id
+  app.use(customMiddleware({worker_id: cluster.worker.id}));
   // Load Morgan
   app.use(morgan('[:id] :remote-addr - :remote-user [:date[clf]] :method :url :response-time HTTP/:http-version" :status :res[content-length] :referrer :user-agent'));
 
@@ -196,13 +199,14 @@ if (cluster.isMaster) {
 
 // catch 404 and forward to error handler
   app.use(function (req, res, next) {
+    logger.requestStartLog(customUrlParser.parse(req.originalUrl).pathname, req.method);
     return responseHelper.error('404', 'Not Found').renderResponse(res, 404);
   });
 
 // error handler
   app.use(function (err, req, res, next) {
     // set locals, only providing error in development
-    console.error(err);
+    logger.error(err);
     return responseHelper.error('500', 'Something went wrong').renderResponse(res, 500);
   });
 
