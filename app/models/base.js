@@ -30,6 +30,7 @@ ModelBaseKlass.prototype = {
     ;
 
     params = oThis.convertEnumForDB(params);
+
     for (var key in params) {
       createFields.push(key);
       setFieldsValues.push(params[key])

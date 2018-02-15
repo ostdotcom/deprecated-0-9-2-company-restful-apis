@@ -1,7 +1,8 @@
 "use strict";
 
 var rootPrefix = '../../..'
-  , clientTransactionType = require(rootPrefix + '/app/models/client_transaction_type')
+  , ClientTransactionTypeKlass = require(rootPrefix + '/app/models/client_transaction_type')
+  , clientTransactionTypeObj = new ClientTransactionTypeKlass()
   , responseHelper = require(rootPrefix + '/lib/formatter/response.js')
 ;
 
@@ -36,15 +37,17 @@ List.prototype = {
     oThis.apiResponse = {
       client_id: clientId,
       transaction_types: [],
-      next_page_payload: {},
+      meta: {next_page_payload: {}},
       result_type: 'transaction_types'
+      fiat_conversion_pankaj: 'pankaj se pucho', //TODO:
+      client_token: 'cache karo' //TODO:
     }
 
   },
 
   getTransactionKinds: async function (oThis) {
 
-    var result = await clientTransactionType.getAll({clientId: oThis.clientId});
+    var result = await clientTransactionTypeObj.getAll({clientId: oThis.clientId});
 
     for (var i = 0; i < result.length; i++) {
       var res = result[i];
@@ -54,13 +57,14 @@ List.prototype = {
             'id': res.id,
             'name': res.name,
             'kind': res.kind,
-            'value_currency_type': res.value_currency_type,
+            'currency_type': res.currency_type,
             'value_in_usd': res.value_in_usd,
             'value_in_bt': res.value_in_bt,
-            'commission_percent': res.commission_percent,
-            'use_price_oracle': res.use_price_oracle
+            'value_in_bt_wei': res.value_in_bt,
+            'commission_percent': res.commission_percent
           }
       );
+
 
     }
     return Promise.resolve();

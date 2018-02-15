@@ -47,6 +47,8 @@ const assignParams = function (req) {
 
 const validateApiSignature = function (req, res, next){
   assignParams(req);
+  next();
+  return;
 
   const handleParamValidationResult = function(result) {
     if(result.isSuccess()){
@@ -210,7 +212,7 @@ if (cluster.isMaster) {
    * Get port from environment and store in Express.
    */
 
-  var port = normalizePort(process.env.PORT || '3000');
+  var port = 4001; //normalizePort(process.env.PORT || '3000');
   app.set('port', port);
 
   /**

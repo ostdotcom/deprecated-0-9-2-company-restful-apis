@@ -11,8 +11,10 @@ const dbName = "saas_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreCons
   , QueryDBObj = new QueryDBKlass(dbName)
   , kinds = {'1':'user_to_user', '2':'user_to_company', '3':'company_to_user'}
   , invertedKinds = util.invert(kinds)
-  , valueCurrencyTypes = {'1':'usd', '2':'bt'}
-  , invertedValueCurrencyTypes = util.invert(valueCurrencyTypes)
+  , currencyTypes = {'1':'usd', '2':'bt'}
+  , invertedCurrencyTypes = util.invert(currencyTypes)
+  , statuses = {'1':'active', '2':'inactive'}
+  , invertedStatuses = util.invert(statuses)
 ;
 
 const ClientTransactionTypeKlass = function () {};
@@ -32,18 +34,26 @@ const ClientTransactionTypeKlassPrototype = {
 
   invertedKinds: invertedKinds,
 
-  valueCurrencyTypes: valueCurrencyTypes,
+  currencyTypes: currencyTypes,
 
-  invertedValueCurrencyTypes: invertedValueCurrencyTypes,
+  invertedCurrencyTypes: invertedCurrencyTypes,
+
+  statuses: statuses,
+
+  invertedStatuses: invertedStatuses,
 
   enums: {
     'kind': {
       val: kinds,
       inverted: invertedKinds
     },
-    'value_currency_type': {
-      val: valueCurrencyTypes,
-      inverted: invertedValueCurrencyTypes
+    'currency_type': {
+      val: currencyTypes,
+      inverted: invertedCurrencyTypes
+    },
+    'status': {
+      val: statuses,
+      inverted: invertedStatuses
     }
   },
 

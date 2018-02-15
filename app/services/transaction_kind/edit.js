@@ -1,15 +1,17 @@
 "use strict";
 
 var rootPrefix = '../../..'
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , util = require(rootPrefix + '/lib/util')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
   , ClientTransactionTypeKlass = require(rootPrefix + '/app/models/client_transaction_type')
   , clientTransactionTypeObj = new ClientTransactionTypeKlass()
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
 ;
 
 const Edit = function(params){
 
   this.params = params
-
+  this.transactionKindObj = {}
 };
 
 Edit.prototype = {
@@ -22,13 +24,12 @@ Edit.prototype = {
       , r = null;
 
     r = await oThis.validateParams();
-    if(r.isFailure()){
-      return r;
-    }
+    if(r.isFailure()) return r;
 
-    await oThis.editTransactionKind();
+    r = await oThis.editTransactionKind();
+    if(r.isFailure()) return r;
 
-    return oThis.returnResponse();
+    return await oThis.returnResponse();
   },
 
   validateParams: async function(){
@@ -36,10 +37,10 @@ Edit.prototype = {
       , clientId = oThis.params.client_id
       , name = oThis.params.name
       , kind = oThis.params.kind
-      , value_currency_type = oThis.params.value_currency_type
+      , currency_type = oThis.params.currency_type
       , value_in_usd = oThis.params.value_in_usd
       , value_in_bt = oThis.params.value_in_bt
-      , use_price_oracle = parseInt(oThis.params.use_price_oracle)
+      , commission_percent = oThis.params.commission_percent
       , errors_object = {}
     ;
 
@@ -53,10 +54,31 @@ Edit.prototype = {
       errors_object['kind'] = 'invalid kind';
     }
 
-    if (value_currency_type == 'usd' && (!value_in_usd || value_in_usd<=0 ) ) {
-      errors_object['value_in_usd'] = 'Value in USD is required';
-    } else if (value_currency_type == 'bt' && (!value_in_bt || value_in_bt<=0 ) ){
-      errors_object['value_in_bt'] = 'Value in BT is required';
+    if (currency_type == 'usd') {
+      if(!value_in_usd || value_in_usd<=0 ){
+        errors_object['value_in_usd'] = 'Value in USD is required';
+      }
+      oThis.transactionKindObj['currency_type'] = oThis.params.currency_type;
+      oThis.transactionKindObj['value_in_bt_wei'] = null;
+      oThis.transactionKindObj['value_in_usd'] = value_in_usd;
+
+    } else if (currency_type == 'bt'){
+      oThis.params.value_in_usd = null;
+      if(!value_in_bt || value_in_bt<=0){
+        errors_object['value_in_bt'] = 'Value in BT is required';
+      }
+      var value_in_bt_wei = basicHelper.convertToWei(value_in_bt);
+      if(!basicHelper.isWeiValid(value_in_bt_wei)){
+        errors_object['value_in_bt'] = 'Value in BT is not valid';
+      }
+      oThis.transactionKindObj['currency_type'] = oThis.params.currency_type;
+      oThis.transactionKindObj['value_in_bt_wei'] = basicHelper.formatWeiToString(value_in_bt_wei);
+      oThis.transactionKindObj['value_in_usd'] = null;
+
+    }
+
+    if(commission_percent && parseInt(commission_percent) < 0){
+      errors_object['commission_percent'] = 'invalid commission_percent';
     }
 
     var qResult = await oThis.getCurrentTransactionKind();
@@ -68,10 +90,6 @@ Edit.prototype = {
 
     if(oThis.currentTransactionKind && oThis.currentTransactionKind['client_id'] != clientId){
       return Promise.resolve(responseHelper.error('tk_e_1', 'Unauthorised access.'));
-    }
-
-    if(use_price_oracle != 1 && use_price_oracle != 0){
-      errors_object['use_price_oracle'] = 'Invalid value for use_price_oracle: ' + use_price_oracle;
     }
 
     if(name && oThis.currentTransactionKind && oThis.currentTransactionKind['name'].toLowerCase() != name.toLowerCase()){
@@ -97,12 +115,21 @@ Edit.prototype = {
   editTransactionKind: async function(){
     var oThis = this;
 
-    var editedTransactionType = await clientTransactionTypeObj.edit(
-      {
-        qParams: oThis.params,
-        whereCondition: {id: oThis.clientTransactionId}
-      }
-    );
+    if(oThis.params.client_id) oThis.transactionKindObj['client_id'] = oThis.params.client_id;
+    if(oThis.params.name) oThis.transactionKindObj['name'] = oThis.params.name;
+    if(oThis.params.kind) oThis.transactionKindObj['kind'] = oThis.params.kind;
+    if(oThis.params.commission_percent) oThis.transactionKindObj['commission_percent'] = oThis.params.commission_percent;
+
+    try {
+      await clientTransactionTypeObj.edit(
+        {
+          qParams: util.clone(oThis.transactionKindObj),
+          whereCondition: {id: oThis.clientTransactionId}
+        }
+      );
+    } catch(err){
+      return Promise.resolve(responseHelper.error('tk_e_3', 'Something went wrong.'));
+    }
 
     return Promise.resolve(responseHelper.successWithData({}));
   },
@@ -116,12 +143,10 @@ Edit.prototype = {
           id: oThis.clientTransactionId,
           client_id: oThis.params.client_id,
           name: oThis.params.name,
-          // TODO: read kind key from enum
           kind: oThis.params.kind,
-          value_currency_type: oThis.params.value_currency_type,
+          currency_type: oThis.params.currency_type,
           value_in_usd: oThis.params.value_in_usd,
           value_in_bt: oThis.params.value_in_bt,
-          use_price_oracle: parseInt(oThis.params.use_price_oracle),
           uts: Date.now()
         }]
       }
