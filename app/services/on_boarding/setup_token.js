@@ -169,7 +169,7 @@ SetupToken.prototype = {
     return Promise.resolve(responseHelper.successWithData(
       {
         id: oThis.reserve_managed_address_id,
-        reserveUuid: oThis.addrUuid
+        reserveUuid: oThis.addrUuid,
         name: oThis.name,
         client_id: oThis.clientId
       }
