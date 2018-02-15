@@ -32,6 +32,7 @@ ModelBaseKlass.prototype = {
     params = oThis.convertEnumForDB(params);
 
     for (var key in params) {
+      if(key=='id' || key=='updated_at' || key=='created_at') continue;
       createFields.push(key);
       setFieldsValues.push(params[key])
     }
@@ -54,6 +55,7 @@ ModelBaseKlass.prototype = {
 
     params['qParams'] = oThis.convertEnumForDB(params['qParams']);
     for (var key in params['qParams']) {
+      if(key=='id' || key=='updated_at' || key=='created_at') continue;
       editFields.push(key + '=?');
       setFieldsValues.push(params['qParams'][key])
     }

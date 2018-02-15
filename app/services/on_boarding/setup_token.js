@@ -57,13 +57,13 @@ SetupToken.prototype = {
 
     // create managed_address_salts if not present
     r = await oThis.setClientAddressSalt();
-    if(r.isFailure()) return r;
+    if(r.isFailure()) return Promise.resolve(r);
 
     r = await oThis.setClientReserveAddress();
-    if(r.isFailure()) return r;
+    if(r.isFailure()) return Promise.resolve(r);
 
     r = await oThis.createClientToken();
-    if(r.isFailure()) return r;
+    if(r.isFailure()) return Promise.resolve(r);
 
     return oThis.renderResponse();
   },

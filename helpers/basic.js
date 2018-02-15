@@ -73,7 +73,49 @@ BasicHelperKlass.prototype = {
    */
   convertToBigNumber: function (number) {
     return (number instanceof BigNumber) ? number : new BigNumber(number);
-  }
+  },
+
+  /**
+   * Check if branded token name is valid or not
+   *
+   * @param {string} name - Branded token name
+   *
+   * @return {boolean}
+   */
+  isBTNameValid: function (name) {
+    if (typeof name !== "string") {
+      return false;
+    }
+    return (/^[a-z0-9\s]{1,}$/i).test(name);
+  },
+
+  /**
+   * Check if branded token symbol is valid or not
+   *
+   * @param {string} symbol - Branded token symbol
+   *
+   * @return {boolean}
+   */
+  isBTSymbolValid: function (symbol) {
+    if (typeof symbol !== "string") {
+      return false;
+    }
+    return (/^[a-z0-9]{1,}$/i).test(symbol);
+  },
+
+  /**
+   * Check if branded token conversion rate is valid or not
+   *
+   * @param {number} conversionRate - Branded token conversion rate
+   *
+   * @return {boolean}
+   */
+  isBTConversionRateValid: function (conversionRate) {
+    if (!isNaN(conversionRate) && (conversionRate % 1) > 0 && parseInt(conversionRate) > 0) {
+      return true;
+    }
+    return false;
+  },
 
 };
 

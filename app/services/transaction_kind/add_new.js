@@ -24,11 +24,10 @@ AddNew.prototype = {
       , r = null;
 
     r = await oThis.validateParams();
-    if(r.isFailure()){
-      return r;
-    }
+    if(r.isFailure()) Promise.resolve(r);
 
-    await oThis.createTransactionKind();
+    r = await oThis.createTransactionKind();
+    if(r.isFailure()) Promise.resolve(r);
 
     return oThis.returnResponse();
   },

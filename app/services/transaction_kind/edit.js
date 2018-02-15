@@ -10,8 +10,9 @@ var rootPrefix = '../../..'
 
 const Edit = function(params){
 
-  this.params = params
-  this.transactionKindObj = {}
+  this.params = params;
+  this.transactionKindObj = {};
+
 };
 
 Edit.prototype = {
@@ -24,10 +25,10 @@ Edit.prototype = {
       , r = null;
 
     r = await oThis.validateParams();
-    if(r.isFailure()) return r;
+    if(r.isFailure()) return Promise.resolve(r);
 
     r = await oThis.editTransactionKind();
-    if(r.isFailure()) return r;
+    if(r.isFailure()) return Promise.resolve(r);
 
     return await oThis.returnResponse();
   },
