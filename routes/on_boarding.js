@@ -103,7 +103,7 @@ router.get('/registration-status', function (req, res, next) {
 
     // handle final response
     const handleResponse = function (registrationResponse) {
-      if(proposeResponse.isSuccess()){
+      if(registrationResponse.isSuccess()){
         return responseHelper.successWithData(registrationResponse.data).renderResponse(res);
       } else {
         return responseHelper.error(registrationResponse.err.code, registrationResponse.err.message).renderResponse(res);
@@ -114,7 +114,7 @@ router.get('/registration-status', function (req, res, next) {
       'transaction_hash': proposeTransactionHash
     });
 
-    return object.perform().then(handleOpenStPlatformSuccess);
+    return object.perform().then(handleResponse);
 
   };
 
