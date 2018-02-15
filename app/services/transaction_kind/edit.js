@@ -39,8 +39,7 @@ Edit.prototype = {
       , name = oThis.params.name
       , kind = oThis.params.kind
       , currency_type = oThis.params.currency_type
-      , value_in_usd = oThis.params.value_in_usd
-      , value_in_bt = oThis.params.value_in_bt
+      , currency_value = oThis.params.currency_value
       , commission_percent = oThis.params.commission_percent
       , errors_object = {}
     ;
@@ -56,21 +55,21 @@ Edit.prototype = {
     }
 
     if (currency_type == 'usd') {
-      if(!value_in_usd || value_in_usd<=0 ){
-        errors_object['value_in_usd'] = 'Value in USD is required';
+      if(!currency_value || currency_value<=0 ){
+        errors_object['currency_value'] = 'Value in USD is required';
       }
       oThis.transactionKindObj['currency_type'] = oThis.params.currency_type;
       oThis.transactionKindObj['value_in_bt_wei'] = null;
-      oThis.transactionKindObj['value_in_usd'] = value_in_usd;
+      oThis.transactionKindObj['value_in_usd'] = currency_value;
 
     } else if (currency_type == 'bt'){
       oThis.params.value_in_usd = null;
-      if(!value_in_bt || value_in_bt<=0){
-        errors_object['value_in_bt'] = 'Value in BT is required';
+      if(!currency_value || currency_value<=0){
+        errors_object['currency_value'] = 'Value in BT is required';
       }
-      var value_in_bt_wei = basicHelper.convertToWei(value_in_bt);
+      var value_in_bt_wei = basicHelper.convertToWei(currency_value);
       if(!basicHelper.isWeiValid(value_in_bt_wei)){
-        errors_object['value_in_bt'] = 'Value in BT is not valid';
+        errors_object['currency_value'] = 'Value in BT is not valid';
       }
       oThis.transactionKindObj['currency_type'] = oThis.params.currency_type;
       oThis.transactionKindObj['value_in_bt_wei'] = basicHelper.formatWeiToString(value_in_bt_wei);
@@ -146,8 +145,7 @@ Edit.prototype = {
           name: oThis.params.name,
           kind: oThis.params.kind,
           currency_type: oThis.params.currency_type,
-          value_in_usd: oThis.params.value_in_usd,
-          value_in_bt: oThis.params.value_in_bt,
+          currency_value: oThis.params.currency_value,
           uts: Date.now()
         }]
       }
