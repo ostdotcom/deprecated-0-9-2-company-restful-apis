@@ -128,7 +128,7 @@ SetupToken.prototype = {
       const existingToken = tokenByClientId[tokenByClientId.length-1];
       oThis.reserve_managed_address_id = existingToken.reserve_managed_address_id;
     } else {
-      var r = await generateEthAddress.perform(oThis.clientId, oThis.addrUuid, oThis.saltPlainText);
+      var r = await generateEthAddress.perform(oThis.clientId);
       if(r.isFailure()) return Promise.resolve(r);
       oThis.reserve_managed_address_id = r.data.id;
     }
