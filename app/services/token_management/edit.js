@@ -8,6 +8,7 @@ const rootPrefix = '../../..'
 ;
 
 const EditBrandedTokenKlass = function (params) {
+
   var oThis = this;
 
   oThis.params = params;
@@ -20,11 +21,12 @@ const EditBrandedTokenKlass = function (params) {
   oThis.conversion_rate = oThis.params.conversion_rate;
 
   oThis.brandedTokenAr = null;
+
 };
 
 EditBrandedTokenKlass.prototype = {
 
-  perform: function () {
+  perform: async function () {
     var oThis = this
       , r = null;
 
@@ -35,6 +37,7 @@ EditBrandedTokenKlass.prototype = {
     if(r.isFailure()) return Promise.resolve(r);
 
     oThis.returnResponse();
+
   },
 
   validateAndSanitize: async function () {
@@ -80,7 +83,10 @@ EditBrandedTokenKlass.prototype = {
     return Promise.resolve(responseHelper.successWithData({}));
   },
 
-  editToken: function () {
+  editToken: async function () {
+
+    var oThis = this;
+
     await clientBrandedTokenObj.edit(
       {
         qParams: oThis.brandedTokenAr,
@@ -89,6 +95,9 @@ EditBrandedTokenKlass.prototype = {
         }
       }
     )
+
+    return Promise.resolve(responseHelper.successWithData({}));
+
   },
 
   returnResponse: function () {
@@ -97,4 +106,4 @@ EditBrandedTokenKlass.prototype = {
 
 };
 
-module.exports = EditBrandedTokenKlass();
+module.exports = EditBrandedTokenKlass;

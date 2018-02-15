@@ -117,6 +117,20 @@ BasicHelperKlass.prototype = {
     return false;
   },
 
+  /**
+   * Check if uuid is valid or not
+   *
+   * @param {string} uuid - Branded Token UUID
+   *
+   * @return {boolean}
+   */
+  isUuidValid: function (uuid) {
+    if (typeof uuid !== "string") {
+      return false;
+    }
+    return /^0x[0-9a-fA-F]{64}$/.test(uuid);
+  },
+
 };
 
 module.exports = new BasicHelperKlass();

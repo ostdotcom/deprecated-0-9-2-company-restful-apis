@@ -47,8 +47,6 @@ const assignParams = function (req) {
 
 const validateApiSignature = function (req, res, next){
   assignParams(req);
-  next();
-  return;
 
   const handleParamValidationResult = function(result) {
     if(result.isSuccess()){
