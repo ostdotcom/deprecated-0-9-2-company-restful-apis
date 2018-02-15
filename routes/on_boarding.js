@@ -16,7 +16,11 @@ router.post('/setup-token', function (req, res, next) {
 
     // handle final response
     const handleResponse = function (response) {
-      response.renderResponse(res);
+      if(response.isSuccess()){
+        return responseHelper.successWithData(response.data).renderResponse(res);
+      } else {
+        return responseHelper.error(response.err.code, response.err.message).renderResponse(res);
+      }
     };
 
     const object = new SetupTokenKlass(req.decodedParams);
@@ -29,6 +33,7 @@ router.post('/setup-token', function (req, res, next) {
     console.error(err);
     responseHelper.error('r_ob_3', 'Something went wrong').renderResponse(res)
   });
+
 });
 
 /* Propose a branded token */
@@ -43,8 +48,12 @@ router.post('/propose-branded-token', function (req, res, next) {
     ;
 
     // handle final response
-    const handleOpenStPlatformSuccess = function (proposeResponse) {
-      return proposeResponse.renderResponse(res);
+    const handleResponse = function (proposeResponse) {
+      if(proposeResponse.isSuccess()){
+        return responseHelper.successWithData(proposeResponse.data).renderResponse(res);
+      } else {
+        return responseHelper.error(proposeResponse.err.code, proposeResponse.err.message).renderResponse(res);
+      }
     };
 
     const object = new openStPlatform.services.onBoarding.proposeBrandedToken({
@@ -53,7 +62,7 @@ router.post('/propose-branded-token', function (req, res, next) {
       'conversion_rate': tokenConversionRate
     });
 
-    return object.perform().then(handleOpenStPlatformSuccess);
+    return object.perform().then(handleResponse);
 
   };
 
@@ -66,6 +75,7 @@ router.post('/propose-branded-token', function (req, res, next) {
 
 /* Propose a branded token */
 router.get('/registration-status', function (req, res, next) {
+
   const performer = function() {
 
     const decodedParams = req.decodedParams
@@ -73,8 +83,12 @@ router.get('/registration-status', function (req, res, next) {
     ;
 
     // handle final response
-    const handleOpenStPlatformSuccess = function (registrationResponse) {
-      return registrationResponse.renderResponse(res);
+    const handleResponse = function (registrationResponse) {
+      if(proposeResponse.isSuccess()){
+        return responseHelper.successWithData(registrationResponse.data).renderResponse(res);
+      } else {
+        return responseHelper.error(registrationResponse.err.code, registrationResponse.err.message).renderResponse(res);
+      }
     };
 
     const object = new openStPlatform.services.onBoarding.getRegistrationStatus({
