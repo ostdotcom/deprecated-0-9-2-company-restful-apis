@@ -51,7 +51,17 @@ const ManagedAddressKlassPrototype = {
       oThis.tableName,
       ['id', 'ethereum_address'],
       ids);
+  },
+
+  getByUuid: function (uuid) {
+    var oThis = this;
+    return oThis.QueryDB.read(
+        oThis.tableName,
+        ['client_id', 'name','ethereum_address', 'hashed_ethereum_address', 'passphrase', 'status'],
+        'uuid=?',
+        [uuid]);
   }
+
 };
 
 Object.assign(ManagedAddressKlass.prototype, ManagedAddressKlassPrototype);
