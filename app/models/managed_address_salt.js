@@ -4,7 +4,7 @@ const rootPrefix = '../..'
   , coreConstants = require(rootPrefix + '/config/core_constants')
   , QueryDBKlass = require(rootPrefix + '/app/models/queryDb')
   , ModelBaseKlass = require(rootPrefix + '/app/models/base')
-  , clientAddressSaltCacheKlass = require(rootPrefix + '/lib/cache_management/client_address_salt')
+  // , clientAddressSaltCacheKlass = require(rootPrefix + '/lib/cache_management/client_address_salt')
   , localCipher = require(rootPrefix + '/lib/authentication/local_cipher')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
 ;
@@ -34,16 +34,17 @@ const ManagedAddressSaltKlassPrototype = {
       [clientId]);
   },
 
-  getClientDecryptedSalt: async function(clientId) {
-    var obj = new clientAddressSaltCacheKlass({client_id: clientId});
-    var cachedResponse = await obj.fetch();
-    if (cachedResponse.isFailure()) {
-      return cachedResponse;
-    }
-
-    var addrSalt = await localCipher.decrypt(coreConstants.CACHE_SHA_KEY, cachedResponse.data.addressSalt);
-    return responseHelper.successWithData({addressSalt: addrSalt});
-  }
+  //Loading this here is leading to cyclic dependency leading to env not loading
+  // getClientDecryptedSalt: async function(clientId) {
+  //   var obj = new clientAddressSaltCacheKlass({client_id: clientId});
+  //   var cachedResponse = await obj.fetch();
+  //   if (cachedResponse.isFailure()) {
+  //     return cachedResponse;
+  //   }
+  //
+  //   var addrSalt = await localCipher.decrypt(coreConstants.CACHE_SHA_KEY, cachedResponse.data.addressSalt);
+  //   return responseHelper.successWithData({addressSalt: addrSalt});
+  // }
 
 };
 

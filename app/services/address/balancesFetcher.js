@@ -5,6 +5,8 @@ const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , ethBalanceCacheKlass = require(rootPrefix + '/lib/cache_management/ethBalance')
   , ostBalanceCacheKlass = require(rootPrefix + '/lib/cache_management/ostBalance')
+  , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_management/managedAddresses')
+  , ClientBrandedTokenSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
   , logger = require(rootPrefix+'/lib/logger/custom_console_logger')
   , bigNumber = require('bignumber.js')
 ;
@@ -20,8 +22,9 @@ const balancesFetcherKlass = function(params) {
 
   const oThis = this;
 
-  oThis.address = params['address'];
-  oThis.erc20Address = params['erc20Address'];
+  oThis.addressUuid = params['addressUuid'];
+
+  oThis.address = null;
 
 };
 
@@ -36,24 +39,29 @@ balancesFetcherKlass.prototype = {
 
     const oThis = this;
 
-    const validBalanceTypes = balanceTypes.filter(function(n) {
-      return oThis._supportedBalanceTypes().indexOf(n) >= 0;
-    });
+    const setAddrRsp = await oThis._setAddress();
 
-    if (validBalanceTypes.length != balanceTypes.length) {
-      var r = responseHelper.error(
-          'bf_1', "invalid balanceTypes"
-      );
-      logger.error(r);
-      return Promise.resolve(r);
+    if (setAddrRsp.isFailure()) {
+      return setAddrRsp;
     }
 
     var promiseResolvers = []
         , balances = {};
 
     for (var i=0; i < balanceTypes.length; i++) {
-      var promise = oThis["_fetch"+balanceTypes[i]+"Balance"].apply(oThis);
+
+      if (oThis._nonBrandedTokenBalanceTypes().indexOf(n) >= 0) {
+
+        var promise = oThis["_fetch"+balanceTypes[i]+"Balance"].apply(oThis);
+
+      } else {
+
+        var promise = oThis._fetchBrandedTokenBalance(balanceTypes[i]);
+
+      }
+
       promiseResolvers.push(promise);
+
     }
 
     const promiseResolverResponses = await Promise.all(promiseResolvers);
@@ -84,15 +92,14 @@ balancesFetcherKlass.prototype = {
   },
 
   /**
-   * fetchsupported types
+   * balance types other then those of BT
    *
    * @return {Array}
    */
-  _supportedBalanceTypes: function() {
+  _nonBrandedTokenBalanceTypes: function() {
     return [
       'ost',
       'ostPrime',
-      'brandedToken',
       'eth'
     ]
   },
@@ -143,19 +150,56 @@ balancesFetcherKlass.prototype = {
   },
 
   /**
-   * fetch BT balance
+   * fetch BT balance for a given symbol
+   *
+   * @param {String} tokenSymbol
    *
    * @return {Promise}
    */
-  _fetchbrandedTokenBalance: function(){
+  _fetchBrandedTokenBalance: function(tokenSymbol){
 
-    const oThis = this;
+    const oThis = this
+        , clientBrandedTokenSecureCacheObj = new ClientBrandedTokenSecureCacheKlass({tokenSymbol: tokenSymbol})
+        , clientBrandedTokenSecureCacheRsp = await clientBrandedTokenSecureCacheObj.fetch();
+
+    if (clientBrandedTokenSecureCacheRsp.isFailure()) {
+      return Promise.resolve(clientBrandedTokenSecureCacheRsp);
+    }
+
+    const clientBrandedTokenSecureCacheData = clientBrandedTokenSecureCacheRsp.data;
+
+    if (!clientBrandedTokenSecureCacheData.token_erc20_address) {
+      return Promise.resolve(responseHelper.error('bf_1','Token Contract Not Deployed'));
+    }
 
     const obj = new openStPlatform.services.balance.brandedToken(
-        {'address': oThis.address, 'erc20_address': oThis.erc20Address}
+      {'address': oThis.address, 'erc20_address': clientBrandedTokenSecureCacheData.token_erc20_address}
     );
 
     return obj.perform();
+
+  },
+
+  /**
+   * fetch address from uuid
+   *
+   * @return {Promise}
+   */
+  _setAddress: async function(){
+
+    const oThis = this;
+
+    const managedAddressCache = new ManagedAddressCacheKlass({'addressUuid': oThis.addressUuid });
+
+    const cacheFetchResponse = await managedAddressCache.fetchDecryptedData(['ethereum_address']);
+
+    if (cacheFetchResponse.isFailure()) {
+      return Promise.resolve(cacheFetchResponse);
+    }
+
+    oThis.address = cacheFetchResponse.data['ethereum_address_d'];
+
+    return Promise.resolve(responseHelper.successWithData({}));
 
   }
 

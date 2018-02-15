@@ -29,7 +29,7 @@ const ClientBrandedTokenKlassPrototype = {
     var oThis = this;
     return oThis.QueryDB.read(
       oThis.tableName,
-      ['id', 'client_id'],
+      ['id', 'client_id', 'symbol', 'reserve_managed_address_id', 'conversion_rate', 'token_erc20_address'],
       "symbol=?",
       [symbol]);
   },

@@ -32,10 +32,7 @@ router.get('/fetch-balances', function (req, res, next) {
     const decodedParams = req.decodedParams
         , balanceTypes = decodedParams.balance_types
         , balancesFetcherKlass = require(rootPrefix + '/app/services/address/balancesFetcher')
-        , balancesFetcher = new balancesFetcherKlass({
-          'erc20Address': decodedParams.erc20_address,
-          'address': decodedParams.address
-        })
+        , balancesFetcher = new balancesFetcherKlass({'addressUuid': decodedParams.address_uuid})
     ;
 
     // handle final response
