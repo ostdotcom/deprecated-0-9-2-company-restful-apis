@@ -76,6 +76,20 @@ BasicHelperKlass.prototype = {
   },
 
   /**
+   * Check if address is valid or not
+   *
+   * @param {string} address - Address
+   *
+   * @return {boolean}
+   */
+  isAddressValid: function (address) {
+    if (typeof address !== "string") {
+      return false;
+    }
+    return /^0x[0-9a-fA-F]{40}$/.test(address);
+  },
+
+  /**
    * Check if branded token name is valid or not
    *
    * @param {string} name - Branded token name
