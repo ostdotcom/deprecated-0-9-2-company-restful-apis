@@ -25,12 +25,16 @@ QueryDB.prototype = {
     return mysqlWrapper.getPoolFor(this.dbName, 'master');
   },
 
-  read: function(tableName, fields, whereClause, whereClauseValues) {
+  read: function(tableName, fields, whereClause, whereClauseValues, orderByClause) {
     var oThis = this
       , selectFields = ((!fields || fields.length==0) ? '*' : fields.join(','))
       , selectWhereClause = ((!whereClause || whereClause.length==0) ? '' : ' where '+whereClause)
       , whereClauseValues = (!whereClauseValues) ? [] : whereClauseValues
       , q = 'SELECT '+selectFields+' FROM '+tableName+' '+selectWhereClause;
+
+    if (orderByClause){
+      q = q + ' ' + orderByClause;
+    }
 
     console.log(q);
     return new Promise(
