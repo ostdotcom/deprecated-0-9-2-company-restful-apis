@@ -8,7 +8,7 @@ const rootPrefix = '../../..'
   , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_management/managedAddresses')
   , ClientBrandedTokenSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
   , logger = require(rootPrefix+'/lib/logger/custom_console_logger')
-  , bigNumber = require('bignumber.js')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
 
 /**
@@ -76,11 +76,13 @@ balancesFetcherKlass.prototype = {
       } else {
         var data = response.data;
         if (data && data.balance) {
-          balances[balanceType] = new bigNumber(data.balance);
+          balance = data.balance;
         } else {
-          balances[balanceType] = new bigNumber(data);
+          balance = data;
         }
       }
+
+      balances[balanceType] = basicHelper.convertToNormal(balance);
 
     }
 
