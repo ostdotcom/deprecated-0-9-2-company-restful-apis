@@ -1,5 +1,11 @@
 "use strict";
 
+/**
+ * Add new transaction kind
+ *
+ * @module app/services/transaction_kind/add_new
+ *
+ */
 var rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , util = require(rootPrefix + '/lib/util')
@@ -8,6 +14,20 @@ var rootPrefix = '../../..'
   , clientTransactionTypeObj = new ClientTransactionTypeKlass()
 ;
 
+/**
+ * Add new transaction kind constructor
+ *
+ * @param {object} params - external passed parameters
+ * @param {number} params.client_id - client id for whom setup is to be made.
+ * @param {string} params.name - Name of the transaction kind eg. voteUp, voteDown, etc..
+ * @param {string} params.kind - The kind of the kind, user_to_user, user_to_client, etc..
+ * @param {string} params.currency_type - Type of currency. usd or bt
+ * @param {decimal} params.currency_value - Value of currency with respect to currency_type
+ * @param {decimal} params.commission_percent - commission in percentage.
+ *
+ * @constructor
+ *
+ */
 const AddNew = function(params){
 
   var oThis = this;
@@ -20,8 +40,12 @@ const AddNew = function(params){
 
 AddNew.prototype = {
 
-  constructor: AddNew,
-
+  /**
+   * Perform<br><br>
+   *
+   * @return {promise<result>} - returns a promise which resolves to an object of Result
+   *
+   */
   perform: async function () {
     var oThis = this
       , r = null;
@@ -35,6 +59,13 @@ AddNew.prototype = {
     return oThis.returnResponse();
   },
 
+  /**
+   * Validate params<br><br>
+   *
+   * @sets transactionKindObj
+   * @return {promise<result>} - returns a promise which resolves to an object of Result
+   *
+   */
   validateParams: async function(){
     var oThis = this
       , client_id = oThis.params.client_id
@@ -101,6 +132,13 @@ AddNew.prototype = {
 
   },
 
+  /**
+   * Create new kind in DB.<br><br>
+   *
+   * @set transactionKindObj
+   * @return {promise<result>} - returns a promise which resolves to an object of Result
+   *
+   */
   createTransactionKind: async function(){
     var oThis = this;
 
@@ -114,6 +152,12 @@ AddNew.prototype = {
     return Promise.resolve(responseHelper.successWithData({}));
   },
 
+  /**
+   * Return response.<br><br>
+   *
+   * @return {promise<result>} - returns a promise which resolves to an object of Result
+   *
+   */
   returnResponse: function(){
     var oThis = this;
     return Promise.resolve(responseHelper.successWithData(

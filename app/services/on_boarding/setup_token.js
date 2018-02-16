@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * Setup Token with following steps
+ * Setup Token
  *
  * @module app/services/on_boarding/setup_token
  *

@@ -5,15 +5,23 @@ const rootPrefix = '../..'
   , QueryDBKlass = require(rootPrefix + '/app/models/queryDb')
   , util = require(rootPrefix + '/lib/util')
   , ModelBaseKlass = require(rootPrefix + '/app/models/base')
+  , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
   ;
 
 const dbName = "saas_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
   , QueryDBObj = new QueryDBKlass(dbName)
-  , kinds = {'1':'user_to_user', '2':'user_to_company', '3':'company_to_user'}
+  , kinds = {
+    '1':clientTxTypesConst.userToUserKind,
+    '2':clientTxTypesConst.userToCompanyKind,
+    '3':clientTxTypesConst.companyToUserKind
+  }
   , invertedKinds = util.invert(kinds)
-  , currencyTypes = {'1':'usd', '2':'bt'}
+  , currencyTypes = {
+    '1':clientTxTypesConst.usdCurrencyType,
+    '2':clientTxTypesConst.btCurrencyType
+  }
   , invertedCurrencyTypes = util.invert(currencyTypes)
-  , statuses = {'1':'active', '2':'inactive'}
+  , statuses = {'1':clientTxTypesConst.activeStatus, '2':clientTxTypesConst.inactiveStatus}
   , invertedStatuses = util.invert(statuses)
 ;
 
@@ -64,9 +72,8 @@ const ClientTransactionTypeKlassPrototype = {
     ;
 
     var results = await oThis.QueryDB.read(
-      tableName,
-      ['id', 'client_id','name', 'kind', 'value_currency_type', 'value_in_usd',
-        'value_in_bt', 'commission_percent', 'use_price_oracle'],
+      oThis.tableName,
+      [],
       'client_id=?',
       [params['clientId']]
     );

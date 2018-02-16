@@ -1,14 +1,31 @@
 "use strict";
 
+/**
+ *
+ * Return existing ransaction kind list.
+ *
+ * @module app/services/transaction_kind/edit
+ */
+
+
 var rootPrefix = '../../..'
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
   , ClientTransactionTypeKlass = require(rootPrefix + '/app/models/client_transaction_type')
   , clientTransactionTypeObj = new ClientTransactionTypeKlass()
-  , responseHelper = require(rootPrefix + '/lib/formatter/response.js')
+  , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
+  , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
 ;
 
 const List = function(params){
 
-  this.params = params;
+  var oThis = this;
+
+  oThis.params = params;
+  oThis.transactionTypes = [];
+  oThis.clientTokens = [];
+
+  oThis.allPromises = [];
 
 };
 
@@ -21,53 +38,94 @@ List.prototype = {
 
     oThis.validateAssignParams();
 
-    await oThis.getTransactionKinds(oThis);
+    oThis.allPromises.push(oThis.getTransactionKinds());
 
-    return Promise.resolve(responseHelper.successWithData(oThis.apiResponse));
+    oThis.allPromises.push(oThis.getClientTokens());
+
+    return await oThis.prepareApiResponse();
+
   },
 
   validateAssignParams: function(){
 
-    var oThis = this
-        , clientId = oThis.params.client_id;
+    var oThis = this;
 
-    oThis.clientId = clientId;
-
-    //TODO: handle pagination here
-    oThis.apiResponse = {
-      client_id: clientId,
-      transaction_types: [],
-      meta: {next_page_payload: {}},
-      result_type: 'transaction_types'
-      fiat_conversion_pankaj: 'pankaj se pucho', //TODO:
-      client_token: 'cache karo' //TODO:
-    }
+    oThis.clientId = oThis.params.client_id;
 
   },
 
-  getTransactionKinds: async function (oThis) {
+  getTransactionKinds: function () {
 
-    var result = await clientTransactionTypeObj.getAll({clientId: oThis.clientId});
+    var oThis = this;
 
-    for (var i = 0; i < result.length; i++) {
-      var res = result[i];
+    //TODO: Support pagination
+    return new Promise(async function (onResolve, onReject) {
 
-      oThis.apiResponse.transaction_types.push(
+      const result = await clientTransactionTypeObj.getAll({clientId: oThis.clientId});
+
+      var currency_value = null;
+
+      for (var i = 0; i < result.length; i++) {
+        var res = result[i];
+        if(res.currency_type == clientTxTypesConst.btCurrencyType){
+          currency_value = basicHelper.formatWeiToString(basicHelper.convertToNormal(res.value_in_bt_wei));
+        }else{
+          currency_value = res.value_in_usd;
+        }
+        oThis.transactionTypes.push(
           {
-            'id': res.id,
-            'name': res.name,
-            'kind': res.kind,
-            'currency_type': res.currency_type,
-            'value_in_usd': res.value_in_usd,
-            'value_in_bt': res.value_in_bt,
-            'value_in_bt_wei': res.value_in_bt,
-            'commission_percent': res.commission_percent
+            id: res.id,
+            name: res.name,
+            kind: res.kind,
+            currency_type: res.currency_type,
+            currency_value: currency_value,
+            commission_percent: res.commission_percent,
+            status: res.status
           }
-      );
+        );
+      }
+      onResolve();
 
+    });
 
-    }
-    return Promise.resolve();
+  },
+
+  getClientTokens: function(){
+
+    var oThis = this;
+
+    return new Promise(async function (onResolve, onReject) {
+
+      const clientBrandedTokenCacheObj = new ClientBrandedTokenCacheKlass({clientId: oThis.clientId});
+
+      const clientBrandedTokenCacheResp = await clientBrandedTokenCacheObj.fetch();
+
+      console.log('clientBrandedTokenCacheResp------', clientBrandedTokenCacheResp);
+
+      oThis.clientTokens = clientBrandedTokenCacheResp.data;
+
+      onResolve();
+
+    });
+
+  },
+
+  prepareApiResponse: async function () {
+
+    var oThis = this;
+
+    await Promise.all(oThis.allPromises);
+
+    return Promise.resolve(responseHelper.successWithData(
+      {
+        client_id: oThis.clientId,
+        result_type: 'transaction_types',
+        transaction_types: oThis.transactionTypes,
+        meta: {next_page_payload: {}},
+        price_points: {ost: {usd: '1'}}, //TODO: for Pankaj
+        client_tokens: oThis.clientTokens
+      }
+    ));
 
   }
 

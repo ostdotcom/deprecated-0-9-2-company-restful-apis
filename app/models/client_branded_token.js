@@ -38,10 +38,10 @@ const ClientBrandedTokenKlassPrototype = {
     var oThis = this;
     return oThis.QueryDB.read(
       oThis.tableName,
-      ['id', 'client_id', 'symbol', 'reserve_managed_address_id', 'conversion_rate'],
+      [],
       "client_id=?",
       [client_id],
-      'order by id ASC'
+      'order by id DESC'
     );
   }
 
