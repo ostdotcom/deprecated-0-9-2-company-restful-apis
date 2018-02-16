@@ -8,6 +8,7 @@ const rootPrefix = '..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , SetupTokenKlass = require(rootPrefix + '/app/services/on_boarding/setup_token')
   , EditTokenKlass = require(rootPrefix + '/app/services/token_management/edit')
+  , CreateDummyUsersKlass = require(rootPrefix + '/app/services/on_boarding/create_dummy_users')
   , transactionLog = require(rootPrefix + '/app/models/transaction_log')
 ;
 
@@ -162,5 +163,30 @@ router.post('/grant-test-ost', function (req, res, next) {
     responseHelper.error('r_ob_3', 'Something went wrong').renderResponse(res)
   });
 });
+
+router.post('/create-dummy-users', function (req, res, next) {
+
+  const performer = function() {
+
+    const decodedParams = req.decodedParams;
+
+    // handle final response
+    const handleResponse = function (response) {
+      response.renderResponse(res);
+    };
+
+    const object = new CreateDummyUsersKlass(req.decodedParams);
+
+    return object.perform().then(handleResponse);
+
+  };
+
+  Promise.resolve(performer()).catch(function (err) {
+    console.error(err);
+    responseHelper.error('r_ob_4', 'Something went wrong').renderResponse(res)
+  });
+
+});
+
 
 module.exports = router;
