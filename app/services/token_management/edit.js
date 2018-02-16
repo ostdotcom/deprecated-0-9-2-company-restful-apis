@@ -36,7 +36,7 @@ EditBrandedTokenKlass.prototype = {
     r = await oThis.editToken();
     if(r.isFailure()) return Promise.resolve(r);
 
-    oThis.returnResponse();
+    return oThis.returnResponse();
 
   },
 

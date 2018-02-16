@@ -29,6 +29,7 @@ const rootPrefix = '../../..'
  * @param {number} params.client_id - client id for whom setup is to be made.
  * @param {number} params.symbol - unique(across system) symbol.
  * @param {String} params.name - unique(across system) name of branded token.
+ * @param {String} params.symbol_icon - ICON for branded token.
  *
  */
 const SetupToken = function(params){
@@ -36,6 +37,7 @@ const SetupToken = function(params){
   this.clientId = params.client_id;
   this.symbol = params.symbol;
   this.name = params.name;
+  this.symbol_icon = params.symbol_icon;
 
 };
 
@@ -151,6 +153,7 @@ SetupToken.prototype = {
     oThis.clientTokenObj = {
       client_id: oThis.clientId,
       symbol: oThis.symbol,
+      symbol_icon: oThis.symbol_icon,
       reserve_managed_address_id: oThis.reserve_managed_address_id,
       name: oThis.name
     };
