@@ -4,7 +4,8 @@ const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
-  , clientBrandedTokenObj = new ClientBrandedTokenKlass();
+  , clientBrandedTokenObj = new ClientBrandedTokenKlass()
+  , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
 ;
 
 const EditBrandedTokenKlass = function (params) {
@@ -98,6 +99,18 @@ EditBrandedTokenKlass.prototype = {
 
     return Promise.resolve(responseHelper.successWithData({}));
 
+  },
+
+  /**
+   * clear cache
+   *
+   * return render response.
+   * @return {promise<result>}
+   */
+  clearCache: function () {
+    const oThis = this;
+    const clientBrandedTokenCache = new ClientBrandedTokenCacheKlass({'clientId': oThis.client_id});
+    clientBrandedTokenCache.clear()
   },
 
   returnResponse: function () {

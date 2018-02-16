@@ -18,6 +18,7 @@ const rootPrefix = '../../..'
   , clientBrandedToken = new ClientBrandedTokenKlass()
   , ManagedAddressSaltKlass = require(rootPrefix + '/app/models/managed_address_salt')
   , managedAddressSaltObj = new ManagedAddressSaltKlass()
+  , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
 ;
 
 /**
@@ -69,7 +70,10 @@ SetupToken.prototype = {
     r = await oThis.createClientToken();
     if(r.isFailure()) return Promise.resolve(r);
 
+    oThis.clearCache()
+
     return oThis.renderResponse();
+
   },
 
   /**
@@ -162,6 +166,18 @@ SetupToken.prototype = {
     var result = await clientBrandedToken.create(oThis.clientTokenObj);
 
     return Promise.resolve(responseHelper.successWithData({}));
+  },
+
+  /**
+   * clear cache
+   *
+   * return render response.
+   * @return {promise<result>}
+   */
+  clearCache: function () {
+    const oThis = this;
+    const clientBrandedTokenCache = new ClientBrandedTokenCacheKlass({'clientId': oThis.clientId});
+    clientBrandedTokenCache.clear()
   },
 
   /**
