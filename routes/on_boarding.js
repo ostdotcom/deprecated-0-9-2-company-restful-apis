@@ -9,7 +9,6 @@ const rootPrefix = '..'
   , SetupTokenKlass = require(rootPrefix + '/app/services/on_boarding/setup_token')
   , EditTokenKlass = require(rootPrefix + '/app/services/token_management/edit')
   , CreateDummyUsersKlass = require(rootPrefix + '/app/services/on_boarding/create_dummy_users')
-  , transactionLog = require(rootPrefix + '/app/models/transaction_log')
 ;
 
 /* Propose a branded token */
@@ -139,22 +138,19 @@ router.post('/grant-test-ost', function (req, res, next) {
     // handle final response
     const handleResponse = function (response) {
       if(response.isSuccess()){
-        transactionLog.create({uuid: response.data.transaction_uuid,
-            chain: "value"});
         return responseHelper.successWithData(response.data).renderResponse(res);
       } else {
         return responseHelper.error(response.err.code, response.err.message).renderResponse(res);
       }
     };
 
-    const object = new openStPlatform.services.transaction.transfer.simpleToken({
+    const obj = new openStPlatform.services.transaction.transfer.simpleToken({
       sender_name: "foundation",
       recipient_address: ethAddress,
       amount_in_wei: (new BigNumber(amount)).mul(weiConversion).toNumber(),
       options: {tag: "testOST", returnType: "txHash"}
     });
-
-    return object.perform().then(handleResponse);
+    return obj.perform().then(handleResponse);
 
   };
 
