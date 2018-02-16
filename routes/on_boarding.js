@@ -160,6 +160,41 @@ router.post('/grant-test-ost', function (req, res, next) {
   });
 });
 
+/* Grant test OST to user */
+router.post('/grant-eth', function (req, res, next) {
+  const performer = function() {
+
+    const decodedParams = req.decodedParams
+      , ethAddress = decodedParams.ethereum_address
+      , amount = decodedParams.amount
+      , weiConversion = new BigNumber(1000000000000000000)
+    ;
+
+    // handle final response
+    const handleResponse = function (response) {
+      if(response.isSuccess()){
+        return responseHelper.successWithData(response.data).renderResponse(res);
+      } else {
+        return responseHelper.error(response.err.code, response.err.message).renderResponse(res);
+      }
+    };
+
+    const obj = new openStPlatform.services.transaction.transfer.eth({
+      sender_name: "foundation",
+      recipient_address: ethAddress,
+      amount_in_wei: (new BigNumber(amount)).mul(weiConversion).toNumber(),
+      options: {tag: "grantEth", returnType: "txHash"}
+    });
+    return obj.perform().then(handleResponse);
+
+  };
+
+  Promise.resolve(performer()).catch(function (err) {
+    console.error(err);
+    responseHelper.error('r_ob_5', 'Something went wrong').renderResponse(res)
+  });
+});
+
 router.post('/create-dummy-users', function (req, res, next) {
 
   const performer = function() {
