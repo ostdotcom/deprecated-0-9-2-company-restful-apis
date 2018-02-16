@@ -3,16 +3,16 @@ export CR_ENVIRONMENT='development'
 export CR_SUB_ENVIRONMENT='sandbox'
 
 # Database details
-export CR_MYSQL_HOST='127.0.0.1
+export CR_MYSQL_HOST='127.0.0.1'
 export CR_MYSQL_USER='root'
 export CR_MYSQL_PASSWORD='root'
 export CR_MYSQL_CONNECTION_POOL_SIZE='5'
 export CR_MYSQL_TIMEZONE='+05:30'
 
 # AWS details
-export CR_AWS_ACCESS_KEY= 'AKIAJUDRALNURKAVS5IQ'
-export CR_AWS_SECRET_KEY= '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'
-export CR_AWS_REGION="us-east-1"
+export CR_AWS_ACCESS_KEY='AKIAJUDRALNURKAVS5IQ'
+export CR_AWS_SECRET_KEY='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'
+export CR_AWS_REGION='us-east-1'
 
 # KMS details
 export CR_INFO_KMS_ARN='arn:aws:kms:us-east-1:604850698061:key'

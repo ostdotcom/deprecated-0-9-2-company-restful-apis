@@ -34,6 +34,7 @@
 * Start APIs
 ```bash
 > cd company-restful-apis
+> source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
 > node app.js
 ```
