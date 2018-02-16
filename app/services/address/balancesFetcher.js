@@ -50,7 +50,7 @@ balancesFetcherKlass.prototype = {
 
     for (var i=0; i < balanceTypes.length; i++) {
 
-      if (oThis._nonBrandedTokenBalanceTypes().indexOf(n) >= 0) {
+      if (oThis._nonBrandedTokenBalanceTypes().indexOf(balanceTypes[i]) >= 0) {
 
         var promise = oThis["_fetch"+balanceTypes[i]+"Balance"].apply(oThis);
 
@@ -69,7 +69,8 @@ balancesFetcherKlass.prototype = {
     for (var i=0; i < balanceTypes.length; i++) {
 
       var balanceType = balanceTypes[i]
-          , response = promiseResolverResponses[i];
+          , response = promiseResolverResponses[i]
+          , balance = null;
 
       if (response.isFailure()) {
         logger.error(response);
@@ -80,9 +81,8 @@ balancesFetcherKlass.prototype = {
         } else {
           balance = data;
         }
+        balances[balanceType] = basicHelper.convertToNormal(balance);
       }
-
-      balances[balanceType] = basicHelper.convertToNormal(balance);
 
     }
 
@@ -158,7 +158,7 @@ balancesFetcherKlass.prototype = {
    *
    * @return {Promise}
    */
-  _fetchBrandedTokenBalance: function(tokenSymbol){
+  _fetchBrandedTokenBalance: async function(tokenSymbol){
 
     const oThis = this
         , clientBrandedTokenSecureCacheObj = new ClientBrandedTokenSecureCacheKlass({tokenSymbol: tokenSymbol})

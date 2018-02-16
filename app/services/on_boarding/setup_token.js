@@ -51,9 +51,8 @@ SetupToken.prototype = {
    *
    */
   perform: async function () {
-    const oThis = this;
 
-    oThis.addrUuid = uuid.v4();
+    const oThis = this;
 
     var r = null;
 
@@ -70,7 +69,7 @@ SetupToken.prototype = {
     r = await oThis.createClientToken();
     if(r.isFailure()) return Promise.resolve(r);
 
-    oThis.clearCache()
+    oThis.clearCache();
 
     return oThis.renderResponse();
 
@@ -133,10 +132,12 @@ SetupToken.prototype = {
     if(tokenByClientId.length > 0){
       const existingToken = tokenByClientId[tokenByClientId.length-1];
       oThis.reserve_managed_address_id = existingToken.reserve_managed_address_id;
+      // handle setting oThis.addrUuid by querying managed_address table ?
     } else {
       var r = await generateEthAddress.perform(oThis.clientId);
       if(r.isFailure()) return Promise.resolve(r);
       oThis.reserve_managed_address_id = r.data.id;
+      oThis.addrUuid = r.data.uuid;
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
