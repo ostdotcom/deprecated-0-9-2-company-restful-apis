@@ -19,6 +19,7 @@ const rootPrefix = '../../..'
   , ManagedAddressSaltKlass = require(rootPrefix + '/app/models/managed_address_salt')
   , managedAddressSaltObj = new ManagedAddressSaltKlass()
   , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
 /**
@@ -112,7 +113,7 @@ SetupToken.prototype = {
         managed_address_salt: addressSalt
       });
     } catch(err){
-      //console.log("eeeerrrrooooorrr-------", err);
+      logger.error(err);
     }
 
     return Promise.resolve(responseHelper.successWithData({}));

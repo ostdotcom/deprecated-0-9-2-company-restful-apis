@@ -38,7 +38,6 @@ const clientUser = {
 
     for(var i=0; i<creatableFields.length; i++){
       if(params[creatableFields[i]]){
-        console.log("------$$$$$----", creatableFields[i], "=>",params[creatableFields[i]]);
         createFields.push(creatableFields[i]);
         setFieldsValues.push(params[creatableFields[i]])
       }

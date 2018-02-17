@@ -10,6 +10,7 @@ var rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , util = require(rootPrefix + '/lib/util')
   , basicHelper = require(rootPrefix + '/helpers/basic')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , ClientTransactionTypeKlass = require(rootPrefix + '/app/models/client_transaction_type')
   , clientTransactionTypeObj = new ClientTransactionTypeKlass()
 ;
@@ -117,7 +118,7 @@ AddNew.prototype = {
     }
 
     if(Object.keys(errors_object).length > 0){
-      console.log("errors_object------------------", errors_object);
+      logger.error("errors_object------------------", errors_object);
       return Promise.resolve(responseHelper.error('tk_an_2', 'invalid params', '', [errors_object]));
     }
 

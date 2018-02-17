@@ -4,6 +4,7 @@ const express = require('express')
 
 const rootPrefix = '..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , openStPlatform = require('@openstfoundation/openst-platform')
 ;
 
@@ -27,7 +28,7 @@ router.post('/approve', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    console.error(err);
+    logger.error(err);
     responseHelper.error('r_su_1', 'Something went wrong').renderResponse(res)
   });
 
@@ -60,7 +61,7 @@ router.get('/approval-status', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    console.error(err);
+    logger.error(err);
     responseHelper.error('r_su_2', 'Something went wrong').renderResponse(res)
   });
 
@@ -95,7 +96,7 @@ router.post('/start', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    console.error(err);
+    logger.error(err);
     responseHelper.error('r_su_3', 'Something went wrong').renderResponse(res)
   });
 

@@ -38,7 +38,6 @@ GetEthereumKlass.prototype = {
 
       // Fetch Ethereum addresses from company managed addresses
       var companyAddresses = await companyAddressModel.getByIds(oThis.addressIds);
-      console.log(companyAddresses);
       if (!companyAddresses[0] || companyAddresses.length != oThis.addressIds.length) {
         return Promise.resolve(responseHelper.error("ca_gea_3", "Invalid Company address Ids."));
       }

@@ -1,7 +1,9 @@
 const express = require('express')
   , router = express.Router()
   , rootPrefix = '..'
-  , responseHelper = require(rootPrefix + '/lib/formatter/response');
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+;
 
 /* Create Ethereum address with random passphrase */
 router.post('/create', function (req, res, next) {
@@ -19,7 +21,7 @@ router.post('/create', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    console.error(err);
+    logger.error(err);
     responseHelper.error('r_adc_1', 'Something went wrong').renderResponse(res)
   });
 });
@@ -45,7 +47,7 @@ router.get('/fetch-balances', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    console.error(err);
+    logger.error(err);
     responseHelper.error('r_adc_2', 'Something went wrong').renderResponse(res)
   });
 

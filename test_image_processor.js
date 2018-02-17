@@ -3,6 +3,10 @@
 
 const Jimp = require("jimp");
 
+const rootPrefix = '.'
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+;
+
 const imageFileName = '/Users/PpuneetKhushwani/Desktop/828544_p.jpg';
 const foneFileName = Jimp.FONT_SANS_32_WHITE;
 
@@ -15,7 +19,7 @@ var fontFile = null;
 
 function readFromFile() {
   return Jimp.read(imageFileName).then(function(image){
-    console.log('image loaded');
+    logger.debug('image loaded');
     rawImage = image;
     return Promise.resolve({});
   });
@@ -23,7 +27,7 @@ function readFromFile() {
 
 function loadFontFile() {
   return Jimp.loadFont(foneFileName).then(function(font){
-    console.log('font file loaded');
+    logger.debug('font file loaded');
     fontFile = font;
     return Promise.resolve({});
   });
@@ -32,12 +36,12 @@ function loadFontFile() {
 function modifyImage() {
 
   var printCb = function() {
-    console.log('test written to image');
+    logger.debug('test written to image');
     rawImage.write(outputFileName, writeCb);
   };
 
   var writeCb = function() {
-    console.log('image written to file');
+    logger.debug('image written to file');
     return Promise.resolve({});
   };
 
@@ -49,5 +53,5 @@ readFromFile()
     .then( loadFontFile )
     .then( modifyImage )
     .catch(function(e){
-      console.error(e);
+      logger.error(e);
     });

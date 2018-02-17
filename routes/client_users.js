@@ -1,7 +1,9 @@
 const express = require('express')
   , router = express.Router()
   , rootPrefix = '..'
-  , responseHelper = require(rootPrefix + '/lib/formatter/response');
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+;
 
 /* Create User for a client */
 router.post('/create', function (req, res, next) {
@@ -20,7 +22,7 @@ router.post('/create', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    console.error(err);
+    logger.error(err);
     responseHelper.error('r_cu_1', 'Something went wrong').renderResponse(res)
   });
 });

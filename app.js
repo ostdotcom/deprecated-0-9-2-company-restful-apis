@@ -9,7 +9,7 @@
 const express = require('express')
   , path = require('path')
   , createNamespace = require('continuation-local-storage').createNamespace
-  , requestSharedNameSpace = createNamespace('company-Saas-NameSpace')
+  , requestSharedNameSpace = createNamespace('openST-Platform-NameSpace')
   , morgan = require('morgan')
   , cookieParser = require('cookie-parser')
   , bodyParser = require('body-parser')
@@ -35,6 +35,16 @@ const rootPrefix = '.'
 
 morgan.token('id', function getId (req) {
   return req.id;
+});
+
+morgan.token('endTime', function getendTime (req) {
+  var hrTime = process.hrtime();
+  return (hrTime[0] * 1000 + hrTime[1] / 1000000);
+});
+morgan.token('endDateTime', function getEndDateTime (req) {
+  const d = new Date()
+    return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate() + " " + d.getHours() + ":" +
+    d.getMinutes() + ":" + d.getSeconds() + "." + d.getMilliseconds();
 });
 
 const assignParams = function (req) {
@@ -161,15 +171,13 @@ if (cluster.isMaster) {
   // Load custom middleware and set the worker id
   app.use(customMiddleware({worker_id: cluster.worker.id}));
   // Load Morgan
-  app.use(morgan('[:id] :remote-addr - :remote-user [:date[clf]] :method :url :response-time HTTP/:http-version" :status :res[content-length] :referrer :user-agent'));
+  app.use(morgan('[:id][:endTime] Completed with ":status" in :response-time ms at :endDateTime -  ":res[content-length] bytes" - ":remote-addr" ":remote-user" - "HTTP/:http-version :method :url" - ":referrer" - ":user-agent"'));
 
   // Set request debugging/logging details to shared namespace
   app.use(function(req, res, next) {
     requestSharedNameSpace.run(function() {
       requestSharedNameSpace.set('reqId', req.id);
-      requestSharedNameSpace.set('workerId', cluster.worker.id);
-      var hrTime = process.hrtime();
-      requestSharedNameSpace.set('startTime', hrTime);
+      requestSharedNameSpace.set('startTime', req.startTime);
       next();
     });
   });

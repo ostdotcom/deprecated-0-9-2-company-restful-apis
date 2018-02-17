@@ -1,7 +1,9 @@
 const express = require('express')
   , router = express.Router()
   , rootPrefix = '..'
-  , responseHelper = require(rootPrefix + '/lib/formatter/response');
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+;
 
 /* Fetch Transaction Receipt from transaction hash */
 router.get('/get-receipt', function (req, res, next) {
@@ -20,7 +22,7 @@ router.get('/get-receipt', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    console.error(err);
+    logger.error(err);
     responseHelper.error('r_t_2', 'Something went wrong').renderResponse(res)
   });
 });
@@ -33,7 +35,7 @@ router.get('/kind/get-all', function (req, res, next) {
       , transactionList = new transactionListKlass(decodedParams)
     ;
 
-    console.log("decodedParams--", decodedParams);
+    logger.log("decodedParams--", decodedParams);
 
     const renderResult = function(result) {
       return result.renderResponse(res);
@@ -44,7 +46,7 @@ router.get('/kind/get-all', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    console.error(err);
+    logger.error(err);
     responseHelper.error('r_tk_1', 'Something went wrong').renderResponse(res)
   });
 });
@@ -56,7 +58,7 @@ router.post('/kind/new', function (req, res, next) {
       , newTransaction = new newTransactionKlass(decodedParams)
     ;
 
-    console.log("decodedParams--", decodedParams);
+    logger.log("decodedParams--", decodedParams);
 
     const renderResult = function(result) {
       return result.renderResponse(res);
@@ -67,7 +69,7 @@ router.post('/kind/new', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    console.error(err);
+    logger.error(err);
     responseHelper.error('r_tk_2', 'Something went wrong').renderResponse(res)
   });
 });
@@ -79,7 +81,7 @@ router.post('/kind/edit', function (req, res, next) {
       , editTransaction = new editTransactionKlass(decodedParams)
     ;
 
-    console.log("decodedParams--", decodedParams);
+    logger.log("decodedParams--", decodedParams);
 
     const renderResult = function(result) {
       return result.renderResponse(res);
@@ -90,7 +92,7 @@ router.post('/kind/edit', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    console.error(err);
+    logger.error(err);
     responseHelper.error('r_tk_3', 'Something went wrong').renderResponse(res)
   });
 });

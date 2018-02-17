@@ -11,6 +11,7 @@
 var rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , basicHelper = require(rootPrefix + '/helpers/basic')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , ClientTransactionTypeKlass = require(rootPrefix + '/app/models/client_transaction_type')
   , clientTransactionTypeObj = new ClientTransactionTypeKlass()
   , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
@@ -99,8 +100,6 @@ List.prototype = {
       const clientBrandedTokenCacheObj = new ClientBrandedTokenCacheKlass({clientId: oThis.clientId});
 
       const clientBrandedTokenCacheResp = await clientBrandedTokenCacheObj.fetch();
-
-      console.log('clientBrandedTokenCacheResp------', clientBrandedTokenCacheResp);
 
       oThis.clientTokens = clientBrandedTokenCacheResp.data;
 
