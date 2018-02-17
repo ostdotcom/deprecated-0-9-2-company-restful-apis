@@ -90,7 +90,7 @@ balancesFetcherKlass.prototype = {
     //TODO: append conversion rates here
     return Promise.resolve(responseHelper.successWithData({
       'balances': balances,
-      'orace_price_points': {
+      'oracle_price_points': {
         'ost': {
           'usd': 0.33
         }
