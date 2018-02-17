@@ -199,6 +199,7 @@ Edit.prototype = {
           kind: oThis.params.kind,
           currency_type: oThis.params.currency_type,
           currency_value: oThis.params.currency_value,
+          device_id: oThis.params.device_id,
           uts: Date.now()
         }]
       }

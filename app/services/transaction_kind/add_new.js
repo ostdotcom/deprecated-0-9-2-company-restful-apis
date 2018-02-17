@@ -173,6 +173,7 @@ AddNew.prototype = {
           currency_value: oThis.params.currency_value,
           commission_percent: oThis.transactionKindObj.commission_percent,
           status: oThis.transactionKindObj.status,
+          device_id: oThis.params.device_id,
           uts: Date.now()
         }]
       }
