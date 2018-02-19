@@ -34,7 +34,7 @@ router.post('/edit', function (req, res, next) {
       , editUser = require(rootPrefix + '/app/services/client_users/edit_user')
     ;
     var clientId = decodedParams.client_id;
-    var uuid = decodedParams.user_id;
+    var uuid = decodedParams.address_uuid;
     var name = decodedParams.name;
 
     // handle final response
