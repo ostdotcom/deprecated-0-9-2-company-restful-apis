@@ -27,4 +27,27 @@ router.post('/create', function (req, res, next) {
   });
 });
 
+/* Edit User of a client */
+router.post('/edit', function (req, res, next) {
+  const performer = function() {
+    const decodedParams = req.decodedParams
+      , editUser = require(rootPrefix + '/app/services/client_users/edit_user')
+    ;
+    var clientId = decodedParams.client_id;
+    var uuid = decodedParams.user_id;
+    var name = decodedParams.name;
+
+    // handle final response
+    const handleResponse = function (response) {
+      return response.renderResponse(res);
+    };
+    return editUser.perform(clientId, uuid, name).then(handleResponse);
+  };
+
+  Promise.resolve(performer()).catch(function (err) {
+    logger.error(err);
+    responseHelper.error('r_cu_2', 'Something went wrong').renderResponse(res)
+  });
+});
+
 module.exports = router;
