@@ -21,10 +21,10 @@ BaseKlass.prototype = {
     if(r.isFailure()) return Promise.resolve(r);
 
     await oThis.setTokenUuid();
+
     await oThis.setBenificiaryAddress();
 
-    var stakeAndMintResponse = await oThis.initiateStakeAndMint();
-    if(stakeAndMintResponse.isFailure()) return Promise.resolve(stakeAndMintResponse);
+    await oThis.initiateStakeAndMint();
 
     return oThis.returnResponse();
 
@@ -60,16 +60,20 @@ BaseKlass.prototype = {
     var oThis = this;
 
     if(oThis.stakeResponse.isSuccess()){
+
       return Promise.resolve(
         responseHelper.successWithData(
           oThis.stakeResponse.data
         ));
+
     } else {
+
       return Promise.resolve(
         responseHelper.error(
           oThis.stakeResponse.err.code,
           oThis.stakeResponse.err.message
         ));
+
     }
   }
 
