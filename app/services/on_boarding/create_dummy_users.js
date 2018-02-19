@@ -75,7 +75,7 @@ CreateDummyUsers.prototype = {
     }
 
     if(oThis.numberOfUsers > 25){
-      (oThis.numberOfUsers = 25;
+      oThis.numberOfUsers = 25;
     }
 
     if(!oThis.clientId){

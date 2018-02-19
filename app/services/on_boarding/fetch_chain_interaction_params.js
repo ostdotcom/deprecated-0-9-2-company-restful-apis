@@ -22,7 +22,7 @@ const rootPrefix = '../../..'
  * @param {number} params.client_id - client id for whom users are to be created.
  *
  */
-const FetchChainInteractionParams = function(){
+const FetchChainInteractionParams = function(params){
 
   this.clientId = params.client_id;
 

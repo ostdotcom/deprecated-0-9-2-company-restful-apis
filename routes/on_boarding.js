@@ -232,9 +232,10 @@ router.get('/get-chain-interaction-params', function (req, res, next) {
       response.renderResponse(res);
     };
 
-    const object = new FetchChainInteractionParamsKlass(req.decodedParams);
+    const object = new FetchChainInteractionParamsKlass(req.decodedParams)
+        , response = object.perform();
 
-    return object.perform().then(handleResponse);
+    return response.renderResponse(res);
 
   };
 
