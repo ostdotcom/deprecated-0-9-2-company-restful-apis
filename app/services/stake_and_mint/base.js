@@ -41,7 +41,7 @@ BaseKlass.prototype = {
 
   },
 
-  initiateStakeAndMint: function () {
+  initiateStakeAndMint: async function () {
     var oThis = this;
 
     const object = new openStPlatform.services.stake.start({
