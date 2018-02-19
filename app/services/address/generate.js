@@ -35,17 +35,11 @@ const _private = {
     if(!passPhraseEncr){
       return Promise.resolve(responseHelper.error("s_ad_g_1", "Error while generating user address."));
     }
-    var ethResp = await obj.encrypt(eth_address);
-    if(!ethResp){
-      return Promise.resolve(responseHelper.error("s_ad_g_2", "Error while generating user address."));
-    }
-    var hashedEthAddress = await localCipher.getShaHashedText(eth_address);
 
     var updateQueryResponse = managedAddressObj.edit({
       qParams: {
         passphrase: passPhraseEncr,
-        ethereum_address: ethResp,
-        hashed_ethereum_address: hashedEthAddress
+        ethereum_address: eth_address
       },
       whereCondition: {
         id: company_managed_address_id

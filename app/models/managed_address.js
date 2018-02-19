@@ -38,12 +38,11 @@ const ManagedAddressKlassPrototype = {
 
   getByEthAddress: function (ethAddress) {
     var oThis = this;
-    var hashedAddr = localCipher.getShaHashedText(ethAddress);
     return oThis.QueryDB.read(
       oThis.tableName,
       [],
-      'hashed_ethereum_address=?',
-      [hashedAddr]);
+      'ethereum_address=?',
+      [ethAddress]);
   },
 
   getByIds: function (ids) {
@@ -58,7 +57,7 @@ const ManagedAddressKlassPrototype = {
     var oThis = this;
     return oThis.QueryDB.read(
         oThis.tableName,
-        ['client_id', 'name','ethereum_address', 'hashed_ethereum_address', 'passphrase', 'status'],
+        ['client_id', 'name','ethereum_address', 'passphrase', 'status'],
         'uuid=?',
         [uuid]);
   }

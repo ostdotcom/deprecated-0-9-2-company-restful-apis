@@ -209,7 +209,7 @@ balancesFetcherKlass.prototype = {
       return Promise.resolve(cacheFetchResponse);
     }
 
-    oThis.address = cacheFetchResponse.data['ethereum_address_d'];
+    oThis.address = cacheFetchResponse.data['ethereum_address'];
 
     return Promise.resolve(responseHelper.successWithData({}));
 
