@@ -68,36 +68,49 @@ router.get('/approval-status', function (req, res, next) {
 });
 
 /* Propose a branded token */
-router.post('/start', function (req, res, next) {
+router.post('/start-bt', function (req, res, next) {
   const performer = function() {
     const decodedParams = req.decodedParams
-      , beneficiary = decodedParams.beneficiary
-      , toStakeAmount = decodedParams.to_stake_amount
-      , uuid = decodedParams.uuid
+      , stakeStartBtKlass = require(rootPrefix + '/app/services/stake_and_mint/branded_token')
+      , stakeStartBtObj = new stakeStartBtKlass(decodedParams)
     ;
 
     // handle final response
-    const handleOpenStPlatformSuccess = function (stakeResponse) {
-      if(stakeResponse.isSuccess()){
-        return responseHelper.successWithData(stakeResponse.data).renderResponse(res);
-      } else {
-        return responseHelper.error(stakeResponse.err.code, stakeResponse.err.message).renderResponse(res);
-      }
+    const handleResponse = function (stakeResponse) {
+      return stakeResponse.renderResponse(res);
     };
 
-    const object = new openStPlatform.services.stake.start({
-      'beneficiary': beneficiary,
-      'to_stake_amount': toStakeAmount,
-      'uuid': uuid
-    });
-
-    return object.perform().then(handleOpenStPlatformSuccess);
+    return stakeStartBtObj.perform().then(handleResponse);
 
   };
 
   Promise.resolve(performer()).catch(function (err) {
     logger.error(err);
     responseHelper.error('r_su_3', 'Something went wrong').renderResponse(res)
+  });
+
+});
+
+/* Propose a branded token */
+router.post('/start-st-prime', function (req, res, next) {
+  const performer = function() {
+    const decodedParams = req.decodedParams
+      , stakeStartStPrimeKlass = require(rootPrefix + '/app/services/stake_and_mint/st_prime')
+      , stakeStartStPrimeObj = new stakeStartStPrimeKlass(decodedParams)
+    ;
+
+    // handle final response
+    const handleResponse = function (stakeResponse) {
+      return stakeResponse.renderResponse(res);
+    };
+
+    return stakeStartStPrimeObj.perform().then(handleResponse);
+
+  };
+
+  Promise.resolve(performer()).catch(function (err) {
+    logger.error(err);
+    responseHelper.error('r_su_4', 'Something went wrong').renderResponse(res)
   });
 
 });

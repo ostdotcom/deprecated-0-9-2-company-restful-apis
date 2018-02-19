@@ -25,6 +25,15 @@ const ClientBrandedTokenKlassPrototype = {
 
   enums: {},
 
+  getById: function(id){
+    var oThis = this;
+    return oThis.QueryDB.read(
+      oThis.tableName,
+      [],
+      "id=?",
+      [id]);
+  },
+
   getBySymbol: function(symbol){
     var oThis = this;
     return oThis.QueryDB.read(
