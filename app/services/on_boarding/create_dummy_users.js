@@ -74,6 +74,10 @@ CreateDummyUsers.prototype = {
       );
     }
 
+    if(oThis.numberOfUsers > 25){
+      (oThis.numberOfUsers = 25;
+    }
+
     if(!oThis.clientId){
       return Promise.resolve(responseHelper.error(
           'ob_cdu_2', 'missing clientId')

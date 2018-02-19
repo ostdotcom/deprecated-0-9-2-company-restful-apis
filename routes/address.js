@@ -34,7 +34,7 @@ router.get('/fetch-balances', function (req, res, next) {
     const decodedParams = req.decodedParams
         , balanceTypes = decodedParams.balance_types
         , balancesFetcherKlass = require(rootPrefix + '/app/services/address/balancesFetcher')
-        , balancesFetcher = new balancesFetcherKlass({'addressUuid': decodedParams.address_uuid})
+        , balancesFetcher = new balancesFetcherKlass(decodedParams)
     ;
 
     // handle final response

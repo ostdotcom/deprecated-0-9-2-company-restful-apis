@@ -9,6 +9,7 @@ const rootPrefix = '..'
   , SetupTokenKlass = require(rootPrefix + '/app/services/on_boarding/setup_token')
   , EditTokenKlass = require(rootPrefix + '/app/services/token_management/edit')
   , CreateDummyUsersKlass = require(rootPrefix + '/app/services/on_boarding/create_dummy_users')
+  , FetchChainInteractionParamsKlass = require(rootPrefix + '/app/services/on_boarding/fetch_chain_interaction_params')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
@@ -220,5 +221,28 @@ router.post('/create-dummy-users', function (req, res, next) {
 
 });
 
+router.get('/get-chain-interaction-params', function (req, res, next) {
+
+  const performer = function() {
+
+    const decodedParams = req.decodedParams;
+
+    // handle final response
+    const handleResponse = function (response) {
+      response.renderResponse(res);
+    };
+
+    const object = new FetchChainInteractionParamsKlass(req.decodedParams);
+
+    return object.perform().then(handleResponse);
+
+  };
+
+  Promise.resolve(performer()).catch(function (err) {
+    logger.error(err);
+    responseHelper.error('r_ob_5', 'Something went wrong').renderResponse(res)
+  });
+
+});
 
 module.exports = router;

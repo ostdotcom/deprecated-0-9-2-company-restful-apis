@@ -22,7 +22,7 @@ const balancesFetcherKlass = function(params) {
 
   const oThis = this;
 
-  oThis.addressUuid = params['addressUuid'];
+  oThis.addressUuid = params['address_uuid'];
   oThis.clientId = params['client_id'];
 
   oThis.address = null;
@@ -176,7 +176,7 @@ balancesFetcherKlass.prototype = {
 
     const clientBrandedTokenSecureCacheData = clientBrandedTokenSecureCacheRsp.data;
 
-    if (clientBrandedTokenSecureCacheData.client_id != oThis.clientId) {
+    if (parseInt(clientBrandedTokenSecureCacheData.client_id) != parseInt(oThis.clientId)) {
       return Promise.resolve(responseHelper.error('bf_1','Unauthorised for some other client'));
     }
 
