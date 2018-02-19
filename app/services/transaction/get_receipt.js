@@ -32,7 +32,7 @@ GetReceiptKlass.prototype = {
   perform: async function(){
     const oThis = this;
 
-    var obj = new openStPlatform.services.transaction.getTransactionReceipt(
+    var obj = new openStPlatform.services.transaction.getReceipt(
       {'transaction_hash': oThis.transactionHash, 'chain': oThis.chain}
     );
 
