@@ -3,6 +3,7 @@ const express = require('express')
   , rootPrefix = '..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , listAddressesKlass = require(rootPrefix + '/app/services/client_users/list')
 ;
 
 /* Create User for a client */
@@ -48,6 +49,30 @@ router.post('/edit', function (req, res, next) {
     logger.error(err);
     responseHelper.error('r_cu_2', 'Something went wrong').renderResponse(res)
   });
+});
+
+/* List User for a client */
+router.post('/list', function (req, res, next) {
+
+  const performer = function() {
+
+      const decodedParams = req.decodedParams
+          , listAddresses = new listAddressesKlass();
+
+    // handle final response
+    const handleResponse = function (response) {
+      return response.renderResponse(res);
+    };
+
+    return listAddresses.perform(decodedParams).then(handleResponse);
+
+  };
+
+  Promise.resolve(performer()).catch(function (err) {
+    logger.error(err);
+    responseHelper.error('r_cu_3', 'Something went wrong').renderResponse(res)
+  });
+
 });
 
 module.exports = router;

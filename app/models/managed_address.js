@@ -60,6 +60,42 @@ const ManagedAddressKlassPrototype = {
         ['client_id', 'name','ethereum_address', 'passphrase', 'status'],
         'uuid=?',
         [uuid]);
+  },
+
+  getByFilterAndPaginationParams: function (params) {
+
+    const oThis = this
+        , clientId = params.client_id
+        , sortBy = params.sort_by
+      ;
+
+    var pageNo = params.page_no
+        , orderBy = ''
+        , paginationClause = '';
+
+    if (!pageNo) {
+      pageNo = 1;
+    } else {
+      pageNo = parseInt(pageNo);
+    }
+
+    if (sortBy == 'creation_time') {
+      orderBy = 'order by id DESC';
+    } else {
+      orderBy = 'order by id ASC'
+    }
+
+    paginationClause = `limit ${params.pageSize} offset ${pageNo - 1}`;
+
+    return oThis.QueryDB.read(
+        oThis.tableName,
+        ['id','name', 'uuid'],
+        'client_id = ?',
+        [clientId],
+        orderBy,
+        paginationClause
+    );
+
   }
 
 };

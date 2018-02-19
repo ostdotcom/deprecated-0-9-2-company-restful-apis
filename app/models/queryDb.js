@@ -26,7 +26,7 @@ QueryDB.prototype = {
     return mysqlWrapper.getPoolFor(this.dbName, 'master');
   },
 
-  read: function(tableName, fields, whereClause, whereClauseValues, orderByClause) {
+  read: function(tableName, fields, whereClause, whereClauseValues, orderByClause, paginationClause) {
     var oThis = this
       , selectFields = ((!fields || fields.length==0) ? '*' : fields.join(','))
       , selectWhereClause = ((!whereClause || whereClause.length==0) ? '' : ' where '+whereClause)
@@ -35,6 +35,10 @@ QueryDB.prototype = {
 
     if (orderByClause){
       q = q + ' ' + orderByClause;
+    }
+
+    if (paginationClause) {
+      q = q + ' ' + paginationClause;
     }
 
     return new Promise(
