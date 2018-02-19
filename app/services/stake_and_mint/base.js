@@ -39,6 +39,7 @@ BaseKlass.prototype = {
     const managedAddress = await managedAddressObj.getByIds([reserveAddressId]);
     oThis.benificieryAddress = managedAddress[0].ethereum_address;
 
+    return Promise.resolve(responseHelper.successWithData({}));
   },
 
   initiateStakeAndMint: async function () {
@@ -52,6 +53,7 @@ BaseKlass.prototype = {
 
     oThis.stakeResponse = await object.perform();
 
+    return Promise.resolve(responseHelper.successWithData({}));
   },
 
   returnResponse: function(){

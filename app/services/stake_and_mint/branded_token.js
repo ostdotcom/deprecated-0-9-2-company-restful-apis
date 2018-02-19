@@ -45,6 +45,8 @@ const BrandedTokenKlassPrototype = {
 
     oThis.toStakeAmount = basicHelper.convertToWei(oThis.toStakeAmount.toString());
 
+    return Promise.resolve(responseHelper.successWithData({}));
+
   },
   
   setTokenUuid: async function () {
@@ -56,6 +58,8 @@ const BrandedTokenKlassPrototype = {
 
     oThis.brandedToken = clientBrandedToken[0];
     oThis.uuid = oThis.brandedToken.token_uuid;
+
+    return Promise.resolve(responseHelper.successWithData({}));
   }
 
 };
