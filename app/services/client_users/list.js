@@ -69,15 +69,20 @@ listKlass.prototype = {
 
     };
 
+    var next_page_payload = {};
+    if (hasMore) {
+      next_page_payload = {
+        sort_by: params.sort_by,
+        filter: params.filter,
+        page_no: params.page_no + 1
+      }
+    };
+
     return Promise.resolve(responseHelper.successWithData({
       result_type: 'economy_users',
       'economy_users': usersList,
       meta: {
-        next_page_payload: {
-          sort_by: params.sort_by,
-          filter: params.filter,
-          page_no: params.page_no + 1
-        },
+        next_page_payload: next_page_payload,
       }
     }));
 

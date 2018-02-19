@@ -85,7 +85,7 @@ const ManagedAddressKlassPrototype = {
       orderBy = 'order by id ASC'
     }
 
-    paginationClause = `limit ${params.pageSize} offset ${pageNo - 1}`;
+    paginationClause = `limit ${params.pageSize} offset ${params.pageSize*(pageNo - 1)}`;
 
     return oThis.QueryDB.read(
         oThis.tableName,
