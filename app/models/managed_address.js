@@ -36,13 +36,12 @@ const ManagedAddressKlassPrototype = {
     }
   },
 
-  getByEthAddress: function (ethAddress) {
+  getByEthAddresses: function (ethAddresses) {
     var oThis = this;
-    return oThis.QueryDB.read(
+    return oThis.QueryDB.readByInQuery(
       oThis.tableName,
-      [],
-      'ethereum_address=?',
-      [ethAddress]);
+      ['client_id', 'uuid', 'name','ethereum_address'],
+      ethAddresses, 'ethereum_address');
   },
 
   getByIds: function (ids) {
@@ -51,15 +50,6 @@ const ManagedAddressKlassPrototype = {
       oThis.tableName,
       ['id', 'ethereum_address'],
       ids, 'id');
-  },
-
-  getByUuid: function (uuid) {
-    var oThis = this;
-    return oThis.QueryDB.read(
-        oThis.tableName,
-        ['client_id', 'name','ethereum_address', 'passphrase', 'status'],
-        'uuid=?',
-        [uuid]);
   },
 
   getByFilterAndPaginationParams: function (params) {

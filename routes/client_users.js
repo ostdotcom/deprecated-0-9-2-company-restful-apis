@@ -4,6 +4,7 @@ const express = require('express')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , listAddressesKlass = require(rootPrefix + '/app/services/client_users/list')
+  , getUsersDataKlass = require(rootPrefix + '/app/services/client_users/get_users_data')
 ;
 
 /* Create User for a client */
@@ -71,6 +72,31 @@ router.post('/list', function (req, res, next) {
   Promise.resolve(performer()).catch(function (err) {
     logger.error(err);
     responseHelper.error('r_cu_3', 'Something went wrong').renderResponse(res)
+  });
+
+});
+
+/* List User for a client */
+router.get('/get-users-details', function (req, res, next) {
+
+  const performer = function() {
+
+    const decodedParams = req.decodedParams
+      , getUsersData = new getUsersDataKlass(decodedParams);
+
+
+    // handle final response
+    const handleResponse = function (response) {
+      return response.renderResponse(res);
+    };
+
+    return getUsersData.perform().then(handleResponse);
+
+  };
+
+  Promise.resolve(performer()).catch(function (err) {
+    logger.error(err);
+    responseHelper.error('r_cu_5', 'Something went wrong').renderResponse(res)
   });
 
 });
