@@ -115,4 +115,25 @@ router.post('/start-st-prime', function (req, res, next) {
 
 });
 
+router.get('/get-receipt', function (req, res, next) {
+  const performer = function() {
+    const decodedParams = req.decodedParams
+      , getReceiptKlass = require(rootPrefix + '/app/services/transaction/get_receipt')
+      , getReceiptObj = new getReceiptKlass(decodedParams)
+    ;
+
+    // handle final response
+    const handleResponse = function (response) {
+      return response.renderResponse(res);
+    };
+
+    return getReceiptObj.perform().then(handleResponse);
+  };
+
+  Promise.resolve(performer()).catch(function (err) {
+    logger.error(err);
+    responseHelper.error('r_t_2', 'Something went wrong').renderResponse(res)
+  });
+});
+
 module.exports = router;

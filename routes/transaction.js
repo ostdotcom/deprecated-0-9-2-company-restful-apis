@@ -5,28 +5,6 @@ const express = require('express')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
-/* Fetch Transaction Receipt from transaction hash */
-router.get('/get-receipt', function (req, res, next) {
-  const performer = function() {
-    const decodedParams = req.decodedParams
-      , getReceiptKlass = require(rootPrefix + '/app/services/transaction/get_receipt')
-      , getReceiptObj = new getReceiptKlass(decodedParams)
-    ;
-
-    // handle final response
-    const handleResponse = function (response) {
-      return response.renderResponse(res);
-    };
-
-    return getReceiptObj.perform().then(handleResponse);
-  };
-
-  Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
-    responseHelper.error('r_t_2', 'Something went wrong').renderResponse(res)
-  });
-});
-
 /* Get transaction block info for a transaction hash */
 router.get('/kind/get-all', function (req, res, next) {
   const performer = function() {

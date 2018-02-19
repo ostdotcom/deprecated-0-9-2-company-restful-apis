@@ -215,6 +215,6 @@ balancesFetcherKlass.prototype = {
 
   }
 
-}
+};
 
 module.exports = balancesFetcherKlass;

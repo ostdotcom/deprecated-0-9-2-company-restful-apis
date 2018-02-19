@@ -38,9 +38,9 @@ GetReceiptKlass.prototype = {
 
     var response = await obj.perform();
     if(response.isSuccess()){
-      return responseHelper.successWithData(response.data)
+      return Promise.resolve(responseHelper.successWithData(response.data));
     } else {
-      return responseHelper.error(response.err.code, response.err.message)
+      return Promise.resolve(responseHelper.error(response.err.code, response.err.message));
     }
   }
 

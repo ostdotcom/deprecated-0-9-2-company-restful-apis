@@ -21,7 +21,7 @@ BaseKlass.prototype = {
     if(r.isFailure()) return Promise.resolve(r);
 
     await oThis.setTokenUuid();
-    await oThis.setBenificieryAddress();
+    await oThis.setBenificiaryAddress();
 
     var stakeAndMintResponse = await oThis.initiateStakeAndMint();
     if(stakeAndMintResponse.isFailure()) return Promise.resolve(stakeAndMintResponse);
@@ -30,7 +30,7 @@ BaseKlass.prototype = {
 
   },
 
-  setBenificieryAddress: async function(){
+  setBenificiaryAddress: async function(){
     var oThis = this;
 
     const reserveAddressId = oThis.brandedToken.reserve_managed_address_id
