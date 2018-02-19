@@ -58,10 +58,10 @@ QueryDB.prototype = {
     );
   },
 
-  readByIds: function(tableName, fields, ids) {
+  readByInQuery: function(tableName, fields, ids, columnName) {
     var oThis = this
       , selectFields = ((!fields || fields.length==0) ? '*' : fields.join(','))
-      , q = 'SELECT '+selectFields+' FROM '+tableName+' WHERE id IN ('+ ids.join(',')+')';
+      , q = "SELECT "+selectFields+" FROM "+tableName+" WHERE "+columnName+" IN ('"+ ids.join("','")+"')";
 
     return new Promise(
       function (onResolve, onReject) {

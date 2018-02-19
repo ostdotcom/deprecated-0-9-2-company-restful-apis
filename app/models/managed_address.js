@@ -47,10 +47,10 @@ const ManagedAddressKlassPrototype = {
 
   getByIds: function (ids) {
     var oThis = this;
-    return oThis.QueryDB.readByIds(
+    return oThis.QueryDB.readByInQuery(
       oThis.tableName,
       ['id', 'ethereum_address'],
-      ids);
+      ids, 'id');
   },
 
   getByUuid: function (uuid) {
@@ -65,13 +65,13 @@ const ManagedAddressKlassPrototype = {
   getByFilterAndPaginationParams: function (params) {
 
     const oThis = this
-        , clientId = params.client_id
-        , sortBy = params.sort_by
-      ;
+      , clientId = params.client_id
+      , sortBy = params.sort_by
+    ;
 
     var pageNo = params.page_no
-        , orderBy = ''
-        , paginationClause = '';
+      , orderBy = ''
+      , paginationClause = '';
 
     if (!pageNo) {
       pageNo = 1;
@@ -85,17 +85,25 @@ const ManagedAddressKlassPrototype = {
       orderBy = 'order by id ASC'
     }
 
-    paginationClause = `limit ${params.pageSize} offset ${params.pageSize*(pageNo - 1)}`;
+    paginationClause = `limit ${params.pageSize} offset ${params.pageSize * (pageNo - 1)}`;
 
     return oThis.QueryDB.read(
-        oThis.tableName,
-        ['id','name', 'uuid'],
-        'client_id = ?',
-        [clientId],
-        orderBy,
-        paginationClause
+      oThis.tableName,
+      ['id', 'name', 'uuid'],
+      'client_id = ?',
+      [clientId],
+      orderBy,
+      paginationClause
     );
 
+  },
+
+  getByUuids: function (uuids) {
+    var oThis = this;
+    return oThis.QueryDB.readByInQuery(
+      oThis.tableName,
+      ['client_id', 'uuid', 'name','ethereum_address', 'passphrase', 'status'],
+      uuids, 'uuid');
   }
 
 };

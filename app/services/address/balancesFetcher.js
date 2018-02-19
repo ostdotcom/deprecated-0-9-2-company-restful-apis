@@ -5,7 +5,7 @@ const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , ethBalanceCacheKlass = require(rootPrefix + '/lib/cache_management/ethBalance')
   , ostBalanceCacheKlass = require(rootPrefix + '/lib/cache_management/ostBalance')
-  , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_management/managedAddresses')
+  , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
   , ClientBrandedTokenSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
   , logger = require(rootPrefix+'/lib/logger/custom_console_logger')
   , basicHelper = require(rootPrefix + '/helpers/basic')
@@ -201,15 +201,16 @@ balancesFetcherKlass.prototype = {
 
     const oThis = this;
 
-    const managedAddressCache = new ManagedAddressCacheKlass({'addressUuid': oThis.addressUuid });
+    const managedAddressCache = new ManagedAddressCacheKlass({'uuids': [oThis.addressUuid] });
 
-    const cacheFetchResponse = await managedAddressCache.fetchDecryptedData(['ethereum_address']);
+    const cacheFetchResponse = await managedAddressCache.fetch();
+    var response = cacheFetchResponse.data[oThis.addressUuid];
 
-    if (cacheFetchResponse.isFailure()) {
+    if (cacheFetchResponse.isFailure() || !response) {
       return Promise.resolve(cacheFetchResponse);
     }
 
-    oThis.address = cacheFetchResponse.data['ethereum_address'];
+    oThis.address = response['ethereum_address'];
 
     return Promise.resolve(responseHelper.successWithData({}));
 
