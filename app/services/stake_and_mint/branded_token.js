@@ -12,7 +12,7 @@ const rootPrefix = '../../..'
  *
  * @param {object} params - external passed parameters
  * @param {number} params.client_id - client id for whom tokens need to be minted
- * @param {number} params.client_token_id - id of token to be minted
+ * @param {number} params.token_symbol - symbol of token which is to be minted
  * @param {number} params.to_stake_amount - amount to stake in ost
  *
  * @constructor
@@ -24,13 +24,14 @@ const BrandedTokenKlass = function (params) {
 
   oThis.toStakeAmount = params.to_stake_amount;
   oThis.clientId = params.client_id;
-  oThis.clientTokenId = params.client_token_id;
+  oThis.tokenSymbol = params.token_symbol;
 
   oThis.benificieryAddress = null;
   oThis.uuid = null;
 
   oThis.stakeResponse = null;
   oThis.brandedToken = null;
+
 };
 
 BrandedTokenKlass.prototype = Object.create(BaseKlass.prototype);
@@ -38,8 +39,10 @@ BrandedTokenKlass.prototype = Object.create(BaseKlass.prototype);
 const BrandedTokenKlassPrototype = {
 
   validateAndSanitize: function () {
+
     var oThis = this;
-    if(!oThis.toStakeAmount || !oThis.clientId || !oThis.clientTokenId){
+
+    if(!oThis.toStakeAmount || !oThis.clientId || !oThis.tokenSymbol){
       return Promise.resolve(responseHelper.error('sam_bt_1', 'Invalid Params'));
     }
 
@@ -54,12 +57,13 @@ const BrandedTokenKlassPrototype = {
     var oThis = this;
 
     const clientBrandedTokenObj = new clientBrandedTokenKlass();
-    const clientBrandedToken = await clientBrandedTokenObj.getById(oThis.clientTokenId);
+    const clientBrandedToken = await clientBrandedTokenObj.getBySymbol(oThis.tokenSymbol);
 
     oThis.brandedToken = clientBrandedToken[0];
     oThis.uuid = oThis.brandedToken.token_uuid;
 
     return Promise.resolve(responseHelper.successWithData({}));
+
   }
 
 };
