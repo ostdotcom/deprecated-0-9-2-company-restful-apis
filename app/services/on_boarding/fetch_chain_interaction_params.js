@@ -41,9 +41,7 @@ FetchChainInteractionParams.prototype = {
     const oThis = this;
 
     if(!oThis.clientId){
-      return Promise.resolve(responseHelper.error(
-          'ob_fcip_1', 'missing clientId')
-      );
+      return Promise.resolve(responseHelper.error('ob_fcip_1', 'missing clientId'));
     }
 
     var responseData = {
