@@ -83,4 +83,5 @@ export OST_UTILITY_PRICE_ORACLES='{"OST":{"USD":"0x60Fa2655AD1F08DfC3e1DAd9b31e4
 * Start Cronjobs
 ```base
 */60 * * * * node executables/update_price_oracle_price_points.js >> logs/update_price_oracle_price_points.log
+#start node executables/send_error_emails.js and end after 1 hr
 ```
