@@ -80,7 +80,7 @@ FetchCurrentOSTPriceKlass.prototype = {
     logger.info(updateTransactionResponse);
 
     //Keep on checking for a price in contract whether its set to new value.
-    oThis.compareContractPrice();
+    return oThis.compareContractPrice();
 
   },
 
@@ -135,19 +135,30 @@ FetchCurrentOSTPriceKlass.prototype = {
   },
 
   // Compare price from coin market cap with contract price.
-  compareContractPrice: async function(){
-    const oThis = this;
-    var priceInDecimal = await priceOracle.decimalPrice(chainId, conversionRateConstants.ost_currency(), oThis.quoteCurrency);
-    if(priceInDecimal.isFailure()){
-      logger.error("Error while getting price from contract." + priceInDecimal);
-      return;
-    }else if(priceInDecimal.isSuccess() && priceInDecimal.data.price == oThis.currentOstValue.conversion_rate){
-      logger.error("Price point updated in contract.");
-      currencyConversionRateModel.updateStatus(oThis.dbRowId, conversionRateConstants.active_status());
-      return;
-    } else {
-      return setTimeout(oThis.compareContractPrice, 10000);
-    }
+  compareContractPrice: function(){
+    const oThis = this
+      , quoteCurrency = oThis.quoteCurrency
+      , conversionRate = oThis.currentOstValue.conversion_rate
+      , dbRowId = oThis.dbRowId;
+
+    return new Promise(function(onResolve, onReject) {
+      var loopCompareContractPrice = async function () {
+        var priceInDecimal = await priceOracle.decimalPrice(chainId, conversionRateConstants.ost_currency(), quoteCurrency);
+        logger.debug(priceInDecimal);
+        if (priceInDecimal.isFailure()) {
+          logger.error("Error while getting price from contract." + JSON.stringify(priceInDecimal));
+          return onResolve('error');
+        } else if (priceInDecimal.isSuccess() && priceInDecimal.data.price == conversionRate) {
+          await currencyConversionRateModel.updateStatus(dbRowId, conversionRateConstants.active_status());
+          logger.win("Price point updated in contract.");
+          return onResolve('success');
+        } else {
+          return setTimeout(loopCompareContractPrice, 10000);
+        }
+      }
+
+      loopCompareContractPrice();
+    });
   }
 
 };

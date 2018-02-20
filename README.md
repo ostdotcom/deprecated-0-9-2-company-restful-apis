@@ -47,10 +47,10 @@ export OST_RMQ_HEARTBEATS='30'
 
 
 > node node_modules/@ostdotcom/ost-price-oracle/tools/deploy/price_oracle.js OST USD $OST_UTILITY_GAS_PRICE
+
 > vim $HOME/openst-setup/openst_env_vars.sh
 # 3rd party contract address
-OST_UTILITY_PRICE_ORACLES='{"OST":{"USD":"------------ NEW CONTRACT ADDRESS JUST DEPLOYED ------------"}}'
-> node executables/update_price_oracle_price_points.js
+export OST_UTILITY_PRICE_ORACLES='{"OST":{"USD":"0x60Fa2655AD1F08DfC3e1DAd9b31e4DD817a36f9D"}}'
 ```
 
 # Start Services

@@ -22,7 +22,7 @@ const UpdatePriceOraclePricePoints = function () {
 };
 
 UpdatePriceOraclePricePoints.prototype = {
-  perform: function() {
+  perform: async function() {
 
     if (Object.keys(chainInteractionConstants.UTILITY_PRICE_ORACLES).length == 0) {
       throw "Price oracle contracts not defined";
@@ -38,7 +38,8 @@ UpdatePriceOraclePricePoints.prototype = {
 
             logger.step("Updating quote currency '" + quoteCurrency + "' in base currency '" + baseCurrency + "'");
             var ostPriceUpdater = require(rootPrefix + '/app/services/conversion_rates/fetch_current_ost_price');
-            new ostPriceUpdater({currency_code: 'USD'}).perform();
+            await new ostPriceUpdater({currency_code: 'USD'}).perform();
+            process.exit(0);
 
           } else {
             throw "Unhandled quote currency '" + quoteCurrency + "' in base currency '" + baseCurrency + "'";
