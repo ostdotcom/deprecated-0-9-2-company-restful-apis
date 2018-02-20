@@ -74,7 +74,7 @@ balancesFetcherKlass.prototype = {
           , balance = null;
 
       if (response.isFailure()) {
-        logger.error(response);
+        logger.notify('b_f1_1', 'Something Went Wrong', response);
       } else {
         var data = response.data;
         if (data && data.balance) {

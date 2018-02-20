@@ -29,7 +29,7 @@ router.post('/setup-token', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_ob_4', 'Something went wrong', err);
     responseHelper.error('r_ob_4', 'Something went wrong').renderResponse(res)
   });
 
@@ -51,7 +51,7 @@ router.post('/edit-token', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_ob_5', 'Something went wrong', err);
     responseHelper.error('r_ob_5', 'Something went wrong').renderResponse(res)
   });
 
@@ -88,7 +88,7 @@ router.post('/propose-branded-token', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_ob_1', 'Something went wrong', err);
     responseHelper.error('r_ob_1', 'Something went wrong').renderResponse(res)
   });
 
@@ -121,7 +121,7 @@ router.get('/registration-status', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_ob_2', 'Something went wrong', err);
     responseHelper.error('r_ob_2', 'Something went wrong').renderResponse(res)
   });
 
@@ -157,7 +157,7 @@ router.post('/grant-test-ost', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_ob_3', 'Something went wrong', err);
     responseHelper.error('r_ob_3', 'Something went wrong').renderResponse(res)
   });
 });
@@ -192,7 +192,7 @@ router.post('/grant-eth', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_ob_5', 'Something went wrong', err);
     responseHelper.error('r_ob_5', 'Something went wrong').renderResponse(res)
   });
 });
@@ -215,7 +215,7 @@ router.post('/create-dummy-users', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_ob_4', 'Something went wrong', err);
     responseHelper.error('r_ob_4', 'Something went wrong').renderResponse(res)
   });
 
@@ -240,7 +240,7 @@ router.get('/get-chain-interaction-params', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_ob_5', 'Something went wrong', err);
     responseHelper.error('r_ob_5', 'Something went wrong').renderResponse(res)
   });
 

@@ -21,7 +21,7 @@ router.post('/create', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_adc_1', 'Something went wrong', err);
     responseHelper.error('r_adc_1', 'Something went wrong').renderResponse(res)
   });
 });
@@ -47,7 +47,7 @@ router.get('/fetch-balances', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_adc_2', 'Something went wrong', err);
     responseHelper.error('r_adc_2', 'Something went wrong').renderResponse(res)
   });
 

@@ -90,7 +90,7 @@ const decodeJwt = function(req, res, next) {
 
   // send error, if token is invalid
   const jwtOnReject = function (err) {
-    logger.error(err);
+    logger.notify('a_1', 'Invalid token or expired', err);
     return responseHelper.error('a_1', 'Invalid token or expired').renderResponse(res);
   };
 
@@ -102,7 +102,7 @@ const decodeJwt = function(req, res, next) {
         jwtOnReject
       )
   ).catch(function (err) {
-    logger.error(err);
+    logger.notify('a_2', 'Something went wrong', err);
     responseHelper.error('a_2', 'Something went wrong').renderResponse(res)
   });
 
@@ -133,7 +133,7 @@ if (cluster.isMaster) {
 
   //  Called when all workers are disconnected and handles are closed.
   cluster.on('disconnect', function(worker) {
-    logger.error(`[worker-${worker.id}] is disconnected`);
+    logger.notify('a_3', `[worker-${worker.id}] is disconnected`);
   });
 
   // When any of the workers die the cluster module will emit the 'exit' event.
@@ -143,7 +143,7 @@ if (cluster.isMaster) {
       logger.info(`[worker-${worker.id}] voluntary exit. signal: ${signal}. code: ${code}`);
     } else {
       // restart worker as died unexpectedly
-      logger.error(`[worker-${worker.id}] restarting died. signal: ${signal}. code: ${code}`, worker.id, signal, code);
+      logger.notify(code, `[worker-${worker.id}] restarting died. signal: ${signal}. code: ${code}`);
       cluster.fork();
     }
   });
@@ -214,7 +214,7 @@ if (cluster.isMaster) {
 // error handler
   app.use(function (err, req, res, next) {
     // set locals, only providing error in development
-    logger.error(err);
+    logger.notify('a_5', 'Something went wrong', err);
     return responseHelper.error('500', 'Something went wrong').renderResponse(res, 500);
   });
 
@@ -277,11 +277,11 @@ function onError(error) {
   // handle specific listen errors with friendly messages
   switch (error.code) {
     case 'EACCES':
-      logger.error(bind + ' requires elevated privileges');
+      logger.notify('a_6', bind + ' requires elevated privileges');
       process.exit(1);
       break;
     case 'EADDRINUSE':
-      logger.error(bind + ' is already in use');
+      logger.notify('a_7', bind + ' is already in use');
       process.exit(1);
       break;
     default:

@@ -59,7 +59,7 @@ FetchCurrentOSTPriceKlass.prototype = {
     oThis.parseResponse(response);
 
     if(!oThis.currentOstValue){
-      logger.error("Invalid Response from CoinMarket" + response);
+      logger.notify('f_c_o_p_1', "Invalid Response from CoinMarket", response);
       return;
     }
 
@@ -70,7 +70,7 @@ FetchCurrentOSTPriceKlass.prototype = {
     // Set current price in contract
     var contractResponse = await oThis.setPriceInContract();
     if(contractResponse.isFailure()){
-      logger.error("Error while setting price in contract." + response);
+      logger.notify('f_c_o_p_2', "Error while setting price in contract.", response);
       return;
     }
     var transactionHash = contractResponse.data.transactionHash;
@@ -95,12 +95,12 @@ FetchCurrentOSTPriceKlass.prototype = {
       var ostValue = JSON.parse(response)[0];
       logger.info("OST Value From CoinMarketCap:" + JSON.stringify(ostValue));
       if (!ostValue || ostValue.symbol != conversionRateConstants.ost_currency()) {
-        logger.error("Invalid OST Value" + response);
+        logger.notify('f_c_o_p_3', "Invalid OST Value", response);
         return;
       }
       var pricePoint = ostValue["price_" + oThis.quoteCurrency.toLowerCase()];
       if (!pricePoint || pricePoint < 0) {
-        logger.error("Invalid OST Price" + response);
+        logger.notify('f_c_o_p_4', "Invalid OST Price", response);
         return;
       }
       oThis.currentOstValue = {base_currency: conversionRateConstants.ost_currency(),
@@ -112,7 +112,7 @@ FetchCurrentOSTPriceKlass.prototype = {
       return;
     }
     catch(err) {
-      logger.error("Invalid Response from CoinMarket" + response);
+      logger.notify('f_c_o_p_5', "Invalid Response from CoinMarket", response);
       return;
     }
   },
@@ -146,7 +146,7 @@ FetchCurrentOSTPriceKlass.prototype = {
         var priceInDecimal = await priceOracle.decimalPrice(chainId, conversionRateConstants.ost_currency(), quoteCurrency);
         logger.debug(priceInDecimal);
         if (priceInDecimal.isFailure()) {
-          logger.error("Error while getting price from contract." + JSON.stringify(priceInDecimal));
+          logger.notify('f_c_o_p_6', "Error while getting price from contract." + JSON.stringify(priceInDecimal));
           return onResolve('error');
         } else if (priceInDecimal.isSuccess() && priceInDecimal.data.price == conversionRate) {
           await currencyConversionRateModel.updateStatus(dbRowId, conversionRateConstants.active_status());

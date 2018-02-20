@@ -118,7 +118,7 @@ CreateDummyUsers.prototype = {
     for(var i=0; i<resolversData.length; i++) {
 
       if(resolversData[i].isFailure()) {
-        logger.error(resolversData[i]);
+        logger.notify('c_d_u_1', 'Something Went Wrong', resolversData[i]);
       }
 
     }

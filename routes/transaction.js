@@ -24,7 +24,7 @@ router.get('/kind/get-all', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_tk_1', 'Something went wrong', err);
     responseHelper.error('r_tk_1', 'Something went wrong').renderResponse(res)
   });
 });
@@ -47,7 +47,7 @@ router.post('/kind/new', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_tk_2', 'Something went wrong', err);
     responseHelper.error('r_tk_2', 'Something went wrong').renderResponse(res)
   });
 });
@@ -70,7 +70,7 @@ router.post('/kind/edit', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_tk_3', 'Something went wrong', err);
     responseHelper.error('r_tk_3', 'Something went wrong').renderResponse(res)
   });
 });

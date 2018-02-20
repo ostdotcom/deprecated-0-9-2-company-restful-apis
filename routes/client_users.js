@@ -24,7 +24,7 @@ router.post('/create', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_cu_1', 'Something went wrong', err);
     responseHelper.error('r_cu_1', 'Something went wrong').renderResponse(res)
   });
 });
@@ -47,7 +47,7 @@ router.post('/edit', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_cu_2', 'Something went wrong', err);
     responseHelper.error('r_cu_2', 'Something went wrong').renderResponse(res)
   });
 });
@@ -70,7 +70,7 @@ router.post('/list', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_cu_3', 'Something went wrong', err);
     responseHelper.error('r_cu_3', 'Something went wrong').renderResponse(res)
   });
 
@@ -95,7 +95,7 @@ router.get('/get-users-details', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_cu_5', 'Something went wrong', err);
     responseHelper.error('r_cu_5', 'Something went wrong').renderResponse(res)
   });
 

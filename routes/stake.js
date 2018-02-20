@@ -28,7 +28,7 @@ router.post('/approve', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_su_1', 'Something went wrong', err);
     responseHelper.error('r_su_1', 'Something went wrong').renderResponse(res)
   });
 
@@ -61,7 +61,7 @@ router.get('/approval-status', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_su_2', 'Something went wrong', err);
     responseHelper.error('r_su_2', 'Something went wrong').renderResponse(res)
   });
 
@@ -85,7 +85,7 @@ router.post('/start-bt', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_su_3', 'Something went wrong', err);
     responseHelper.error('r_su_3', 'Something went wrong').renderResponse(res)
   });
 
@@ -109,7 +109,7 @@ router.post('/start-st-prime', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
+    logger.notify('r_su_4', 'Something went wrong', err);
     responseHelper.error('r_su_4', 'Something went wrong').renderResponse(res)
   });
 
@@ -131,8 +131,8 @@ router.get('/get-receipt', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
-    responseHelper.error('r_t_2', 'Something went wrong').renderResponse(res)
+    logger.notify('r_su_5', 'Something went wrong', err);
+    responseHelper.error('r_su_5', 'Something went wrong').renderResponse(res)
   });
 });
 

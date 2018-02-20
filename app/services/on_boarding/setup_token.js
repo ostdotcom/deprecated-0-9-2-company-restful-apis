@@ -113,7 +113,7 @@ SetupToken.prototype = {
         managed_address_salt: addressSalt
       });
     } catch(err){
-      logger.error(err);
+      logger.notify('ob_st_1', 'Something Went Wrong', err);
     }
 
     return Promise.resolve(responseHelper.successWithData({}));

@@ -53,5 +53,5 @@ readFromFile()
     .then( loadFontFile )
     .then( modifyImage )
     .catch(function(e){
-      logger.error(e);
+      logger.notify('t_i_p_1','error while reading from file', e);
     });

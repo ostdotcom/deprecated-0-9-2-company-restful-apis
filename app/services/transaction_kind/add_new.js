@@ -118,7 +118,7 @@ AddNew.prototype = {
     }
 
     if(Object.keys(errors_object).length > 0){
-      logger.error("errors_object------------------", errors_object);
+      logger.notify('tk_an_2', 'invalid params', errors_object);
       return Promise.resolve(responseHelper.error('tk_an_2', 'invalid params', '', [errors_object]));
     }
 
