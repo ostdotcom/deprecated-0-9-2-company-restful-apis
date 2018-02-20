@@ -19,8 +19,29 @@ export OST_CACHING_ENGINE='memcached'
 export OST_MEMCACHE_SERVERS='127.0.0.1:11211'
 ```
 
+* Enable RMQ for platform
+```bash
+
+# Start rabbmitMQ 
+> brew services start rabbitmq
+
+# RMQ in browser
+http://127.0.0.1:15672
+
+# Configure environment variables 
+> vim $HOME/openst-setup/openst_env_vars.sh
+
+export OST_RMQ_SUPPORT='1'
+export OST_RMQ_HOST='127.0.0.1'
+export OST_RMQ_PORT='5672'
+export OST_RMQ_USERNAME='guest'
+export OST_RMQ_PASSWORD='guest'
+export OST_RMQ_HEARTBEATS='30'
+```
+
 * Setup Price Oracle
 ```bash
+> source $HOME/openst-setup/openst_env_vars.sh
 > node node_modules/@ostdotcom/ost-price-oracle/tools/deploy/price_oracle.js OST USD $OST_UTILITY_GAS_PRICE
 > vim $HOME/openst-setup/openst_env_vars.sh
 # 3rd party contract address
