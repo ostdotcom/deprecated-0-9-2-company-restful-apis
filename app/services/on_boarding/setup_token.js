@@ -137,8 +137,9 @@ SetupToken.prototype = {
     } else {
       var r = await generateEthAddress.perform(oThis.clientId);
       if(r.isFailure()) return Promise.resolve(r);
-      oThis.reserve_managed_address_id = r.data.id;
-      oThis.addrUuid = r.data.uuid;
+      var createdAddress = r.data[r.data.result_type][0];
+      oThis.reserve_managed_address_id = createdAddress.id;
+      oThis.addrUuid = createdAddress.uuid;
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
