@@ -66,12 +66,21 @@ const generate = {
       oThis.updateAddress(insertedRec.insertId, clientId);
     }
 
-    return responseHelper.successWithData(
-      {
-        id: insertedRec.insertId,
-        uuid: addrUuid
+    return responseHelper.successWithData({
+      result_type: "economy_users",
+      'economy_users': [
+        {
+          id: insertedRec.insertId,
+          uuid: addrUuid,
+          name: name,
+          total_airdropped_tokens: 0,
+          token_balance: 0
+        }
+      ],
+      meta: {
+        next_page_payload: {}
       }
-    );
+    });
 
   },
 
