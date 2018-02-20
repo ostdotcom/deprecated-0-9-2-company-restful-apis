@@ -125,7 +125,7 @@ BasicHelperKlass.prototype = {
    * @return {boolean}
    */
   isBTConversionRateValid: function (conversionRate) {
-    if (!isNaN(conversionRate) && parseFloat(conversionRate) > 0 && (parseInt(conversionRate) == parseFloat(conversionRate))) {
+    if (!isNaN(conversionRate) && parseFloat(conversionRate) > 0) {
       return true;
     }
     return false;
