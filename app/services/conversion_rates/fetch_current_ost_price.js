@@ -1,33 +1,35 @@
 "use strict";
 
-
 /**
  * Fetch OST Current price in given currency from coin market cap and set in price oracle.
  *
  * @module services/conversion_rates/fetch_current_ost_price
  */
 
-  const request = require('request-promise')
-  , exchangeUrl = "https://api.coinmarketcap.com/v1/ticker/simple-token"
+const request = require('request-promise')
   , OSTPriceOracle = require('@ostdotcom/ost-price-oracle')
-  , priceOracle = OSTPriceOracle.priceOracle
   , BigNumber = require('bignumber.js')
-  , gasPrice = '0x12A05F200'
-  , chainId = 1
-  ;
+;
 
-  const rootPrefix = "../../.."
+const rootPrefix = "../../.."
+  , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , logger = require(rootPrefix + "/lib/logger/custom_console_logger")
   , currencyConversionRateModel = require(rootPrefix + "/app/models/currency_conversion_rate")
   , conversionRateConstants = require(rootPrefix + "/lib/global_constant/conversion_rates")
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  ;
+;
+
+const priceOracle = OSTPriceOracle.priceOracle
+  , exchangeUrl = "https://api.coinmarketcap.com/v1/ticker/simple-token"
+  , gasPrice = chainInteractionConstants.UTILITY_GAS_PRICE
+  , chainId = chainInteractionConstants.UTILITY_CHAIN_ID
+;
 
 /**
  * Fetch OST Current price
  *
- * @param {object} params - this is object with keys.
- *                  currency_code - Currency code to fetch price in. eg: (USD or EUR)
+ * @param {object} params -
+ * @param {string} params.currency_code - Currency code to fetch price in. eg: (USD or EUR)
  *
  * @constructor
  */
