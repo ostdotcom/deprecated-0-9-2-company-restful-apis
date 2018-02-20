@@ -23,7 +23,11 @@ const UpdatePriceOraclePricePoints = function () {
 
 UpdatePriceOraclePricePoints.prototype = {
   perform: function() {
-    console.log(chainInteractionConstants.UTILITY_PRICE_ORACLES);
+
+    if (Object.keys(chainInteractionConstants.UTILITY_PRICE_ORACLES).length == 0) {
+      throw "Price oracle contracts not defined";
+    }
+
     for (var baseCurrency in chainInteractionConstants.UTILITY_PRICE_ORACLES) {
       if (baseCurrency == conversionRateConstants.ost_currency()) {
 
