@@ -30,8 +30,24 @@ const editUser = {
       return responseHelper.error("s_cu_eu_3", "User does not belong to client");
     }
 
+    var apiResponseData = {
+      result_type: "economy_users",
+      'economy_users': [
+        {
+          id: response['id'],
+          uuid: userUuid,
+          name: name,
+          total_airdropped_tokens: 0,
+          token_balance: 0
+        }
+      ],
+      meta: {
+        next_page_payload: {}
+      }
+    };
+
     if(response['name'] == name){
-      return responseHelper.successWithData({});
+      return responseHelper.successWithData(apiResponseData);
     }
 
     var updateQueryResponse = managedAddressObj.edit({
@@ -42,9 +58,10 @@ const editUser = {
         uuid: userUuid
       }
     });
+
     managedAddressCache.clear();
 
-    return responseHelper.successWithData({});
+    return responseHelper.successWithData(apiResponseData);
 
   }
 
