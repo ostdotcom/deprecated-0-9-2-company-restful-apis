@@ -42,6 +42,10 @@ export OST_RMQ_HEARTBEATS='30'
 * Setup Price Oracle
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
+> export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform
+> node $OPENST_PLATFORM_PATH/tools/setup/start_services.js
+
+
 > node node_modules/@ostdotcom/ost-price-oracle/tools/deploy/price_oracle.js OST USD $OST_UTILITY_GAS_PRICE
 > vim $HOME/openst-setup/openst_env_vars.sh
 # 3rd party contract address
