@@ -9,6 +9,7 @@ const rootPrefix = '../../..'
   , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
   , managedAddressObj = new ManagedAddressKlass()
   , AddressesEncryptorKlass = require(rootPrefix + '/lib/encryptors/addresses_encryptor')
+  , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
 ;
 
 const _private = {
@@ -64,6 +65,9 @@ const generate = {
     if(insertedRec.affectedRows > 0){
       oThis.updateAddress(insertedRec.insertId, clientId);
     }
+
+    const managedAddressCache = new ManagedAddressCacheKlass({'uuids': [addrUuid] });
+    managedAddressCache.clear();
 
     return responseHelper.successWithData({
       result_type: "economy_users",
