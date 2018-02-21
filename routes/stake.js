@@ -136,4 +136,33 @@ router.get('/get-receipt', function (req, res, next) {
   });
 });
 
+router.get('/get-staked-amount', function (req, res, next) {
+
+  const performer = function() {
+
+    const decodedParams = req.decodedParams;
+
+    // handle final response
+    const handleOpenStPlatformSuccess = function (getStakedAmountRsp) {
+      if(getStakedAmountRsp.isSuccess()){
+        return responseHelper.successWithData(getStakedAmountRsp.data).renderResponse(res);
+      } else {
+        return responseHelper.error(getStakedAmountRsp.err.code, getStakedAmountRsp.err.message).renderResponse(res);
+      }
+    };
+
+    const object = new openStPlatform.services.stake.getStakedAmount(decodedParams.simple_stake_contract_address);
+
+    return object.perform().then(handleOpenStPlatformSuccess);
+
+  };
+
+  Promise.resolve(performer()).catch(function (err) {
+    logger.error(err);
+    responseHelper.error('r_t_3', 'Something went wrong').renderResponse(res)
+  });
+
+});
+
+
 module.exports = router;
