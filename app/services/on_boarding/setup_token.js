@@ -20,6 +20,7 @@ const rootPrefix = '../../..'
   , managedAddressSaltObj = new ManagedAddressSaltKlass()
   , ManagedAddressModelKlass = require(rootPrefix + '/app/models/managed_address')
   , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
+  , ClientSecuredBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
@@ -293,9 +294,15 @@ SetupToken.prototype = {
    * @return {promise<result>}
    */
   clearCache: function () {
+
     const oThis = this;
+
     const clientBrandedTokenCache = new ClientBrandedTokenCacheKlass({'clientId': oThis.clientId});
-    clientBrandedTokenCache.clear()
+    clientBrandedTokenCache.clear();
+
+    const clientSecureBrandedTokenCache = new ClientSecuredBrandedTokenCacheKlass({'tokenSymbol': oThis.symbol});
+    clientSecureBrandedTokenCache.clear();
+
   },
 
   /**

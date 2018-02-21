@@ -6,6 +6,7 @@ const rootPrefix = '../../..'
   , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
   , clientBrandedTokenObj = new ClientBrandedTokenKlass()
   , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
+  , ClientSecuredBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
 ;
 
 const EditBrandedTokenKlass = function (params) {
@@ -108,9 +109,15 @@ EditBrandedTokenKlass.prototype = {
    * @return {promise<result>}
    */
   clearCache: function () {
+
     const oThis = this;
+
     const clientBrandedTokenCache = new ClientBrandedTokenCacheKlass({'clientId': oThis.client_id});
-    clientBrandedTokenCache.clear()
+    clientBrandedTokenCache.clear();
+
+    const clientSecureBrandedTokenCache = new ClientSecuredBrandedTokenCacheKlass({'tokenSymbol': oThis.symbol});
+    clientSecureBrandedTokenCache.clear();
+
   },
 
   returnResponse: function () {
