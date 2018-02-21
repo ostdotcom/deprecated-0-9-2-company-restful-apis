@@ -5,7 +5,6 @@ const uuid = require('uuid')
   , openStPlatform = require('@openstfoundation/openst-platform')
 ;
 const rootPrefix = '../../..'
-  , localCipher = require(rootPrefix + '/lib/encryptors/local_cipher')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
   , managedAddressObj = new ManagedAddressKlass()

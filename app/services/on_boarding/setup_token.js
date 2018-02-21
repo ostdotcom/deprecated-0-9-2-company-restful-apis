@@ -18,6 +18,7 @@ const rootPrefix = '../../..'
   , clientBrandedToken = new ClientBrandedTokenKlass()
   , ManagedAddressSaltKlass = require(rootPrefix + '/app/models/managed_address_salt')
   , managedAddressSaltObj = new ManagedAddressSaltKlass()
+  , ManagedAddressModelKlass = require(rootPrefix + '/app/models/managed_address')
   , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
@@ -36,10 +37,18 @@ const rootPrefix = '../../..'
  */
 const SetupToken = function(params){
 
-  this.clientId = params.client_id;
-  this.symbol = params.symbol;
-  this.name = params.name;
-  this.symbol_icon = params.symbol_icon;
+  var oThis = this;
+
+  oThis.clientId = params.client_id;
+  oThis.symbol = params.symbol;
+  oThis.name = params.name;
+  oThis.symbol_icon = params.symbol_icon;
+
+  oThis.existingToken = null;
+
+  oThis.reserveAddrUuid = null;
+  oThis.workerAddrUuid = null;
+  oThis.airdropHolderAddrUuid = null;
 
 };
 
@@ -64,7 +73,7 @@ SetupToken.prototype = {
     r = await oThis.setClientAddressSalt();
     if(r.isFailure()) return Promise.resolve(r);
 
-    r = await oThis.setClientReserveAddress();
+    r = await oThis.getSetClientAddresses();
     if(r.isFailure()) return Promise.resolve(r);
 
     r = await oThis.createClientToken();
@@ -119,6 +128,17 @@ SetupToken.prototype = {
     return Promise.resolve(responseHelper.successWithData({}));
   },
 
+  getExistingManagedAddress: async function() {
+    var oThis = this
+      , clientTokenByClientId = await clientBrandedToken.getByClientId(oThis.clientId);
+    if(clientTokenByClientId.length > 0){
+      oThis.existingToken = clientTokenByClientId[clientTokenByClientId.length-1];
+    }
+
+    return Promise.resolve(responseHelper.successWithData({}));
+
+  },
+
   /**
    * Get and set client reserve address. Generate new address if already not found.
    *
@@ -126,23 +146,116 @@ SetupToken.prototype = {
    * @return {promise<result>}
    *
    */
-  setClientReserveAddress: async function () {
+  getSetClientAddresses: async function () {
     var oThis = this
-      , tokenByClientId = await clientBrandedToken.getByClientId(oThis.clientId);
+      , promisesArray = [];
 
-    if(tokenByClientId.length > 0){
-      const existingToken = tokenByClientId[tokenByClientId.length-1];
-      oThis.reserve_managed_address_id = existingToken.reserve_managed_address_id;
-      // handle setting oThis.addrUuid by querying managed_address table ?
-    } else {
-      var r = await generateEthAddress.perform(oThis.clientId);
-      if(r.isFailure()) return Promise.resolve(r);
-      var createdAddress = r.data[r.data.result_type][0];
-      oThis.reserve_managed_address_id = createdAddress.id;
-      oThis.addrUuid = createdAddress.uuid;
-    }
+    promisesArray.push(oThis.setClientReserveAddress());
+    promisesArray.push(oThis.setClientWorkerAddress());
+    promisesArray.push(oThis.setClientAirdropHolderAddress());
+
+    await Promise.all(promisesArray);
+
+    console.log("oThis.reserve_managed_address_id------", oThis.reserve_managed_address_id);
 
     return Promise.resolve(responseHelper.successWithData({}));
+
+  },
+
+  /**
+   * Get and set client reserve address. Generate new address if already not found.
+   *
+   * @set reserve_managed_address_id, reserveAddrUuid
+   * @return {promise<result>}
+   *
+   */
+  setClientReserveAddress: function () {
+    var oThis = this
+      , managedAddressModelObj = new ManagedAddressModelKlass();
+
+    return new Promise(async function(onResolve, onReject){
+      if(oThis.existingToken && oThis.existingToken.reserve_managed_address_id){
+
+        oThis.reserve_managed_address_id = oThis.existingToken.reserve_managed_address_id;
+        const manageAddrObj = await managedAddressModelObj.getByIds([oThis.reserve_managed_address_id]);
+        oThis.reserveAddrUuid = manageAddrObj[0].uuid;
+        return onResolve(responseHelper.successWithData({}));
+
+      } else {
+
+        var r = await generateEthAddress.perform(oThis.clientId);
+        if(r.isFailure()) return onResolve(r);
+        const resultData = r.data[r.data.result_type][0];
+        oThis.reserve_managed_address_id = resultData.id;
+        oThis.reserveAddrUuid = resultData.uuid;
+
+        return onResolve(responseHelper.successWithData({}));
+      }
+
+    });
+
+  },
+
+  /**
+   * Get and set client reserve address. Generate new address if already not found.
+   *
+   * @set worker_managed_address_id, workerAddrUuid
+   * @return {promise<result>}
+   *
+   */
+  setClientWorkerAddress: function () {
+    var oThis = this
+      , managedAddressModelObj = new ManagedAddressModelKlass();
+
+    return new Promise(async function(onResolve, onReject){
+      if(oThis.existingToken && oThis.existingToken.worker_managed_address_id){
+        oThis.worker_managed_address_id = oThis.existingToken.worker_managed_address_id;
+        const manageAddrObj = await managedAddressModelObj.getByIds([oThis.worker_managed_address_id]);
+        oThis.workerAddrUuid = manageAddrObj[0].uuid;
+        return onResolve(responseHelper.successWithData({}));
+      } else {
+        var r = await generateEthAddress.perform(oThis.clientId);
+        if(r.isFailure()) return onResolve(r);
+        const resultData = r.data[r.data.result_type][0];
+        oThis.worker_managed_address_id = resultData.id;
+        oThis.workerAddrUuid = resultData.uuid;
+
+        return onResolve(responseHelper.successWithData({}));
+      }
+
+    });
+
+  },
+
+  /**
+   * Get and set client reserve address. Generate new address if already not found.
+   *
+   * @set airdrop_holder_managed_address_id, airdropHolderAddrUuid
+   * @return {promise<result>}
+   *
+   */
+  setClientAirdropHolderAddress: function () {
+    var oThis = this
+      , managedAddressModelObj = new ManagedAddressModelKlass();
+
+    return new Promise(async function(onResolve, onReject){
+
+      if(oThis.existingToken && oThis.existingToken.airdrop_holder_managed_address_id){
+        oThis.airdrop_holder_managed_address_id = oThis.existingToken.airdrop_holder_managed_address_id;
+        const manageAddrObj = await managedAddressModelObj.getByIds([oThis.airdrop_holder_managed_address_id]);
+        oThis.airdropHolderAddrUuid = manageAddrObj[0].uuid;
+        return onResolve(responseHelper.successWithData({}));
+      } else {
+        var r = await generateEthAddress.perform(oThis.clientId);
+        if(r.isFailure()) return onResolve(r);
+        const resultData = r.data[r.data.result_type][0];
+        oThis.airdrop_holder_managed_address_id = resultData.id;
+        oThis.airdropHolderAddrUuid = resultData.uuid;
+
+        return onResolve(responseHelper.successWithData({}));
+      }
+
+    });
 
   },
 
@@ -162,6 +275,8 @@ SetupToken.prototype = {
       symbol: oThis.symbol,
       symbol_icon: oThis.symbol_icon,
       reserve_managed_address_id: oThis.reserve_managed_address_id,
+      worker_managed_address_id: oThis.worker_managed_address_id,
+      airdrop_holder_managed_address_id: oThis.airdrop_holder_managed_address_id,
       name: oThis.name
     };
 
@@ -192,7 +307,9 @@ SetupToken.prototype = {
     return Promise.resolve(responseHelper.successWithData(
       {
         id: oThis.reserve_managed_address_id,
-        reserveUuid: oThis.addrUuid,
+        reserveUuid: oThis.reserveAddrUuid,
+        workerAddrUuid: oThis.workerAddrUuid,
+        airdropHolderAddrUuid: oThis.airdropHolderAddrUuid,
         name: oThis.name,
         client_id: oThis.clientId
       }

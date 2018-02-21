@@ -3,16 +3,22 @@
 const rootPrefix = '../..'
   , coreConstants = require(rootPrefix + '/config/core_constants')
   , QueryDBKlass = require(rootPrefix + '/app/models/queryDb')
-  , localCipher = require(rootPrefix + '/lib/encryptors/local_cipher')
   , util = require(rootPrefix + '/lib/util')
   , ModelBaseKlass = require(rootPrefix + '/app/models/base')
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
 ;
 
 const dbName = "saas_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
   , QueryDBObj = new QueryDBKlass(dbName)
-  , statuses = {'1':'active', '2':'inactive'}
+  , statuses = { '1':managedAddressesConst.activeStatus, '2':managedAddressesConst.inactiveStatus }
   , invertedStatuses = util.invert(statuses)
+  , addressTypes = {
+    '1': managedAddressesConst.userAddressType,
+    '2': managedAddressesConst.reserveAddressType,
+    '3': managedAddressesConst.workerAddressType,
+    '4': managedAddressesConst.airdropHolderAddressType
+  }
+  , invertedAddressTypes = util.invert(addressTypes)
 ;
 
 const ManagedAddressKlass = function () {};
@@ -29,10 +35,18 @@ const ManagedAddressKlassPrototype = {
 
   invertedStatuses: invertedStatuses,
 
+  addressTypes: addressTypes,
+
+  invertedAddressTypes: invertedAddressTypes,
+
   enums: {
     'status': {
       val: statuses,
       inverted: invertedStatuses
+    },
+    'address_type': {
+      val: addressTypes,
+      inverted: invertedAddressTypes
     }
   },
 
@@ -48,7 +62,7 @@ const ManagedAddressKlassPrototype = {
     var oThis = this;
     return oThis.QueryDB.readByInQuery(
       oThis.tableName,
-      ['id', 'ethereum_address'],
+      ['id', 'uuid', 'ethereum_address'],
       ids, 'id');
   },
 
