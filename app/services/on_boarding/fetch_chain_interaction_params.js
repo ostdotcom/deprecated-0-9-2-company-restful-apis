@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * Create Dummy Users
+ * Fetch Chain Interaction Params
  *
  * @module app/services/on_boarding/fetch_chain_interact_params
  *

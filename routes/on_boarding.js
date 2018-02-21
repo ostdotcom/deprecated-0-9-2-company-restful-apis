@@ -10,6 +10,7 @@ const rootPrefix = '..'
   , EditTokenKlass = require(rootPrefix + '/app/services/token_management/edit')
   , CreateDummyUsersKlass = require(rootPrefix + '/app/services/on_boarding/create_dummy_users')
   , FetchChainInteractionParamsKlass = require(rootPrefix + '/app/services/on_boarding/fetch_chain_interaction_params')
+  , FetchBalancesKlass = require(rootPrefix + '/app/services/on_boarding/fetch_balances')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
@@ -242,6 +243,31 @@ router.get('/get-chain-interaction-params', function (req, res, next) {
   Promise.resolve(performer()).catch(function (err) {
     logger.notify('r_ob_5', 'Something went wrong', err);
     responseHelper.error('r_ob_5', 'Something went wrong').renderResponse(res)
+  });
+
+});
+
+router.get('/fetch-balances', function (req, res, next) {
+
+  const performer = async function() {
+
+    const decodedParams = req.decodedParams;
+
+    // handle final response
+    const handleResponse = function (response) {
+      response.renderResponse(res);
+    };
+
+    const object = new FetchBalancesKlass(req.decodedParams)
+        , response = await object.perform();
+console.log(response);
+    return response.renderResponse(res);
+
+  };
+
+  Promise.resolve(performer()).catch(function (err) {
+    logger.notify('r_ob_6', 'Something went wrong', err);
+    responseHelper.error('r_ob_6', 'Something went wrong').renderResponse(res)
   });
 
 });

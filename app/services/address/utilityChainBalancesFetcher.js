@@ -18,27 +18,29 @@ const rootPrefix = '../../..'
  *
  * @constructor
  */
-const balancesFetcherKlass = function(params) {
+const utilityChainBalancesFetcherKlass = function(params) {
 
   const oThis = this;
 
   oThis.addressUuid = params['address_uuid'];
   oThis.clientId = params['client_id'];
+  oThis.balanceTypes = params['balance_types'];
 
   oThis.address = null;
 
 };
 
-balancesFetcherKlass.prototype = {
+utilityChainBalancesFetcherKlass.prototype = {
 
   /**
-   * fetch data from source and return eth balance from VC in Wei
+   * fetch data from from UC in Wei
    *
    * @return {Result}
    */
-  perform: async function(balanceTypes){
+  perform: async function(){
 
-    const oThis = this;
+    const oThis = this
+        , balanceTypes = oThis.balanceTypes ;
 
     const setAddrRsp = await oThis._setAddress();
 
@@ -74,7 +76,7 @@ balancesFetcherKlass.prototype = {
           , balance = null;
 
       if (response.isFailure()) {
-        logger.notify('b_f1_1', 'Something Went Wrong', response);
+        logger.notify('ub_bf_1', 'Something Went Wrong', response);
       } else {
         var data = response.data;
         if (data && data.balance) {
@@ -87,15 +89,7 @@ balancesFetcherKlass.prototype = {
 
     }
 
-    //TODO: append conversion rates here
-    return Promise.resolve(responseHelper.successWithData({
-      'balances': balances,
-      'oracle_price_points': {
-        'ost': {
-          'usd': 0.33
-        }
-      }
-    }));
+    return Promise.resolve(responseHelper.successWithData(balances));
 
   },
 
@@ -105,41 +99,7 @@ balancesFetcherKlass.prototype = {
    * @return {Array}
    */
   _nonBrandedTokenBalanceTypes: function() {
-    return [
-      'ost',
-      'ostPrime',
-      'eth'
-    ]
-  },
-
-  /**
-   * fetch eth balance
-   *
-   * @return {Promise}
-   */
-  _fetchethBalance: function(){
-
-    const oThis = this;
-
-    const obj = new ethBalanceCacheKlass({'address': oThis.address});
-
-    return obj.fetch();
-
-  },
-
-  /**
-   * fetch OST balance
-   *
-   * @return {Promise}
-   */
-  _fetchostBalance: function(){
-
-    const oThis = this;
-
-    const obj = new ostBalanceCacheKlass({'address': oThis.address});
-
-    return obj.fetch();
-
+    return ['ostPrime']
   },
 
   /**
@@ -218,4 +178,4 @@ balancesFetcherKlass.prototype = {
 
 };
 
-module.exports = balancesFetcherKlass;
+module.exports = utilityChainBalancesFetcherKlass;

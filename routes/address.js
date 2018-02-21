@@ -27,13 +27,13 @@ router.post('/create', function (req, res, next) {
 });
 
 /* fetch balances for an address */
-router.get('/fetch-balances', function (req, res, next) {
+router.get('/fetch-utility-chain-balances', function (req, res, next) {
 
   const performer = function() {
 
     const decodedParams = req.decodedParams
         , balanceTypes = decodedParams.balance_types
-        , balancesFetcherKlass = require(rootPrefix + '/app/services/address/balancesFetcher')
+        , balancesFetcherKlass = require(rootPrefix + '/app/services/address/utilityChainBalancesFetcher')
         , balancesFetcher = new balancesFetcherKlass(decodedParams)
     ;
 
