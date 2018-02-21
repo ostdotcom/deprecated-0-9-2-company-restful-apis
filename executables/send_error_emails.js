@@ -31,7 +31,7 @@ global.emailsAggregator = {};
 
 var waitingForEmail = false;
 
-openSTNotification.subscribeEvent.rabbit(["error.#"], {queue: 'send_error_email_from_restful_apis'},
+openSTNotification.subscribeEvent.rabbit(["email_error.#"], {queue: 'send_error_email_from_restful_apis'},
   function (msgContent) {
     msgContent = JSON.parse(msgContent);
     logger.info('Consumed error message -> ', msgContent);
