@@ -36,6 +36,9 @@ EditBrandedTokenKlass.prototype = {
     if(r.isFailure()) return Promise.resolve(r);
 
     r = await oThis.editToken();
+
+    oThis.clearCache(); // regardless it failed or not flush cache as it might have changed something
+
     if(r.isFailure()) return Promise.resolve(r);
 
     return oThis.returnResponse();
