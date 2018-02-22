@@ -22,7 +22,7 @@ const EditBrandedTokenKlass = function (params) {
   oThis.token_erc20_address = oThis.params.token_erc20_address;
   oThis.airdrop_contract_addr = oThis.params.airdrop_contract_addr;
   oThis.token_uuid = oThis.params.token_uuid;
-  oThis.conversion_rate = oThis.params.conversion_rate;
+  oThis.conversion_factor = oThis.params.conversion_factor;
 
   oThis.brandedTokenAr = null;
 
@@ -93,10 +93,10 @@ EditBrandedTokenKlass.prototype = {
       oThis.brandedTokenAr.token_uuid = oThis.token_uuid;
     }
 
-    if(oThis.conversion_rate && basicHelper.isBTConversionRateValid(oThis.conversion_rate) &&
-      oThis.conversion_rate != oThis.brandedTokenAr.conversion_rate
+    if(oThis.conversion_factor && basicHelper.isBTConversionRateValid(oThis.conversion_factor) &&
+      oThis.conversion_factor != oThis.brandedTokenAr.conversion_factor
     ){
-      oThis.brandedTokenAr.conversion_rate = oThis.conversion_rate;
+      oThis.brandedTokenAr.conversion_factor = oThis.conversion_factor;
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
