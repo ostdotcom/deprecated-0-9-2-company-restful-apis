@@ -6,6 +6,7 @@ const rootPrefix = '..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , openStPlatform = require('@openstfoundation/openst-platform')
+  , routeHelper = require(rootPrefix + '/routes/helper')
 ;
 
 /* Propose a branded token */
@@ -69,95 +70,35 @@ router.get('/approval-status', function (req, res, next) {
 
 /* Propose a branded token */
 router.post('/start-bt', function (req, res, next) {
-  const performer = function() {
-    const decodedParams = req.decodedParams
-      , stakeStartBtKlass = require(rootPrefix + '/app/services/stake_and_mint/branded_token')
-      , stakeStartBtObj = new stakeStartBtKlass(decodedParams)
-    ;
 
-    // handle final response
-    const handleResponse = function (stakeResponse) {
-      return stakeResponse.renderResponse(res);
-    };
+  const stakeStartBtKlass = require(rootPrefix + '/app/services/stake_and_mint/branded_token');
 
-    return stakeStartBtObj.perform().then(handleResponse);
-
-  };
-
-  Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_su_3', 'Something went wrong', err);
-    responseHelper.error('r_su_3', 'Something went wrong').renderResponse(res)
-  });
+  Promise.resolve(routeHelper.performer(req, res, next, stakeStartBtKlass, 'r_su_3'));
 
 });
 
 /* Propose a branded token */
 router.post('/start-st-prime', function (req, res, next) {
-  const performer = function() {
-    const decodedParams = req.decodedParams
-      , stakeStartStPrimeKlass = require(rootPrefix + '/app/services/stake_and_mint/st_prime')
-      , stakeStartStPrimeObj = new stakeStartStPrimeKlass(decodedParams)
-    ;
 
-    // handle final response
-    const handleResponse = function (stakeResponse) {
-      return stakeResponse.renderResponse(res);
-    };
+  const stakeStartStPrimeKlass = require(rootPrefix + '/app/services/stake_and_mint/st_prime');
 
-    return stakeStartStPrimeObj.perform().then(handleResponse);
-
-  };
-
-  Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_su_4', 'Something went wrong', err);
-    responseHelper.error('r_su_4', 'Something went wrong').renderResponse(res)
-  });
+  Promise.resolve(routeHelper.performer(req, res, next, stakeStartStPrimeKlass, 'r_su_4'));
 
 });
 
 router.get('/get-receipt', function (req, res, next) {
-  const performer = function() {
-    const decodedParams = req.decodedParams
-      , getReceiptKlass = require(rootPrefix + '/app/services/transaction/get_receipt')
-      , getReceiptObj = new getReceiptKlass(decodedParams)
-    ;
 
-    // handle final response
-    const handleResponse = function (response) {
-      return response.renderResponse(res);
-    };
+  const getReceiptKlass = require(rootPrefix + '/app/services/transaction/get_receipt');
 
-    return getReceiptObj.perform().then(handleResponse);
-  };
+  Promise.resolve(routeHelper.performer(req, res, next, getReceiptKlass, 'r_su_5'));
 
-  Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_su_5', 'Something went wrong', err);
-    responseHelper.error('r_su_5', 'Something went wrong').renderResponse(res)
-  });
 });
 
 router.get('/get-staked-amount', function (req, res, next) {
 
-  const performer = function() {
+  const GetStakedAmountKlass = require(rootPrefix + '/app/services/stake_and_mint/get_staked_amount');
 
-    const decodedParams = req.decodedParams
-        , GetStakedAmountKlass = require(rootPrefix + '/app/services/stake_and_mint/get_staked_amount')
-        , getStakedAmount = new GetStakedAmountKlass(decodedParams)
-    ;
-
-    // handle final response
-    const handleResponse = function (response) {
-      return response.renderResponse(res);
-    };
-
-    return getStakedAmount.perform().then(handleResponse);
-
-  };
-
-  Promise.resolve(performer()).catch(function (err) {
-    logger.error(err);
-    responseHelper.error('r_t_3', 'Something went wrong').renderResponse(res)
-  });
+  Promise.resolve(routeHelper.performer(req, res, next, GetStakedAmountKlass, 'r_su_6'));
 
 });
 

@@ -1,78 +1,32 @@
 const express = require('express')
   , router = express.Router()
   , rootPrefix = '..'
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , routeHelper = require(rootPrefix + '/routes/helper')
 ;
 
 /* Get transaction block info for a transaction hash */
 router.get('/kind/get-all', function (req, res, next) {
-  const performer = function() {
-    const decodedParams = req.decodedParams
-      , transactionListKlass = require(rootPrefix + '/app/services/transaction_kind/list')
-      , transactionList = new transactionListKlass(decodedParams)
-    ;
 
-    logger.log("decodedParams--", decodedParams);
+  const transactionListKlass = require(rootPrefix + '/app/services/transaction_kind/list');
 
-    const renderResult = function(result) {
-      return result.renderResponse(res);
-    };
+  Promise.resolve(routeHelper.performer(req, res, next, transactionListKlass, 'r_tk_1'));
 
-    return transactionList.perform()
-      .then(renderResult);
-  };
-
-  Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_tk_1', 'Something went wrong', err);
-    responseHelper.error('r_tk_1', 'Something went wrong').renderResponse(res)
-  });
 });
 
 router.post('/kind/new', function (req, res, next) {
-  const performer = function() {
-    const decodedParams = req.decodedParams
-      , newTransactionKlass = require(rootPrefix + '/app/services/transaction_kind/add_new')
-      , newTransaction = new newTransactionKlass(decodedParams)
-    ;
 
-    logger.log("decodedParams--", decodedParams);
+  const newTransactionKlass = require(rootPrefix + '/app/services/transaction_kind/add_new');
 
-    const renderResult = function(result) {
-      return result.renderResponse(res);
-    };
+  Promise.resolve(routeHelper.performer(req, res, next, newTransactionKlass, 'r_tk_2'));
 
-    return newTransaction.perform()
-      .then(renderResult);
-  };
-
-  Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_tk_2', 'Something went wrong', err);
-    responseHelper.error('r_tk_2', 'Something went wrong').renderResponse(res)
-  });
 });
 
 router.post('/kind/edit', function (req, res, next) {
-  const performer = function() {
-    const decodedParams = req.decodedParams
-      , editTransactionKlass = require(rootPrefix + '/app/services/transaction_kind/edit')
-      , editTransaction = new editTransactionKlass(decodedParams)
-    ;
 
-    logger.log("decodedParams--", decodedParams);
+  const editTransactionKlass = require(rootPrefix + '/app/services/transaction_kind/edit');
 
-    const renderResult = function(result) {
-      return result.renderResponse(res);
-    };
+  Promise.resolve(routeHelper.performer(req, res, next, editTransactionKlass, 'r_tk_3'));
 
-    return editTransaction.perform()
-      .then(renderResult);
-  };
-
-  Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_tk_3', 'Something went wrong', err);
-    responseHelper.error('r_tk_3', 'Something went wrong').renderResponse(res)
-  });
 });
 
 module.exports = router;

@@ -6,57 +6,9 @@ const express = require('express')
 
 const rootPrefix = '..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , SetupTokenKlass = require(rootPrefix + '/app/services/on_boarding/setup_token')
-  , EditTokenKlass = require(rootPrefix + '/app/services/token_management/edit')
-  , CreateDummyUsersKlass = require(rootPrefix + '/app/services/on_boarding/create_dummy_users')
-  , FetchChainInteractionParamsKlass = require(rootPrefix + '/app/services/on_boarding/fetch_chain_interaction_params')
-  , FetchBalancesKlass = require(rootPrefix + '/app/services/on_boarding/fetch_balances')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , routeHelper = require(rootPrefix + '/routes/helper')
 ;
-
-/* Propose a branded token */
-router.post('/setup-token', function (req, res, next) {
-  const performer = function() {
-
-    // handle final response
-    const handleResponse = function (response) {
-      return response.renderResponse(res);
-    };
-
-    const object = new SetupTokenKlass(req.decodedParams);
-
-    return object.perform().then(handleResponse);
-
-  };
-
-  Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_ob_4', 'Something went wrong', err);
-    responseHelper.error('r_ob_4', 'Something went wrong').renderResponse(res)
-  });
-
-});
-
-/* Propose a branded token */
-router.post('/edit-token', function (req, res, next) {
-  const performer = function() {
-
-    // handle final response
-    const handleResponse = function (response) {
-      return response.renderResponse(res);
-    };
-
-    const object = new EditTokenKlass(req.decodedParams);
-
-    return object.perform().then(handleResponse);
-
-  };
-
-  Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_ob_5', 'Something went wrong', err);
-    responseHelper.error('r_ob_5', 'Something went wrong').renderResponse(res)
-  });
-
-});
 
 /* Propose a branded token */
 router.post('/propose-branded-token', function (req, res, next) {
@@ -193,107 +145,66 @@ router.post('/grant-eth', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_ob_5', 'Something went wrong', err);
-    responseHelper.error('r_ob_5', 'Something went wrong').renderResponse(res)
+    logger.notify('r_ob_4', 'Something went wrong', err);
+    responseHelper.error('r_ob_4', 'Something went wrong').renderResponse(res)
   });
+});
+
+/* Propose a branded token */
+router.post('/setup-token', function (req, res, next) {
+
+  const SetupTokenKlass = require(rootPrefix + '/app/services/on_boarding/setup_token');
+
+  Promise.resolve(routeHelper.performer(req, res, next, SetupTokenKlass, 'r_ob_5'));
+
+});
+
+/* Propose a branded token */
+router.post('/edit-token', function (req, res, next) {
+
+  const EditTokenKlass = require(rootPrefix + '/app/services/token_management/edit');
+
+  Promise.resolve(routeHelper.performer(req, res, next, EditTokenKlass, 'r_ob_6'));
+
 });
 
 router.post('/create-dummy-users', function (req, res, next) {
 
-  const performer = function() {
+  const CreateDummyUsersKlass = require(rootPrefix + '/app/services/on_boarding/create_dummy_users');
 
-    const decodedParams = req.decodedParams;
-
-    // handle final response
-    const handleResponse = function (response) {
-      response.renderResponse(res);
-    };
-
-    const object = new CreateDummyUsersKlass(req.decodedParams);
-
-    return object.perform().then(handleResponse);
-
-  };
-
-  Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_ob_4', 'Something went wrong', err);
-    responseHelper.error('r_ob_4', 'Something went wrong').renderResponse(res)
-  });
+  Promise.resolve(routeHelper.performer(req, res, next, CreateDummyUsersKlass, 'r_ob_7'));
 
 });
 
 router.get('/get-chain-interaction-params', function (req, res, next) {
 
-  const performer = function() {
+  const FetchChainInteractionParamsKlass = require(rootPrefix + '/app/services/on_boarding/fetch_chain_interaction_params');
 
-    const decodedParams = req.decodedParams;
-
-    // handle final response
-    const handleResponse = function (response) {
-      response.renderResponse(res);
-    };
-
-    const object = new FetchChainInteractionParamsKlass(req.decodedParams)
-        , response = object.perform();
-
-    return response.renderResponse(res);
-
-  };
-
-  Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_ob_5', 'Something went wrong', err);
-    responseHelper.error('r_ob_5', 'Something went wrong').renderResponse(res)
-  });
+  Promise.resolve(routeHelper.performer(req, res, next, FetchChainInteractionParamsKlass, 'r_ob_8'));
 
 });
 
 router.get('/fetch-balances', function (req, res, next) {
 
-  const performer = async function() {
+  const FetchBalancesKlass = require(rootPrefix + '/app/services/on_boarding/fetch_balances');
 
-    const decodedParams = req.decodedParams;
-
-    // handle final response
-    const handleResponse = function (response) {
-      response.renderResponse(res);
-    };
-
-    const object = new FetchBalancesKlass(req.decodedParams)
-        , response = await object.perform();
-console.log(response);
-    return response.renderResponse(res);
-
-  };
-
-  Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_ob_6', 'Something went wrong', err);
-    responseHelper.error('r_ob_6', 'Something went wrong').renderResponse(res)
-  });
+  Promise.resolve(routeHelper.performer(req, res, next, FetchBalancesKlass, 'r_ob_9'));
 
 });
 
 router.post('/deploy-airdrop-contract', function (req, res, next) {
 
-  const performer = function() {
+  const DeployAirdropContractKlass = require(rootPrefix + '/app/services/on_boarding/deploy_airdrop_contract');
 
-    const decodedParams = req.decodedParams
-      , DeployAirdropContractKlass = require(rootPrefix + '/app/services/on_boarding/deploy_airdrop_contract');
+  Promise.resolve(routeHelper.performer(req, res, next, DeployAirdropContractKlass, 'r_ob_10'));
 
-    // handle final response
-    const handleResponse = function (response) {
-      response.renderResponse(res);
-    };
+});
 
-    const airDropObject = new DeployAirdropContractKlass(decodedParams);
+router.post('/set-worker', function (req, res, next) {
 
-    return airDropObject.perform().then(handleResponse);
+  const SetWorkerKlass = require(rootPrefix + '/app/services/on_boarding/set_worker');
 
-  };
-
-  Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_ob_5', 'Something went wrong', err);
-    responseHelper.error('r_ob_5', 'Something went wrong').renderResponse(res)
-  });
+  Promise.resolve(routeHelper.performer(req, res, next, SetWorkerKlass, 'r_ob_11'));
 
 });
 

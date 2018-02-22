@@ -6,6 +6,7 @@ const express = require('express')
   , listAddressesKlass = require(rootPrefix + '/app/services/client_users/list')
   , getUsersDataKlass = require(rootPrefix + '/app/services/client_users/get_users_data')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
+  , routeHelper = require(rootPrefix + '/routes/helper')
 ;
 
 /* Create User for a client */
@@ -80,25 +81,7 @@ router.post('/list', function (req, res, next) {
 /* List User for a client */
 router.get('/get-users-details', function (req, res, next) {
 
-  const performer = function() {
-
-    const decodedParams = req.decodedParams
-      , getUsersData = new getUsersDataKlass(decodedParams);
-
-
-    // handle final response
-    const handleResponse = function (response) {
-      return response.renderResponse(res);
-    };
-
-    return getUsersData.perform().then(handleResponse);
-
-  };
-
-  Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_cu_5', 'Something went wrong', err);
-    responseHelper.error('r_cu_5', 'Something went wrong').renderResponse(res)
-  });
+  Promise.resolve(routeHelper.performer(req, res, next, getUsersDataKlass, 'r_cu_5'));
 
 });
 
