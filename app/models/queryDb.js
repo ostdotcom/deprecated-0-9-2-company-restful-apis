@@ -119,14 +119,8 @@ QueryDB.prototype = {
   bulkInsert: function(tableName, fields, queryArgs, options) {
 
     var oThis = this
-      , currentDateTime = util.formatDbDate(new Date())
-      , fields = fields.concat(['created_at', 'updated_at'])
       , q = 'INSERT INTO '+tableName+' ('+fields+') VALUES ?'
     ;
-
-    for(var i in queryArgs){
-      queryArgs[i] = queryArgs[i].concat([currentDateTime, currentDateTime]);
-    }
 
     return new Promise(
       function (onResolve, onReject) {

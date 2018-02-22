@@ -1,5 +1,8 @@
 "use strict";
 
+const rootPrefix = '../..'
+  , util = require(rootPrefix + '/lib/util')
+
 const ModelBaseKlass = function () {};
 
 ModelBaseKlass.prototype = {
@@ -45,26 +48,26 @@ ModelBaseKlass.prototype = {
 
   },
 
-  bulkInsert: function (createFields, createFieldVals) {
+  bulkInsert: function (createFields, setFieldsValues) {
 
     var oThis = this
       , addingCreatedAt = false
       , addingUpdatedAt = false
+      , currentDateTime = util.formatDbDate(new Date())
     ;
 
-    if(!createFields.indexOf('created_at') > 0){
+    if(createFields.indexOf('created_at') < 0){
       createFields.push('created_at');
       addingCreatedAt = true;
     }
-    if(!createFields.indexOf('updated_at') > 0){
+    if(createFields.indexOf('updated_at') < 0){
       createFields.push('updated_at');
       addingUpdatedAt = true;
     }
 
-    for (var key in createFieldVals) {
-      if(key=='id' || key=='updated_at' || key=='created_at') continue;
-      createFields.push(key);
-      setFieldsValues.push(params[key])
+    for (var i in setFieldsValues) {
+      if(addingCreatedAt) setFieldsValues[i].push(currentDateTime);
+      if(addingUpdatedAt) setFieldsValues[i].push(currentDateTime)
     }
 
     return oThis.QueryDB.bulkInsert(
