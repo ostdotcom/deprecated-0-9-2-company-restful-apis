@@ -53,14 +53,20 @@ const _private = {
 
 const generate = {
 
-  perform: async function(clientId, name){
+  perform: async function(clientId, addressType, name){
 
     var oThis = this
       , name = name || ""
       , addrUuid = uuid.v4();
 
-    const insertedRec = await managedAddressObj.create({client_id: clientId, name: name,
-      uuid: addrUuid, status: 'active'});
+    const insertedRec = await managedAddressObj.create(
+      {
+        client_id: clientId,
+        name: name,
+        uuid: addrUuid,
+        address_type: addressType,
+        status: 'active'
+      });
 
     if(insertedRec.affectedRows > 0){
       oThis.updateAddress(insertedRec.insertId, clientId);

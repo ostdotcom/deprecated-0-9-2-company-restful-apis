@@ -53,6 +53,20 @@ export OST_RMQ_HEARTBEATS='30'
 export OST_UTILITY_PRICE_ORACLES='{"OST":{"USD":"0x60Fa2655AD1F08DfC3e1DAd9b31e4DD817a36f9D"}}'
 ```
 
+* Setup Workers Contract
+```bash
+> source $HOME/openst-setup/openst_env_vars.sh
+> export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform
+> node $OPENST_PLATFORM_PATH/tools/setup/start_services.js
+
+
+> node node_modules/@openstfoundation/openst-payments/tools/deploy/workers.js $OST_UTILITY_GAS_PRICE
+
+> vim $HOME/openst-setup/openst_env_vars.sh
+# 3rd party contract address
+export OST_UTILITY_WORKERS_CONTRACT_ADDRESS='0x549B7A418f88F02cF366E4999bda858BB8815451'
+```
+
 # Start Services
 
 * Start Platform

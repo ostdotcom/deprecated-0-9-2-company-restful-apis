@@ -5,6 +5,7 @@ const express = require('express')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , listAddressesKlass = require(rootPrefix + '/app/services/client_users/list')
   , getUsersDataKlass = require(rootPrefix + '/app/services/client_users/get_users_data')
+  , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
 ;
 
 /* Create User for a client */
@@ -20,7 +21,7 @@ router.post('/create', function (req, res, next) {
     const handleResponse = function (response) {
       return response.renderResponse(res);
     };
-    return generateAddress.perform(clientId, name).then(handleResponse);
+    return generateAddress.perform(clientId, managedAddressesConst.userAddressType, name).then(handleResponse);
   };
 
   Promise.resolve(performer()).catch(function (err) {

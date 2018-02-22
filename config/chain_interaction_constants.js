@@ -30,3 +30,6 @@ try {
 } catch(err) {
 }
 define("UTILITY_PRICE_ORACLES", po_contracts);
+
+//Workers contract address to setup workers and deploy airdropcontract
+define('UTILITY_WORKERS_CONTRACT_ADDRESS', process.env.OST_UTILITY_WORKERS_CONTRACT_ADDRESS);

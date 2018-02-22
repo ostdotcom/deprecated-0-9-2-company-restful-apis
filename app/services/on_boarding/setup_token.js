@@ -22,6 +22,7 @@ const rootPrefix = '../../..'
   , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
   , ClientSecuredBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
 ;
 
 /**
@@ -184,7 +185,7 @@ SetupToken.prototype = {
 
       } else {
 
-        var r = await generateEthAddress.perform(oThis.clientId);
+        var r = await generateEthAddress.perform(oThis.clientId, managedAddressesConst.reserveAddressType);
         if(r.isFailure()) return onResolve(r);
         const resultData = r.data[r.data.result_type][0];
         oThis.reserve_managed_address_id = resultData.id;
@@ -215,7 +216,7 @@ SetupToken.prototype = {
         oThis.workerAddrUuid = manageAddrObj[0].uuid;
         return onResolve(responseHelper.successWithData({}));
       } else {
-        var r = await generateEthAddress.perform(oThis.clientId);
+        var r = await generateEthAddress.perform(oThis.clientId, managedAddressesConst.workerAddressType);
         if(r.isFailure()) return onResolve(r);
         const resultData = r.data[r.data.result_type][0];
         oThis.worker_managed_address_id = resultData.id;
@@ -247,7 +248,7 @@ SetupToken.prototype = {
         oThis.airdropHolderAddrUuid = manageAddrObj[0].uuid;
         return onResolve(responseHelper.successWithData({}));
       } else {
-        var r = await generateEthAddress.perform(oThis.clientId);
+        var r = await generateEthAddress.perform(oThis.clientId, managedAddressesConst.airdropHolderAddressType);
         if(r.isFailure()) return onResolve(r);
         const resultData = r.data[r.data.result_type][0];
         oThis.airdrop_holder_managed_address_id = resultData.id;

@@ -20,6 +20,7 @@ const EditBrandedTokenKlass = function (params) {
   oThis.symbol = oThis.params.symbol;
   oThis.symbol_icon = oThis.params.symbol_icon;
   oThis.token_erc20_address = oThis.params.token_erc20_address;
+  oThis.airdrop_contract_addr = oThis.params.airdrop_contract_addr;
   oThis.token_uuid = oThis.params.token_uuid;
   oThis.conversion_rate = oThis.params.conversion_rate;
 
@@ -80,8 +81,11 @@ EditBrandedTokenKlass.prototype = {
     ){
       oThis.brandedTokenAr.token_erc20_address = oThis.token_erc20_address;
     }
-
-    if(oThis.token_uuid && basicHelper.isUuidValid(oThis.token_uuid)
+if(oThis.airdrop_contract_addr && basicHelper.isAddressValid(oThis.airdrop_contract_addr) &&
+      oThis.airdrop_contract_addr != oThis.brandedTokenAr.airdrop_contract_addr
+    ){
+      oThis.brandedTokenAr.airdrop_contract_addr = oThis.airdrop_contract_addr;
+    }    if(oThis.token_uuid && basicHelper.isUuidValid(oThis.token_uuid)
     ){
       oThis.brandedTokenAr.token_uuid = oThis.token_uuid;
     }

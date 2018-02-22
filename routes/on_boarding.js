@@ -272,4 +272,29 @@ console.log(response);
 
 });
 
+router.post('/deploy-airdrop-contract', function (req, res, next) {
+
+  const performer = function() {
+
+    const decodedParams = req.decodedParams
+      , DeployAirdropContractKlass = require(rootPrefix + '/app/services/on_boarding/deploy_airdrop_contract');
+
+    // handle final response
+    const handleResponse = function (response) {
+      response.renderResponse(res);
+    };
+
+    const airDropObject = new DeployAirdropContractKlass(decodedParams);
+
+    return airDropObject.perform().then(handleResponse);
+
+  };
+
+  Promise.resolve(performer()).catch(function (err) {
+    logger.notify('r_ob_5', 'Something went wrong', err);
+    responseHelper.error('r_ob_5', 'Something went wrong').renderResponse(res)
+  });
+
+});
+
 module.exports = router;
