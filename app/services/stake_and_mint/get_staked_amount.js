@@ -28,7 +28,7 @@ const GetStakedAmountKlass = function (params) {
 
 GetStakedAmountKlass.prototype = {
 
-  perform: function() {
+  perform: async function() {
 
     var oThis = this
         , r = null;
