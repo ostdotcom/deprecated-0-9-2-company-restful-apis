@@ -140,20 +140,17 @@ router.get('/get-staked-amount', function (req, res, next) {
 
   const performer = function() {
 
-    const decodedParams = req.decodedParams;
+    const decodedParams = req.decodedParams
+        , GetStakedAmountKlass = require(rootPrefix + '/app/services/stake_and_mint/get_staked_amount')
+        , getStakedAmount = new GetStakedAmountKlass(decodedParams)
+    ;
 
     // handle final response
-    const handleOpenStPlatformSuccess = function (getStakedAmountRsp) {
-      if(getStakedAmountRsp.isSuccess()){
-        return responseHelper.successWithData(getStakedAmountRsp.data).renderResponse(res);
-      } else {
-        return responseHelper.error(getStakedAmountRsp.err.code, getStakedAmountRsp.err.message).renderResponse(res);
-      }
+    const handleResponse = function (response) {
+      return response.renderResponse(res);
     };
 
-    const object = new openStPlatform.services.stake.getStakedAmount(decodedParams.simple_stake_contract_address);
-
-    return object.perform().then(handleOpenStPlatformSuccess);
+    return getStakedAmount.perform().then(handleResponse);
 
   };
 
