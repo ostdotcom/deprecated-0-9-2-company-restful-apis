@@ -28,37 +28,6 @@ const GetStakedAmountKlass = function (params) {
 
 GetStakedAmountKlass.prototype = {
 
-  validateAndSanitize: function () {
-
-    var oThis = this;
-
-    if(!oThis.clientId || !oThis.tokenSymbol){
-      return Promise.resolve(responseHelper.error('sam_gsa_1', 'Invalid Params'));
-    }
-
-    return Promise.resolve(responseHelper.successWithData({}));
-
-  },
-
-  setSimpleStakeContractAddr: async function () {
-
-    var oThis = this;
-
-    const clientSecureBrandedTokenCache = new ClientSecuredBrandedTokenCacheKlass({'tokenSymbol': oThis.tokenSymbol});
-    const clientBrandedTokenSecureCacheRsp = await clientSecureBrandedTokenCache.fetch();
-
-    if (clientBrandedTokenSecureCacheRsp.isFailure()) {
-      return Promise.resolve(clientBrandedTokenSecureCacheRsp);
-    }
-
-    const clientBrandedTokenSecureCacheData = clientBrandedTokenSecureCacheRsp.data;
-
-    oThis.simpleStakeContractAddr = clientBrandedTokenSecureCacheData.simple_stake_contract_addr;
-
-    return Promise.resolve(responseHelper.successWithData({}));
-
-  },
-
   perform: function() {
 
     var oThis = this
@@ -83,6 +52,37 @@ GetStakedAmountKlass.prototype = {
     };
 
     return object.perform().then(handleOpenStPlatformSuccess);
+
+  },
+
+  validateAndSanitize: function() {
+
+    var oThis = this;
+
+    if(!oThis.clientId || !oThis.tokenSymbol){
+      return Promise.resolve(responseHelper.error('sam_gsa_1', 'Invalid Params'));
+    }
+
+    return Promise.resolve(responseHelper.successWithData({}));
+
+  },
+
+  setSimpleStakeContractAddr: async function() {
+
+    var oThis = this;
+
+    const clientSecureBrandedTokenCache = new ClientSecuredBrandedTokenCacheKlass({'tokenSymbol': oThis.tokenSymbol});
+    const clientBrandedTokenSecureCacheRsp = await clientSecureBrandedTokenCache.fetch();
+
+    if (clientBrandedTokenSecureCacheRsp.isFailure()) {
+      return Promise.resolve(clientBrandedTokenSecureCacheRsp);
+    }
+
+    const clientBrandedTokenSecureCacheData = clientBrandedTokenSecureCacheRsp.data;
+
+    oThis.simpleStakeContractAddr = clientBrandedTokenSecureCacheData.simple_stake_contract_addr;
+
+    return Promise.resolve(responseHelper.successWithData({}));
 
   }
 
