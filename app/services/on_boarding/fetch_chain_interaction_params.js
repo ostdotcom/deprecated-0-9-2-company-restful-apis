@@ -55,7 +55,7 @@ FetchChainInteractionParams.prototype = {
 
     };
 
-    return responseHelper.successWithData(responseData);
+    return Promise.resolve(responseHelper.successWithData(responseData));
 
   }
 
