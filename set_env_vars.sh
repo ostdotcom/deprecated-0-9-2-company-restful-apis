@@ -5,7 +5,7 @@ export CR_SUB_ENVIRONMENT='sandbox'
 # Database details
 export CR_MYSQL_HOST='127.0.0.1'
 export CR_MYSQL_USER='root'
-export CR_MYSQL_PASSWORD=''
+export CR_MYSQL_PASSWORD='root'
 export CR_MYSQL_CONNECTION_POOL_SIZE='5'
 export CR_MYSQL_TIMEZONE='+05:30'
 
