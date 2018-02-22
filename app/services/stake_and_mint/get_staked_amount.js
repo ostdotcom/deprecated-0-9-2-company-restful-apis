@@ -4,6 +4,7 @@ const rootPrefix = '../../..'
     , responseHelper = require(rootPrefix + '/lib/formatter/response')
     , ClientSecuredBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
     , openStPlatform = require('@openstfoundation/openst-platform')
+    , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
 
 /**
@@ -45,7 +46,8 @@ GetStakedAmountKlass.prototype = {
 
     const handleOpenStPlatformSuccess = function (getStakedAmountRsp) {
       if(getStakedAmountRsp.isSuccess()){
-        return responseHelper.successWithData(getStakedAmountRsp.data);
+        const amountInWei = getStakedAmountRsp.data.allTimeStakedAmount;
+        return responseHelper.successWithData({allTimeStakedAmount: basicHelper.convertToNormal(amountInWei)});
       } else {
         return responseHelper.error(getStakedAmountRsp.err.code, getStakedAmountRsp.err.message);
       }
