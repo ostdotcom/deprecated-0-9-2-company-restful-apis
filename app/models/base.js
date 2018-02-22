@@ -45,6 +45,36 @@ ModelBaseKlass.prototype = {
 
   },
 
+  bulkInsert: function (createFields, createFieldVals) {
+
+    var oThis = this
+      , addingCreatedAt = false
+      , addingUpdatedAt = false
+    ;
+
+    if(!createFields.indexOf('created_at') > 0){
+      createFields.push('created_at');
+      addingCreatedAt = true;
+    }
+    if(!createFields.indexOf('updated_at') > 0){
+      createFields.push('updated_at');
+      addingUpdatedAt = true;
+    }
+
+    for (var key in createFieldVals) {
+      if(key=='id' || key=='updated_at' || key=='created_at') continue;
+      createFields.push(key);
+      setFieldsValues.push(params[key])
+    }
+
+    return oThis.QueryDB.bulkInsert(
+      oThis.tableName,
+      createFields,
+      setFieldsValues
+    );
+
+  },
+
   edit: function (params) {
     var oThis = this
       , editFields = []

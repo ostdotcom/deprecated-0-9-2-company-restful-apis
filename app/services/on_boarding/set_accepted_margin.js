@@ -1,14 +1,15 @@
 "use strict";
 
 const OpenStPaymentsKlass = require('@openstfoundation/openst-payments')
+  , BigNumber = require('bignumber.js')
 ;
 
 const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , chainIntConstants = require(rootPrefix + '/config/chain_interaction_constants')
+  , coreConstants = require(rootPrefix + '/config/core_constants')
   , clientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
-  , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
-  , basicHelper = require(rootPrefix + '/helpers/basic')
+  , utils = require(rootPrefix + '/lib/util')
 ;
 
 const SetWorkerKlass = function (params) {
@@ -17,15 +18,13 @@ const SetWorkerKlass = function (params) {
   oThis.tokenSymbol = params['token_symbol'];
   oThis.clientId = params['client_id'];
 
-  oThis.workerContractAddress = chainIntConstants.UTILITY_WORKERS_CONTRACT_ADDRESS;
   oThis.senderAddress = chainIntConstants.UTILITY_OPS_ADDR;
   oThis.senderPassphrase = chainIntConstants.UTILITY_OPS_PASSPHRASE;
   oThis.chainId = chainIntConstants.UTILITY_CHAIN_ID;
   oThis.gasPrice = chainIntConstants.UTILITY_GAS_PRICE;
 
-  oThis.deactivationHeight = basicHelper.convertToBigNumber(10).toPower(18).toString(10);
-
-  oThis.workerAddress = '';
+  oThis.acceptedMargin = coreConstants.ACCEPTED_PRICE_FLUCTUATION_FOR_PAYMENT.OST.USD;
+  oThis.airDropContractAddress = '';
 
 };
 
@@ -39,13 +38,13 @@ SetWorkerKlass.prototype = {
     r = await oThis.validateAndSanitize();
     if(r.isFailure()) return Promise.resolve(r);
 
-    const workers = new OpenStPaymentsKlass.workers(oThis.workerContractAddress, oThis.chainId);
+    const airdrop = new OpenStPaymentsKlass.airdrop(oThis.airDropContractAddress, oThis.chainId);
 
-    r = await workers.setWorker(
+    r = await airdrop.setAcceptedMargin(
       oThis.senderAddress,
       oThis.senderPassphrase,
-      oThis.workerAddress,
-      oThis.deactivationHeight,
+      'USD',
+      oThis.acceptedMargin,
       oThis.gasPrice,
       {returnType: "txHash"}
     );
@@ -58,11 +57,7 @@ SetWorkerKlass.prototype = {
     var oThis = this;
 
     if(!oThis.tokenSymbol || !oThis.clientId){
-      return Promise.resolve(responseHelper.error('ob_sw_2', 'Mandatory params missing.'));
-    }
-
-    if(!oThis.workerContractAddress){
-      return Promise.resolve(responseHelper.error('ob_sw_2', 'Mandatory to have Workers contract deployed.'));
+      return Promise.resolve(responseHelper.error('ob_spo_2', 'Mandatory params missing.'));
     }
 
     const clientBrandedTokenObj = new clientBrandedTokenKlass();
@@ -70,17 +65,13 @@ SetWorkerKlass.prototype = {
     const brandedToken = clientBrandedToken[0];
 
     if(brandedToken.client_id != oThis.clientId){
-      return Promise.resolve(responseHelper.error('ob_sw_1', 'Unauthorised request'));
+      return Promise.resolve(responseHelper.error('ob_spo_1', 'Unauthorised request'));
     }
 
-    const workerManagedAddressId = brandedToken.worker_managed_address_id
-      , managedAddressInstance = new ManagedAddressKlass()
-      , managedAddresses = await managedAddressInstance.getByIds([workerManagedAddressId]);
+    oThis.airDropContractAddress = brandedToken.airdrop_contract_addr;
 
-    oThis.workerAddress = managedAddresses[0].ethereum_address;
-
-    if(!oThis.workerAddress){
-      return Promise.resolve(responseHelper.error('ob_sw_3', 'Worker address is mandatory.'));
+    if(!oThis.airDropContractAddress){
+      return Promise.resolve(responseHelper.error('ob_spo_3', 'Airdrop contract address is mandatory.'));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));

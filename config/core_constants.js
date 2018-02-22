@@ -37,3 +37,11 @@ define('GENERIC_SHA_KEY', process.env.CA_GENERIC_SHA_KEY);
 
 // Cache data key
 define('CACHE_SHA_KEY', process.env.CR_CACHE_DATA_SHA_KEY);
+
+// Price oracle details
+var accepted_margine = {};
+try {
+  accepted_margine = JSON.parse(process.env.CR_ACCEPTED_PRICE_FLUCTUATION_FOR_PAYMENT);
+} catch(err) {
+}
+define('ACCEPTED_PRICE_FLUCTUATION_FOR_PAYMENT', accepted_margine);

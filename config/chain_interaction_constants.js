@@ -11,6 +11,8 @@ function define(name, value) {
 define("UTILITY_CHAIN_ID", process.env.OST_UTILITY_CHAIN_ID);
 define("UTILITY_GAS_PRICE", process.env.OST_UTILITY_GAS_PRICE);
 define("UTILITY_GETH_RPC_PROVIDER", process.env.OST_UTILITY_GETH_RPC_PROVIDER);
+define("UTILITY_OPS_ADDR", process.env.OST_UTILITY_OPS_ADDR);
+define("UTILITY_OPS_PASSPHRASE", process.env.OST_UTILITY_OPS_PASSPHRASE);
 
 // Constants which are needed to interact with Value Chain
 define("VALUE_CHAIN_ID", process.env.OST_VALUE_CHAIN_ID);

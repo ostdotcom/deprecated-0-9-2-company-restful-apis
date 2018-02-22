@@ -86,7 +86,7 @@ DeployAirdropContractClass.prototype = {
 
     const constructorArgs = [
       oThis.brandedTokenAddress,
-      utils.asciiToHex('USD'),
+      utils.asciiToHex('OST'),
       oThis.workerContractAddress,
       oThis.airdropBudgetHolderAddr
     ];

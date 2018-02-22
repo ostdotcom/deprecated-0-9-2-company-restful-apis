@@ -7,7 +7,7 @@ const rootPrefix = '../../..'
   , ostBalanceCacheKlass = require(rootPrefix + '/lib/cache_management/ostBalance')
   , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
   , ClientBrandedTokenSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
-  , logger = require(rootPrefix+'/lib/logger/custom_console_logger')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
 
@@ -18,7 +18,7 @@ const rootPrefix = '../../..'
  *
  * @constructor
  */
-const utilityChainBalancesFetcherKlass = function(params) {
+const utilityChainBalancesFetcherKlass = function (params) {
 
   const oThis = this;
 
@@ -37,10 +37,10 @@ utilityChainBalancesFetcherKlass.prototype = {
    *
    * @return {Result}
    */
-  perform: async function(){
+  perform: async function () {
 
     const oThis = this
-        , balanceTypes = oThis.balanceTypes ;
+      , balanceTypes = oThis.balanceTypes;
 
     const setAddrRsp = await oThis._setAddress();
 
@@ -49,13 +49,13 @@ utilityChainBalancesFetcherKlass.prototype = {
     }
 
     var promiseResolvers = []
-        , balances = {};
+      , balances = {};
 
-    for (var i=0; i < balanceTypes.length; i++) {
+    for (var i = 0; i < balanceTypes.length; i++) {
 
       if (oThis._nonBrandedTokenBalanceTypes().indexOf(balanceTypes[i]) >= 0) {
 
-        var promise = oThis["_fetch"+balanceTypes[i]+"Balance"].apply(oThis);
+        var promise = oThis["_fetch" + balanceTypes[i] + "Balance"].apply(oThis);
 
       } else {
 
@@ -69,11 +69,11 @@ utilityChainBalancesFetcherKlass.prototype = {
 
     const promiseResolverResponses = await Promise.all(promiseResolvers);
 
-    for (var i=0; i < balanceTypes.length; i++) {
+    for (var i = 0; i < balanceTypes.length; i++) {
 
       var balanceType = balanceTypes[i]
-          , response = promiseResolverResponses[i]
-          , balance = null;
+        , response = promiseResolverResponses[i]
+        , balance = null;
 
       if (response.isFailure()) {
         logger.notify('ub_bf_1', 'Something Went Wrong', response);
@@ -98,7 +98,7 @@ utilityChainBalancesFetcherKlass.prototype = {
    *
    * @return {Array}
    */
-  _nonBrandedTokenBalanceTypes: function() {
+  _nonBrandedTokenBalanceTypes: function () {
     return ['ostPrime']
   },
 
@@ -107,7 +107,7 @@ utilityChainBalancesFetcherKlass.prototype = {
    *
    * @return {Promise}
    */
-  _fetchostPrimeBalance: function(){
+  _fetchostPrimeBalance: function () {
 
     const oThis = this;
 
@@ -124,11 +124,11 @@ utilityChainBalancesFetcherKlass.prototype = {
    *
    * @return {Promise}
    */
-  _fetchBrandedTokenBalance: async function(tokenSymbol){
+  _fetchBrandedTokenBalance: async function (tokenSymbol) {
 
     const oThis = this
-        , clientBrandedTokenSecureCacheObj = new ClientBrandedTokenSecureCacheKlass({tokenSymbol: tokenSymbol})
-        , clientBrandedTokenSecureCacheRsp = await clientBrandedTokenSecureCacheObj.fetch();
+      , clientBrandedTokenSecureCacheObj = new ClientBrandedTokenSecureCacheKlass({tokenSymbol: tokenSymbol})
+      , clientBrandedTokenSecureCacheRsp = await clientBrandedTokenSecureCacheObj.fetch();
 
     if (clientBrandedTokenSecureCacheRsp.isFailure()) {
       return Promise.resolve(clientBrandedTokenSecureCacheRsp);
@@ -137,11 +137,11 @@ utilityChainBalancesFetcherKlass.prototype = {
     const clientBrandedTokenSecureCacheData = clientBrandedTokenSecureCacheRsp.data;
 
     if (parseInt(clientBrandedTokenSecureCacheData.client_id) != parseInt(oThis.clientId)) {
-      return Promise.resolve(responseHelper.error('bf_1','Unauthorised for some other client'));
+      return Promise.resolve(responseHelper.error('bf_1', 'Unauthorised for some other client'));
     }
 
     if (!clientBrandedTokenSecureCacheData.token_erc20_address) {
-      return Promise.resolve(responseHelper.error('bf_2','Token Contract Not Deployed'));
+      return Promise.resolve(responseHelper.error('bf_2', 'Token Contract Not Deployed'));
     }
 
     const obj = new openStPlatform.services.balance.brandedToken(
@@ -157,11 +157,11 @@ utilityChainBalancesFetcherKlass.prototype = {
    *
    * @return {Promise}
    */
-  _setAddress: async function(){
+  _setAddress: async function () {
 
     const oThis = this;
 
-    const managedAddressCache = new ManagedAddressCacheKlass({'uuids': [oThis.addressUuid] });
+    const managedAddressCache = new ManagedAddressCacheKlass({'uuids': [oThis.addressUuid]});
 
     const cacheFetchResponse = await managedAddressCache.fetch();
     var response = cacheFetchResponse.data[oThis.addressUuid];

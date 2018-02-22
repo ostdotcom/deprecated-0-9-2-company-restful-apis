@@ -89,7 +89,8 @@ EditBrandedTokenKlass.prototype = {
     }
 
     if((oThis.token_uuid && basicHelper.isUuidValid(oThis.token_uuid)) &&
-        (oThis.token_uuid != oThis.brandedTokenAr.token_uuid)) {
+        (oThis.token_uuid != oThis.brandedTokenAr.token_uuid)
+    ){
       oThis.brandedTokenAr.token_uuid = oThis.token_uuid;
     }
 

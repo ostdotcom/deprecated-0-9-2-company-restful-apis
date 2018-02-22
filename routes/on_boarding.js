@@ -208,4 +208,20 @@ router.post('/set-worker', function (req, res, next) {
 
 });
 
+router.post('/set-price-oracle', function (req, res, next) {
+
+  const SetWorkerKlass = require(rootPrefix + '/app/services/on_boarding/set_price_oracle');
+
+  Promise.resolve(routeHelper.performer(req, res, next, SetWorkerKlass, 'r_ob_11'));
+
+});
+
+router.post('/set-accepted-margin', function (req, res, next) {
+
+  const SetWorkerKlass = require(rootPrefix + '/app/services/on_boarding/set_accepted_margin');
+
+  Promise.resolve(routeHelper.performer(req, res, next, SetWorkerKlass, 'r_ob_11'));
+
+});
+
 module.exports = router;

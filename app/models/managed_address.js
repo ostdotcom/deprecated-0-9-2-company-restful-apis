@@ -84,20 +84,23 @@ const ManagedAddressKlassPrototype = {
     }
 
     if (sortBy == 'creation_time') {
-      orderBy = 'order by id DESC';
+      orderBy = 'id DESC';
     } else {
-      orderBy = 'order by id ASC'
+      orderBy = 'id ASC'
     }
 
-    paginationClause = `limit ${params.pageSize} offset ${params.pageSize * (pageNo - 1)}`;
+    //paginationClause = `limit ${params.pageSize} offset ${params.pageSize * (pageNo - 1)}`;
 
     return oThis.QueryDB.read(
       oThis.tableName,
       ['id', 'name', 'uuid'],
       'client_id = ?',
       [clientId],
-      orderBy,
-      paginationClause
+      {
+        order: orderBy,
+        limit: params.pageSize,
+        offset: params.pageSize * (pageNo - 1)
+      }
     );
 
   },

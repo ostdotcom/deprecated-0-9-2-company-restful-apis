@@ -46,6 +46,10 @@ export OST_RMQ_HEARTBEATS='30'
 > node $OPENST_PLATFORM_PATH/tools/setup/start_services.js
 
 
+> vim $HOME/openst-setup/openst_env_vars.sh
+export OST_UTILITY_PRICE_ORACLES='{}'
+
+> source $HOME/openst-setup/openst_env_vars.sh
 > node node_modules/@ostdotcom/ost-price-oracle/tools/deploy/price_oracle.js OST USD $OST_UTILITY_GAS_PRICE
 
 > vim $HOME/openst-setup/openst_env_vars.sh

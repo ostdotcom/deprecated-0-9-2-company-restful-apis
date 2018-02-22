@@ -50,7 +50,9 @@ const ClientBrandedTokenKlassPrototype = {
       [],
       "client_id=?",
       [client_id],
-      'order by id DESC'
+      {
+        order: 'id DESC'
+      }
     );
   }
 

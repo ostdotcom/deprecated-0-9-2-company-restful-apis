@@ -26,19 +26,25 @@ QueryDB.prototype = {
     return mysqlWrapper.getPoolFor(this.dbName, 'master');
   },
 
-  read: function(tableName, fields, whereClause, whereClauseValues, orderByClause, paginationClause) {
+  read: function(tableName, fields, whereClause, whereClauseValues, options) {
     var oThis = this
       , selectFields = ((!fields || fields.length==0) ? '*' : fields.join(','))
       , selectWhereClause = ((!whereClause || whereClause.length==0) ? '' : ' where '+whereClause)
       , whereClauseValues = (!whereClauseValues) ? [] : whereClauseValues
       , q = 'SELECT '+selectFields+' FROM '+tableName+' '+selectWhereClause;
 
-    if (orderByClause){
-      q = q + ' ' + orderByClause;
+    if(options.order){
+      q = q + ' ORDER BY ' + options.order + ' ';
     }
 
-    if (paginationClause) {
-      q = q + ' ' + paginationClause;
+    if(options.limit){
+      q = q + ' LIMIT ? ';
+      whereClauseValues.push(options.limit);
+    }
+
+    if(options.offset){
+      q = q + ' OFFSET ? ';
+      whereClauseValues.push(options.offset);
     }
 
     return new Promise(
@@ -88,6 +94,39 @@ QueryDB.prototype = {
       , queryArgs = queryArgs.concat([currentDateTime, currentDateTime])
       , q = 'INSERT INTO '+tableName+' ('+fields+') VALUES (?)'
     ;
+
+    return new Promise(
+      function (onResolve, onReject) {
+        // get a timestamp before running the query
+        var pre_query = Date.now();
+        var qry = oThis.onWriteConnection().query(q, [queryArgs], function (err, result, fields) {
+          logger.info("(%s ms) %s", (Date.now() - pre_query), qry.sql);
+          if (err) {
+            onReject(err);
+          } else {
+            onResolve({
+              fieldCount: result.fieldCount,
+              affectedRows: result.affectedRows,
+              insertId: result.insertId
+            });
+          }
+        });
+
+      }
+    );
+  },
+
+  bulkInsert: function(tableName, fields, queryArgs, options) {
+
+    var oThis = this
+      , currentDateTime = util.formatDbDate(new Date())
+      , fields = fields.concat(['created_at', 'updated_at'])
+      , q = 'INSERT INTO '+tableName+' ('+fields+') VALUES ?'
+    ;
+
+    for(var i in queryArgs){
+      queryArgs[i] = queryArgs[i].concat([currentDateTime, currentDateTime]);
+    }
 
     return new Promise(
       function (onResolve, onReject) {
