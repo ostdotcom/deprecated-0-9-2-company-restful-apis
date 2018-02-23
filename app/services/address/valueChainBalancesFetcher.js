@@ -5,7 +5,7 @@ const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , ethBalanceCacheKlass = require(rootPrefix + '/lib/cache_management/ethBalance')
   , ostBalanceCacheKlass = require(rootPrefix + '/lib/cache_management/ostBalance')
-  , logger = require(rootPrefix+'/lib/logger/custom_console_logger')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
 
@@ -16,7 +16,7 @@ const rootPrefix = '../../..'
  *
  * @constructor
  */
-const valueChainBalancesFetcherKlass = function(params) {
+const valueChainBalancesFetcherKlass = function (params) {
 
   const oThis = this;
 
@@ -33,19 +33,19 @@ valueChainBalancesFetcherKlass.prototype = {
    *
    * @return {Result}
    */
-  perform: async function(){
+  perform: async function () {
 
     const oThis = this
-        , balanceTypes = oThis.balanceTypes;
-    
-    var promiseResolvers = []
-        , balances = {};
+      , balanceTypes = oThis.balanceTypes;
 
-    for (var i=0; i < balanceTypes.length; i++) {
+    var promiseResolvers = []
+      , balances = {};
+
+    for (var i = 0; i < balanceTypes.length; i++) {
 
       if (oThis.supportedBalanceTypes().indexOf(balanceTypes[i]) >= 0) {
 
-        var promise = oThis["_fetch"+balanceTypes[i]+"Balance"].apply(oThis);
+        var promise = oThis["_fetch" + balanceTypes[i] + "Balance"].apply(oThis);
 
       } else {
 
@@ -59,11 +59,11 @@ valueChainBalancesFetcherKlass.prototype = {
 
     const promiseResolverResponses = await Promise.all(promiseResolvers);
 
-    for (var i=0; i < balanceTypes.length; i++) {
+    for (var i = 0; i < balanceTypes.length; i++) {
 
       var balanceType = balanceTypes[i]
-          , response = promiseResolverResponses[i]
-          , balance = null;
+        , response = promiseResolverResponses[i]
+        , balance = null;
 
       if (response.isFailure()) {
         logger.notify('b_f1_2', 'Something Went Wrong', response);
@@ -82,7 +82,7 @@ valueChainBalancesFetcherKlass.prototype = {
    *
    * @return {Array}
    */
-  supportedBalanceTypes: function() {
+  supportedBalanceTypes: function () {
     return [
       'ost',
       'eth'
@@ -94,7 +94,7 @@ valueChainBalancesFetcherKlass.prototype = {
    *
    * @return {Promise}
    */
-  _fetchethBalance: function(){
+  _fetchethBalance: function () {
 
     const oThis = this;
 
@@ -109,7 +109,7 @@ valueChainBalancesFetcherKlass.prototype = {
    *
    * @return {Promise}
    */
-  _fetchostBalance: function(){
+  _fetchostBalance: function () {
 
     const oThis = this;
 

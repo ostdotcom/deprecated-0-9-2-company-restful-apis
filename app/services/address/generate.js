@@ -14,25 +14,44 @@ const rootPrefix = '../../..'
 
 const _private = {
 
-  callOpenST: function(passphrase){
+  /**
+   * Call Open ST platform function for creating address in Utility chain.
+   *
+   * @param passphrase
+   */
+  callOpenST: function (passphrase) {
 
     const obj = new openStPlatform.services.utils.generateAddress(
-        {'passphrase': passphrase, 'chain': 'utility'}
+      {'passphrase': passphrase, 'chain': 'utility'}
     );
 
     return obj.perform();
 
   },
 
-  generatePassphrase: function(){
+  /**
+   * Generate Random Passphrase.
+   *
+   * @return {string}
+   */
+  generatePassphrase: function () {
     var iv = new Buffer(crypto.randomBytes(16));
     return (iv.toString('hex').slice(0, 16));
   },
 
-  updateInDb: async function(company_managed_address_id, eth_address, passphrase, clientId){
+  /**
+   * Update the row in database.
+   *
+   * @param company_managed_address_id
+   * @param eth_address
+   * @param passphrase
+   * @param clientId
+   * @return {Promise<*>}
+   */
+  updateInDb: async function (company_managed_address_id, eth_address, passphrase, clientId) {
     var obj = new AddressesEncryptorKlass(clientId);
     var passPhraseEncr = await obj.encrypt(passphrase);
-    if(!passPhraseEncr){
+    if (!passPhraseEncr) {
       return Promise.resolve(responseHelper.error("s_ad_g_1", "Error while generating user address."));
     }
 
@@ -53,7 +72,16 @@ const _private = {
 
 const generate = {
 
-  perform: async function(clientId, addressType, name){
+  /**
+   *
+   * Perform operation of generating new address
+   *
+   * @param clientId
+   * @param addressType
+   * @param name
+   * @return {Promise<*>}
+   */
+  perform: async function (clientId, addressType, name) {
 
     var oThis = this
       , name = name || ""
@@ -68,11 +96,11 @@ const generate = {
         status: 'active'
       });
 
-    if(insertedRec.affectedRows > 0){
+    if (insertedRec.affectedRows > 0) {
       oThis.updateAddress(insertedRec.insertId, clientId);
     }
 
-    const managedAddressCache = new ManagedAddressCacheKlass({'uuids': [addrUuid] });
+    const managedAddressCache = new ManagedAddressCacheKlass({'uuids': [addrUuid]});
     managedAddressCache.clear();
 
     return responseHelper.successWithData({
@@ -93,12 +121,19 @@ const generate = {
 
   },
 
-  updateAddress: async function(company_managed_address_id, clientId){
+  /**
+   * Update the record in db, after generating an address.
+   *
+   * @param company_managed_address_id
+   * @param clientId
+   * @return {Promise<*>}
+   */
+  updateAddress: async function (company_managed_address_id, clientId) {
 
     var passphrase = _private.generatePassphrase();
 
     var r1 = await _private.callOpenST(passphrase);
-    if(r1.isFailure()){
+    if (r1.isFailure()) {
       return r1;
     }
     var eth_address = r1.data.address;

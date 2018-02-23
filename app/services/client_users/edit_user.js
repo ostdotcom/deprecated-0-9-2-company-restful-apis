@@ -1,5 +1,10 @@
 "use strict";
 
+/**
+ * Edit Name of a user
+ *
+ * @module services/client_users/edit_user
+ */
 const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
@@ -9,15 +14,23 @@ const rootPrefix = '../../..'
 
 const editUser = {
 
-  perform: async function(clientId, userUuid, name){
+  /**
+   * Perform Edit user operation
+   *
+   * @param clientId
+   * @param userUuid
+   * @param name
+   * @return {Promise<*>}
+   */
+  perform: async function (clientId, userUuid, name) {
 
     const oThis = this;
 
-    if(!clientId || !userUuid || !name){
+    if (!clientId || !userUuid || !name) {
       return responseHelper.error("s_cu_eu_1", "Mandatory parameters missing");
     }
 
-    var managedAddressCache = new ManagedAddressCacheKlass({'uuids': [userUuid] });
+    var managedAddressCache = new ManagedAddressCacheKlass({'uuids': [userUuid]});
 
     const cacheFetchResponse = await managedAddressCache.fetch();
     var response = cacheFetchResponse.data[userUuid];
@@ -26,7 +39,7 @@ const editUser = {
       return responseHelper.error("s_cu_eu_2", "User not found");
     }
 
-    if (response['client_id'] != clientId){
+    if (response['client_id'] != clientId) {
       return responseHelper.error("s_cu_eu_3", "User does not belong to client");
     }
 
@@ -46,7 +59,7 @@ const editUser = {
       }
     };
 
-    if(response['name'] == name){
+    if (response['name'] == name) {
       return responseHelper.successWithData(apiResponseData);
     }
 

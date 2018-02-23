@@ -8,9 +8,9 @@
  */
 
 const rootPrefix = '../../..'
-    , responseHelper = require(rootPrefix + '/lib/formatter/response')
-    , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
-    , openStPlatform = require('@openstfoundation/openst-platform')
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
+  , openStPlatform = require('@openstfoundation/openst-platform')
 ;
 
 /**
@@ -22,7 +22,7 @@ const rootPrefix = '../../..'
  * @param {number} params.client_id - client id for whom users are to be created.
  *
  */
-const FetchChainInteractionParams = function(params){
+const FetchChainInteractionParams = function (params) {
 
   this.clientId = params.client_id;
 
@@ -40,7 +40,7 @@ FetchChainInteractionParams.prototype = {
 
     const oThis = this;
 
-    if(!oThis.clientId){
+    if (!oThis.clientId) {
       return Promise.resolve(responseHelper.error('ob_fcip_1', 'missing clientId'));
     }
 

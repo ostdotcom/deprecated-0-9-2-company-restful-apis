@@ -2,7 +2,7 @@
 
 const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , logger = require(rootPrefix+'/lib/logger/custom_console_logger')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
   , managedAddress = new ManagedAddressKlass()
 ;
@@ -12,7 +12,7 @@ const rootPrefix = '../../..'
  *
  * @constructor
  */
-const GetUsersDataKlass = function(params) {
+const GetUsersDataKlass = function (params) {
 
   const oThis = this;
 
@@ -27,19 +27,19 @@ GetUsersDataKlass.prototype = {
    *
    * @return {Promise<result>}
    */
-  perform: async function(){
+  perform: async function () {
     const oThis = this;
     var users = await managedAddress.getByEthAddresses(oThis.ethAddresses);
 
-    if(users.length <= 0){
+    if (users.length <= 0) {
       return Promise.resolve(responseHelper.error("s_cu_gud_1", "No Data found"));
     }
 
     var response = {};
-    for(var i=0;i<users.length;i++){
+    for (var i = 0; i < users.length; i++) {
       var user = users[i];
 
-      if(user['client_id'] != oThis.clientId){
+      if (user['client_id'] != oThis.clientId) {
         return Promise.resolve(responseHelper.error("s_cu_gud_2", "Invalid client details."));
       }
 

@@ -34,7 +34,7 @@ SetWorkerKlass.prototype = {
       , r = null;
 
     r = await oThis.validateAndSanitize();
-    if(r.isFailure()) return Promise.resolve(r);
+    if (r.isFailure()) return Promise.resolve(r);
 
     const airdrop = new OpenStPaymentsKlass.airdrop(oThis.airDropContractAddress, oThis.chainId);
 
@@ -54,7 +54,7 @@ SetWorkerKlass.prototype = {
 
     var oThis = this;
 
-    if(!oThis.tokenSymbol || !oThis.clientId){
+    if (!oThis.tokenSymbol || !oThis.clientId) {
       return Promise.resolve(responseHelper.error('ob_spo_2', 'Mandatory params missing.'));
     }
 
@@ -62,13 +62,13 @@ SetWorkerKlass.prototype = {
     const clientBrandedToken = await clientBrandedTokenObj.getBySymbol(oThis.tokenSymbol);
     const brandedToken = clientBrandedToken[0];
 
-    if(brandedToken.client_id != oThis.clientId){
+    if (brandedToken.client_id != oThis.clientId) {
       return Promise.resolve(responseHelper.error('ob_spo_1', 'Unauthorised request'));
     }
 
     oThis.airDropContractAddress = brandedToken.airdrop_contract_addr;
 
-    if(!oThis.airDropContractAddress){
+    if (!oThis.airDropContractAddress) {
       return Promise.resolve(responseHelper.error('ob_spo_3', 'Airdrop contract address is mandatory.'));
     }
 

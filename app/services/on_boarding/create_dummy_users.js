@@ -28,7 +28,7 @@ const rootPrefix = '../../..'
  * @param {number} params.number_of_users - number_of_users to be geenrated
  *
  */
-const CreateDummyUsers = function(params){
+const CreateDummyUsers = function (params) {
 
   this.clientId = params.client_id;
   this.numberOfUsers = parseInt(params.number_of_users);
@@ -50,7 +50,7 @@ CreateDummyUsers.prototype = {
     var r = null;
 
     r = await oThis.validateParams();
-    if(r.isFailure()) return r;
+    if (r.isFailure()) return r;
 
     // Do NOT wait for this promise to resolve to end request
     oThis.createUserInBackground();
@@ -69,26 +69,26 @@ CreateDummyUsers.prototype = {
 
     const oThis = this;
 
-    if(!oThis.numberOfUsers){
+    if (!oThis.numberOfUsers) {
       return Promise.resolve(responseHelper.error(
-          'ob_cdu_1', 'Invlaid numberOfUsers')
+        'ob_cdu_1', 'Invlaid numberOfUsers')
       );
     }
 
-    if(oThis.numberOfUsers > 25){
+    if (oThis.numberOfUsers > 25) {
       oThis.numberOfUsers = 25;
     }
 
-    if(!oThis.clientId){
+    if (!oThis.clientId) {
       return Promise.resolve(responseHelper.error(
-          'ob_cdu_2', 'missing clientId')
+        'ob_cdu_2', 'missing clientId')
       );
     }
 
     const clientBrandedTokenCache = new ClientBrandedTokenCacheKlass({'clientId': oThis.clientId})
-        , clientDetail = await clientBrandedTokenCache.fetch();
+      , clientDetail = await clientBrandedTokenCache.fetch();
 
-    if(clientDetail.isFailure()){
+    if (clientDetail.isFailure()) {
       return Promise.resolve(responseHelper.error(
         'ob_cdu_3', 'Invlaid Client')
       );
@@ -110,15 +110,15 @@ CreateDummyUsers.prototype = {
 
     var promiseResolvers = [];
 
-    for(var i=0; i<oThis.numberOfUsers; i++) {
-      promiseResolvers.push(generateAddress.perform(oThis.clientId, managedAddressesConst.userAddressType, "User "+i));
+    for (var i = 0; i < oThis.numberOfUsers; i++) {
+      promiseResolvers.push(generateAddress.perform(oThis.clientId, managedAddressesConst.userAddressType, "User " + i));
     }
 
     const resolversData = await Promise.all(promiseResolvers);
 
-    for(var i=0; i<resolversData.length; i++) {
+    for (var i = 0; i < resolversData.length; i++) {
 
-      if(resolversData[i].isFailure()) {
+      if (resolversData[i].isFailure()) {
         logger.notify('c_d_u_1', 'Something Went Wrong', resolversData[i]);
       }
 

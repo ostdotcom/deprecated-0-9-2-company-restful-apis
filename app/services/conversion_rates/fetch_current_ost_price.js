@@ -33,11 +33,11 @@ const priceOracle = OSTPriceOracle.priceOracle
  *
  * @constructor
  */
-const FetchCurrentOSTPriceKlass = function(params){
+const FetchCurrentOSTPriceKlass = function (params) {
   const oThis = this;
 
   oThis.quoteCurrency = params.currency_code || conversionRateConstants.usd_currency();
-  oThis.currentTime = Math.floor((new Date).getTime()/1000);
+  oThis.currentTime = Math.floor((new Date).getTime() / 1000);
   oThis.currentOstValue = null;
 };
 
@@ -48,7 +48,7 @@ FetchCurrentOSTPriceKlass.prototype = {
    *
    * @return {promise<result>} - returns a promise which resolves to an object of kind Result
    */
-  perform: async function(){
+  perform: async function () {
     const oThis = this;
     var url = exchangeUrl + "?convert=" + oThis.quoteCurrency;
 
@@ -58,7 +58,7 @@ FetchCurrentOSTPriceKlass.prototype = {
     // Parse Coinmarketcap api response
     oThis.parseResponse(response);
 
-    if(!oThis.currentOstValue){
+    if (!oThis.currentOstValue) {
       logger.notify('f_c_o_p_1', "Invalid Response from CoinMarket", response);
       return;
     }
@@ -69,7 +69,7 @@ FetchCurrentOSTPriceKlass.prototype = {
 
     // Set current price in contract
     var contractResponse = await oThis.setPriceInContract();
-    if(contractResponse.isFailure()){
+    if (contractResponse.isFailure()) {
       logger.notify('f_c_o_p_2', "Error while setting price in contract.", response);
       return;
     }
@@ -89,7 +89,7 @@ FetchCurrentOSTPriceKlass.prototype = {
    *
    * Sets currentOstValue
    */
-  parseResponse: function(response){
+  parseResponse: function (response) {
     const oThis = this;
     try {
       var ostValue = JSON.parse(response)[0];
@@ -103,7 +103,8 @@ FetchCurrentOSTPriceKlass.prototype = {
         logger.notify('f_c_o_p_4', "Invalid OST Price", response);
         return;
       }
-      oThis.currentOstValue = {base_currency: conversionRateConstants.ost_currency(),
+      oThis.currentOstValue = {
+        base_currency: conversionRateConstants.ost_currency(),
         quote_currency: oThis.quoteCurrency,
         conversion_rate: pricePoint,
         timestamp: oThis.currentTime,
@@ -111,21 +112,26 @@ FetchCurrentOSTPriceKlass.prototype = {
       };
       return;
     }
-    catch(err) {
+    catch (err) {
       logger.notify('f_c_o_p_5', "Invalid Response from CoinMarket", response);
       return;
     }
   },
 
-  // Set current price in Price oracle contract
-  setPriceInContract: function(){
+
+  /**
+   * Set current price in Price oracle contract
+   *
+   * @return {Promise<Result>}
+   */
+  setPriceInContract: function () {
     const oThis = this;
 
     logger.info("Price Input for contract:" + oThis.currentOstValue.conversion_rate);
     var num = new BigNumber(oThis.currentOstValue.conversion_rate);
     logger.info("Quote Currency for contract:" + oThis.quoteCurrency);
     var priceResponse = priceOracle.fixedPointIntegerPrice(num.toNumber());
-    if(priceResponse.isFailure()){
+    if (priceResponse.isFailure()) {
       return Promise.resolve(priceResponse);
     }
     var amountInWei = priceResponse.data.price.toNumber();
@@ -134,14 +140,19 @@ FetchCurrentOSTPriceKlass.prototype = {
       amountInWei, gasPrice);
   },
 
-  // Compare price from coin market cap with contract price.
-  compareContractPrice: function(){
+
+  /**
+   * Compare price from coin market cap with contract price.
+   *
+   * @return {Promise<any>}
+   */
+  compareContractPrice: function () {
     const oThis = this
       , quoteCurrency = oThis.quoteCurrency
       , conversionRate = oThis.currentOstValue.conversion_rate
       , dbRowId = oThis.dbRowId;
 
-    return new Promise(function(onResolve, onReject) {
+    return new Promise(function (onResolve, onReject) {
       var loopCompareContractPrice = async function () {
         var priceInDecimal = await priceOracle.decimalPrice(chainId, conversionRateConstants.ost_currency(), quoteCurrency);
         logger.debug(priceInDecimal);

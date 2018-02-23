@@ -8,9 +8,9 @@
  */
 
 const rootPrefix = '../../..'
-    , responseHelper = require(rootPrefix + '/lib/formatter/response')
-    , ucBalanceFetcherKlass = require(rootPrefix + '/app/services/address/utilityChainBalancesFetcher')
-    , vcBalanceFetcherKlass = require(rootPrefix + '/app/services/address/valueChainBalancesFetcher')
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , ucBalanceFetcherKlass = require(rootPrefix + '/app/services/address/utilityChainBalancesFetcher')
+  , vcBalanceFetcherKlass = require(rootPrefix + '/app/services/address/valueChainBalancesFetcher')
 ;
 
 /**
@@ -23,7 +23,7 @@ const rootPrefix = '../../..'
  * @param {object} params.balances_to_fetch - object having details about which balances are to be fetched
  *
  */
-const FetchBalances = function(params){
+const FetchBalances = function (params) {
 
   this.clientId = params.client_id;
   this.balancesToFetch = params.balances_to_fetch
@@ -42,22 +42,22 @@ FetchBalances.prototype = {
 
     const oThis = this;
 
-    if(!oThis.clientId){
+    if (!oThis.clientId) {
       return Promise.resolve(responseHelper.error('ob_fcip_1', 'missing clientId'));
     }
 
-    if(!oThis.balancesToFetch) {
+    if (!oThis.balancesToFetch) {
       return Promise.resolve(responseHelper.error('ob_fcip_2', 'missing balancesToFetch'));
     }
 
     var promisesArray = []
-        , responseData = {
-          'oracle_price_points': {
-            'ost': {
-              'usd': '0.3' // values should be strings as they go to FE
-            }
-          },
-          balances: {}
+      , responseData = {
+      'oracle_price_points': {
+        'ost': {
+          'usd': '0.33'
+        }
+      },
+      balances: {}
     };
 
     if (oThis.balancesToFetch.value) {
@@ -74,7 +74,7 @@ FetchBalances.prototype = {
 
     var balancesData = await Promise.all(promisesArray);
 
-    for(var i=0; i<promisesArray.length; i++) {
+    for (var i = 0; i < promisesArray.length; i++) {
 
       var balanceData = balancesData[i];
 

@@ -37,7 +37,7 @@ SetWorkerKlass.prototype = {
       , r = null;
 
     r = await oThis.validateAndSanitize();
-    if(r.isFailure()) return Promise.resolve(r);
+    if (r.isFailure()) return Promise.resolve(r);
 
     const workers = new OpenStPaymentsKlass.workers(oThis.workerContractAddress, oThis.chainId);
 
@@ -57,11 +57,11 @@ SetWorkerKlass.prototype = {
 
     var oThis = this;
 
-    if(!oThis.tokenSymbol || !oThis.clientId){
+    if (!oThis.tokenSymbol || !oThis.clientId) {
       return Promise.resolve(responseHelper.error('ob_sw_2', 'Mandatory params missing.'));
     }
 
-    if(!oThis.workerContractAddress){
+    if (!oThis.workerContractAddress) {
       return Promise.resolve(responseHelper.error('ob_sw_2', 'Mandatory to have Workers contract deployed.'));
     }
 
@@ -69,7 +69,7 @@ SetWorkerKlass.prototype = {
     const clientBrandedToken = await clientBrandedTokenObj.getBySymbol(oThis.tokenSymbol);
     const brandedToken = clientBrandedToken[0];
 
-    if(brandedToken.client_id != oThis.clientId){
+    if (brandedToken.client_id != oThis.clientId) {
       return Promise.resolve(responseHelper.error('ob_sw_1', 'Unauthorised request'));
     }
 
@@ -79,7 +79,7 @@ SetWorkerKlass.prototype = {
 
     oThis.workerAddress = managedAddresses[0].ethereum_address;
 
-    if(!oThis.workerAddress){
+    if (!oThis.workerAddress) {
       return Promise.resolve(responseHelper.error('ob_sw_3', 'Worker address is mandatory.'));
     }
 

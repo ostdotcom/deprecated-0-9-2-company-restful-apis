@@ -36,7 +36,7 @@ DeployAirdropContractClass.prototype = {
     ;
 
     r = await oThis.getAddresses();
-    if(r.isFailure()) return Promise.resolve(r);
+    if (r.isFailure()) return Promise.resolve(r);
 
     r = await oThis.deploy_airdrop();
 
@@ -48,7 +48,7 @@ DeployAirdropContractClass.prototype = {
 
     var oThis = this;
 
-    if(!oThis.workerContractAddress){
+    if (!oThis.workerContractAddress) {
       return Promise.resolve(responseHelper.error('ob_dac_2', 'Mandatory to have Workers contract deployed.'));
     }
 
@@ -57,12 +57,12 @@ DeployAirdropContractClass.prototype = {
 
     const brandedToken = clientBrandedToken[0];
 
-    if(brandedToken.client_id != oThis.clientId){
+    if (brandedToken.client_id != oThis.clientId) {
       return Promise.resolve(responseHelper.error('ob_dac_1', 'Unauthorised request'));
     }
     oThis.brandedTokenAddress = brandedToken.token_erc20_address;
 
-    if(!oThis.brandedTokenAddress){
+    if (!oThis.brandedTokenAddress) {
       return Promise.resolve(responseHelper.error('ob_dac_2', 'Mandatory to have Branded token contract deployed.'));
     }
 
@@ -72,7 +72,7 @@ DeployAirdropContractClass.prototype = {
 
     oThis.airdropBudgetHolderAddr = managedAddresses[0].ethereum_address;
 
-    if(!oThis.airdropBudgetHolderAddr){
+    if (!oThis.airdropBudgetHolderAddr) {
       return Promise.resolve(responseHelper.error('ob_dac_2', 'Airdrop budget holder address is mandatory.'));
     }
 
@@ -98,7 +98,7 @@ DeployAirdropContractClass.prototype = {
       {returnType: "txHash"}
     );
 
-    if(r.isFailure()){
+    if (r.isFailure()) {
       return Promise.resolve(responseHelper.error('ob_dac_2', 'Airdrop contract deployment failed.'));
     }
 
