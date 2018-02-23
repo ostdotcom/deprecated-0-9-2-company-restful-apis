@@ -33,16 +33,16 @@ QueryDB.prototype = {
       , whereClauseValues = (!whereClauseValues) ? [] : whereClauseValues
       , q = 'SELECT '+selectFields+' FROM '+tableName+' '+selectWhereClause;
 
-    if(options.order){
+    if(options && options.order){
       q = q + ' ORDER BY ' + options.order + ' ';
     }
 
-    if(options.limit){
+    if(options && options.limit){
       q = q + ' LIMIT ? ';
       whereClauseValues.push(options.limit);
     }
 
-    if(options.offset){
+    if(options && options.offset){
       q = q + ' OFFSET ? ';
       whereClauseValues.push(options.offset);
     }
