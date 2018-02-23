@@ -14,6 +14,9 @@ define("UTILITY_GETH_RPC_PROVIDER", process.env.OST_UTILITY_GETH_RPC_PROVIDER);
 define("UTILITY_OPS_ADDR", process.env.OST_UTILITY_OPS_ADDR);
 define("UTILITY_OPS_PASSPHRASE", process.env.OST_UTILITY_OPS_PASSPHRASE);
 
+define("UTILITY_DEPLOYER_ADDR", process.env.OST_UTILITY_DEPLOYER_ADDR);
+define("UTILITY_DEPLOYER_PASSPHRASE", process.env.OST_UTILITY_DEPLOYER_PASSPHRASE);
+
 // Constants which are needed to interact with Value Chain
 define("VALUE_CHAIN_ID", process.env.OST_VALUE_CHAIN_ID);
 define("VALUE_GAS_PRICE", process.env.OST_VALUE_GAS_PRICE);

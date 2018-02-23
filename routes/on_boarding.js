@@ -200,11 +200,19 @@ router.post('/deploy-airdrop-contract', function (req, res, next) {
 
 });
 
+router.post('/setops-airdrop', function (req, res, next) {
+
+  const DeployAirdropContractKlass = require(rootPrefix + '/app/services/on_boarding/setops_airdrop_contract');
+
+  Promise.resolve(routeHelper.performer(req, res, next, DeployAirdropContractKlass, 'r_ob_11'));
+
+});
+
 router.post('/set-worker', function (req, res, next) {
 
   const SetWorkerKlass = require(rootPrefix + '/app/services/on_boarding/set_worker');
 
-  Promise.resolve(routeHelper.performer(req, res, next, SetWorkerKlass, 'r_ob_11'));
+  Promise.resolve(routeHelper.performer(req, res, next, SetWorkerKlass, 'r_ob_12'));
 
 });
 
@@ -212,7 +220,7 @@ router.post('/set-price-oracle', function (req, res, next) {
 
   const SetWorkerKlass = require(rootPrefix + '/app/services/on_boarding/set_price_oracle');
 
-  Promise.resolve(routeHelper.performer(req, res, next, SetWorkerKlass, 'r_ob_11'));
+  Promise.resolve(routeHelper.performer(req, res, next, SetWorkerKlass, 'r_ob_13'));
 
 });
 
@@ -220,7 +228,7 @@ router.post('/set-accepted-margin', function (req, res, next) {
 
   const SetWorkerKlass = require(rootPrefix + '/app/services/on_boarding/set_accepted_margin');
 
-  Promise.resolve(routeHelper.performer(req, res, next, SetWorkerKlass, 'r_ob_11'));
+  Promise.resolve(routeHelper.performer(req, res, next, SetWorkerKlass, 'r_ob_14'));
 
 });
 
