@@ -8,6 +8,7 @@
  */
 const express = require('express')
   , path = require('path')
+  , openSTNotification = require('@openstfoundation/openst-notification')
   , createNamespace = require('continuation-local-storage').createNamespace
   , requestSharedNameSpace = createNamespace('openST-Platform-NameSpace')
   , morgan = require('morgan')

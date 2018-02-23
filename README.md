@@ -101,5 +101,5 @@ export OST_UTILITY_WORKERS_CONTRACT_ADDRESS='0x549B7A418f88F02cF366E4999bda858BB
 * Start Cronjobs
 ```base
 */60 * * * * node executables/update_price_oracle_price_points.js >> logs/update_price_oracle_price_points.log
-*/5 * * * * node executables/send_error_emails.js >> logs/send_error_emails.log
+*/5 * * * * node executables/rmq_subscribers/send_error_emails.js >> logs/send_error_emails.log
 ```

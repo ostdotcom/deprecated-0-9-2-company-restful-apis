@@ -4,12 +4,12 @@
  *
  * Get Error Emails from RabbitMQ. Aggregate them and send emails .<br><br>
  *
- * @module executables/send_error_emails
+ * @module executables/rmq_subscribers/send_error_emails
  *
  */
 
 // Include Process Locker File
-const rootPrefix = '..'
+const rootPrefix = '../..'
   , ProcessLockerKlass = require(rootPrefix + '/lib/process_locker')
   , ProcessLocker = new ProcessLockerKlass()
   ;
