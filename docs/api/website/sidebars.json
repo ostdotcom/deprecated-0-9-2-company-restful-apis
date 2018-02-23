@@ -1,0 +1,9 @@
+{
+  "docs": {
+    "ostKIT alpha User": ["authentication","error", "started", "user", "transaction"],
+    "Second Category": ["doc1"] 
+  },
+  "docs-other": {
+    "First Category": ["doc5"]
+  }
+}
