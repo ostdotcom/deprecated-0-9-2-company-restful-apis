@@ -6,6 +6,7 @@ const rootPrefix = '../..'
   , util = require(rootPrefix + '/lib/util')
   , ModelBaseKlass = require(rootPrefix + '/app/models/base')
   , clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop')
+  , bitWiseHelperKlass = require(rootPrefix + '/helpers/bitwise_operations')
 ;
 
 const dbName = "saas_airdrop_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
@@ -17,7 +18,7 @@ const dbName = "saas_airdrop_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.E
     '3':clientAirdropConst.completeStatus,
     '4':clientAirdropConst.failedStatus
   }
-  , stepsComplete = {
+  , invertedStepsComplete = {
     '1':clientAirdropConst.userIdentifiedStepComplete,
     '2':clientAirdropConst.tokensTransferedStepComplete,
     '4':clientAirdropConst.contractApprovedStepComplete,
@@ -29,13 +30,16 @@ const dbName = "saas_airdrop_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.E
     '3':clientAirdropConst.specificAddressesAirdropListType
   }
   , invertedStatuses = util.invert(statuses)
-  , invertedStepsComplete = util.invert(stepsComplete)
+  , stepsComplete = util.invert(invertedStepsComplete)
   , invertedAirdropListType = util.invert(airdropListType)
 ;
 
-const ClientAirdropKlass = function () {};
+const ClientAirdropKlass = function () {
+  bitWiseHelperKlass.call(this);
+};
 
 ClientAirdropKlass.prototype = Object.create(ModelBaseKlass.prototype);
+ClientAirdropKlass.prototype = Object.create(bitWiseHelperKlass.prototype);
 
 const ClientAirdropKlassPrototype = {
 
@@ -56,10 +60,6 @@ const ClientAirdropKlassPrototype = {
       val: statuses,
       inverted: invertedStatuses
     },
-    'steps_complete': {
-      val: stepsComplete,
-      inverted: invertedStepsComplete
-    },
     'airdrop_list_type': {
       val: airdropListType,
       inverted: invertedAirdropListType
@@ -67,19 +67,29 @@ const ClientAirdropKlassPrototype = {
   },
 
   get: function (clientAirdropId) {
-    return QueryDB.read(
-      tableName,
+    const oThis = this;
+    return oThis.QueryDB.read(
+      oThis.tableName,
       [],
       'id=?',
       [clientAirdropId]);
-  },
-
-  is_user_identifed_step_done: function (stepsComplete) {
-    var oThis = this;
-    return oThis.is_bit_present(stepsComplete, invertedAirdropListType, clientAirdropConst.userIdentifiedStepComplete)
-  },
+  }
 
 
+};
+
+/**
+ * Set all BitWise columns as hash
+ * key would be column name and value would be hash of all bitwise values
+ *
+ * @return {{}}
+ */
+ClientAirdropKlass.prototype.setBitColumns = function () {
+  const oThis = this;
+
+  oThis.bitColumns = {'steps_complete': stepsComplete};
+
+  return oThis.bitColumns;
 };
 
 Object.assign(ClientAirdropKlass.prototype, ClientAirdropKlassPrototype);
