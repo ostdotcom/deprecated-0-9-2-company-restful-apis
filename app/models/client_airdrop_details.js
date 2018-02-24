@@ -40,8 +40,9 @@ const clientAirdropDetailsKlassPrototype = {
   },
 
   getTotalTransferAmount: function (clientAirdropId) {
-    return QueryDB.read(
-      tableName,
+    const oThis = this;
+    return oThis.QueryDB.read(
+      oThis.tableName,
       ['sum(airdrop_amount_in_wei) as totalAmountInWei'],
       'id=?',
       [clientAirdropId]);

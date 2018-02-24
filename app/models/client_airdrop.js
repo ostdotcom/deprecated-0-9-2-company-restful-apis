@@ -39,7 +39,7 @@ const ClientAirdropKlass = function () {
 };
 
 ClientAirdropKlass.prototype = Object.create(ModelBaseKlass.prototype);
-ClientAirdropKlass.prototype = Object.create(bitWiseHelperKlass.prototype);
+Object.assign(ClientAirdropKlass.prototype, bitWiseHelperKlass.prototype);
 
 const ClientAirdropKlassPrototype = {
 
@@ -54,6 +54,8 @@ const ClientAirdropKlassPrototype = {
   stepsComplete: stepsComplete,
 
   invertedStepsComplete: invertedStepsComplete,
+
+  invertedAirdropListType: invertedAirdropListType,
 
   enums: {
     'status': {
@@ -73,8 +75,16 @@ const ClientAirdropKlassPrototype = {
       [],
       'id=?',
       [clientAirdropId]);
-  }
+  },
 
+  getByClientId: function (clientId) {
+    var oThis = this;
+    return oThis.QueryDB.read(
+      oThis.tableName,
+      [],
+      'client_id=?',
+      [clientId]);
+  }
 
 };
 

@@ -33,7 +33,7 @@ const ManagedAddressKlass = function () {
 };
 
 ManagedAddressKlass.prototype = Object.create(ModelBaseKlass.prototype);
-ManagedAddressKlass.prototype = Object.create(bitWiseHelperKlass.prototype);
+Object.assign(ManagedAddressKlass.prototype, bitWiseHelperKlass.prototype);
 
 const ManagedAddressKlassPrototype = {
 
@@ -48,6 +48,8 @@ const ManagedAddressKlassPrototype = {
   addressTypes: addressTypes,
 
   invertedAddressTypes: invertedAddressTypes,
+
+  properties: properties,
 
   enums: {
     'status': {
@@ -80,15 +82,15 @@ const ManagedAddressKlassPrototype = {
     const oThis = this
       , clientId = params.client_id
       , propertyBitVal =  params.property_set_bit_value
-      , valueFields = [clientId, managedAddressesConst.activeStatus, managedAddressesConst.userAddressType]
-      , propertiesWhereClause = ''
       , options = {limit: params.limit, offset: params.offset, order: "id asc"}
     ;
 
+  var valueFields = [clientId, managedAddressesConst.activeStatus, managedAddressesConst.userAddressType]
+    , propertiesWhereClause = ''
+    ;
     if (propertyBitVal) {
-      var propertiesWhereClause = ' AND (properties & ?) = ?'
-        , valueFields = valueFields.concat([propertyBitVal, propertyBitVal])
-      ;
+      propertiesWhereClause = ' AND (properties & ?) = ?';
+      valueFields = valueFields.concat([propertyBitVal, propertyBitVal]);
     }
 
     return oThis.QueryDB.read(
@@ -104,22 +106,21 @@ const ManagedAddressKlassPrototype = {
     const oThis = this
       , clientId = params.client_id
       , propertyBitVal =  params.property_set_bit_value
-      , valueFields = [clientId, managedAddressesConst.activeStatus, managedAddressesConst.userAddressType]
-      , propertiesWhereClause = ''
     ;
 
+    var propertiesWhereClause = '',
+      valueFields = [clientId, oThis.invertedStatuses[managedAddressesConst.activeStatus],
+        oThis.invertedAddressTypes[managedAddressesConst.userAddressType]];
     if (propertyBitVal) {
-      var propertiesWhereClause = ' AND (properties & ?) = ?'
-        , valueFields = valueFields.concat([propertyBitVal, propertyBitVal])
-      ;
+      propertiesWhereClause += ' AND (properties & ?) = ?';
+      valueFields = valueFields.concat([propertyBitVal, 0]);
     }
 
     return oThis.QueryDB.read(
       oThis.tableName,
       ['count(1) as total_count'],
       'client_id = ? AND status=? AND address_type=?' + propertiesWhereClause,
-      valueFields,
-      options
+      valueFields
     );
   },
 

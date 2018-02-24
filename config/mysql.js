@@ -35,5 +35,6 @@ const mysqlConfig = {
 mysqlConfig["databases"]["saas_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT] = ["cluster1"];
 mysqlConfig["databases"]["saas_transaction_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT] = ["cluster1"];
 mysqlConfig["databases"]["company_saas_shared_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT] = ["cluster1"];
+mysqlConfig["databases"]["saas_airdrop_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT] = ["cluster1"];
 
 module.exports = mysqlConfig;
