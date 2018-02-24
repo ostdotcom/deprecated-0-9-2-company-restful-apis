@@ -72,8 +72,55 @@ const ManagedAddressKlassPrototype = {
     var oThis = this;
     return oThis.QueryDB.readByInQuery(
       oThis.tableName,
-      ['id', 'uuid', 'ethereum_address'],
+      ['id', 'uuid', 'ethereum_address', 'properties', 'passphrase'],
       ids, 'id');
+  },
+
+  getActiveUsersByLimitAndOffset: function (params) {
+    const oThis = this
+      , clientId = params.client_id
+      , propertyBitVal =  params.property_set_bit_value
+      , valueFields = [clientId, managedAddressesConst.activeStatus, managedAddressesConst.userAddressType]
+      , propertiesWhereClause = ''
+      , options = {limit: params.limit, offset: params.offset, order: "id asc"}
+    ;
+
+    if (propertyBitVal) {
+      var propertiesWhereClause = ' AND (properties & ?) = ?'
+        , valueFields = valueFields.concat([propertyBitVal, propertyBitVal])
+      ;
+    }
+
+    return oThis.QueryDB.read(
+      oThis.tableName,
+      ['id'],
+      'client_id = ? AND status=? AND address_type=?' + propertiesWhereClause,
+      valueFields,
+      options
+    );
+  },
+
+  getActiveUsersCount: function (params) {
+    const oThis = this
+      , clientId = params.client_id
+      , propertyBitVal =  params.property_set_bit_value
+      , valueFields = [clientId, managedAddressesConst.activeStatus, managedAddressesConst.userAddressType]
+      , propertiesWhereClause = ''
+    ;
+
+    if (propertyBitVal) {
+      var propertiesWhereClause = ' AND (properties & ?) = ?'
+        , valueFields = valueFields.concat([propertyBitVal, propertyBitVal])
+      ;
+    }
+
+    return oThis.QueryDB.read(
+      oThis.tableName,
+      ['count(1) as total_count'],
+      'client_id = ? AND status=? AND address_type=?' + propertiesWhereClause,
+      valueFields,
+      options
+    );
   },
 
   getByFilterAndPaginationParams: function (params) {
