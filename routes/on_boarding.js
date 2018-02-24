@@ -33,7 +33,7 @@ router.post('/propose-branded-token', function (req, res, next) {
     const object = new openStPlatform.services.onBoarding.proposeBrandedToken({
       'symbol': tokenSymbol,
       'name': tokenName,
-      'conversion_rate': tokenConversionFactor
+      'conversion_factor': tokenConversionFactor
     });
 
     return object.perform().then(handleResponse);
