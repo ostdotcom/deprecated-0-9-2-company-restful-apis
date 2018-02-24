@@ -5,6 +5,7 @@ const express = require('express')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , listAddressesKlass = require(rootPrefix + '/app/services/client_users/list')
   , getUsersDataKlass = require(rootPrefix + '/app/services/client_users/get_users_data')
+  , startAirdropKlass = require(rootPrefix + '/app/services/airdrop_management/start_airdrop')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , routeHelper = require(rootPrefix + '/routes/helper')
 ;
@@ -74,6 +75,30 @@ router.post('/list', function (req, res, next) {
   Promise.resolve(performer()).catch(function (err) {
     logger.notify('r_cu_3', 'Something went wrong', err);
     responseHelper.error('r_cu_3', 'Something went wrong').renderResponse(res)
+  });
+
+});
+
+/* Airdrop tokens to users of a client */
+router.post('/airdrop-tokens', function (req, res, next) {
+
+  const performer = function() {
+
+    const decodedParams = req.decodedParams
+      , startAirdropObj = new startAirdropKlass(decodedParams);
+
+    // handle final response
+    const handleResponse = function (response) {
+      return response.renderResponse(res);
+    };
+
+    return startAirdropObj.perform().then(handleResponse);
+
+  };
+
+  Promise.resolve(performer()).catch(function (err) {
+    logger.notify('r_cu_6', 'Something went wrong', err);
+    responseHelper.error('r_cu_6', 'Something went wrong').renderResponse(res)
   });
 
 });
