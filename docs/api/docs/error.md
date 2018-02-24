@@ -1,6 +1,6 @@
 ---
 id: error
-title: Error Handling documentation
+title: Error Handling 
 sidebar_label:Error handling 
 ---
 
@@ -8,8 +8,9 @@ We use conventional HTTP response codes to indicate the success or failure of an
 
 
 ### HTTP status code summary
-| 200 - OK                           | Everything worked as expected.                                           |
+| Response Code                         | Definition                                         |
 |------------------------------------|--------------------------------------------------------------------------|
+|200 - OK                           | Everything worked as expected.                                           |
 | 400 - Bad Request                  | The request was unacceptable, often due to missing a required parameter. |
 | 401 - Unauthorized                 | No valid API key provided.                                               |
 | 404 - Not Found                    | The requested resource doesn't exist.                                    |
@@ -42,12 +43,6 @@ A string the further describes the error that occurred. This can be used to disp
 
 #### _Error_data_ (optional)
 The _Error_data_ relates to if the error is parameter specific. Its a key-value pair where the key will be the parameter name and the corresponding error string for it. This can be used to display specific messages at appropriate user interface. These are parameter specific. Can be used to show errors in form fields.
-
-#### Pagination
-
-```javascript
-"meta"=>{"next_page_payload"=>{"page_no"=>2}}
-```
 
 ### Updates
 

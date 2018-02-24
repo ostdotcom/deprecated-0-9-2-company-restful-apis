@@ -1,13 +1,12 @@
 ---
 id: transaction
-title: Transaction API documentation
+title:Transaction API
 sidebar_label:Transaction API 
 ---
 
-## Transaction
- Transactions are defined post onboarding users into the _company_'s application with tokenization capability provided by ostKIT alpha. The _company_ needs to understand the tokenization capacity of the set of actions that the user engages with while using the services provided by the _company_'s application. An action that leads to a transaction of value between _user_ and _company_ or _user_ and another _user_ can be defined using this API. Thus tokenizing an aspect of the application - end-user interactivity with ostKIT alpha.  
+ Transactions are defined post onboarding users into your application with tokenization capability provided by ostKIT alpha. The _company_ needs to understand the tokenization capacity of the set of actions that the user engages with while using the services provided by the _company_'s application. An action that leads to a transaction of value between _user_ and _company_ or _user_ and another _user_ can be defined using this API. Thus tokenizing an aspect of the application - end-user interactivity with ostKIT alpha.  
 
-| Attribute           | Type   | Description                                                                                                                                                                                                                                |
+| Parameter           | Type   | Description                                                                                                                                                                                                                                |
 |---------------------|--------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | _name_                | String | The name / username of the end-user of your application.                                                                                                                                                                                   |
 | [_kind_](http://localhost:3000/test-site/docs/transaction.html#transaction-kind-properties)                | String | The three kinds of transaction types _user_to_user_ or _user_to_company_ or _company_to_user_.                                                                                                                                                      |
@@ -17,14 +16,14 @@ sidebar_label:Transaction API
 | _value_in_usd_        | Float  | Value in USD of the transaction                                                                                                                                                                                                            |
 
 #### Transaction - _kind_ properties 
-| Attribute       | Type   | Definition                                                                                    |
+| Parameter       | Type   | Definition                                                                                    |
 |-----------------|--------|-----------------------------------------------------------------------------------------------|
 | _user_to_user_    | String | Value transfer from one end-user to another. Eg: "Upvote" or "like" end-user                                          |
 | _user_to_company_ | String | Value transfer from an end-user to the application service provider / _company_. Eg: “API call” |
 | _company_to_user_ | String | Value transfer from the application service provider company to an end-user. Eg: “Rewards”    |
 
 #### Transaction - _value_currency_type_ properties 
-| Attribute | Type   | Definition                                                                                                        |
+| Parameter | Type   | Definition                                                                                                        |
 |-----------|--------|-------------------------------------------------------------------------------------------------------------------|
 | _usd_       | String | Fiat currency that the Branded Token is valued in.                                                                |
 | _bt_        | String | Branded Token created at the staked value of OST. Each BT has a fixed value in terms of USD when it is defined. |
@@ -40,7 +39,7 @@ For each such action converted into a transaction on blockchain by the ostKIT al
 ```
 
 #### parameters 
-| Attribute           | Type   | Value                                               |
+| Parameter           | Type   | Value                                               |
 |---------------------|--------|-----------------------------------------------------|
 | name                | String | ABC (displayed name)                                |
 | kind                | String | user_to_user (transaction type)                     |
@@ -79,7 +78,7 @@ Post defining the different user actions that lead to transactions types, if the
 ```
 
 #### Parameters 
-| Attribute             | Type   | Value                                                                                              |
+| Parameter             | Type   | Value                                                                                              |
 |-----------------------|--------|----------------------------------------------------------------------------------------------------|
 | client_transaction_id | String | 13 (id that was generated when the transaction type was created with the creatTransactionType API) |
 | kind                  | String | user_to_user (transaction type)                                                                    |
@@ -117,7 +116,7 @@ The details and parameters of the list of different user actions that lead to tr
 ```
 	
 #### Parameters 
-| Attribute | Type | Value                                         |
+| Parameter | Type | Value                                         |
 |-----------|------|-----------------------------------------------|
 | page_no   | Int  | 1 (page number for all the transaction types) |
 
@@ -137,5 +136,11 @@ curl --request POST \
 #### Response
 ```javascript
 {"client_id"=>28, "result_type"=>"transaction_types", "transaction_types"=> [{"id"=>"4", "name"=>"Transaction 1", "kind"=>"user_to_user", "currency_type"=>"bt", "currency_value"=>"10", "commission_percent"=>"0.000", "status"=>"active"}, {"id"=>"2", "name"=>"Transaction 2", "kind"=>"company_to_user", "currency_type"=>"usd", "currency_value"=>"1.000000", "commission_percent"=>"10.000", "status"=>"active"}, {"id"=>"3", "name"=>"Transaction 3", "kind"=>"user_to_company", "currency_type"=>"usd", "currency_value"=>"0.500000", "commission_percent"=>"10.000", "status"=>"active"}, {"id"=>"5", "name"=>"Transaction 4", "kind"=>"company_to_user", "currency_type"=>"bt", "currency_value"=>"0.5", "commission_percent"=>"0.000", "status"=>"active"}], "meta"=>{"next_page_payload"=>{}}, "price_points"=>{"ost"=>{"usd"=>"1"}}, "client_tokens"=> [{"id"=>"16", "client_id"=>28, "reserve_managed_address_id"=>90, "name"=>"sd1", "symbol"=>"sd1", "symbol_icon"=>nil, "token_erc20_address"=>"0xdc1A2F9A712a38F673fe7758C35Bec4F9051Da63", "token_uuid"=> "0xf4842e7905d55ebd6699832662570539c2995d35e345360a4cf05e9b486e0a95", "conversion_rate"=>"1.000000", "created_at"=>"2018-02-20 08:16:27", "updated_at"=>"2018-02-20 08:31:44"}]}
+```
+
+
+#### Pagination
+```javascript
+"meta"=>{"next_page_payload"=>{"page_no"=>2}}
 ```
 

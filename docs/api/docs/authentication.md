@@ -1,6 +1,6 @@
 ---
 id: authentication
-title: Authentication API documentation
+title: Authentication 
 sidebar_label:Authentication
 ---
 

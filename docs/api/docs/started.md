@@ -4,14 +4,16 @@ title: Getting Started
 sidebar_label: Getting Started 
 ---
 
-OST helps you launch and manage your cryptocurrency powered economy. Great OST use cases include projects with P2P micro-payments, enabling transparent and incentives and rewards, monetizing API calls, low cost cross-border payments and many more.
+ostKit helps you launch and manage your cryptocurrency powered economy. ostKIT use cases include projects with P2P micro-payments, enabling transparent incentives and rewards, monetizing API calls, low cost cross-border payments and much more.
 
-## Create your Branded Tokens 
-ostKIT aplha enables you to design create and manage your branded token economy.  You may want to set just one branded token for your company or a few, depending upon the range of services and product variations you offer. For example : ….
+## 1. Create your Branded Tokens 
+ostKIT aplha enables you to design create and manage your branded token economy.  You may want to set just one branded token for your company or a few, depending upon the range of services and product variations you offer. 
 
-You can proceed through the rest of the tutorial ones who have created your branded token using ostKIT alpha.
+For example : <..>
 
-## Create Users 
+You can proceed through the rest of the tutorial once you have created your branded token using ostKIT alpha. < link >
+
+## 2. Create Users 
 
 Users here represent your actual users and ost provides an easy way to process their token transfers. Your business may onboard your existing or new end-users to participate in your branded token economy.
 Note: This tutorial assumes you’ve created api signature using steps given here and are aware of the Error Handling recommendations. 
