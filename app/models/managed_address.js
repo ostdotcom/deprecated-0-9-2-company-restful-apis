@@ -30,10 +30,14 @@ const ManagedAddressKlass = function () {
   const oThis = this;
 
   bitWiseHelperKlass.call(this);
+  ModelBaseKlass.call(this, {dbName: dbName});
 };
 
 ManagedAddressKlass.prototype = Object.create(ModelBaseKlass.prototype);
 Object.assign(ManagedAddressKlass.prototype, bitWiseHelperKlass.prototype);
+
+//Object.assign(ManagedAddressKlass.prototype, Object.create(ModelBaseKlass.prototype));
+//const ModelBaseKlassPrototype = Object.create(ModelBaseKlass.prototype);
 
 const ManagedAddressKlassPrototype = {
 
@@ -169,24 +173,28 @@ const ManagedAddressKlassPrototype = {
       oThis.tableName,
       ['id', 'client_id', 'uuid', 'name', 'ethereum_address', 'passphrase', 'status', 'properties'],
       uuids, 'uuid');
+  },
+
+  /**
+   * Set all BitWise columns as hash
+   * key would be column name and value would be hash of all bitwise values
+   *
+   * @return {{}}
+   */
+  setBitColumns: function () {
+    const oThis = this;
+
+    oThis.bitColumns = {'properties': properties};
+
+    return oThis.bitColumns;
   }
-};
 
-/**
- * Set all BitWise columns as hash
- * key would be column name and value would be hash of all bitwise values
- *
- * @return {{}}
- */
-ManagedAddressKlass.prototype.setBitColumns = function () {
-  const oThis = this;
-
-  oThis.bitColumns = {'properties': properties};
-
-  return oThis.bitColumns;
 };
 
 
-Object.assign(ManagedAddressKlass.prototype, ManagedAddressKlassPrototype);
+Object.assign(
+  ManagedAddressKlass.prototype,
+  ManagedAddressKlassPrototype
+);
 
 module.exports = ManagedAddressKlass;
