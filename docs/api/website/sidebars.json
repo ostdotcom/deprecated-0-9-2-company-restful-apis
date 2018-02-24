@@ -1,0 +1,9 @@
+{
+  "docs": {
+    "Getting Started": ["authentication","error", "started"],
+    "API Documentation": ["user", "transaction"] 
+  },
+  "docs-other": {
+    "First Category": ["doc5"]
+  }
+}
