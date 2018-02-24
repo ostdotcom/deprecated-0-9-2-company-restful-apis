@@ -6,11 +6,12 @@ const rootPrefix = '../..'
   , util = require(rootPrefix + '/lib/util')
   , ModelBaseKlass = require(rootPrefix + '/app/models/base')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
+  , bitWiseHelperKlass = require(rootPrefix + '/helpers/bitwise_operations')
 ;
 
-const dbName = "saas_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
+const dbName = "saas_client_economy_" + coreConstants.SUB_ENVIRONMENT + "_" + coreConstants.ENVIRONMENT
   , QueryDBObj = new QueryDBKlass(dbName)
-  , statuses = { '1':managedAddressesConst.activeStatus, '2':managedAddressesConst.inactiveStatus }
+  , statuses = {'1': managedAddressesConst.activeStatus, '2': managedAddressesConst.inactiveStatus}
   , invertedStatuses = util.invert(statuses)
   , addressTypes = {
     '1': managedAddressesConst.userAddressType,
@@ -19,11 +20,20 @@ const dbName = "saas_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreCons
     '4': managedAddressesConst.airdropHolderAddressType
   }
   , invertedAddressTypes = util.invert(addressTypes)
+  , invertedProperties = {
+    1: managedAddressesConst.airdropGrantProperty
+  }
+  , properties = util.invert(invertedProperties)
 ;
 
-const ManagedAddressKlass = function () {};
+const ManagedAddressKlass = function () {
+  const oThis = this;
+
+  bitWiseHelperKlass.call(this);
+};
 
 ManagedAddressKlass.prototype = Object.create(ModelBaseKlass.prototype);
+ManagedAddressKlass.prototype = Object.create(bitWiseHelperKlass.prototype);
 
 const ManagedAddressKlassPrototype = {
 
@@ -54,7 +64,7 @@ const ManagedAddressKlassPrototype = {
     var oThis = this;
     return oThis.QueryDB.readByInQuery(
       oThis.tableName,
-      ['client_id', 'uuid', 'name','ethereum_address'],
+      ['client_id', 'uuid', 'name', 'ethereum_address'],
       ethAddresses, 'ethereum_address');
   },
 
@@ -109,11 +119,25 @@ const ManagedAddressKlassPrototype = {
     var oThis = this;
     return oThis.QueryDB.readByInQuery(
       oThis.tableName,
-      ['id', 'client_id', 'uuid', 'name','ethereum_address', 'passphrase', 'status'],
+      ['id', 'client_id', 'uuid', 'name', 'ethereum_address', 'passphrase', 'status', 'properties'],
       uuids, 'uuid');
   }
-
 };
+
+/**
+ * Set all BitWise columns as hash
+ * key would be column name and value would be hash of all bitwise values
+ *
+ * @return {{}}
+ */
+ManagedAddressKlass.prototype.setBitColumns = function () {
+  const oThis = this;
+
+  oThis.bitColumns = {'properties': properties};
+
+  return oThis.bitColumns;
+};
+
 
 Object.assign(ManagedAddressKlass.prototype, ManagedAddressKlassPrototype);
 

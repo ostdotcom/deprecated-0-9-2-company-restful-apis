@@ -1,0 +1,165 @@
+"use strict";
+
+/**
+ *
+ * @constructor
+ */
+const BitWiseOperationsKlass = function () {
+
+  const oThis = this;
+
+  oThis.bitColumns = {};
+
+  oThis.setBitColumns();
+
+  oThis.validateBitColumns();
+};
+
+BitWiseOperationsKlass.prototype = {
+
+  /**
+   * Set all data as hashmap for performing bitwise operations
+   */
+  setBitColumns: function () {
+    throw "SubClass to Implement";
+  },
+
+  /**
+   * Validate all Bitwise columns of a model for uniqueness.
+   *
+   * @return {string}
+   */
+  validateBitColumns: function () {
+    const oThis = this;
+
+    // Validate only if model has bitwise columns
+    if (Object.keys(oThis.bitColumns).length > 0) {
+      var allBits = [];
+
+      for (var i = 0, keys = Object.keys(oThis.bitColumns), ii = keys.length; i < ii; i++) {
+        var columnBits = Object.keys(oThis.bitColumns[keys[i]]);
+        for (var j = 0; j < columnBits.length; j++) {
+          if (allBits.includes(columnBits[j])) {
+            throw "Bit Keys name should be unique across all columns of model.";
+          } else {
+            allBits.push(columnBits[j]);
+          }
+        }
+      }
+    }
+
+    return "success";
+  },
+
+  /**
+   * Set Bit in the column for a given bit string.
+   *
+   * @param bitName
+   * @param previousValue
+   * @return {number}
+   */
+  setBit: function (bitName, previousValue) {
+    const oThis = this;
+
+    var resp = oThis.findValueOfBit(bitName);
+    if (resp) {
+      console.log(resp);
+      return (resp['bitValue'] | previousValue);
+    }
+
+    // If Bit is not found for any column then return old value.
+    return previousValue;
+  },
+
+  /**
+   * Unset Bit in the column for a given bit string.
+   *
+   * @param bitName
+   * @param previousValue
+   * @return {number}
+   */
+  unsetBit: function (bitName, previousValue) {
+    const oThis = this;
+
+    var resp = oThis.findValueOfBit(bitName);
+    if (resp) {
+      var val = (resp['bitValue'] ^ previousValue);
+      // If XOR operator returns value less than previous value means bit was set previously else not.
+      if (val < previousValue) {
+        return val;
+      }
+    }
+
+    // If Bit is not found for any column then return old value.
+    return previousValue;
+  },
+
+  /**
+   * Check whether bit is set in a value for a given bitName
+   *
+   * @param bitName
+   * @param currentValue
+   * @return {boolean}
+   */
+  isBitSet: function (bitName, currentValue) {
+    const oThis = this;
+
+    var resp = oThis.findValueOfBit(bitName);
+    if (resp) {
+      var val = (resp['bitValue'] & currentValue);
+      // If Bitwise and operator returns 0 means bit is not set.
+      return (val != 0);
+    }
+
+    // If Bit is not found for any column then return false.
+    return false;
+  },
+
+  /**
+   * Get all bits set for a given column
+   *
+   * @param columnName
+   * @param currentValue
+   * @return {Array}
+   */
+  getAllBits: function (columnName, currentValue) {
+    const oThis = this;
+
+    var allBits = oThis.bitColumns[columnName];
+    if (allBits && Object.keys(allBits).length > 0) {
+      var bitNames = Object.keys(allBits);
+      var arr = []
+      for (var i = 0; i < bitNames.length; i++) {
+        if (oThis.isBitSet(bitNames[i], currentValue)) {
+          arr.push(bitNames[i]);
+        }
+      }
+      return arr;
+    }
+    return [];
+  },
+
+  /**
+   * Fetch Column and Value of a given bit
+   *
+   * @param bitName
+   * @return {*}
+   */
+  findValueOfBit: function (bitName) {
+    const oThis = this;
+
+    for (var i = 0, keys = Object.keys(oThis.bitColumns), ii = keys.length; i < ii; i++) {
+      var columnName = keys[i];
+      var columnBits = Object.keys(oThis.bitColumns[columnName]);
+      if (columnBits.includes(bitName)) {
+        var bitValue = oThis.bitColumns[columnName][bitName];
+        return {column: columnName, bitValue: bitValue};
+      }
+    }
+
+    return null;
+  }
+
+};
+
+module.exports = BitWiseOperationsKlass;
