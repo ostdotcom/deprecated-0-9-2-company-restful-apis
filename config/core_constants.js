@@ -18,7 +18,6 @@ define("MYSQL_HOST", process.env.CR_MYSQL_HOST);
 define("MYSQL_USER", process.env.CR_MYSQL_USER);
 define("MYSQL_PASSWORD", process.env.CR_MYSQL_PASSWORD);
 define("MYSQL_CONNECTION_POOL_SIZE", process.env.CR_MYSQL_CONNECTION_POOL_SIZE);
-define("MYSQL_TIMEZONE", process.env.CR_MYSQL_TIMEZONE);
 
 // AWS details
 define("AWS_ACCESS_KEY", process.env.CR_AWS_ACCESS_KEY);
