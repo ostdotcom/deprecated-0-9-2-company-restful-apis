@@ -4,6 +4,8 @@ title: Getting Started
 sidebar_label: Getting Started 
 ---
 
+The API documentation for the the complete blockchain toolkit for businesses. 
+
 OST helps you launch and manage your cryptocurrency powered economy. Great OST use cases include projects with P2P micro-payments, enabling transparent and incentives and rewards, monetizing API calls, low cost cross-border payments and many more.
 
 ## Create your Branded Tokens 
