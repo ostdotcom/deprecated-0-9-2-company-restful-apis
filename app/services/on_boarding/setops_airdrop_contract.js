@@ -41,8 +41,8 @@ SetopsAirdropContractClass.prototype = {
     r = await oThis.validateAndSanitize();
     if (r.isFailure()) return Promise.resolve(r);
 
-    //r = await oThis.registerAirdrop();
-    //if (r.isFailure()) return Promise.resolve(r);
+    r = await oThis.registerAirdrop();
+    if (r.isFailure()) return Promise.resolve(r);
 
     return await oThis.setops();
 
@@ -95,7 +95,10 @@ SetopsAirdropContractClass.prototype = {
   },
 
   registerAirdrop: async function () {
-    return OpenStPaymentsModule.airdropManager.registerAirdrop(oThis.airDropContractAddress, oThis.chainId);
+    var oThis = this;
+    return OpenStPaymentsModule.airdropManager.setupAirdrop(oThis.airDropContractAddress, oThis.chainId);
+    //Open below for next openst-payments release
+    //return OpenStPaymentsModule.airdropManager.registerAirdrop(oThis.airDropContractAddress, oThis.chainId);
   }
 
 };

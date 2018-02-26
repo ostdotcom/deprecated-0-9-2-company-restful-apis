@@ -8,6 +8,13 @@ export CR_MYSQL_USER='root'
 export CR_MYSQL_PASSWORD='root'
 export CR_MYSQL_CONNECTION_POOL_SIZE='5'
 
+#DB details of openst-payments.
+export OP_MYSQL_HOST='127.0.0.1'
+export OP_MYSQL_USER='root'
+export OP_MYSQL_PASSWORD=''
+export OP_MYSQL_DATABASE=payment_${CR_SUB_ENVIRONMENT}_${CR_ENVIRONMENT}
+export OP_MYSQL_CONNECTION_POOL_SIZE='5'
+
 # AWS details
 export CR_AWS_ACCESS_KEY='AKIAJUDRALNURKAVS5IQ'
 export CR_AWS_SECRET_KEY='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'
