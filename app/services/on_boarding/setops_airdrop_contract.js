@@ -97,7 +97,7 @@ SetopsAirdropContractClass.prototype = {
   registerAirdrop: async function () {
     var oThis = this;
     return OpenStPaymentsModule.airdropManager.setupAirdrop(oThis.airDropContractAddress, oThis.chainId);
-    //Open below for next openst-payments release
+    //TODO: Open below for next openst-payments release
     //return OpenStPaymentsModule.airdropManager.registerAirdrop(oThis.airDropContractAddress, oThis.chainId);
   }
 
