@@ -44,12 +44,12 @@ Creating transaction requires evaluating core user actions on your application a
 #### Parameters 
 | Parameter           | Type   | Value                                               |
 |---------------------|--------|-----------------------------------------------------|
-| name                | String | String representing name of the transaction. Example :"Upvote","buy a coffee".                               |
-| kind                | String | The type of transaction based on the owners involved in the token exchange. Example **_user_to_user_** .                  |
-| value_currency_type | String | String representing the currency the transaction is valued in. Two possible values **_usd_** or **_bt_** .                                 |
-| value_in_bt         | Float  | Positive number that represents amount of branded token to be set as transaction value.                 |
-| commission_percent  | Float  | % of transaction value that you set as a service provider on a transaction. Can be set for only **_user_to_user_** transaction type. |
-| value_in_usd        | Float  | Positive number that represents amount in dollars (USD) to be set as transaction value.               |
+| _name_                | String | String representing name of the transaction. Example :"Upvote","buy a coffee".                               |
+| _kind_                | String | The type of transaction based on the owners involved in the token exchange. Example **_user_to_user_** .                  |
+| _value_currency_type_ | String | String representing the currency the transaction is valued in. Two possible values **_usd_** or **_bt_** .                                 |
+| _value_in_bt_         | Float  | Positive number that represents amount of branded token to be set as transaction value.                 |
+| _commission_percent_  | Float  | % of transaction value that you set as a service provider on a transaction. Can be set for only **_user_to_user_** transaction type. |
+| _value_in_usd_        | Float  | Positive number that represents amount in dollars (USD) to be set as transaction value.               |
 
 
 #### Sample Code | Curl 
@@ -96,12 +96,12 @@ Updates the specified transaction by setting the values of the parameters passed
 #### Parameters 
 | Parameter             | Type   | Value                                                                                              |
 |-----------------------|--------|----------------------------------------------------------------------------------------------------|
-| client_transaction_id | String | The ID of the transaction that was returned when the transaction was created with the creat Transaction API |
-| kind                  | String | The type of transaction based on the owners involved in the token exchange. (example user_to_user)                                                                   |
-| value_currency_type   | String | String representing the currency the transaction is valued in. Two possible values usd or bt                                                                                |
-| value_in_bt           | Float  | positive number that represents amount of Branded Token to be set as transaction value                                                                   |
-| commission_percent    | Float  | % of transaction value that you set as a service provider on a transaction. Can be set for only user_to_user transaction type.                                                |
-| value_in_usd          | Float  | positive number that represents amount in dollars (USD) to be set as transaction value.                                                                  |
+| _client_transaction_id_ | String | The ID of the transaction that was returned when the transaction was created with the [create transaction API](http://localhost:3000/test-site/docs/transaction.html#1-create-a-new-transaction-api) |
+| _kind_                  | String | The type of transaction based on the owners involved in the token exchange. Example **_user_to_user_**                                                                    |
+| _value_currency_type_   | String | String representing the currency the transaction is valued in. Two possible values are **_usd_** or **_bt _.**                                                                               |
+| _value_in_bt_           | Float  | Positive number that represents amount of Branded Token to be set as transaction value.                                                                   |
+| _commission_percent_    | Float  | Percentage of the total transaction value that you set as a service provider on a transaction. Can be set for only user_to_user transaction type.                                                |
+| _value_in_usd_          | Float  | positive number that represents amount in dollars (USD) to be set as transaction value.                                                                  |
 
 #### Sample Code | Curl 
 ```bash
