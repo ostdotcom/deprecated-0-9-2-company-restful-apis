@@ -32,7 +32,6 @@ openSTNotification.subscribeEvent.rabbit(["airdrop.start.#"],
   },
   function (params) {
 
-
     // Promise is required to be returned to manually ack messages in RMQ
     return new Promise(async function (onResolve, onReject) {
       // Process request
