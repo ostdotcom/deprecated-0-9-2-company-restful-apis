@@ -4,36 +4,36 @@ title:Transaction API
 sidebar_label:Transaction API 
 ---
 
-Transactions are executed when tokens are moved between accounts. These can be between _user_ to another _user_ or _company_ to _user_ and vice versa. In ostKIT a transaction represents a core action or event in your application, for example. a "like", "share", "purchase", "monthly winner" or a "birthday event". You can associate a value with each transaction. Once you create such transactions for your application and assign value to each of them, they become opportunities for your end-users to "Earn" and "Spend" Branded Tokens (BT) in your application. This exchange of tokens represents a branded token economy.
+Transactions are executed when tokens are moved between accounts. These can be between _user_ to another _user_ or _company_ to _user_ and vice versa. In ostKIT a transaction represents a core action or event in your application, as examples, a "like", "share", "purchase", "monthly winner" or a "birthday event". You can associate a value with each transaction. Once you create such transactions for your application and assign value to each of them, they become opportunities for your end-users to "Earn" and "Spend" Branded Tokens (BT) in your application. This exchange of tokens represents a branded token economy.
 
 So an important aspect of setting up a branded token economy is to setup transactions. Below we detail out APIs for creating transactions, running them and viewing the list of all transactions created. 
 
 
 #### Transaction Object  
-| Attribute           | Type   | Description                                                                                                                                       |
+| Parameter           | Type   | Description                                                                                                                                       |
 |---------------------|--------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| _name_                | String | String representing name of the transaction. (example :"Upvote","buy a coffee")                                                                                                                                                                                   |
-| _kind_ <br>([show sub-attributes](http://localhost:3000/test-site/docs/transaction.html#transaction-kind-properties))                | String | The type of transaction differentiated based on the owners involved in the token exchange. The three types of transactions are _user_to_user_, _company_to_user_ and _user_to_company_.                                                                                                                                                      |
-| _value_currency_type_ <br>([show sub-attributes](http://localhost:3000/test-site/docs/transaction.html#transaction-value-currency-type-properties))| String | String representing the currency type in which the value of the transaction will be set. The transaction value can either be set in USD or in Branded Tokens. (For example You can set value of an "Upvote" transaction to be 20 cents or 10 of your branded tokens). If the value is set in USD the string used should be _usd_ and if the value is set in branded tokens the string used should be _bt_.                                                                                                                                                        |
-| _value_in_bt_         | Float  | Amount of branded tokens to be set as transaction value.                                                                                                                                                                                                                |
-| _commission_percent_  | Float  | You as a company can set a fee on _user_to_user_ transactions. (For example: If a user buys a service on your platform from another user, you can set a fee on these 'buy' transactions).  This fee is set in percentage of the total value  of the transaction and is not additional to the transaction value. |
+| _name_                | String | String representing the name of the transaction. (example :an "Upvote","buy a coffee")                                                                                                                                                                                   |
+| _kind_ <br>([show sub-attributes](http://localhost:3000/test-site/docs/transaction.html#transaction-kind-properties))                | String | String representing the type of transaction, differentiated based on the owners involved in the token exchange. The three types of transactions are **_user_to_user_**, **_company_to_user_** and **_user_to_company_**.                                                                                                                                                       |
+| _value_currency_type_ <br>([show sub-attributes](http://localhost:3000/test-site/docs/transaction.html#transaction-value-currency-type-properties))| String | String representing the currency type in which the value of the transaction has been set. The transaction value can either be set in USD or in Branded Tokens (BT). Example: you can set value of an "Upvote" transaction to be 20 cents or 10 of your branded tokens. If the value is set in USD, the string used should be **_usd_** and if the value is set in branded tokens the string used should be **_bt_** .                                                                                                                                                        |
+| _value_in_bt_         | Float  | Amount in branded tokens (BT) to be set as transaction value.                                                                                                                                                                                                                |
+| _commission_percent_  | Float  | You as a company can set a fee on **_user_to_user_** transactions. Example: If a user buys a service on your platform from another user, you can set a fee on these 'buy' transactions.  This fee is set in percentage of the total value of the transaction and is not additional to the transaction value. |
 | _value_in_usd_        | Float  | Amount in dollars (USD) to be set as transaction value.                                                                                                                                                                                                            |
 
 #### Transaction - _kind_ properties 
-| Attribute       | Type   | Definition                                                                                    |
+| Parameter       | Type   | Definition                                                                                    |
 |-----------------|--------|-----------------------------------------------------------------------------------------------|
 | _user_to_user_    | String | Value transfer from one end-user to another. Example: "Upvote" or "like".                                         |
-| _user_to_company_ | String | Value transfer from an end-user to the application service provider (you). Example: “API call”. |
+| _user_to_company_ | String | Value transfer from an end-user to you (the application service provider). Example: “API call”. |
 | _company_to_user_ | String | Value transfer from the application service provider to an end-user. Example: “Rewards”.    |
 
 #### Transaction - _value_currency_type_ properties 
-| Attribute | Type   | Definition                                                                                                        |
+| Parameter | Type   | Definition                                                                                                        |
 |-----------|--------|-------------------------------------------------------------------------------------------------------------------|
 | _usd_       | String | Fiat currency that the transaction is valued in.                                                                |
 | _bt_        | String | Branded tokens that the transaction is valued in.  |
 
 
-### 1.Create a new transaction API
+### 1. Create a new transaction API
 Creating transaction requires evaluating core user actions on your application and filtering out the ones you want should trigger branded token transfers. Once you have decided the core actions you start with creating a transaction for each of them. While setting up these transactions you decide the type of the transaction, associate a value to it and can also set a commission on it. An “Upvote” for example would be setup as a user-to-user transaction, whereas something like “Rewards”  would be setup as a company-to-user transaction.
 
 Value for a transaction can be set in two ways. One in the fiat value system : USD - US dollars and second in the tokenized value system : BT - your Branded Token.
@@ -47,7 +47,7 @@ To create a transaction :
 ```
 
 #### parameters 
-| Attribute           | Type   | Value                                               |
+| Parameter           | Type   | Value                                               |
 |---------------------|--------|-----------------------------------------------------|
 | name                | String | String representing name of the transaction. (example :"Upvote","buy a coffee")                               |
 | kind                | String | The type of transaction based on the owners involved in the token exchange. (example _user_to_user_)                    |
@@ -89,7 +89,7 @@ Updates the specified transaction by setting the values of the parameters passed
 ```
 
 #### Parameters 
-| Attribute             | Type   | Value                                                                                              |
+| Parameter             | Type   | Value                                                                                              |
 |-----------------------|--------|----------------------------------------------------------------------------------------------------|
 | client_transaction_id | String | The ID of the transaction that was returned when the transaction was created with the creat Transaction API |
 | kind                  | String | The type of transaction based on the owners involved in the token exchange. (example user_to_user)                                                                   |
@@ -130,7 +130,7 @@ Returns a list of all existing transactions created. The transactions are return
 ```
   
 #### Parameters 
-| Attribute | Type | Value                                         |
+| Parameter | Type | Value                                         |
 |-----------|------|-----------------------------------------------|
 | page_no   | Int  | 1 (page number for all the transaction types) |
 
