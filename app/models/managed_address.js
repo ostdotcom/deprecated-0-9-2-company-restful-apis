@@ -6,6 +6,7 @@ const rootPrefix = '../..'
   , util = require(rootPrefix + '/lib/util')
   , ModelBaseKlass = require(rootPrefix + '/app/models/base')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
+  , clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop')
   , bitWiseHelperKlass = require(rootPrefix + '/helpers/bitwise_operations')
 ;
 
@@ -139,6 +140,7 @@ const ManagedAddressKlassPrototype = {
     const oThis = this
       , clientId = params.client_id
       , sortBy = params.sort_by
+      , filter = params.filter
     ;
 
     var pageNo = params.page_no
@@ -157,13 +159,19 @@ const ManagedAddressKlassPrototype = {
       orderBy = 'id ASC'
     }
 
-    //paginationClause = `limit ${params.pageSize} offset ${params.pageSize * (pageNo - 1)}`;
+    var whereClause = 'client_id = ?'
+      , whereValues = [clientId];
+
+    if(filter == clientAirdropConst.neverAirdroppedAddressesAirdropListType){
+      whereClause += ' AND (properties & ?) != ?';
+      whereValues.push(invertedProperties[managedAddressesConst.airdropGrantProperty], invertedProperties[managedAddressesConst.airdropGrantProperty])
+    }
 
     return oThis.QueryDB.read(
       oThis.tableName,
       ['id', 'name', 'uuid'],
-      'client_id = ?',
-      [clientId],
+      whereClause,
+      whereValues,
       {
         order: orderBy,
         limit: params.pageSize,

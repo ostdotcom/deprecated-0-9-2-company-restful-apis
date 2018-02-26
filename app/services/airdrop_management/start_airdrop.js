@@ -29,7 +29,7 @@ const startAirdropKlass = function(params){
   const oThis = this;
 
   oThis.clientId = params.client_id;
-  oThis.tokenSymbol = params.symbol;
+  oThis.tokenSymbol = params.token_symbol;
   oThis.amount = params.amount;
   oThis.listType = params.list_type;
   oThis.clientBrandedToken = null;

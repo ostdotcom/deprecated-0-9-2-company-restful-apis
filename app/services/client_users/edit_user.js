@@ -47,7 +47,6 @@ const editUser = {
       result_type: "economy_users",
       'economy_users': [
         {
-          id: response['id'],
           uuid: userUuid,
           name: name,
           total_airdropped_tokens: 0,

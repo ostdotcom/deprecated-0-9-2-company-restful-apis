@@ -107,7 +107,6 @@ const generate = {
       result_type: "economy_users",
       'economy_users': [
         {
-          id: insertedRec.insertId,
           uuid: addrUuid,
           name: name,
           total_airdropped_tokens: 0,
