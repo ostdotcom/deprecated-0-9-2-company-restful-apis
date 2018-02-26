@@ -4,17 +4,6 @@
     "next": "Next",
     "previous": "Previous",
     "tagline": "A website for testing",
-<<<<<<< HEAD
-    "authentication": "Authentication",
-    "Authentication": "Authentication",
-    "error": "Error Handling",
-    "Error handling": "Error handling",
-    "started": "Getting Started",
-    "Getting Started": "Getting Started",
-    "transaction": "Transaction API",
-    "Transaction API": "Transaction API",
-    "user": "User API",
-=======
     "authentication": "Authentication API documentation",
     "Authentication": "Authentication",
     "error": "Error Handling documentation",
@@ -24,21 +13,15 @@
     "Example Page": "Example Page",
     "started": "Getting Started",
     "Getting Started": "Getting Started",
-    "transaction": "Transaction API documentation",
+    "transaction": "Transaction API",
     "Transaction API": "Transaction API",
     "user": "User API Documentation",
->>>>>>> af6140541f6623dba7ef855bff015ee38632e6c1
     "User API": "User API",
     "Docs": "Docs",
     "API": "API",
     "Help": "Help",
     "Blog": "Blog",
-<<<<<<< HEAD
     "API Documentation": "API Documentation",
-=======
-    "ostKIT alpha User": "ostKIT alpha User",
-    "Second Category": "Second Category",
->>>>>>> af6140541f6623dba7ef855bff015ee38632e6c1
     "First Category": "First Category"
   },
   "pages-strings": {

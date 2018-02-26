@@ -1,12 +1,7 @@
 {
   "docs": {
-<<<<<<< HEAD
     "Getting Started": ["authentication","error", "started"],
     "API Documentation": ["user", "transaction"] 
-=======
-    "ostKIT alpha User": ["authentication","error", "started", "user", "transaction"],
-    "Second Category": ["doc1"] 
->>>>>>> af6140541f6623dba7ef855bff015ee38632e6c1
   },
   "docs-other": {
     "First Category": ["doc5"]
