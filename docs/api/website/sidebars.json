@@ -1,0 +1,10 @@
+{
+  "docs": {
+    "Introduction": ["authentication","error" ],
+    "Getting started": ["started"],
+    "API Documentation": ["user", "transaction"] 
+  },
+  "docs-other": {
+    "First Category": ["doc5"]
+  }
+}
