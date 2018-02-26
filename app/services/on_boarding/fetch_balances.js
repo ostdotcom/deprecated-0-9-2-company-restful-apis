@@ -54,7 +54,7 @@ FetchBalances.prototype = {
       , responseData = {
       'oracle_price_points': {
         'ost': {
-          'usd': '0.33'
+          'usd': '0.3'
         }
       },
       balances: {}
