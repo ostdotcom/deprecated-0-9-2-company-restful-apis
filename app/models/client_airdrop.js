@@ -84,6 +84,15 @@ const ClientAirdropKlassPrototype = {
       [],
       'client_id=?',
       [clientId]);
+  },
+
+  getByUuid: function (uuid) {
+    var oThis = this;
+    return oThis.QueryDB.read(
+      oThis.tableName,
+      [],
+      'airdrop_uuid=?',
+      [uuid]);
   }
 
 };

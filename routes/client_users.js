@@ -6,6 +6,7 @@ const express = require('express')
   , listAddressesKlass = require(rootPrefix + '/app/services/client_users/list')
   , getUsersDataKlass = require(rootPrefix + '/app/services/client_users/get_users_data')
   , startAirdropKlass = require(rootPrefix + '/app/services/airdrop_management/start_airdrop')
+  , getAirdropStatusKlass = require(rootPrefix + '/app/services/airdrop_management/get_airdrop_status')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , routeHelper = require(rootPrefix + '/routes/helper')
 ;
@@ -100,6 +101,13 @@ router.post('/airdrop-tokens', function (req, res, next) {
     logger.notify('r_cu_6', 'Something went wrong', err);
     responseHelper.error('r_cu_6', 'Something went wrong').renderResponse(res)
   });
+
+});
+
+/* Get status of Airdrop request */
+router.get('/airdrop/get-status', function (req, res, next) {
+
+  Promise.resolve(routeHelper.performer(req, res, next, getAirdropStatusKlass, 'r_cu_7'));
 
 });
 
