@@ -76,6 +76,7 @@ List.prototype = {
         oThis.transactionTypes.push(
           {
             id: res.id,
+            client_transaction_id: res.id,
             name: res.name,
             kind: res.kind,
             currency_type: res.currency_type,
