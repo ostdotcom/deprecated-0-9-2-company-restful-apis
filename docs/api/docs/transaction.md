@@ -34,27 +34,22 @@ So an important aspect of setting up a branded token economy is to setup transac
 
 
 ### 1. Create a new transaction API
-Creating transaction requires evaluating core user actions on your application and filtering out the ones you want should trigger branded token transfers. Once you have decided the core actions you start with creating a transaction for each of them. While setting up these transactions you decide the type of the transaction, associate a value to it and can also set a commission on it. An “Upvote” for example would be setup as a user-to-user transaction, whereas something like “Rewards”  would be setup as a company-to-user transaction.
-
-Value for a transaction can be set in two ways. One in the fiat value system : USD - US dollars and second in the tokenized value system : BT - your Branded Token.
-
-To create a transaction : 
-
+Creating transaction requires evaluating core user actions on your application and filtering out for the ones that you want to trigger branded token exchanges. Once you have decided the core actions you should start with creating a transaction for each of them. While setting up these transactions you should decide the type of the transaction, associate a value to it and also (if required) set a commission on it. An “Upvote” for example would be setup as a **_user-to-user_** transaction, whereas something like “Rewards”  would be setup as a **_company-to-user_** transaction. The value for a transaction can be set in two ways. One in the fiat value system : USD - US dollars and second in the tokenized value system : BT - your branded token.
 
 #### POST 
 ```url
 {{saas_api_url}}/transaction/kind/create
 ```
 
-#### parameters 
+#### Parameters 
 | Parameter           | Type   | Value                                               |
 |---------------------|--------|-----------------------------------------------------|
-| name                | String | String representing name of the transaction. (example :"Upvote","buy a coffee")                               |
-| kind                | String | The type of transaction based on the owners involved in the token exchange. (example _user_to_user_)                    |
-| value_currency_type | String | String representing the currency the transaction is valued in. Two possible values _usd_ or _bt_                                  |
-| value_in_bt         | Float  | positive number that represents amount of Branded Token to be set as transaction value                 |
-| commission_percent  | Float  | % of transaction value that you set as a service provider on a transaction. Can be set for only user_to_user transaction type. |
-| value_in_usd        | Float  | positive number that represents amount in dollars (USD) to be set as transaction value.               |
+| name                | String | String representing name of the transaction. Example :"Upvote","buy a coffee".                               |
+| kind                | String | The type of transaction based on the owners involved in the token exchange. Example **_user_to_user_** .                  |
+| value_currency_type | String | String representing the currency the transaction is valued in. Two possible values **_usd_** or **_bt_** .                                 |
+| value_in_bt         | Float  | Positive number that represents amount of branded token to be set as transaction value.                 |
+| commission_percent  | Float  | % of transaction value that you set as a service provider on a transaction. Can be set for only **_user_to_user_** transaction type. |
+| value_in_usd        | Float  | Positive number that represents amount in dollars (USD) to be set as transaction value.               |
 
 
 #### Sample Code | Curl 
@@ -71,16 +66,26 @@ curl --request POST \
 ```
 
 #### Returns
-Returns a transaction object if there were no initial errors with the transaction creation (Example - transactions being created with duplicate names, or value of the transaction set breaches the max value set). This call will return an error if create parameters are invalid. Errors are sent as per specification here <cross link to Error Handling>
+Returns a transaction object if there were no initial errors with the transaction creation. Example - transactions being created with duplicate names, or value of the transaction set breaches the max value set. This call will return an error if create parameters are invalid. Errors are sent as per specification [here.](http://localhost:3000/test-site/docs/error.html)
 
 #### Response
 ```javascript
-{"client_id"=>28, "result_type"=>"transaction_types", "transaction_types"=> [ {"id"=>"5",
-"name"=>"Transaction 4", "kind"=>"company_to_user", "currency_type"=>"bt", "currency_value"=>"0.5", "commission_percent"=>"0.000", "status"=>"active"}], "meta"=>{"next_page_payload"=>{}}, "price_points"=>{"ost"=>{"usd"=>"1"}}, "client_tokens"=> [{"id"=>"16", "client_id"=>28, "reserve_managed_address_id"=>90, "name"=>"sd1", "symbol"=>"sd1", "symbol_icon"=>nil, "token_erc20_address"=>"0xdc1A2F9A712a38F673fe7758C35Bec4F9051Da63", "token_uuid"=> "0xf4842e7905d55ebd6699832662570539c2995d35e345360a4cf05e9b486e0a95", "conversion_rate"=>"1.000000", "created_at"=>"2018-02-20 08:16:27", "updated_at"=>"2018-02-20 08:31:44"}]}
+{"client_id"=>28, "result_type"=>"transaction_types", 
+"transaction_types"=> [ {"id"=>"5","name"=>"Transaction 4", 
+"kind"=>"company_to_user", "currency_type"=>"bt", 
+"currency_value"=>"0.5", "commission_percent"=>"0.000", 
+"status"=>"active"}], "meta"=>{"next_page_payload"=>{}},
+"price_points"=>{"ost"=>{"usd"=>"1"}}, "client_tokens"=> 
+[{"id"=>"16", "client_id"=>28, "reserve_managed_address_id"=>90, 
+"name"=>"sd1", "symbol"=>"sd1", "symbol_icon"=>nil,
+"token_erc20_address"=>"0xdc1A2F9A712a38F673fe7758C35Bec4F9051Da63", 
+"token_uuid"=> "0xf4842e7905d55ebd6699832662570539c2995d35e345360a4cf05e9b486e0a95",
+"conversion_rate"=>"1.000000", "created_at"=>"2018-02-20 08:16:27",
+"updated_at"=>"2018-02-20 08:31:44"}]}
 
 ```
 
-### 2.Update an existing transaction API
+### 2. Update an existing transaction API
 Updates the specified transaction by setting the values of the parameters passed. Any parameter not provided will be left unchanged. Individual keys can be unset by posting an empty value to them. 
 
 #### POST 
