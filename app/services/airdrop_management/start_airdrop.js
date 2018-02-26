@@ -144,9 +144,9 @@ startAirdropKlass.prototype = {
     var maObj = new managedAddressModel();
     var params = {client_id: oThis.clientId};
     if(oThis.listType == clientAirdropConst.neverAirdroppedAddressesAirdropListType){
-      params['property_set_bit_value'] = maObj.properties[managedAddressesConst.airdropGrantProperty]
+      params['property_unset_bit_value'] = maObj.invertedProperties[managedAddressesConst.airdropGrantProperty]
     }
-    var response = await maObj.getActiveUsersCount(params);
+    var response = await maObj.getFilteredActiveUsersCount(params);
     if(!response[0] || response[0].total_count == 0){
       return Promise.resolve(responseHelper.error("s_am_sa_6", "No users found to airdrop for this list type."));
     }

@@ -20,10 +20,10 @@ const dbName = "saas_client_economy_" + coreConstants.SUB_ENVIRONMENT + "_" + co
     '4': managedAddressesConst.airdropHolderAddressType
   }
   , invertedAddressTypes = util.invert(addressTypes)
-  , invertedProperties = {
+  , properties = {
     1: managedAddressesConst.airdropGrantProperty
   }
-  , properties = util.invert(invertedProperties)
+  , invertedProperties = util.invert(properties)
 ;
 
 const ManagedAddressKlass = function () {
@@ -55,6 +55,8 @@ const ManagedAddressKlassPrototype = {
 
   properties: properties,
 
+  invertedProperties: invertedProperties,
+
   enums: {
     'status': {
       val: statuses,
@@ -82,19 +84,21 @@ const ManagedAddressKlassPrototype = {
       ids, 'id');
   },
 
-  getActiveUsersByLimitAndOffset: function (params) {
+  getFilteredActiveUsersByLimitAndOffset: function (params) {
     const oThis = this
       , clientId = params.client_id
-      , propertyBitVal =  params.property_set_bit_value
+      , propertyUnsetBitVal =  params.property_unset_bit_value
       , options = {limit: params.limit, offset: params.offset, order: "id asc"}
     ;
 
-  var valueFields = [clientId, managedAddressesConst.activeStatus, managedAddressesConst.userAddressType]
-    , propertiesWhereClause = ''
+    var valueFields = [clientId, managedAddressesConst.activeStatus, managedAddressesConst.userAddressType]
+      , propertiesWhereClause = ''
     ;
-    if (propertyBitVal) {
-      propertiesWhereClause = ' AND (properties & ?) = ?';
-      valueFields = valueFields.concat([propertyBitVal, propertyBitVal]);
+
+    if (propertyUnsetBitVal) {
+      propertiesWhereClause = ' AND (properties & ?) != ?'
+        , valueFields = valueFields.concat([propertyUnsetBitVal, propertyUnsetBitVal])
+      ;
     }
 
     return oThis.QueryDB.read(
@@ -106,18 +110,20 @@ const ManagedAddressKlassPrototype = {
     );
   },
 
-  getActiveUsersCount: function (params) {
+  getFilteredActiveUsersCount: function (params) {
     const oThis = this
       , clientId = params.client_id
-      , propertyBitVal =  params.property_set_bit_value
+      , propertyUnsetBitVal =  params.property_unset_bit_value
     ;
 
-    var propertiesWhereClause = '',
-      valueFields = [clientId, oThis.invertedStatuses[managedAddressesConst.activeStatus],
-        oThis.invertedAddressTypes[managedAddressesConst.userAddressType]];
-    if (propertyBitVal) {
-      propertiesWhereClause += ' AND (properties & ?) = ?';
-      valueFields = valueFields.concat([propertyBitVal, 0]);
+    var valueFields = [clientId, managedAddressesConst.activeStatus, managedAddressesConst.userAddressType]
+      , propertiesWhereClause = ''
+    ;
+
+    if (propertyUnsetBitVal) {
+      propertiesWhereClause = ' AND (properties & ?) != ?'
+        , valueFields = valueFields.concat([propertyUnsetBitVal, propertyUnsetBitVal])
+      ;
     }
 
     return oThis.QueryDB.read(
@@ -184,7 +190,7 @@ const ManagedAddressKlassPrototype = {
   setBitColumns: function () {
     const oThis = this;
 
-    oThis.bitColumns = {'properties': properties};
+    oThis.bitColumns = {'properties': invertedProperties};
 
     return oThis.bitColumns;
   }

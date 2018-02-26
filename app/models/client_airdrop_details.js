@@ -46,7 +46,18 @@ const clientAirdropDetailsKlassPrototype = {
       ['sum(airdrop_amount_in_wei) as totalAmountInWei'],
       'id=?',
       [clientAirdropId]);
+  },
+
+  getPendingRecordsInbatches: function (clientAirdropId, limit, offset) {
+    return QueryDB.read(
+      tableName,
+      ['managed_address_id, airdrop_amount_in_wei, expiry_timesatmp'],
+      'client_airdrop_id=? AND status=?',
+      [clientAirdropId, clientAirdropDetailsConst.incompleteStatus],
+      {limit: limit, offset: offset, order: 'ID ASC'}
+      );
   }
+
 
 };
 

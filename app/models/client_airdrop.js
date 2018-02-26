@@ -18,7 +18,7 @@ const dbName = "saas_airdrop_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.E
     '3':clientAirdropConst.completeStatus,
     '4':clientAirdropConst.failedStatus
   }
-  , invertedStepsComplete = {
+  , stepsComplete = {
     '1':clientAirdropConst.userIdentifiedStepComplete,
     '2':clientAirdropConst.tokensTransferedStepComplete,
     '4':clientAirdropConst.contractApprovedStepComplete,
@@ -30,7 +30,7 @@ const dbName = "saas_airdrop_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.E
     '3':clientAirdropConst.specificAddressesAirdropListType
   }
   , invertedStatuses = util.invert(statuses)
-  , stepsComplete = util.invert(invertedStepsComplete)
+  , invertedStepsComplete = util.invert(stepsComplete)
   , invertedAirdropListType = util.invert(airdropListType)
 ;
 
@@ -68,13 +68,13 @@ const ClientAirdropKlassPrototype = {
     }
   },
 
-  get: function (clientAirdropId) {
+  getById: function (id) {
     const oThis = this;
     return oThis.QueryDB.read(
       oThis.tableName,
       [],
       'id=?',
-      [clientAirdropId]);
+      [id]);
   },
 
   getByClientId: function (clientId) {
@@ -106,7 +106,7 @@ const ClientAirdropKlassPrototype = {
 ClientAirdropKlass.prototype.setBitColumns = function () {
   const oThis = this;
 
-  oThis.bitColumns = {'steps_complete': stepsComplete};
+  oThis.bitColumns = {'steps_complete': invertedStepsComplete};
 
   return oThis.bitColumns;
 };
