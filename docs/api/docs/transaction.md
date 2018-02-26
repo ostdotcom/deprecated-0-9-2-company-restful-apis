@@ -121,12 +121,23 @@ Returns a transaction object if the update is successful. This call will return 
 
 #### Response
 ```javascript
-{"client_id"=>28, "result_type"=>"transaction_types", "transaction_types"=> [ {"id"=>"5", "name"=>"Transaction 4", "kind"=>"company_to_user", "currency_type"=>"bt", "currency_value"=>"0.5", "commission_percent"=>"0.000", "status"=>"active"}], "meta"=>{"next_page_payload"=>{}}, "price_points"=>{"ost"=>{"usd"=>"1"}}, "client_tokens"=> [{"id"=>"16", "client_id"=>28, "reserve_managed_address_id"=>90, "name"=>"sd1", "symbol"=>"sd1", "symbol_icon"=>nil, "token_erc20_address"=>"0xdc1A2F9A712a38F673fe7758C35Bec4F9051Da63", "token_uuid"=> "0xf4842e7905d55ebd6699832662570539c2995d35e345360a4cf05e9b486e0a95", "conversion_rate"=>"1.000000", "created_at"=>"2018-02-20 08:16:27", "updated_at"=>"2018-02-20 08:31:44"}]}
+{"client_id"=>28, "result_type"=>"transaction_types", 
+"transaction_types"=> [ {"id"=>"5", "name"=>"Transaction 4", 
+"kind"=>"company_to_user", "currency_type"=>"bt", 
+"currency_value"=>"0.5", "commission_percent"=>"0.000", 
+"status"=>"active"}], "meta"=>{"next_page_payload"=>{}}, 
+"price_points"=>{"ost"=>{"usd"=>"1"}}, "client_tokens"=> 
+[{"id"=>"16", "client_id"=>28, "reserve_managed_address_id"=>90, 
+"name"=>"sd1", "symbol"=>"sd1", "symbol_icon"=>nil, 
+"token_erc20_address"=>"0xdc1A2F9A712a38F673fe7758C35Bec4F9051Da63", 
+"token_uuid"=> "0xf4842e7905d55ebd6699832662570539c2995d35e345360a4cf05e9b486e0a95", 
+"conversion_rate"=>"1.000000", "created_at"=>"2018-02-20 08:16:27", 
+"updated_at"=>"2018-02-20 08:31:44"}]}
 ```
 
-### 3.List all existing transactions
+### 3. List all existing transactions API
 
-Returns a list of all existing transactions created. The transactions are returned in sorted order, with the transcations created first appearing first. 
+Returns a list of all existing transactions created. The transactions are returned in creation order, with the transcations created first, appearing at the top. 
 
 
 #### GET 
@@ -137,7 +148,7 @@ Returns a list of all existing transactions created. The transactions are return
 #### Parameters 
 | Parameter | Type | Value                                         |
 |-----------|------|-----------------------------------------------|
-| page_no   | Int  | 1 (page number for all the transaction types) |
+| _page_no_   | Int  | 1 (page number for all the transaction types) |
 
 #### Sample Code | Curl 
 ```bash
@@ -153,9 +164,7 @@ curl --request POST \
 ```
 
 #### Returns
-Returns a hash with a key "result-type". The value of result-type is in-turn a key ("transaction_type"). This key ("transaction_type") is an array of upto 25 transactions. Each entry in the array is a separate transaction object. 
-
-If there are subsequent transactions the resulting hash in the response will come with the a meta parameter "next_page_payload" as shown below. 
+Returns a hash with a key _result-type_. The value of _result-type_ is in-turn a key _transaction_type_. This key _transaction_type_ is an array of upto 25 transactions. Each entry in the array is a separate transaction object. If there are subsequent transactions the resulting hash in the response will come with the a meta parameter _next_page_payload_ as shown below. 
 
 ```javascript
 "meta"=>{"next_page_payload"=>{"page_no"=>2}}
@@ -166,7 +175,27 @@ If no more transactions are available, the resulting hash will have the meta par
 
 #### Response
 ```javascript
-{"client_id"=>28, "result_type"=>"transaction_types", "transaction_types"=> [{"id"=>"4", "name"=>"Transaction 1", "kind"=>"user_to_user", "currency_type"=>"bt", "currency_value"=>"10", "commission_percent"=>"0.000", "status"=>"active"}, {"id"=>"2", "name"=>"Transaction 2", "kind"=>"company_to_user", "currency_type"=>"usd", "currency_value"=>"1.000000", "commission_percent"=>"10.000", "status"=>"active"}, {"id"=>"3", "name"=>"Transaction 3", "kind"=>"user_to_company", "currency_type"=>"usd", "currency_value"=>"0.500000", "commission_percent"=>"10.000", "status"=>"active"}, {"id"=>"5", "name"=>"Transaction 4", "kind"=>"company_to_user", "currency_type"=>"bt", "currency_value"=>"0.5", "commission_percent"=>"0.000", "status"=>"active"}], "meta"=>{"next_page_payload"=>{}}, "price_points"=>{"ost"=>{"usd"=>"1"}}, "client_tokens"=> [{"id"=>"16", "client_id"=>28, "reserve_managed_address_id"=>90, "name"=>"sd1", "symbol"=>"sd1", "symbol_icon"=>nil, "token_erc20_address"=>"0xdc1A2F9A712a38F673fe7758C35Bec4F9051Da63", "token_uuid"=> "0xf4842e7905d55ebd6699832662570539c2995d35e345360a4cf05e9b486e0a95", "conversion_rate"=>"1.000000", "created_at"=>"2018-02-20 08:16:27", "updated_at"=>"2018-02-20 08:31:44"}]}
+{"client_id"=>28, "result_type"=>"transaction_types", 
+"transaction_types"=> [{"id"=>"4", "name"=>"Transaction 1", 
+"kind"=>"user_to_user", "currency_type"=>"bt", "currency_value"=>"10"
+, "commission_percent"=>"0.000", "status"=>"active"}, 
+{"id"=>"2", "name"=>"Transaction 2", "kind"=>"company_to_user", 
+"currency_type"=>"usd", "currency_value"=>"1.000000", 
+"commission_percent"=>"10.000", "status"=>"active"}, 
+{"id"=>"3", "name"=>"Transaction 3", "kind"=>"user_to_company", 
+"currency_type"=>"usd", "currency_value"=>"0.500000", 
+"commission_percent"=>"10.000", "status"=>"active"}, 
+{"id"=>"5", "name"=>"Transaction 4", "kind"=>"company_to_user", 
+"currency_type"=>"bt", "currency_value"=>"0.5", 
+"commission_percent"=>"0.000", "status"=>"active"}], 
+"meta"=>{"next_page_payload"=>{}}, 
+"price_points"=>{"ost"=>{"usd"=>"1"}}, "client_tokens"=> 
+[{"id"=>"16", "client_id"=>28, "reserve_managed_address_id"=>90, 
+"name"=>"sd1", "symbol"=>"sd1", "symbol_icon"=>nil, 
+"token_erc20_address"=>"0xdc1A2F9A712a38F673fe7758C35Bec4F9051Da63", 
+"token_uuid"=> "0xf4842e7905d55ebd6699832662570539c2995d35e345360a4cf05e9b486e0a95", 
+"conversion_rate"=>"1.000000", "created_at"=>"2018-02-20 08:16:27", 
+"updated_at"=>"2018-02-20 08:31:44"}]}
 ```
 
 
