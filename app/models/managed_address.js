@@ -97,8 +97,8 @@ const ManagedAddressKlassPrototype = {
     ;
 
     if (propertyUnsetBitVal) {
-      propertiesWhereClause = ' AND (properties & ?) != ?'
-        , valueFields = valueFields.concat([propertyUnsetBitVal, propertyUnsetBitVal])
+      propertiesWhereClause = ' AND (properties & ?) = 0'
+        , valueFields = valueFields.concat([propertyUnsetBitVal])
       ;
     }
 
@@ -122,8 +122,8 @@ const ManagedAddressKlassPrototype = {
     ;
 
     if (propertyUnsetBitVal) {
-      propertiesWhereClause = ' AND (properties & ?) != ?'
-        , valueFields = valueFields.concat([propertyUnsetBitVal, propertyUnsetBitVal])
+      propertiesWhereClause = ' AND (properties & ?) = 0'
+        , valueFields = valueFields.concat([propertyUnsetBitVal])
       ;
     }
 
@@ -163,8 +163,8 @@ const ManagedAddressKlassPrototype = {
       , whereValues = [clientId];
 
     if(filter == clientAirdropConst.neverAirdroppedAddressesAirdropListType){
-      whereClause += ' AND (properties & ?) != ?';
-      whereValues.push(invertedProperties[managedAddressesConst.airdropGrantProperty], invertedProperties[managedAddressesConst.airdropGrantProperty])
+      whereClause += ' AND (properties & ?) = 0';
+      whereValues.push(invertedProperties[managedAddressesConst.airdropGrantProperty])
     }
 
     return oThis.QueryDB.read(
