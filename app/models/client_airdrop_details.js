@@ -44,7 +44,7 @@ const clientAirdropDetailsKlassPrototype = {
     return oThis.QueryDB.read(
       oThis.tableName,
       ['sum(airdrop_amount_in_wei) as totalAmountInWei'],
-      'id=?',
+      'client_airdrop_id=?',
       [clientAirdropId]);
   },
 
