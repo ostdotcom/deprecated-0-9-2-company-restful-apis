@@ -1,10 +1,10 @@
 ---
 id: transaction
-title: Transaction API
+title:Transaction API
 sidebar_label:Transaction API 
 ---
 
-Transactions are executed when tokens are moved between accounts (These can be between _user_ to _another-user_ or _company_ to _user_ and vice versa). In ostKIT a transaction represents a core action or event in your application (for example. a "like", "share", "purchase", "monthly winner" or a "birthday event"). You can associate a value with each transaction. Once you create such transactions for your application and assign value to each of them, they become opportunities for your end-users to "Earn" and "Spend" Branded Tokens (BT) in your application. This exchange of tokens represents a branded token economy.
+Transactions are executed when tokens are moved between accounts. These can be between _user_ to another _user_ or _company_ to _user_ and vice versa. In ostKIT a transaction represents a core action or event in your application, for example. a "like", "share", "purchase", "monthly winner" or a "birthday event". You can associate a value with each transaction. Once you create such transactions for your application and assign value to each of them, they become opportunities for your end-users to "Earn" and "Spend" Branded Tokens (BT) in your application. This exchange of tokens represents a branded token economy.
 
 So an important aspect of setting up a branded token economy is to setup transactions. Below we detail out APIs for creating transactions, running them and viewing the list of all transactions created. 
 
