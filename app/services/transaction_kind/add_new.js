@@ -13,6 +13,7 @@ var rootPrefix = '../../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , ClientTransactionTypeKlass = require(rootPrefix + '/app/models/client_transaction_type')
   , clientTransactionTypeObj = new ClientTransactionTypeKlass()
+  , ClientTxKindCntCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type_count')
 ;
 
 /**
@@ -57,7 +58,10 @@ AddNew.prototype = {
     r = await oThis.createTransactionKind();
     if(r.isFailure()) return Promise.resolve(r);
 
+    oThis.clearCache();
+
     return oThis.returnResponse();
+
   },
 
   /**
@@ -157,6 +161,21 @@ AddNew.prototype = {
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
+  },
+
+  /**
+   * Flush Memcache.<br><br>
+   *
+   * @return {promise<result>} - returns a promise which resolves to an object of Result
+   *
+   */
+  clearCache: function(){
+
+    const oThis = this
+        , cacheObj = new ClientTxKindCntCacheKlass({clientId: oThis.params.client_id});
+
+    cacheObj.clear();
+
   },
 
   /**

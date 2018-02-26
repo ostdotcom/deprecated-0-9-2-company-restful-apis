@@ -94,6 +94,11 @@ const ClientTransactionTypeKlassPrototype = {
   getTransactionByName: function (params) {
     var oThis = this;
     return oThis.QueryDB.read(oThis.tableName, [], 'client_id=? AND name=?', [params['clientId'], params['name']]);
+  },
+
+  getCount: function (params) {
+    var oThis = this;
+    return oThis.QueryDB.read(oThis.tableName, ['count(*) as cnt'], 'client_id=?', [params['clientId']]);
   }
 
 };
