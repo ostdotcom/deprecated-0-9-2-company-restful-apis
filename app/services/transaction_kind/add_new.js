@@ -94,10 +94,16 @@ AddNew.prototype = {
       if(!currency_value || currency_value<=0){
         errors_object['currency_value'] = 'currency value in USD is required';
       }
+      if(currency_value>100){
+        errors_object['currency_value'] = 'currency value is max capped at 100 USD';
+      }
       oThis.transactionKindObj.value_in_usd = currency_value;
     } else if (currency_type == 'bt' ){
       if(!currency_value || currency_value<=0 ){
         errors_object['currency_value'] = 'currency value in BT is required';
+      }
+      if(currency_value>100 ){
+        errors_object['currency_value'] = 'currency value is max capped at 100 BT';
       }
       var value_in_bt_wei = basicHelper.convertToWei(currency_value);
       if(!basicHelper.isWeiValid(value_in_bt_wei)){

@@ -92,6 +92,9 @@ Edit.prototype = {
       if(!currency_value || currency_value<=0 ){
         errors_object['currency_value'] = 'Value in USD is required';
       }
+      if(currency_value>100){
+        errors_object['currency_value'] = 'currency value is max capped at 100 USD';
+      }
       oThis.transactionKindObj['currency_type'] = oThis.params.currency_type;
       oThis.transactionKindObj['value_in_bt_wei'] = null;
       oThis.transactionKindObj['value_in_usd'] = currency_value;
@@ -100,6 +103,9 @@ Edit.prototype = {
       oThis.params.value_in_usd = null;
       if(!currency_value || currency_value<=0){
         errors_object['currency_value'] = 'Value in BT is required';
+      }
+      if(currency_value>100 ){
+        errors_object['currency_value'] = 'currency value is max capped at 100 BT';
       }
       var value_in_bt_wei = basicHelper.convertToWei(currency_value);
       if(!basicHelper.isWeiValid(value_in_bt_wei)){
