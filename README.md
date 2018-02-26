@@ -64,7 +64,7 @@ export OST_UTILITY_PRICE_ORACLES='{"OST":{"USD":"0x60Fa2655AD1F08DfC3e1DAd9b31e4
 > node $OPENST_PLATFORM_PATH/tools/setup/start_services.js
 
 
-> node node_modules/@openstfoundation/openst-payments/tools/deploy/workers.js $OST_UTILITY_GAS_PRICE
+> node node_modules/@openstfoundation/openst-payments/tools/deploy/workers.js $OST_UTILITY_GAS_PRICE $OST_UTILITY_CHAIN_ID
 
 > vim $HOME/openst-setup/openst_env_vars.sh
 # 3rd party contract address
