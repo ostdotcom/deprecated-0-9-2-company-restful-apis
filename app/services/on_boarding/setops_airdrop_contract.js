@@ -95,7 +95,7 @@ SetopsAirdropContractClass.prototype = {
   },
 
   registerAirdrop: async function () {
-    await OpenStPaymentsModule.airdropManager.registerAirdrop(oThis.airDropContractAddress, oThis.chainId);
+    return OpenStPaymentsModule.airdropManager.registerAirdrop(oThis.airDropContractAddress, oThis.chainId);
   }
 
 };

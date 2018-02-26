@@ -2,10 +2,10 @@
 
 const rootPrefix = '../../..'
   , BaseKlass = require(rootPrefix + '/app/services/stake_and_mint/base')
-  , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , clientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
 ;
 
 const StPrimeKlass = function (params) {
@@ -42,13 +42,11 @@ const StPrimeKlassPrototype = {
 
     var oThis = this;
 
-    const clientBrandedTokenCacheObj = new ClientBrandedTokenCacheKlass({clientId: oThis.clientId});
+    const clientBrandedTokenObj = new clientBrandedTokenKlass();
+    const clientBrandedTokens = await clientBrandedTokenObj.getByClientId(oThis.clientId);
 
-    const clientBrandedTokenCacheResp = await clientBrandedTokenCacheObj.fetch();
+    oThis.brandedToken = clientBrandedTokens[clientBrandedTokens.length - 1];
 
-    const clientBrandedTokens = clientBrandedTokenCacheResp.data;
-
-    oThis.brandedToken = clientBrandedTokens[clientBrandedTokens.length-1];
     oThis.uuid = chainInteractionConstants.ST_PRIME_UUID;
 
     return Promise.resolve(responseHelper.successWithData({}));
