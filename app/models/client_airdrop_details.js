@@ -51,7 +51,7 @@ const clientAirdropDetailsKlassPrototype = {
   getPendingRecordsInbatches: function (clientAirdropId, limit, offset) {
     return QueryDB.read(
       tableName,
-      ['managed_address_id, airdrop_amount_in_wei, expiry_timesatmp'],
+      ['managed_address_id, airdrop_amount_in_wei, expiry_timestamp'],
       'client_airdrop_id=? AND status=?',
       [clientAirdropId, clientAirdropDetailsConst.incompleteStatus],
       {limit: limit, offset: offset, order: 'ID ASC'}

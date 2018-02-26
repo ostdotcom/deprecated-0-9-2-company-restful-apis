@@ -91,7 +91,7 @@ const ManagedAddressKlassPrototype = {
       , options = {limit: params.limit, offset: params.offset, order: "id asc"}
     ;
 
-    var valueFields = [clientId, managedAddressesConst.activeStatus, managedAddressesConst.userAddressType]
+    var valueFields = [clientId, invertedStatuses[managedAddressesConst.activeStatus], invertedAddressTypes[managedAddressesConst.userAddressType]]
       , propertiesWhereClause = ''
     ;
 
@@ -116,7 +116,7 @@ const ManagedAddressKlassPrototype = {
       , propertyUnsetBitVal =  params.property_unset_bit_value
     ;
 
-    var valueFields = [clientId, managedAddressesConst.activeStatus, managedAddressesConst.userAddressType]
+    var valueFields = [clientId, invertedStatuses[managedAddressesConst.activeStatus], invertedAddressTypes[managedAddressesConst.userAddressType]]
       , propertiesWhereClause = ''
     ;
 
