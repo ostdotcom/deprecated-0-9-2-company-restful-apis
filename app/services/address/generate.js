@@ -10,6 +10,7 @@ const rootPrefix = '../../..'
   , managedAddressObj = new ManagedAddressKlass()
   , AddressesEncryptorKlass = require(rootPrefix + '/lib/encryptors/addresses_encryptor')
   , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
+  , managedAddressConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
 ;
 
 const _private = {
@@ -103,16 +104,20 @@ const generate = {
     const managedAddressCache = new ManagedAddressCacheKlass({'uuids': [addrUuid]});
     managedAddressCache.clear();
 
+    var userData = {};
+    if(addressType != managedAddressConst.userAddressType){
+      userData['id'] = insertedRec.insertId;
+    }
+
     return responseHelper.successWithData({
       result_type: "economy_users",
       'economy_users': [
-        {
-          id: insertedRec.insertId,
+        Object.assign(userData, {
           uuid: addrUuid,
           name: name,
           total_airdropped_tokens: 0,
           token_balance: 0
-        }
+        })
       ],
       meta: {
         next_page_payload: {}
