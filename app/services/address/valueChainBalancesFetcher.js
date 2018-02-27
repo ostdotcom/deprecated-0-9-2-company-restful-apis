@@ -104,9 +104,14 @@ valueChainBalancesFetcherKlass.prototype = {
 
     const oThis = this;
 
-    const obj = new ethBalanceCacheKlass({'address': oThis.address});
+    // const obj = new ethBalanceCacheKlass({'address': oThis.address});
+    // return obj.fetch();
 
-    return obj.fetch();
+    // Having a one minute cache is leading to PM team reporting bugs.
+    // untill we figure out a way to flush it avoid using it here
+    const obj = new openStPlatform.services.balance.eth({'address': oThis.address});
+
+    return obj.perform();
 
   },
 
