@@ -124,7 +124,7 @@ valueChainBalancesFetcherKlass.prototype = {
     // untill we figure out a way to flush it avoid using it here
     const obj = new openStPlatform.services.balance.simpleToken({'address': oThis.address});
 
-    return obj.fetch();
+    return obj.perform();
 
   }
 
