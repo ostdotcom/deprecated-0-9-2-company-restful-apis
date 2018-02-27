@@ -41,13 +41,14 @@ FundUsersWithEthKlass.prototype = {
   /**
    * Perform
    *
-   * @returns {promise<result>}
    */
   perform: async function () {
 
     const oThis = this;
 
-    for (var userName in oThis._interestedUserNames) {
+    for (var i in oThis._interestedUserNames) {
+      const userName = oThis._interestedUserNames[i];
+
       const minBalanceInWei = basicHelper.convertToWei(oThis._valueChainMinBalanceFor(userName))
         , ethereumAddress = oThis._valueChainAddressFor(userName)
         , balanceResponse = await oThis._getEthBalance(ethereumAddress)
@@ -65,9 +66,8 @@ FundUsersWithEthKlass.prototype = {
     // check if utility chain owner has required min balance
     // keep threshold for utility chain owner sufficiently high so that it is able to fund high no of refills
     const utilityChainOwnerResponse = await oThis._checkBalanceOfChainOwner();
-    if (utilityChainOwnerResponse.isFailure()) return Promise.resolve(utilityChainOwnerResponse);
 
-    return Promise.resolve(responseHelper.successWithData({}));
+    process.exit(0);
 
   },
 
@@ -137,7 +137,7 @@ FundUsersWithEthKlass.prototype = {
   _transferEthBalance: async function (ethereumAddress, transferAmountInWei) {
 
     const oThis = this
-      , transferEthBalanceObj = new openStPlatform.services.transfer.eth({
+      , transferEthBalanceObj = new openStPlatform.services.transaction.transfer.eth({
         sender_name: 'utilityChainOwner',
         recipient_address: ethereumAddress,
         amount_in_wei: transferAmountInWei,
@@ -169,7 +169,7 @@ FundUsersWithEthKlass.prototype = {
     ;
 
     if (!nameData) {
-      logger.notify('e_fa_e_teb_1', "Invalid user name passed for getting data - " + name);
+      logger.notify('e_fa_e_vcbb_1', "Invalid user name passed for getting data - " + name);
       throw "Invalid user name passed for getting data - " + name;
     }
 
