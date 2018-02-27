@@ -18,7 +18,8 @@ const rootPrefix = '../../..'
   , clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , basicHelper = require(rootPrefix + '/helpers/basic')
-  ;
+  , coreConstants = require(rootPrefix + '/config/core_constants')
+;
 
 /**
  * Start Airdrop constructor
@@ -26,7 +27,7 @@ const rootPrefix = '../../..'
  * @param params
  * @Constructor
  */
-const startAirdropKlass = function(params){
+const startAirdropKlass = function (params) {
   const oThis = this;
 
   oThis.clientId = params.client_id;
@@ -44,21 +45,21 @@ startAirdropKlass.prototype = {
    *
    * @return {Promise<result>}
    */
-  perform: async function(){
+  perform: async function () {
     const oThis = this;
 
     var r1 = await oThis.validateInput();
-    if(r1.isFailure()){
+    if (r1.isFailure()) {
       return Promise.resolve(r1);
     }
 
     var r2 = await oThis.validateIncompleteRequests();
-    if(r2.isFailure()){
+    if (r2.isFailure()) {
       return Promise.resolve(r2);
     }
 
     var r3 = await oThis.validateReserveBalance();
-    if(r3.isFailure()){
+    if (r3.isFailure()) {
       return Promise.resolve(r3);
     }
 
@@ -73,19 +74,19 @@ startAirdropKlass.prototype = {
    * Sets clientBrandedToken
    * @return {Promise<any>}
    */
-  validateInput: async function(){
+  validateInput: async function () {
     const oThis = this;
 
-    if(isNaN(oThis.amount) || oThis.amount < 0){
+    if (isNaN(oThis.amount) || oThis.amount < 0) {
       return Promise.resolve(responseHelper.error("s_am_sa_1", "Invalid amount."));
     }
 
-    if(![clientAirdropConst.allAddressesAirdropListType,
-        clientAirdropConst.neverAirdroppedAddressesAirdropListType].includes(oThis.listType)){
+    if (![clientAirdropConst.allAddressesAirdropListType,
+        clientAirdropConst.neverAirdroppedAddressesAirdropListType].includes(oThis.listType)) {
       return Promise.resolve(responseHelper.error("s_am_sa_2", "Invalid List type to airdrop users."));
     }
 
-    if(!oThis.tokenSymbol){
+    if (!oThis.tokenSymbol) {
       return Promise.resolve(responseHelper.error("s_am_sa_3", "Invalid Token Symbol"));
     }
 
@@ -95,7 +96,7 @@ startAirdropKlass.prototype = {
       return Promise.resolve(cacheRsp);
     }
 
-    if(oThis.clientId != cacheRsp.data.client_id){
+    if (oThis.clientId != cacheRsp.data.client_id) {
       return Promise.resolve(responseHelper.error("s_am_sa_3", "Invalid Token Symbol"));
     }
 
@@ -109,14 +110,14 @@ startAirdropKlass.prototype = {
    *
    * @return {Promise<any>}
    */
-  validateIncompleteRequests: async function(){
+  validateIncompleteRequests: async function () {
     const oThis = this;
 
     var obj = new clientAirdropModel();
     var clientAirdrops = await obj.getByClientId(oThis.clientId);
-    if(clientAirdrops.length > 0){
-      for(var i=0;i<clientAirdrops.length;i++){
-        if([clientAirdropConst.incompleteStatus, clientAirdropConst.processingStatus].includes(obj.statuses[clientAirdrops[i].status])){
+    if (clientAirdrops.length > 0) {
+      for (var i = 0; i < clientAirdrops.length; i++) {
+        if ([clientAirdropConst.incompleteStatus, clientAirdropConst.processingStatus].includes(obj.statuses[clientAirdrops[i].status])) {
           return Promise.resolve(responseHelper.error("s_am_sa_4", "Airdrop requests are in-process"));
         }
       }
@@ -130,7 +131,7 @@ startAirdropKlass.prototype = {
    *
    * @return {Promise<any>}
    */
-  validateReserveBalance: async function(){
+  validateReserveBalance: async function () {
     const oThis = this;
 
     var macObj = new ManagedAddressesCacheKlass({'uuids': [oThis.clientBrandedToken.reserve_address_uuid]});
@@ -146,23 +147,23 @@ startAirdropKlass.prototype = {
     );
 
     var resp = await obj.perform();
-    if(resp.isFailure()){
+    if (resp.isFailure()) {
       return Promise.resolve(responseHelper.error("s_am_sa_5", "Something went wrong."));
     }
 
     var maObj = new managedAddressModel();
     var params = {client_id: oThis.clientId};
-    if(oThis.listType == clientAirdropConst.neverAirdroppedAddressesAirdropListType){
+    if (oThis.listType == clientAirdropConst.neverAirdroppedAddressesAirdropListType) {
       params['property_unset_bit_value'] = maObj.invertedProperties[managedAddressesConst.airdropGrantProperty]
     }
     var response = await maObj.getFilteredActiveUsersCount(params);
-    if(!response[0] || response[0].total_count == 0){
+    if (!response[0] || response[0].total_count == 0) {
       return Promise.resolve(responseHelper.error("s_am_sa_6", "No users found to airdrop for this list type."));
     }
 
     var amountInWei = basicHelper.convertToWei(oThis.amount);
-    var totalAmountToAirdrop = (parseInt(response[0].total_count)*oThis.amount);
-    if(amountInWei.mul(response[0].total_count).toNumber() > resp.data.balance){
+    var totalAmountToAirdrop = (parseInt(response[0].total_count) * oThis.amount);
+    if (amountInWei.mul(response[0].total_count).toNumber() > resp.data.balance) {
       return Promise.resolve(responseHelper.error("s_am_sa_7", "Insufficient funds to airdrop users."));
     }
 
@@ -175,21 +176,23 @@ startAirdropKlass.prototype = {
    * Sets @airdropUuid
    *
    */
-  insertDb: function(){
+  insertDb: function () {
     const oThis = this;
     oThis.airdropUuid = uuid.v4();
     var obj = new clientAirdropModel();
-    obj.create({airdrop_uuid: oThis.airdropUuid, client_id: oThis.clientId,
+    obj.create({
+      airdrop_uuid: oThis.airdropUuid, client_id: oThis.clientId,
       client_branded_token_id: oThis.clientBrandedToken.id,
       common_airdrop_amount_in_wei: basicHelper.convertToWei(oThis.amount).toNumber(),
-      airdrop_list_type: oThis.listType, status: clientAirdropConst.incompleteStatus});
+      airdrop_list_type: oThis.listType, status: clientAirdropConst.incompleteStatus
+    });
 
     // Publish Airdrop event
     openSTNotification.publishEvent.perform(
       {
-        topics: ['airdrop.start'],
+        topics: ['airdrop.start.'+ coreConstants.PACKAGE_NAME],
         message: {
-          kind: 'info',
+          kind: 'background_job',
           payload: {
             uuid: oThis.airdropUuid
           }

@@ -1,11 +1,19 @@
 "use strict";
 
+const rootPrefix = '..'
+  , packageFile = require(rootPrefix + '/package.json')
+;
+
 function define(name, value) {
   Object.defineProperty(exports, name, {
     value: value,
     enumerable: true
   });
 }
+
+// package variables for current repo
+define("PACKAGE_NAME", packageFile.name);
+define("PACKAGE_VERSION", packageFile.version);
 
 // Core details
 define("ENVIRONMENT", process.env.CR_ENVIRONMENT);
