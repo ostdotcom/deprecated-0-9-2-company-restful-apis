@@ -86,9 +86,8 @@ AddNew.prototype = {
       return Promise.resolve(responseHelper.error('tk_an_1', 'invalid Client'));
     }
 
-    //TODO: check if any charactors to be blocked
-    if(!name){
-      errors_object['name'] = 'invalid name';
+    if(!basicHelper.isTxKindNameValid(name)){
+      errors_object['name'] = 'Tx Kind name should contain btw 3 - 25 aplhabets.';
     }
     if(!kind || !clientTransactionTypeObj.invertedKinds[kind]){
       errors_object['kind'] = 'invalid kind';

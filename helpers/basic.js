@@ -104,6 +104,20 @@ BasicHelperKlass.prototype = {
   },
 
   /**
+   * Check if transaction kind name is valid or not
+   *
+   * @param {string} name - Tx Kind name
+   *
+   * @return {boolean}
+   */
+  isTxKindNameValid: function (name) {
+    if (typeof name !== "string") {
+      return false;
+    }
+    return (/^[a-z\s]{3,25}$/i).test(name);
+  },
+
+  /**
    * Check if branded token symbol is valid or not
    *
    * @param {string} symbol - Branded token symbol
