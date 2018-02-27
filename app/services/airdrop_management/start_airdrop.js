@@ -11,6 +11,7 @@ const rootPrefix = '../../..'
   , openStPlatform = require('@openstfoundation/openst-platform')
   , openSTNotification = require('@openstfoundation/openst-notification')
   , BTSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
+  , ManagedAddressesCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , clientAirdropModel = require(rootPrefix + '/app/models/client_airdrop')
   , managedAddressModel = require(rootPrefix + '/app/models/managed_address')
@@ -132,8 +133,16 @@ startAirdropKlass.prototype = {
   validateReserveBalance: async function(){
     const oThis = this;
 
+    var macObj = new ManagedAddressesCacheKlass({'uuids': [oThis.clientBrandedToken.reserve_address_uuid]});
+    var addr = await macObj.fetch();
+    if (addr.isFailure()) {
+      return Promise.resolve(addr);
+    }
+
+    var reserveAddressObj = addr.data[oThis.clientBrandedToken.reserve_address_uuid];
+
     const obj = new openStPlatform.services.balance.brandedToken(
-      {'address': oThis.clientBrandedToken.reserve_address, 'erc20_address': oThis.clientBrandedToken.token_erc20_address}
+      {'address': reserveAddressObj.ethereum_address, 'erc20_address': oThis.clientBrandedToken.token_erc20_address}
     );
 
     var resp = await obj.perform();
