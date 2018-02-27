@@ -29,7 +29,8 @@ const currencyConversionRate = {
   base_currency: {1: conversionRates.ost_currency()
   },
 
-  quote_currency: {1: conversionRates.usd_currency()
+  quote_currency: {1: conversionRates.usd_currency(),
+    2: conversionRates.eur_currency()
   },
 
   // Create new record in currency conversion rates table
@@ -93,6 +94,16 @@ const currencyConversionRate = {
       ['id=?'],
       [id]
     );
+  },
+
+  getLastActiveRates: function(currencyCode){
+    var oThis = this;
+    return QueryDB.read(
+      tableName,
+      [],
+      'quote_currency=? and base_currency=?',
+      [utils.invert(oThis.quote_currency)[currencyCode], utils.invert(oThis.base_currency)[conversionRates.ost_currency()]],
+      {limit: 1, order: 'timestamp desc'});
   }
 
 };
