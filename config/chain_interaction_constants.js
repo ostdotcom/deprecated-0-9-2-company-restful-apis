@@ -8,6 +8,13 @@ function define(name, value) {
 }
 
 // Constants which are needed to interact with Utility Chain
+define("UTILITY_CHAIN_OWNER_ADDR", process.env.OST_UTILITY_CHAIN_OWNER_ADDR);
+define("STAKER_ADDR", process.env.OST_STAKER_ADDR);
+define("REDEEMER_ADDR", process.env.OST_REDEEMER_ADDR);
+define("VALUE_REGISTRAR_ADDR", process.env.OST_VALUE_REGISTRAR_ADDR);
+define("VALUE_DEPLOYER_ADDR", process.env.OST_VALUE_DEPLOYER_ADDR);
+define("VALUE_OPS_ADDR", process.env.OST_VALUE_OPS_ADDR);
+
 define("UTILITY_CHAIN_ID", process.env.OST_UTILITY_CHAIN_ID);
 define("UTILITY_GAS_PRICE", process.env.OST_UTILITY_GAS_PRICE);
 define("UTILITY_GETH_RPC_PROVIDER", process.env.OST_UTILITY_GETH_RPC_PROVIDER);
