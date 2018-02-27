@@ -176,11 +176,11 @@ startAirdropKlass.prototype = {
    * Sets @airdropUuid
    *
    */
-  insertDb: function () {
+  insertDb: async function () {
     const oThis = this;
     oThis.airdropUuid = uuid.v4();
     var obj = new clientAirdropModel();
-    obj.create({
+    var resp = await obj.create({
       airdrop_uuid: oThis.airdropUuid, client_id: oThis.clientId,
       client_branded_token_id: oThis.clientBrandedToken.id,
       common_airdrop_amount_in_wei: basicHelper.convertToWei(oThis.amount).toNumber(),
@@ -191,10 +191,11 @@ startAirdropKlass.prototype = {
     openSTNotification.publishEvent.perform(
       {
         topics: ['airdrop.start.'+ coreConstants.PACKAGE_NAME],
+        publisher: 'OST',
         message: {
           kind: 'background_job',
           payload: {
-            uuid: oThis.airdropUuid
+            client_airdrop_id: resp.insertId
           }
         }
       }
