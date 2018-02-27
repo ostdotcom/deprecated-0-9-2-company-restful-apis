@@ -68,7 +68,13 @@ valueChainBalancesFetcherKlass.prototype = {
       if (response.isFailure()) {
         logger.notify('b_f1_2', 'Something Went Wrong', response);
       } else {
-        balances[balanceType] = basicHelper.convertToNormal(response.data);
+        var data = response.data;
+        if (data && data.balance) {
+          balance = data.balance;
+        } else {
+          balance = data;
+        }
+        balances[balanceType] = basicHelper.convertToNormal(balance);
       }
 
     }
@@ -113,7 +119,10 @@ valueChainBalancesFetcherKlass.prototype = {
 
     const oThis = this;
 
-    const obj = new ostBalanceCacheKlass({'address': oThis.address});
+    // const obj = new ostBalanceCacheKlass({'address': oThis.address});
+    // Having a one minute cache is leading to PM team reporting bugs.
+    // untill we figure out a way to flush it avoid using it here
+    const obj = new openStPlatform.services.balance.simpleToken({'address': oThis.address});
 
     return obj.fetch();
 
