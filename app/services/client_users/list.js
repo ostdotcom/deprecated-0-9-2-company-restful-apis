@@ -60,6 +60,7 @@ listKlass.prototype = {
       }
 
       usersList.push({
+        id: object['id'],
         name: object['name'],
         uuid: object['uuid'],
         total_airdropped_tokens: 0,
