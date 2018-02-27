@@ -189,6 +189,25 @@ const ManagedAddressKlassPrototype = {
       uuids, 'uuid');
   },
 
+  getRandomActiveUsers: async function(clientId, numberOfRandomUsers, totalUsers){
+    const oThis = this;
+
+    var valueFields = [clientId, invertedStatuses[managedAddressesConst.activeStatus],
+      invertedAddressTypes[managedAddressesConst.userAddressType]]
+    ;
+
+    return oThis.QueryDB.read(
+      oThis.tableName,
+      ['id', 'client_id', 'uuid'],
+      'client_id = ? AND status=? AND address_type=?',
+      valueFields,
+      {
+        limit: numberOfRandomUsers,
+        offset: Math.floor(Math.random() * totalUsers)
+      }
+    );
+  },
+
   /**
    * Set all BitWise columns as hash
    * key would be column name and value would be hash of all bitwise values

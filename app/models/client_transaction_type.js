@@ -75,7 +75,11 @@ const ClientTransactionTypeKlassPrototype = {
       oThis.tableName,
       [],
       'client_id=?',
-      [params['clientId']]
+      [params['clientId']],
+      {
+        limit: params['limit'],
+        offset: params['offset']
+      }
     );
 
     for(var i=0; i<results.length; i++){

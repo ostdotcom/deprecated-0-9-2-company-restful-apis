@@ -67,7 +67,8 @@ ExecuteTransactionKlass.prototype = {
     oThis.createTransactionLog();
 
     return Promise.resolve(responseHelper.successWithData(
-      {transaction_uuid: oThis.transactionUuid, transaction_hash: oThis.transactionHash}))
+      {transaction_uuid: oThis.transactionUuid, transaction_hash: oThis.transactionHash,
+        from_uuid: oThis.fromUuid, to_uuid: oThis.toUuid, transaction_kind: oThis.transactionKind}));
   },
 
   /**
