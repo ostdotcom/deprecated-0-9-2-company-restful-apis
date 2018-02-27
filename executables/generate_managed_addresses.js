@@ -30,9 +30,9 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
 
-const bufferUnusedAddresses = 1000
-  , rotateSaltAfter = 1000
-  , refillUnusedAddresses = 5000
+const bufferUnusedAddresses = 50000
+  , rotateSaltAfter = 500
+  , refillUnusedAddresses = 1000
 ;
 
 /**

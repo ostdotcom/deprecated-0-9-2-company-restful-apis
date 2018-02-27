@@ -55,6 +55,27 @@ const PreGeneratedManagedAddressKlassPrototype = {
   findById: function (id) {
     var oThis = this;
     return oThis.QueryDB.read(oThis.tableName, [], 'id=?', [id]);
+  },
+
+  getUnusedAddresses: async function(count){
+    const oThis = this;
+
+    var hrTime = process.hrtime(),
+      currentTime = (hrTime[0] * 1000000 + hrTime[1] / 1000);
+
+    await oThis.QueryDB.edit(
+      oThis.tableName,
+      ['lock_identifier = ?, status = ?'],
+      [currentTime, oThis.invertedStatuses[preGeneratedManagedAddressConst.usedStatus]],
+      ['status = ? AND lock_identifier IS NULL limit ?'],
+      [oThis.invertedStatuses[preGeneratedManagedAddressConst.unusedStatus], count]
+    );
+    return oThis.QueryDB.read(
+      oThis.tableName,
+      [],
+      'lock_identifier=?',
+      [currentTime]
+    );
   }
 
 };

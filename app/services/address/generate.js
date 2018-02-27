@@ -1,9 +1,8 @@
 "use strict";
 
 const uuid = require('uuid')
-  , crypto = require('crypto')
-  , openStPlatform = require('@openstfoundation/openst-platform')
 ;
+
 const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
@@ -11,34 +10,13 @@ const rootPrefix = '../../..'
   , AddressesEncryptorKlass = require(rootPrefix + '/lib/encryptors/addresses_encryptor')
   , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
   , managedAddressConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
+  , preGeneratedAddressesKlass = require(rootPrefix + '/app/models/pre_generated_managed_address')
+  , PreGeneratedEncryptionSaltKlass = require(rootPrefix + '/app/models/pre_generated_encryption_salt')
+  , kmsWrapper = require(rootPrefix + '/lib/authentication/kms_wrapper')
+  , localCipher = require(rootPrefix + '/lib/encryptors/local_cipher')
 ;
 
 const _private = {
-
-  /**
-   * Call Open ST platform function for creating address in Utility chain.
-   *
-   * @param passphrase
-   */
-  callOpenST: function (passphrase) {
-
-    const obj = new openStPlatform.services.utils.generateAddress(
-      {'passphrase': passphrase, 'chain': 'utility'}
-    );
-
-    return obj.perform();
-
-  },
-
-  /**
-   * Generate Random Passphrase.
-   *
-   * @return {string}
-   */
-  generatePassphrase: function () {
-    var iv = new Buffer(crypto.randomBytes(16));
-    return (iv.toString('hex').slice(0, 16));
-  },
 
   /**
    * Update the row in database.
@@ -131,19 +109,30 @@ const generate = {
    *
    * @param company_managed_address_id
    * @param clientId
-   * @return {Promise<*>}
+   * @return {ResultBase}
    */
   updateAddress: async function (company_managed_address_id, clientId) {
+    var obj = new preGeneratedAddressesKlass();
+    var resp = await obj.getUnusedAddresses(1);
 
-    var passphrase = _private.generatePassphrase();
-
-    var r1 = await _private.callOpenST(passphrase);
-    if (r1.isFailure()) {
-      return r1;
+    if(!resp[0]){
+      return responseHelper.error("s_ad_g_2", "Address not fetched from db");
     }
-    var eth_address = r1.data.address;
+    var pregeneratedAddress = resp[0];
 
-    await _private.updateInDb(company_managed_address_id, eth_address, passphrase, clientId);
+    var eth_address = pregeneratedAddress.ethereum_address;
+
+    var preGeneratedEncryptionSaltObj = new PreGeneratedEncryptionSaltKlass();
+    var saltResult = await preGeneratedEncryptionSaltObj.findById(pregeneratedAddress.pre_generated_encryption_salt_id);
+    var saltDetail = saltResult[0];
+
+    var addressSaltKMSObj = await kmsWrapper.decrypt(saltDetail.encryption_salt);
+
+    var kmsPlainText = addressSaltKMSObj["Plaintext"];
+
+    var passphrase_d = localCipher.decrypt(kmsPlainText, pregeneratedAddress.passphrase);
+
+    await _private.updateInDb(company_managed_address_id, eth_address, passphrase_d, clientId);
 
     return responseHelper.successWithData({ethereum_address: eth_address});
   }
