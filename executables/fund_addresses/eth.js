@@ -91,7 +91,7 @@ FundUsersWithEthKlass.prototype = {
     if (ucOwnerBalanceBigNumberInWei.lessThan(minUCOBalanceInWei)) {
       logger.notify('e_fa_e_cboco_1', 'ETHER Balance Of Utility Chain Owner is LOW',
         {
-          utility_chain_owner_balance: basicHelper.convertToNormal(ucOwnerBalanceBigNumberInWei),
+          utility_chain_owner_balance_eth: basicHelper.convertToNormal(ucOwnerBalanceBigNumberInWei),
           min_required_balance: oThis._valueChainMinBalanceFor('utilityChainOwner')
         }
       );
