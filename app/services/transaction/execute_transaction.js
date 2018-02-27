@@ -96,8 +96,18 @@ ExecuteTransactionKlass.prototype = {
       return Promise.resolve(responseHelper.error("s_t_et_4", "Invalid From user."));
     }
 
+    if(oThis.clientBrandedToken.kind == clientTransactionTypeConst.companyToUserKind &&
+      oThis.fromUuid != oThis.clientBrandedToken.reserve_address_uuid){
+      return Promise.resolve(responseHelper.error("s_t_et_8", "Invalid From Company user."));
+    }
+
     if(!cacheFetchResponse.data[oThis.toUuid] || cacheFetchResponse.data[oThis.toUuid].client_id != oThis.clientId){
       return Promise.resolve(responseHelper.error("s_t_et_5", "Invalid To user."));
+    }
+
+    if(oThis.clientBrandedToken.kind == clientTransactionTypeConst.userToCompanyKind &&
+      oThis.toUuid != oThis.clientBrandedToken.reserve_address_uuid){
+      return Promise.resolve(responseHelper.error("s_t_et_9", "Invalid To Company user."));
     }
 
     oThis.userRecords = cacheFetchResponse.data;
