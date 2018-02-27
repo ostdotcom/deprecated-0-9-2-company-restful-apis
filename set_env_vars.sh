@@ -3,12 +3,18 @@ export CR_ENVIRONMENT='development'
 export CR_SUB_ENVIRONMENT='sandbox'
 
 # Database details
-export CR_MYSQL_HOST='127.0.0.1'
-export CR_MYSQL_USER='root'
-export CR_MYSQL_PASSWORD='root'
+
 export CR_MYSQL_CONNECTION_POOL_SIZE='5'
 
-#DB details of openst-payments.
+export CR_DEFAULT_MYSQL_HOST='127.0.0.1'
+export CR_DEFAULT_MYSQL_USER='root'
+export CR_DEFAULT_MYSQL_PASSWORD='root'
+
+export CR_CA_SHARED_MYSQL_HOST='127.0.0.1'
+export CR_CA_SHARED_MYSQL_USER='root'
+export CR_CA_SHARED_MYSQL_PASSWORD='root'
+
+# DB details of openst-payments.
 export OP_MYSQL_HOST='127.0.0.1'
 export OP_MYSQL_USER='root'
 export OP_MYSQL_PASSWORD='root'
@@ -21,8 +27,10 @@ export CR_AWS_SECRET_KEY='qS0sJZCPQ5t2WnpJymxyGQjX62Wf13kjs80MYhML'
 export CR_AWS_REGION='us-east-1'
 
 # KMS details
-export CR_INFO_KMS_ARN='arn:aws:kms:us-east-1:604850698061:key'
-export CR_INFO_KMS_ID='eab8148d-fd9f-451d-9eb9-16c115645635'
+export CR_API_KEY_KMS_ARN='arn:aws:kms:us-east-1:604850698061:key'
+export CR_API_KEY_KMS_ID='eab8148d-fd9f-451d-9eb9-16c115645635'
+export CR_MANAGED_ADDRESS_KMS_ARN=''
+export CR_MANAGED_ADDRESS_KMS_ID=''
 
 # JWT details
 export CA_SAAS_API_SECRET_KEY='1somethingsarebetterkeptinenvironemntvariables'
