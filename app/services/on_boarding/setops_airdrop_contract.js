@@ -7,7 +7,7 @@
  *
  */
 
-const OpenStPaymentsModule = require('@openstfoundation/openst-payments');
+const openStPayments = require('@openstfoundation/openst-payments');
 
 const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
@@ -78,7 +78,7 @@ SetopsAirdropContractClass.prototype = {
 
     var oThis = this;
 
-    const opsManaged = new OpenStPaymentsModule.opsManaged(oThis.airDropContractAddress, oThis.gasPrice, oThis.chainId);
+    const opsManaged = new openStPayments.opsManaged(oThis.airDropContractAddress, oThis.gasPrice, oThis.chainId);
 
     var r = await opsManaged.setOpsAddress(
       oThis.utilityDeployerAddress,
@@ -96,9 +96,9 @@ SetopsAirdropContractClass.prototype = {
 
   registerAirdrop: async function () {
     var oThis = this;
-    return OpenStPaymentsModule.airdropManager.setupAirdrop(oThis.airDropContractAddress, oThis.chainId);
+    return openStPayments.airdropManager.setupAirdrop(oThis.airDropContractAddress, oThis.chainId);
     //TODO: Open below for next openst-payments release
-    //return OpenStPaymentsModule.airdropManager.registerAirdrop(oThis.airDropContractAddress, oThis.chainId);
+    //return openStPayments.airdropManager.registerAirdrop(oThis.airDropContractAddress, oThis.chainId);
   }
 
 };

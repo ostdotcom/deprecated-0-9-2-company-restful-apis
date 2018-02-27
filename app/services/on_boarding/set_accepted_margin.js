@@ -1,6 +1,6 @@
 "use strict";
 
-const OpenStPaymentsKlass = require('@openstfoundation/openst-payments')
+const openStPayments = require('@openstfoundation/openst-payments')
   , BigNumber = require('bignumber.js')
 ;
 
@@ -38,7 +38,7 @@ SetWorkerKlass.prototype = {
     r = await oThis.validateAndSanitize();
     if (r.isFailure()) return Promise.resolve(r);
 
-    const airdrop = new OpenStPaymentsKlass.airdrop(oThis.airDropContractAddress, oThis.chainId);
+    const airdrop = new openStPayments.airdrop(oThis.airDropContractAddress, oThis.chainId);
 
     r = await airdrop.setAcceptedMargin(
       oThis.senderAddress,

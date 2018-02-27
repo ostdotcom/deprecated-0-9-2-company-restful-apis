@@ -141,7 +141,11 @@ const ModelBaseKlassPrototype = {
     }
 
     for (var key in params['whereCondition']) {
-      whereCondFields.push(key + '=?');
+      if (Array.isArray(params['whereCondition'][key])) {
+        whereCondFields.push(key + ' IN ?');
+      } else {
+        whereCondFields.push(key + '=?');
+      }
       whereCondFieldsValues.push(params['whereCondition'][key]);
     }
 

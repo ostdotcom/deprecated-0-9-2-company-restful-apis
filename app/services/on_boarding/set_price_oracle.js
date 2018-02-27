@@ -1,6 +1,6 @@
 "use strict";
 
-const OpenStPaymentsKlass = require('@openstfoundation/openst-payments')
+const openStPayments = require('@openstfoundation/openst-payments')
 ;
 
 const rootPrefix = '../../..'
@@ -36,7 +36,7 @@ SetWorkerKlass.prototype = {
     r = await oThis.validateAndSanitize();
     if (r.isFailure()) return Promise.resolve(r);
 
-    const airdrop = new OpenStPaymentsKlass.airdrop(oThis.airDropContractAddress, oThis.chainId);
+    const airdrop = new openStPayments.airdrop(oThis.airDropContractAddress, oThis.chainId);
 
     r = await airdrop.setPriceOracle(
       oThis.senderAddress,

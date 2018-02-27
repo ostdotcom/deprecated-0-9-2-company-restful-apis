@@ -1,7 +1,7 @@
 "use strict";
 
-const OpenStPaymentsKlass = require('@openstfoundation/openst-payments')
-  , openStPaymentsDeployer = new OpenStPaymentsKlass.deployer()
+const openStPayments = require('@openstfoundation/openst-payments')
+  , openStPaymentsDeployer = new openStPayments.deployer()
 ;
 
 const rootPrefix = '../../..'

@@ -71,6 +71,15 @@ export OST_UTILITY_PRICE_ORACLES='{"OST":{"USD":"0x60Fa2655AD1F08DfC3e1DAd9b31e4
 export OST_UTILITY_WORKERS_CONTRACT_ADDRESS='0x549B7A418f88F02cF366E4999bda858BB8815451'
 ```
 
+* Run openST Payments migrations
+```bash
+> source $HOME/openst-setup/openst_env_vars.sh
+> export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform
+> source set_env_vars.sh
+NOTE: Manually create data MySQL mentioned in $OP_MYSQL_DATABASE 
+> node node_modules/@openstfoundation/openst-payments/migrations/create_tables.js
+```
+
 # Start Services
 
 * Start Platform

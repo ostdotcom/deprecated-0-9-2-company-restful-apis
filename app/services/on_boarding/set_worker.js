@@ -1,6 +1,6 @@
 "use strict";
 
-const OpenStPaymentsKlass = require('@openstfoundation/openst-payments')
+const openStPayments = require('@openstfoundation/openst-payments')
 ;
 
 const rootPrefix = '../../..'
@@ -39,7 +39,7 @@ SetWorkerKlass.prototype = {
     r = await oThis.validateAndSanitize();
     if (r.isFailure()) return Promise.resolve(r);
 
-    const workers = new OpenStPaymentsKlass.workers(oThis.workerContractAddress, oThis.chainId);
+    const workers = new openStPayments.workers(oThis.workerContractAddress, oThis.chainId);
 
     r = await workers.setWorker(
       oThis.senderAddress,
