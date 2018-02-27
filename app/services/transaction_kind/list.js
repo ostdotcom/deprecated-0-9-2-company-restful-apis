@@ -16,6 +16,7 @@ var rootPrefix = '../../..'
   , clientTransactionTypeObj = new ClientTransactionTypeKlass()
   , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
   , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
+  , ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points')
 ;
 
 const List = function(params){
@@ -116,13 +117,15 @@ List.prototype = {
 
     await Promise.all(oThis.allPromises);
 
+    var ostPrices = await new ostPriceCacheKlass().fetch();
+
     return Promise.resolve(responseHelper.successWithData(
       {
         client_id: oThis.clientId,
         result_type: 'transaction_types',
         transaction_types: oThis.transactionTypes,
         meta: {next_page_payload: {}},
-        price_points: {ost: {usd: '1'}}, //TODO: for Pankaj
+        price_points: ostPrices.data,
         client_tokens: oThis.clientTokens
       }
     ));

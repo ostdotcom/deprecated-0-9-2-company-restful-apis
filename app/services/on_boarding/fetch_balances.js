@@ -11,6 +11,7 @@ const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , ucBalanceFetcherKlass = require(rootPrefix + '/app/services/address/utilityChainBalancesFetcher')
   , vcBalanceFetcherKlass = require(rootPrefix + '/app/services/address/valueChainBalancesFetcher')
+  , ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points')
 ;
 
 /**
@@ -50,13 +51,10 @@ FetchBalances.prototype = {
       return Promise.resolve(responseHelper.error('ob_fcip_2', 'missing balancesToFetch'));
     }
 
+    var ostPrices = await new ostPriceCacheKlass().fetch();
     var promisesArray = []
       , responseData = {
-      'oracle_price_points': {
-        'ost': {
-          'usd': '0.3'
-        }
-      },
+      'oracle_price_points': ostPrices.data,
       balances: {}
     };
 
