@@ -69,22 +69,30 @@ const currencyConversionRate = {
 
   // Update transaction hash for a record
   updateTransactionHash: function(id, transactionHash){
-    var currentTime = utils.formatDbDate(new Date());
-    var query = "UPDATE "+tableName+" set transaction_hash='"+transactionHash+"', updated_at='"+currentTime+"' where id="+id;
-    return QueryDB.executeQuery(query);
+    return QueryDB.edit(
+      tableName,
+      ['transaction_hash = ?'],
+      [transactionHash],
+      ['id=?'],
+      [id]
+    );
   },
 
   // Update Status for a record
   updateStatus: function(id, status){
     var oThis = this;
-    var currentTime = utils.formatDbDate(new Date());
     // Check if inverted data is present in input then use enumValues key
     var invertedStatus = utils.invert(oThis.status);
     if(invertedStatus[status]){
       status = invertedStatus[status];
     }
-    var query = "UPDATE "+tableName+" set status='"+status+"', updated_at='"+currentTime+"' where id="+id;
-    return QueryDB.executeQuery(query);
+    return QueryDB.edit(
+      tableName,
+      ['status = ?'],
+      [status],
+      ['id=?'],
+      [id]
+    );
   }
 
 };
