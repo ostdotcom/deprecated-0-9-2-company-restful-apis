@@ -108,7 +108,7 @@ BitWiseOperationsKlass.prototype = {
     if (resp) {
       var val = (resp['bitValue'] & currentValue);
       // If Bitwise and operator returns 0 means bit is not set.
-      return (val == currentValue);
+      return (val == resp['bitValue']);
     }
 
     // If Bit is not found for any column then return false.
