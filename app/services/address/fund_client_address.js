@@ -5,9 +5,10 @@ const rootPrefix = '../../..'
   , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
   , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , AddressEncryptorKlass = require(rootPrefix + 'lib/encryptors/addresses_encryptor')
+  , AddressEncryptorKlass = require(rootPrefix + '/lib/encryptors/addresses_encryptor')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , basicHelper = require(rootPrefix + '/helpers/basic')
+  , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
 ;
 
 // Similarly, ST' will be refilled by Reserve Address:
@@ -70,7 +71,6 @@ FundClientAddressKlass.prototype = {
       var addressObj = managedAddresses[i];
       oThis.addrTypeToAddrMap[addressObj.address_type] = addressObj;
     }
-
     return Promise.resolve(responseHelper.successWithData({}))
   },
 
@@ -78,16 +78,16 @@ FundClientAddressKlass.prototype = {
 
     const oThis = this
       , managedAddressObj = new ManagedAddressKlass()
-      , reserveAddrObj = oThis.addrTypeToAddrMap[managedAddressObj.invertedStatuses[managedAddressesConst.reserveAddressType]]
-      , workerAddrObj = oThis.addrTypeToAddrMap[managedAddressObj.invertedStatuses[managedAddressesConst.workerAddressType]]
-      , airdropHolderAddrObj = oThis.addrTypeToAddrMap[managedAddressObj.invertedStatuses[managedAddressesConst.airdropHolderAddressType]]
+      , reserveAddrObj = oThis.addrTypeToAddrMap[managedAddressObj.invertedAddressTypes[managedAddressesConst.reserveAddressType]]
+      , workerAddrObj = oThis.addrTypeToAddrMap[managedAddressObj.invertedAddressTypes[managedAddressesConst.workerAddressType]]
+      , airdropHolderAddrObj = oThis.addrTypeToAddrMap[managedAddressObj.invertedAddressTypes[managedAddressesConst.airdropHolderAddressType]]
     ;
 
     // check st prime balance
     // notify if balance
 
     const addressEncryptor = new AddressEncryptorKlass(oThis.clientId);
-    const reservePassphraseD = addressEncryptor.decrypt(reserveAddrObj.passphrase);
+    const reservePassphraseD = await addressEncryptor.decrypt(reserveAddrObj.passphrase);
 
     if(await oThis._isTransferRequired(workerAddrObj.ethereum_address)) {
       //transfer to worker
