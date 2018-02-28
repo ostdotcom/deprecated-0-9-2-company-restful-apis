@@ -8,6 +8,7 @@
 const rootPrefix = '../../..'
   , uuid = require("uuid")
   , OpenSTPayment = require('@openstfoundation/openst-payments')
+  , openStPlatform = require('/Users/Alpesh/Documents/simpletoken/openst-platform')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , clientTransactionTypeCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type')
   , clientTransactionTypeConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
@@ -73,6 +74,8 @@ ExecuteTransactionKlass.prototype = {
 
     var insertedRec = await oThis.createTransactionLog();
     oThis.transactionLogId = insertedRec.insertId;
+
+    await this.approveForBrandedToken(oThis);
 
     var response = await oThis.sendAirdropPay();
     if(response.isFailure()){
@@ -205,6 +208,60 @@ ExecuteTransactionKlass.prototype = {
     return transactionLogObj.create({client_id: oThis.clientId, client_token_id: oThis.clientBrandedToken.id, input_params: inputParams,
                               chain_type: transactionLogConst.utilityChainType, status: transactionLogConst.processingStatus,
                               transaction_uuid: oThis.transactionUuid});
+  },
+
+  /**
+   * user approving airdrop contract for the transfer of branded token to other user.
+   *
+   * @param oThis
+   * @return {Promise.<void>}
+   */
+  approveForBrandedToken: async function () {
+    const oThis = this;
+
+    console.log('----------------------------------------------------------------------------------------------------');
+    //transfer estimated gas to approvar.
+    const estimatedGasWei = basicHelper.convertToWei('1');
+
+    const transferSTPrimeBalanceObj = new openStPlatform.services.transaction.transfer.simpleTokenPrime({
+      sender_address: oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid].ethereum_address,
+      sender_passphrase: oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid].passphrase_d,
+      recipient_address: oThis.userRecords[oThis.fromUuid].ethereum_address,
+      amount_in_wei: estimatedGasWei,
+      options: {returnType: 'txReceipt', tag: 'GasRefill'}
+    });
+
+    const transferResponse = await transferSTPrimeBalanceObj.perform();
+
+    console.log('transferResponse---------> ', transferResponse);
+
+    if (transferResponse.isFailure()) {
+      logger.notify('t_et_14', "Error in transfer of " + estimatedGasWei + "Wei Eth to Address - " + transferResponse);
+      return Promise.resolve(transferResponse);
+    }
+
+    const approveForBrandedToken = new openStPlatform.services.approve.brandedToken(
+      {
+        erc20_address: oThis.clientBrandedToken.token_erc20_address,
+        approver_address: oThis.userRecords[oThis.fromUuid].ethereum_address,
+        approver_passphrase: oThis.userRecords[oThis.fromUuid].passphrase_d,
+        approvee_address: oThis.clientBrandedToken.airdrop_contract_address,
+        to_approve_amount: basicHelper.convertToWei('1000000000'),
+        options: {returnType: 'txReceipt'}
+      });
+
+    const approveResponse = await approveForBrandedToken.perform();
+
+    console.log('approveResponse---------> ', approveResponse);
+
+    if (approveResponse.isFailure()) {
+      logger.notify('t_et_15', "Error in Approve app/services/transaction/execute_transaction - ", approveResponse);
+      return Promise.resolve(approveResponse);
+    }
+
+    console.log('----------------------------------------------------------------------------------------------------');
+
+    return Promise.resolve(responseHelper.successWithData({}))
   },
 
   /**
