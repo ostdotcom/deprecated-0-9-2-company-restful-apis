@@ -10,7 +10,11 @@ const dbName = "saas_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreCons
   , QueryDBObj = new QueryDBKlass(dbName)
 ;
 
-const ClientBrandedTokenKlass = function () {};
+const ClientBrandedTokenKlass = function () {
+  const oThis = this;
+
+  ModelBaseKlass.call(this, {dbName: dbName});
+};
 
 ClientBrandedTokenKlass.prototype = Object.create(ModelBaseKlass.prototype);
 

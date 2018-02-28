@@ -17,7 +17,8 @@
 
 // Load Packages
 const rootPrefix = '../../..'
-  , fundClientAddressKlass = require(rootPrefix + '/app/services/address/fund_client_address')
+  , FundClientAddressKlass = require(rootPrefix + '/app/services/address/fund_client_address')
+  , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
 ;
 
 /**
@@ -36,22 +37,29 @@ FundUsersWithSTPrimeFromReserveKlass.prototype = {
   perform: async function () {
 
     const oThis = this
-      , batchSize = 10;
+      , batchSize = 1
+      , clientIds = []
+      , clientBrandedTokenObj = new ClientBrandedTokenKlass()
+      , clientObjects = await clientBrandedTokenObj.select("*").fire();
 
-    // fetch all client ids
-    const clientIds = [];
+    for(var i=0; i<clientObjects.length; i++){
+      const c_o = clientObjects[i];
+      if(c_o.airdrop_contract_addr){
+        clientIds.push(clientObjects[i].client_id);
+      }
+    }
 
-    const numerOfClients = clientIds.length;
+    const numberOfClients = clientIds.length;
 
     var currStart = 0;
-    while(currStart < numerOfClients) {
+    while(currStart < numberOfClients) {
       const batchedClientIds = clientIds.slice(currStart, currStart + batchSize);
       currStart = currStart + batchSize;
 
       const promiseArray = [];
 
       for(var i = 0; i < batchedClientIds.length; i++) {
-        const fundClientAddressObj = new fundClientAddressKlass({client_id: batchedClientIds[i]});
+        const fundClientAddressObj = new FundClientAddressKlass({client_id: batchedClientIds[i]});
         promiseArray.push(fundClientAddressObj.perform());
       }
 

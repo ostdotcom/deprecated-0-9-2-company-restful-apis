@@ -84,7 +84,7 @@ SetopsAirdropContractClass.prototype = {
       oThis.utilityDeployerAddress,
       oThis.utilityDeployerPassphrase,
       oThis.utilityOpsAddress,
-      {returnType: "txHash"}
+      {returnType: "txHash", tag: 'setOpsAddress.saas'}
     );
 
     if(r.isFailure()){

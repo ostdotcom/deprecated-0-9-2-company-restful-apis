@@ -46,7 +46,7 @@ SetWorkerKlass.prototype = {
       'USD',
       oThis.acceptedMargin,
       oThis.gasPrice,
-      {returnType: "txHash"}
+      {returnType: "txHash", tag: "setAcceptedMargin.saas"}
     );
 
     return Promise.resolve(r);

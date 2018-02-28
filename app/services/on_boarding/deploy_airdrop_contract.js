@@ -95,7 +95,7 @@ DeployAirdropContractClass.prototype = {
       oThis.contractName,
       constructorArgs,
       oThis.gasPrice,
-      {returnType: "txHash"}
+      {returnType: "txHash", tag: "deployAirdrop.saas"}
     );
 
     if (r.isFailure()) {

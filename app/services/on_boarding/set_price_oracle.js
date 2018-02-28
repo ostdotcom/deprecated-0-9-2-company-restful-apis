@@ -7,7 +7,6 @@ const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , chainIntConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , clientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
-  , utils = require(rootPrefix + '/lib/util')
 ;
 
 const SetWorkerKlass = function (params) {
@@ -44,7 +43,7 @@ SetWorkerKlass.prototype = {
       'USD',
       oThis.priceOracleContractAddress,
       oThis.gasPrice,
-      {returnType: "txHash"}
+      {returnType: "txHash", tag: "setPriceOracle.saas"}
     );
 
     return Promise.resolve(r);

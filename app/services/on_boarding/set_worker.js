@@ -47,7 +47,7 @@ SetWorkerKlass.prototype = {
       oThis.workerAddress,
       oThis.deactivationHeight,
       oThis.gasPrice,
-      {returnType: "txHash"}
+      {returnType: "txHash", tag: "setWorker.saas"}
     );
 
     return Promise.resolve(r);
