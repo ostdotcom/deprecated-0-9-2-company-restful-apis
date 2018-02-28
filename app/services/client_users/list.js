@@ -5,6 +5,8 @@ const rootPrefix = '../../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
   , managedAddress = new ManagedAddressKlass()
+  , EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
 
 /**
@@ -43,31 +45,57 @@ listKlass.prototype = {
     const queryResponse = await managedAddress.getByFilterAndPaginationParams(params);
 
     var usersList = []
+      , ethereumAddresses = []
       , length = queryResponse.length
       , hasMore = false;
 
     for (var i = 0; i < length; i++) {
-
-      var object = queryResponse[i];
+      const object = queryResponse[i];
 
       if (!object['name']) {
         continue;
       }
 
-      if (i == pageSize - 1) {
+      if (i === pageSize - 1) {
+        hasMore = true;
+        continue;
+      }
+      ethereumAddresses.push(object['ethereum_address']);
+    }
+
+    const economyUserBalance = new EconomyUserBalanceKlass({client_id: params.client_id, ethereum_addresses: ethereumAddresses})
+      , userBalancesResponse = await economyUserBalance.perform()
+    ;
+
+    var  balanceHashData = {};
+
+    if (!userBalancesResponse.isFailure()) {
+      balanceHashData = userBalancesResponse.data;
+    }
+
+    for (var i = 0; i < length; i++) {
+
+      const object = queryResponse[i];
+
+      if (!object['name']) {
+        continue;
+      }
+
+      if (i === pageSize - 1) {
         hasMore = true;
         continue;
       }
 
+      const balanceData = balanceHashData[object['ethereum_address']];
+
       usersList.push({
         name: object['name'],
         uuid: object['uuid'],
-        total_airdropped_tokens: 0,
-        token_balance: 0
+        total_airdropped_tokens: basicHelper.convertToNormal(balanceData.totalAirdroppedTokens),
+        token_balance: basicHelper.convertToNormal(balanceData.tokenBalance)
       })
 
     }
-    ;
 
     var next_page_payload = {};
     if (hasMore) {
@@ -75,20 +103,19 @@ listKlass.prototype = {
         sort_by: params.sort_by,
         filter: params.filter,
         page_no: params.page_no + 1
-      }
+      };
     }
-    ;
 
     return Promise.resolve(responseHelper.successWithData({
       result_type: 'economy_users',
       'economy_users': usersList,
       meta: {
-        next_page_payload: next_page_payload,
+        next_page_payload: next_page_payload
       }
     }));
 
   }
 
-}
+};
 
 module.exports = listKlass;

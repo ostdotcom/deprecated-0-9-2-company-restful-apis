@@ -169,7 +169,7 @@ const ManagedAddressKlassPrototype = {
 
     return oThis.QueryDB.read(
       oThis.tableName,
-      ['id', 'name', 'uuid'],
+      ['id', 'name', 'uuid', 'ethereum_address'],
       whereClause,
       whereValues,
       {

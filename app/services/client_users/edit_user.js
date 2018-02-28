@@ -6,10 +6,11 @@
  * @module services/client_users/edit_user
  */
 const rootPrefix = '../../..'
+  , EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
   , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
-  , managedAddressObj = new ManagedAddressKlass()
+  , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
 
 const editUser = {
@@ -20,7 +21,7 @@ const editUser = {
    * @param clientId
    * @param userUuid
    * @param name
-   * @return {Promise<*>}
+   * @return {Promise<result>}
    */
   perform: async function (clientId, userUuid, name) {
 
@@ -30,27 +31,48 @@ const editUser = {
       return responseHelper.error("s_cu_eu_1", "Mandatory parameters missing");
     }
 
-    var managedAddressCache = new ManagedAddressCacheKlass({'uuids': [userUuid]});
+    const managedAddressCache = new ManagedAddressCacheKlass({'uuids': [userUuid]});
 
     const cacheFetchResponse = await managedAddressCache.fetch();
-    var response = cacheFetchResponse.data[userUuid];
 
-    if (cacheFetchResponse.isFailure() || !response) {
+    if (cacheFetchResponse.isFailure()) {
       return responseHelper.error("s_cu_eu_2", "User not found");
+    }
+
+    const response = cacheFetchResponse.data[userUuid];
+
+    if (!response) {
+      return responseHelper.error("s_cu_eu_2.1", "User not found");
     }
 
     if (response['client_id'] != clientId) {
       return responseHelper.error("s_cu_eu_3", "User does not belong to client");
     }
 
-    var apiResponseData = {
+    const ethereumAddress = response['ethereum_address']
+      , economyUserBalance = new EconomyUserBalanceKlass({client_id: clientId, ethereum_addresses: [ethereumAddress]})
+      , userBalance = await economyUserBalance.perform()
+    ;
+
+    var totalAirdroppedTokens = 0
+      , tokenBalance = 0
+    ;
+
+    if (!userBalance.isFailure()) {
+      const userBalanceData = userBalance.data[ethereumAddress];
+
+      totalAirdroppedTokens = userBalanceData['totalAirdroppedTokens'];
+      tokenBalance = userBalanceData['tokenBalance'];
+    }
+
+    const apiResponseData = {
       result_type: "economy_users",
       'economy_users': [
         {
           uuid: userUuid,
           name: name,
-          total_airdropped_tokens: 0,
-          token_balance: 0
+          total_airdropped_tokens: basicHelper.convertToNormal(totalAirdroppedTokens),
+          token_balance: basicHelper.convertToNormal(tokenBalance)
         }
       ],
       meta: {
@@ -58,11 +80,13 @@ const editUser = {
       }
     };
 
-    if (response['name'] == name) {
+    if (response['name'] === name) {
       return responseHelper.successWithData(apiResponseData);
     }
 
-    var updateQueryResponse = managedAddressObj.edit({
+    const managedAddressObj = new ManagedAddressKlass();
+
+    const updateQueryResponse = managedAddressObj.edit({
       qParams: {
         name: name
       },
