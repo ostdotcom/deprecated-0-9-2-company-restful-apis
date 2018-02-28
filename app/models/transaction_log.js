@@ -79,6 +79,30 @@ const TransactionLogKlassPrototype = {
       oThis.tableName,
       [],
       transaction_hashes, 'transaction_hash');
+  },
+
+  // Update transaction hash for a record
+  updateTransactionHash: function(id, transactionHash){
+    const oThis = this;
+    return oThis.QueryDB.edit(
+      oThis.tableName,
+      ['transaction_hash = ?'],
+      [transactionHash],
+      ['id=?'],
+      [id]
+    );
+  },
+
+  // Update Status for a record
+  updateStatus: function(id, status){
+    var oThis = this;
+    return oThis.QueryDB.edit(
+      oThis.tableName,
+      ['status = ?'],
+      [status],
+      ['id=?'],
+      [id]
+    );
   }
 
 };

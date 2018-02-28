@@ -7,6 +7,7 @@
  */
 const rootPrefix = '../../..'
   , uuid = require("uuid")
+  , OpenSTPayment = require('@openstfoundation/openst-payments')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , clientTransactionTypeCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type')
   , clientTransactionTypeConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
@@ -15,6 +16,10 @@ const rootPrefix = '../../..'
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
   , transactionLogKlass = require(rootPrefix + '/app/models/transaction_log')
   , transactionLogObj = new transactionLogKlass()
+  , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
+  , ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
+  , conversionRatesConst = require(rootPrefix + '/lib/global_constant/conversion_rates')
   ;
 
 /**
@@ -37,11 +42,13 @@ const ExecuteTransactionKlass = function (params){
   oThis.fromUuid = params.from_uuid;
   oThis.toUuid = params.to_uuid;
   oThis.transactionKind = params.transaction_kind;
+  oThis.gasPrice = '50000000000';
   oThis.transactionTypeRecord = null;
   oThis.userRecords = null;
   oThis.transactionHash = null;
   oThis.transactionUuid = null;
   oThis.clientBrandedToken = null;
+  oThis.transactionLogId = null;
 };
 
 ExecuteTransactionKlass.prototype = {
@@ -64,7 +71,16 @@ ExecuteTransactionKlass.prototype = {
       return Promise.resolve(r3);
     }
 
-    oThis.createTransactionLog();
+    var insertedRec = await oThis.createTransactionLog();
+    oThis.transactionLogId = insertedRec.insertId;
+
+    var response = await oThis.sendAirdropPay();
+    if(response.isFailure()){
+      oThis.updateTransactionLog(oThis.transactionHash, transactionLogConst.failedStatus,
+        oThis.transactionLogId, response.err);
+      response.data['transaction_uuid'] = oThis.transactionUuid;
+      return Promise.resolve(response);
+    }
 
     return Promise.resolve(responseHelper.successWithData(
       {transaction_uuid: oThis.transactionUuid, transaction_hash: oThis.transactionHash,
@@ -84,7 +100,9 @@ ExecuteTransactionKlass.prototype = {
       return Promise.resolve(responseHelper.error("s_t_et_8", "Invalid users."));
     }
 
-    const managedAddressCache = new ManagedAddressCacheKlass({'uuids': [oThis.fromUuid, oThis.toUuid]});
+    const managedAddressCache = new ManagedAddressCacheKlass({'uuids':
+        [oThis.fromUuid, oThis.toUuid, oThis.clientBrandedToken.reserve_address_uuid,
+          oThis.clientBrandedToken.worker_address_uuid]});
 
     const cacheFetchResponse = await managedAddressCache.fetchDecryptedData(['passphrase']);
 
@@ -98,7 +116,7 @@ ExecuteTransactionKlass.prototype = {
 
     if(oThis.clientBrandedToken.kind == clientTransactionTypeConst.companyToUserKind &&
       oThis.fromUuid != oThis.clientBrandedToken.reserve_address_uuid){
-      return Promise.resolve(responseHelper.error("s_t_et_8", "Invalid From Company user."));
+      return Promise.resolve(responseHelper.error("s_t_et_9", "Invalid From Company user."));
     }
 
     if(!cacheFetchResponse.data[oThis.toUuid] || cacheFetchResponse.data[oThis.toUuid].client_id != oThis.clientId){
@@ -107,7 +125,7 @@ ExecuteTransactionKlass.prototype = {
 
     if(oThis.clientBrandedToken.kind == clientTransactionTypeConst.userToCompanyKind &&
       oThis.toUuid != oThis.clientBrandedToken.reserve_address_uuid){
-      return Promise.resolve(responseHelper.error("s_t_et_9", "Invalid To Company user."));
+      return Promise.resolve(responseHelper.error("s_t_et_10", "Invalid To Company user."));
     }
 
     oThis.userRecords = cacheFetchResponse.data;
@@ -164,6 +182,10 @@ ExecuteTransactionKlass.prototype = {
       return Promise.resolve(responseHelper.error("s_t_et_7", "Invalid Token Symbol"));
     }
 
+    if(!cacheRsp.data.worker_address_uuid){
+      return Promise.resolve(responseHelper.error("s_t_et_11", "Token not set."));
+    }
+
     oThis.clientBrandedToken = cacheRsp.data;
 
     return Promise.resolve(responseHelper.successWithData({}))
@@ -176,13 +198,80 @@ ExecuteTransactionKlass.prototype = {
   createTransactionLog: function () {
     const oThis = this;
 
-    var inputParams = JSON.stringify({from_uuid: oThis.fromUuid, to_uuid: oThis.toUuid, transaction_kind: oThis.transactionKind});
     oThis.transactionUuid = uuid.v4();
-    oThis.transactionHash = uuid.v4();
-    transactionLogObj.create({client_id: oThis.clientId, client_token_id: oThis.clientBrandedToken.id,
+    var inputParams = JSON.stringify({from_uuid: oThis.fromUuid, to_uuid: oThis.toUuid,
+                          transaction_kind: oThis.transactionKind, token_symbol: oThis.tokenSymbol,
+                          gas_price: oThis.gasPrice, transaction_kind_id: oThis.transactionTypeRecord.id});
+    return transactionLogObj.create({client_id: oThis.clientId, client_token_id: oThis.clientBrandedToken.id, input_params: inputParams,
                               chain_type: transactionLogConst.utilityChainType, status: transactionLogConst.processingStatus,
-                              input_params: inputParams, transaction_uuid: oThis.transactionUuid,
-                              transaction_hash: oThis.transactionHash});
+                              transaction_uuid: oThis.transactionUuid});
+  },
+
+  /**
+   * Call Airdrop pay method
+   *
+   * @return {Promise<any>}
+   */
+  sendAirdropPay: async function(){
+    const oThis = this;
+    const airdropPayment = new OpenSTPayment.airdrop(oThis.clientBrandedToken.airdrop_contract_address,
+      chainInteractionConstants.UTILITY_CHAIN_ID);
+
+    var workerUser = oThis.userRecords[oThis.clientBrandedToken.worker_address_uuid];
+    var reserveUser = oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid];
+    console.log(workerUser);
+    console.log(reserveUser);
+    console.log(oThis.userRecords);
+    if(!workerUser || !reserveUser){
+      return Promise.resolve(responseHelper.error("s_t_et_12", "Token not set."));
+    }
+
+    var ostPrices = await new ostPriceCacheKlass().fetch();
+    var ostValue = ostPrices.data[conversionRatesConst.ost_currency()][conversionRatesConst.usd_currency()];
+
+    var currencyType = ((oThis.transactionTypeRecord.currency_type == conversionRatesConst.usd_currency()) ?
+      conversionRatesConst.usd_currency() : "");
+
+    var response = await airdropPayment.pay(workerUser.ethereum_address,
+      workerUser.passphrase_d,
+      oThis.userRecords[oThis.toUuid].ethereum_address,
+      basicHelper.convertToWei(oThis.transactionTypeRecord.currency_value).toString(),
+      reserveUser.ethereum_address,
+      basicHelper.convertToWei(oThis.transactionTypeRecord.commission_percent).toString(),
+      currencyType,
+      basicHelper.convertToWei(ostValue).toString(),
+      oThis.userRecords[oThis.fromUuid].ethereum_address,
+      oThis.gasPrice,
+      {tag:'airdrop.pay', returnType: 'txHash'});
+
+    if(response.isFailure()){
+      return Promise.resolve(response);
+    }
+
+    oThis.transactionHash = response.data.transaction_hash;
+    oThis.updateTransactionLog(oThis.transactionHash, transactionLogConst.processingStatus, oThis.transactionLogId);
+
+    return Promise.resolve(responseHelper.successWithData({}));
+  },
+
+  /**
+   * Update Transaction log.
+   *
+   * @param transactionHash
+   * @param status
+   * @param id
+   */
+  updateTransactionLog: function(transactionHash, status, id, failedResponse) {
+    var qParams = {status: status, transaction_hash: transactionHash};
+    if(failedResponse){
+      qParams['formatted_receipt'] = JSON.stringify(failedResponse);
+    }
+    transactionLogObj.edit(
+      {
+        qParams: qParams,
+        whereCondition: {id: id}
+      }
+    )
   }
 
 
