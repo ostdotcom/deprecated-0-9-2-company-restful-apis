@@ -8,7 +8,8 @@
 const rootPrefix = '../../..'
   , uuid = require("uuid")
   , OpenSTPayment = require('@openstfoundation/openst-payments')
-  , openStPlatform = require('/Users/Alpesh/Documents/simpletoken/openst-platform')
+  , openStPlatform = require('@openstfoundation/openst-platform')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , clientTransactionTypeCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type')
   , clientTransactionTypeConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
@@ -220,7 +221,6 @@ ExecuteTransactionKlass.prototype = {
     const oThis = this
       , toApproveAmount = basicHelper.convertToWei('1000000000');
 
-    console.log('----------------------------------------------------------------------------------------------------');
     //transfer estimated gas to approvar.
 
     const estimateGasObj = new openStPlatform.services.transaction.estimateGas({
@@ -237,21 +237,15 @@ ExecuteTransactionKlass.prototype = {
     const estimatedGasWei = basicHelper.convertToBigNumber(estimateGasResponse.data.gas_to_use).mul(
       basicHelper.convertToBigNumber(chainInteractionConstants.UTILITY_GAS_PRICE));
 
-    console.log('estimateGasResponse.data.gas_to_use', estimateGasResponse.data.gas_to_use);
-    console.log('chainInteractionConstants.UTILITY_GAS_PRICE', chainInteractionConstants.UTILITY_GAS_PRICE);
-    console.log('estimatedGasWei', estimatedGasWei);
-
     const transferSTPrimeBalanceObj = new openStPlatform.services.transaction.transfer.simpleTokenPrime({
       sender_address: oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid].ethereum_address,
       sender_passphrase: oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid].passphrase_d,
       recipient_address: oThis.userRecords[oThis.fromUuid].ethereum_address,
-      amount_in_wei: estimatedGasWei,
+      amount_in_wei: estimatedGasWei.toString(10),
       options: {returnType: 'txReceipt', tag: 'GasRefill'}
     });
 
     const transferResponse = await transferSTPrimeBalanceObj.perform();
-
-    console.log('transferResponse---------> ', transferResponse);
 
     if (transferResponse.isFailure()) {
       logger.notify('t_et_14', "Error in transfer of " + estimatedGasWei + "Wei Eth to Address - " + transferResponse);
