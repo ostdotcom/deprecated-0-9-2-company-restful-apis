@@ -25,6 +25,7 @@ const dbName = "saas_transaction_" + coreConstants.SUB_ENVIRONMENT + "_" + coreC
 ;
 
 const TransactionLogKlass = function () {
+  ModelBaseKlass.call(this, {dbName: dbName});
 };
 
 TransactionLogKlass.prototype = Object.create(ModelBaseKlass.prototype);

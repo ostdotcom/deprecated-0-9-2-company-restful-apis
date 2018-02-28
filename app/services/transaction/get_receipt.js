@@ -1,9 +1,11 @@
 "use strict";
 
-var openStPlatform = require('@openstfoundation/openst-platform')
-  , responseHelper = require('../../../lib/formatter/response')
-  ;
+const openStPlatform = require('@openstfoundation/openst-platform')
+;
 
+const rootPrefix = '../../..'
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+;
 
 /**
  * Fetch Transaction Receipt from Transaction Hash
@@ -32,11 +34,11 @@ GetReceiptKlass.prototype = {
   perform: async function(){
     const oThis = this;
 
-    var obj = new openStPlatform.services.transaction.getReceipt(
-      {'transaction_hash': oThis.transactionHash, 'chain': oThis.chain}
+    const obj = new openStPlatform.services.transaction.getReceipt(
+      {transaction_hash: oThis.transactionHash, chain: oThis.chain}
     );
 
-    var response = await obj.perform();
+    const response = await obj.perform();
     if(response.isSuccess()){
       return Promise.resolve(responseHelper.successWithData(response.data));
     } else {
