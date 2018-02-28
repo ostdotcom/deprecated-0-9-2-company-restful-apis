@@ -217,11 +217,29 @@ ExecuteTransactionKlass.prototype = {
    * @return {Promise.<void>}
    */
   approveForBrandedToken: async function () {
-    const oThis = this;
+    const oThis = this
+      , toApproveAmount = basicHelper.convertToWei('1000000000');
 
     console.log('----------------------------------------------------------------------------------------------------');
     //transfer estimated gas to approvar.
-    const estimatedGasWei = basicHelper.convertToWei('1');
+
+    const estimateGasObj = new openStPlatform.services.transaction.estimateGas({
+      contract_name: 'brandedToken',
+      contract_address: oThis.clientBrandedToken.token_erc20_address,
+      chain: 'utility',
+      sender_address: oThis.userRecords[oThis.fromUuid].ethereum_address,
+      method_name: 'approve',
+      method_arguments: [oThis.userRecords[oThis.fromUuid].ethereum_address, toApproveAmount]
+    });
+
+    const estimateGasResponse = await estimateGasObj.perform();
+
+    const estimatedGasWei = basicHelper.convertToBigNumber(estimateGasResponse.data.gas_to_use).mul(
+      basicHelper.convertToBigNumber(chainInteractionConstants.UTILITY_GAS_PRICE));
+
+    console.log('estimateGasResponse.data.gas_to_use', estimateGasResponse.data.gas_to_use);
+    console.log('chainInteractionConstants.UTILITY_GAS_PRICE', chainInteractionConstants.UTILITY_GAS_PRICE);
+    console.log('estimatedGasWei', estimatedGasWei);
 
     const transferSTPrimeBalanceObj = new openStPlatform.services.transaction.transfer.simpleTokenPrime({
       sender_address: oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid].ethereum_address,
@@ -246,7 +264,7 @@ ExecuteTransactionKlass.prototype = {
         approver_address: oThis.userRecords[oThis.fromUuid].ethereum_address,
         approver_passphrase: oThis.userRecords[oThis.fromUuid].passphrase_d,
         approvee_address: oThis.clientBrandedToken.airdrop_contract_address,
-        to_approve_amount: basicHelper.convertToWei('1000000000'),
+        to_approve_amount: toApproveAmount,
         options: {returnType: 'txReceipt'}
       });
 
