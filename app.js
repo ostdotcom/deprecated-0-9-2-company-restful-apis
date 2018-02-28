@@ -226,7 +226,7 @@ if (cluster.isMaster) {
    * Get port from environment and store in Express.
    */
 
-  var port = 4001; //normalizePort(process.env.PORT || '3000');
+  var port = normalizePort(process.env.PORT || '4001');
   app.set('port', port);
 
   /**
