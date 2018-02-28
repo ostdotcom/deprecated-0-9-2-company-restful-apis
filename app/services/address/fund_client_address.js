@@ -151,9 +151,11 @@ FundClientAddressKlass.prototype = {
    * @returns {promise<result>}
    * @private
    */
-  _checkBalanceOfReserveAddress: async function (ethereumAddress) {
-
+  _checkBalanceOfReserveAddress: async function () {
     const oThis = this
+      , managedAddressObj = new ManagedAddressKlass()
+      , reserveAddrObj = oThis.addrTypeToAddrMap[managedAddressObj.invertedAddressTypes[managedAddressesConst.reserveAddressType]]
+      , ethereumAddress = reserveAddrObj.ethereum_address
       , minReserveAddrBalanceInWei = oThis._MIN_BALANCE_FOR_RESERVE
       , fetchBalanceObj = new openStPlatform.services.balance.simpleTokenPrime({address: ethereumAddress})
       , balanceResponse = await fetchBalanceObj.perform()
@@ -161,7 +163,7 @@ FundClientAddressKlass.prototype = {
 
     if (balanceResponse.isFailure()) return Promise.resolve(balanceResponse);
 
-    const balanceBigNumberInWei = balanceResponse.data.balance;
+    const balanceBigNumberInWei = basicHelper.convertToBigNumber(balanceResponse.data.balance);
 
     if (balanceBigNumberInWei.lessThan(minReserveAddrBalanceInWei)) {
       logger.notify('s_a_fca_1', 'ST PRIME Balance Of Reserve Address is LOW - ' + ethereumAddress,
