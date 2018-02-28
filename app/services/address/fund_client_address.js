@@ -49,6 +49,14 @@ FundClientAddressKlass.prototype = {
   _MIN_BALANCE: basicHelper.convertToWei(1),
 
   /**
+   * Minimum balance for reserve address
+   *
+   * @constant
+   * @private
+   */
+  _MIN_BALANCE_FOR_RESERVE: basicHelper.convertToWei(10),
+
+  /**
    * To Transfer Balance
    *
    * @constant
@@ -67,6 +75,8 @@ FundClientAddressKlass.prototype = {
     await oThis._setAddresses();
 
     await oThis._transferStPrimeIfNeeded();
+
+    await oThis._checkBalanceOfReserveAddress();
 
     return Promise.resolve(responseHelper.successWithData({}));
   },
@@ -115,9 +125,6 @@ FundClientAddressKlass.prototype = {
       , airdropHolderAddrObj = oThis.addrTypeToAddrMap[managedAddressObj.invertedAddressTypes[managedAddressesConst.airdropHolderAddressType]]
     ;
 
-    // check st prime balance
-    // notify if balance
-
     const addressEncryptor = new AddressEncryptorKlass(oThis.clientId);
     const reservePassphraseD = await addressEncryptor.decrypt(reserveAddrObj.passphrase);
 
@@ -134,7 +141,38 @@ FundClientAddressKlass.prototype = {
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
+  },
 
+  /**
+   * Check ST Prime Balance of Reserve Address and notify if less
+   *
+   * @param {string} ethereumAddress - Address to check balance for
+   *
+   * @returns {promise<result>}
+   * @private
+   */
+  _checkBalanceOfReserveAddress: async function (ethereumAddress) {
+
+    const oThis = this
+      , minReserveAddrBalanceInWei = oThis._MIN_BALANCE_FOR_RESERVE
+      , fetchBalanceObj = new openStPlatform.services.balance.simpleTokenPrime({address: ethereumAddress})
+      , balanceResponse = await fetchBalanceObj.perform()
+    ;
+
+    if (balanceResponse.isFailure()) return Promise.resolve(balanceResponse);
+
+    const balanceBigNumberInWei = balanceResponse.data.balance;
+
+    if (balanceBigNumberInWei.lessThan(minReserveAddrBalanceInWei)) {
+      logger.notify('s_a_fca_1', 'ST PRIME Balance Of Reserve Address is LOW - ' + ethereumAddress,
+        {
+          balance_st_prime: basicHelper.convertToNormal(balanceBigNumberInWei),
+          min_required_balance: basicHelper.convertToNormal(minReserveAddrBalanceInWei)
+        }
+      );
+    }
+
+    return Promise.resolve(responseHelper.successWithData({}));
   },
 
   /**
