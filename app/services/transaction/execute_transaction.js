@@ -219,9 +219,6 @@ ExecuteTransactionKlass.prototype = {
 
     var workerUser = oThis.userRecords[oThis.clientBrandedToken.worker_address_uuid];
     var reserveUser = oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid];
-    console.log(workerUser);
-    console.log(reserveUser);
-    console.log(oThis.userRecords);
     if(!workerUser || !reserveUser){
       return Promise.resolve(responseHelper.error("s_t_et_12", "Token not set."));
     }
