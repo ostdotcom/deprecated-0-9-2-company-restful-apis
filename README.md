@@ -112,4 +112,7 @@ NOTE: Manually create data MySQL mentioned in $OP_MYSQL_DATABASE
 */60 * * * * node executables/update_price_oracle_price_points.js >> logs/update_price_oracle_price_points.log
 */5 * * * * node executables/rmq_subscribers/send_error_emails.js >> logs/send_error_emails.log
 */5 * * * * node executables/generate_managed_addresses.js >> logs/generate_managed_addresses.log
+*/5 * * * * node executables/fund_addresses/by_reserve/st_prime.js >> logs/fund_addresses/by_reserve/st_prime.log
+*/5 * * * * node executables/fund_addresses/by_utility_chain_owner/eth.js >> logs/fund_addresses_by_utility_chain_owner/eth.log
+*/5 * * * * node executables/fund_addresses/by_utility_chain_owner/st_prime.js >> logs/fund_addresses_by_utility_chain_owner/st_prime.log
 ```
