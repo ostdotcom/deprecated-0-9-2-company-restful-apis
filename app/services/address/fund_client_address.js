@@ -1,5 +1,17 @@
 "use strict";
 
+/**
+ * Refill ST Prime to client specific addresses by Reserve.
+ *
+ * <br><br>Reserve refills ST Prime to following client specific addresses:
+ * <ol>
+ *   <li>Airdrop fund manager address</li>
+ *   <li>Worker address</li>
+ * </ol>
+ *
+ * @module app/services/address/fund_client_address
+ */
+
 const rootPrefix = '../../..'
   , openStPlatform = require('@openstfoundation/openst-platform')
   , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
@@ -10,10 +22,6 @@ const rootPrefix = '../../..'
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
 ;
-
-// Similarly, ST' will be refilled by Reserve Address:
-// * Airdrop fund manager address
-// * Worker address
 
 /**
  * constructor
@@ -32,8 +40,20 @@ const FundClientAddressKlass = function (params) {
 
 FundClientAddressKlass.prototype = {
 
+  /**
+   * Minimum balance
+   *
+   * @constant
+   * @private
+   */
   _MIN_BALANCE: basicHelper.convertToWei(1),
 
+  /**
+   * To Transfer Balance
+   *
+   * @constant
+   * @private
+   */
   _TO_TRANSFER: basicHelper.convertToWei(1),
 
   /**
@@ -51,6 +71,12 @@ FundClientAddressKlass.prototype = {
     return Promise.resolve(responseHelper.successWithData({}));
   },
 
+  /**
+   * Set addresses
+   *
+   * @returns {promise<result>}
+   * @private
+   */
   _setAddresses: async function() {
     const oThis = this;
 
@@ -74,6 +100,12 @@ FundClientAddressKlass.prototype = {
     return Promise.resolve(responseHelper.successWithData({}))
   },
 
+  /**
+   * Transfer ST Prime if needed
+   *
+   * @returns {promise<result>}
+   * @private
+   */
   _transferStPrimeIfNeeded: async function(){
 
     const oThis = this
