@@ -11,6 +11,7 @@ const dbName = "saas_big_" + coreConstants.SUB_ENVIRONMENT + "_" + coreConstants
 ;
 
 const PreGeneratedEncryptionSaltKlass = function () {
+  ModelBaseKlass.call(this, {dbName: dbName});
 };
 
 PreGeneratedEncryptionSaltKlass.prototype = Object.create(ModelBaseKlass.prototype);

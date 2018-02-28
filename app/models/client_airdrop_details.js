@@ -18,7 +18,9 @@ const dbName = "saas_airdrop_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.E
   , invertedStatuses = util.invert(statuses)
 ;
 
-const clientAirdropDetailsKlass = function () {};
+const clientAirdropDetailsKlass = function () {
+  ModelBaseKlass.call(this, {dbName: dbName});
+};
 
 clientAirdropDetailsKlass.prototype = Object.create(ModelBaseKlass.prototype);
 

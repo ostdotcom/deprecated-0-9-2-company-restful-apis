@@ -10,7 +10,9 @@ const dbName = "saas_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreCons
   , QueryDBObj = new QueryDBKlass(dbName)
 ;
 
-const ManagedAddressSaltKlass = function () {};
+const ManagedAddressSaltKlass = function () {
+  ModelBaseKlass.call(this, {dbName: dbName});
+};
 
 ManagedAddressSaltKlass.prototype = Object.create(ModelBaseKlass.prototype);
 

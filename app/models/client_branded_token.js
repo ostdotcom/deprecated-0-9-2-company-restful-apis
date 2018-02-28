@@ -30,7 +30,7 @@ const ClientBrandedTokenKlassPrototype = {
   enums: {},
 
   getById: function(id){
-    var oThis = this;
+    const oThis = this;
     return oThis.QueryDB.read(
       oThis.tableName,
       [],
@@ -39,7 +39,7 @@ const ClientBrandedTokenKlassPrototype = {
   },
 
   getBySymbol: function(symbol){
-    var oThis = this;
+    const oThis = this;
     return oThis.QueryDB.read(
       oThis.tableName,
       [],
@@ -48,7 +48,7 @@ const ClientBrandedTokenKlassPrototype = {
   },
 
   getByClientId: function(client_id){
-    var oThis = this;
+    const oThis = this;
     return oThis.QueryDB.read(
       oThis.tableName,
       [],

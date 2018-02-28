@@ -15,6 +15,7 @@ const dbName = "saas_big_" + coreConstants.SUB_ENVIRONMENT + "_" + coreConstants
 ;
 
 const PreGeneratedManagedAddressKlass = function () {
+  ModelBaseKlass.call(this, {dbName: dbName});
 };
 
 PreGeneratedManagedAddressKlass.prototype = Object.create(ModelBaseKlass.prototype);

@@ -6,7 +6,8 @@ const rootPrefix = '../..'
   , util = require(rootPrefix + '/lib/util')
   , ModelBaseKlass = require(rootPrefix + '/app/models/base')
   , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
-  ;
+  , basicHelper = require(rootPrefix + '/helpers/basic')
+;
 
 const dbName = "saas_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
   , QueryDBObj = new QueryDBKlass(dbName)
@@ -25,7 +26,9 @@ const dbName = "saas_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreCons
   , invertedStatuses = util.invert(statuses)
 ;
 
-const ClientTransactionTypeKlass = function () {};
+const ClientTransactionTypeKlass = function () {
+  ModelBaseKlass.call(this, {dbName: dbName});
+};
 
 ClientTransactionTypeKlass.prototype = Object.create(ModelBaseKlass.prototype);
 
@@ -67,11 +70,11 @@ const ClientTransactionTypeKlassPrototype = {
 
   getAll: async function (params) {
 
-    var oThis = this
+    const oThis = this
       , return_result = []
     ;
 
-    var results = await oThis.QueryDB.read(
+    const results = await oThis.QueryDB.read(
       oThis.tableName,
       [],
       'client_id=?',
@@ -91,18 +94,27 @@ const ClientTransactionTypeKlassPrototype = {
   },
 
   getTransactionById: function (params) {
-    var oThis = this;
+    const oThis = this;
     return oThis.QueryDB.read(oThis.tableName, [], 'id=?', [params['clientTransactionId']]);
   },
 
   getTransactionByName: function (params) {
-    var oThis = this;
+    const oThis = this;
     return oThis.QueryDB.read(oThis.tableName, [], 'client_id=? AND name=?', [params['clientId'], params['name']]);
   },
 
   getCount: function (params) {
-    var oThis = this;
+    const oThis = this;
     return oThis.QueryDB.read(oThis.tableName, ['count(*) as cnt'], 'client_id=?', [params['clientId']]);
+  },
+
+  getValue: function(record) {
+    const oThis = this;
+    if(oThis.currencyTypes[record.currency_type] == clientTxTypesConst.usdCurrencyType) {
+      return record.value_in_usd;
+    } else {
+      return basicHelper.convertToNormal(record.value_in_bt_wei).toString(10);
+    }
   }
 
 };
