@@ -90,7 +90,7 @@ valueChainBalancesFetcherKlass.prototype = {
    */
   supportedBalanceTypes: function () {
     return [
-      'ost',
+      'OST',
       'eth'
     ]
   },
@@ -120,7 +120,7 @@ valueChainBalancesFetcherKlass.prototype = {
    *
    * @return {Promise}
    */
-  _fetchostBalance: function () {
+  _fetchOSTBalance: function () {
 
     const oThis = this;
 

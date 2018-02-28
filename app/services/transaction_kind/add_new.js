@@ -93,7 +93,7 @@ AddNew.prototype = {
       errors_object['kind'] = 'invalid kind';
     }
 
-    if (currency_type == 'usd' ) {
+    if (currency_type == 'USD' ) {
       if(!currency_value || currency_value<=0){
         errors_object['currency_value'] = 'currency value in USD is required';
       }
@@ -101,7 +101,7 @@ AddNew.prototype = {
         errors_object['currency_value'] = 'currency value is max capped at 100 USD';
       }
       oThis.transactionKindObj.value_in_usd = currency_value;
-    } else if (currency_type == 'bt' ){
+    } else if (currency_type == 'BT' ){
       if(!currency_value || currency_value<=0 ){
         errors_object['currency_value'] = 'currency value in BT is required';
       }

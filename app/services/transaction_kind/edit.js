@@ -88,7 +88,7 @@ Edit.prototype = {
       errors_object['kind'] = 'invalid kind';
     }
 
-    if (currency_type == 'usd') {
+    if (currency_type == 'USD') {
       if(!currency_value || currency_value<=0 ){
         errors_object['currency_value'] = 'Value in USD is required';
       }
@@ -99,7 +99,7 @@ Edit.prototype = {
       oThis.transactionKindObj['value_in_bt_wei'] = null;
       oThis.transactionKindObj['value_in_usd'] = currency_value;
 
-    } else if (currency_type == 'bt'){
+    } else if (currency_type == 'BT'){
       oThis.params.value_in_usd = null;
       if(!currency_value || currency_value<=0){
         errors_object['currency_value'] = 'Value in BT is required';
