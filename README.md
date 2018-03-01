@@ -17,6 +17,7 @@
 > vim $HOME/openst-setup/openst_env_vars.sh
 export OST_CACHING_ENGINE='memcached'
 export OST_MEMCACHE_SERVERS='127.0.0.1:11211'
+memcached -p 11211 -d
 ```
 
 * Enable RMQ for platform
