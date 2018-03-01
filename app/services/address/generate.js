@@ -63,8 +63,20 @@ const generate = {
   perform: async function (clientId, addressType, name) {
 
     var oThis = this
-      , name = name || ""
-      , addrUuid = uuid.v4();
+      , name = name
+      , addrUuid = uuid.v4()
+      , errors_object = {}
+    ;
+
+    if(name && !basicHelper.isUserNameValid(name)){
+      errors_object['name'] = 'User name should contain btw 3 - 25 characters.';
+    }
+
+    if(Object.keys(errors_object).length > 0){
+      return responseHelper.error('s_a_g_1', 'invalid params', '', [errors_object]);
+    }
+
+    name = name || '';
 
     const insertedRec = await managedAddressObj.create(
       {

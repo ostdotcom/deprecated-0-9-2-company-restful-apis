@@ -27,11 +27,19 @@ const editUser = {
 
     const oThis = this;
 
-    if (!clientId || !userUuid || !name) {
+    if (!clientId || !userUuid) {
       return responseHelper.error("s_cu_eu_1", "Mandatory parameters missing");
     }
 
-    const managedAddressCache = new ManagedAddressCacheKlass({'uuids': [userUuid]});
+    if(!basicHelper.isUserNameValid(name)){
+      errors_object['name'] = 'User name should contain btw 3 - 25 characters.';
+    }
+
+    if(Object.keys(errors_object).length > 0){
+      return responseHelper.error('s_cu_eu_2', 'invalid params', '', [errors_object]);
+    }
+
+    var managedAddressCache = new ManagedAddressCacheKlass({'uuids': [userUuid]});
 
     const cacheFetchResponse = await managedAddressCache.fetch();
 

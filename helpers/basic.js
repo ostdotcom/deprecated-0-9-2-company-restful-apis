@@ -118,6 +118,20 @@ BasicHelperKlass.prototype = {
   },
 
   /**
+   * Check if user name is valid or not
+   *
+   * @param {string} name - username
+   *
+   * @return {boolean}
+   */
+  isUserNameValid: function (name) {
+    if (typeof name !== "string") {
+      return false;
+    }
+    return (/^[a-z0-9\s]{3,25}$/i).test(name);
+  },
+
+  /**
    * Check if branded token symbol is valid or not
    *
    * @param {string} symbol - Branded token symbol
