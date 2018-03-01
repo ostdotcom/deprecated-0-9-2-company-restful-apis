@@ -12,7 +12,7 @@
 const rootPrefix = '../..'
   , ProcessLockerKlass = require(rootPrefix + '/lib/process_locker')
   , ProcessLocker = new ProcessLockerKlass()
-  ;
+;
 
 ProcessLocker.canStartProcess({process_title: 'cra_send_error_mail'});
 
@@ -24,7 +24,7 @@ const openSTNotification = require('@openstfoundation/openst-notification')
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , applicationMailerKlass = require(rootPrefix + '/lib/application_mailer')
   , applicationMailer = new applicationMailerKlass()
-  ;
+;
 
 // global variable defined for email aggregation
 global.emailsAggregator = {};
