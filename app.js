@@ -22,6 +22,7 @@ const express = require('express')
 ;
 
 const rootPrefix = '.'
+  , rootRoutes = require(rootPrefix + '/routes/root')
   , jwtAuth = require(rootPrefix + '/lib/jwt/jwt_auth')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , transactionRoutes = require(rootPrefix + '/routes/transaction')
@@ -197,6 +198,8 @@ if (cluster.isMaster) {
   app.use(sanitizer());
 
   // Following are the routes
+  app.use('/', rootRoutes);
+
   app.use('/transaction', validateApiSignature, transactionRoutes);
 
   app.use('/users', validateApiSignature, clientUsersRoutes);
