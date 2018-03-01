@@ -22,7 +22,8 @@ const dbName = "saas_client_economy_" + coreConstants.SUB_ENVIRONMENT + "_" + co
   }
   , invertedAddressTypes = util.invert(addressTypes)
   , properties = {
-    1: managedAddressesConst.airdropGrantProperty
+    1: managedAddressesConst.airdropGrantProperty,
+    2: managedAddressesConst.bTContractApproved
   }
   , invertedProperties = util.invert(properties)
 ;
@@ -196,6 +197,8 @@ const ManagedAddressKlassPrototype = {
       invertedAddressTypes[managedAddressesConst.userAddressType]]
     ;
 
+    var offset = (totalUsers - numberOfRandomUsers - 1);
+    offset = ((offset > 0) ? (Math.floor(Math.random() * offset)) : 0);
     return oThis.QueryDB.read(
       oThis.tableName,
       ['id', 'client_id', 'uuid'],
@@ -203,7 +206,7 @@ const ManagedAddressKlassPrototype = {
       valueFields,
       {
         limit: numberOfRandomUsers,
-        offset: Math.floor(Math.random() * totalUsers)
+        offset: offset
       }
     );
   },

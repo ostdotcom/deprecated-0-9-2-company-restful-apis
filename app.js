@@ -31,6 +31,7 @@ const rootPrefix = '.'
   , clientUsersRoutes = require(rootPrefix + '/routes/client_users')
   , clientRoutes = require(rootPrefix + '/routes/client')
   , addressRoutes = require(rootPrefix + '/routes/address')
+  , simulatorRoutes = require(rootPrefix + '/routes/simulator')
   , inputValidator = require(rootPrefix + '/lib/authentication/validate_signature')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , customMiddleware = require(rootPrefix + '/helpers/custom_middleware')
@@ -211,6 +212,8 @@ if (cluster.isMaster) {
   app.use('/stake', decodeJwt, stakeRoutes);
 
   app.use('/client', decodeJwt, clientRoutes);
+
+  app.use('/simulator', decodeJwt, simulatorRoutes);
 
 // catch 404 and forward to error handler
   app.use(function (req, res, next) {

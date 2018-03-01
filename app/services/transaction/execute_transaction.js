@@ -22,6 +22,8 @@ const rootPrefix = '../../..'
   , ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , conversionRatesConst = require(rootPrefix + '/lib/global_constant/conversion_rates')
+  , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
+  , managedAddressesKlass = require(rootPrefix + '/app/models/managed_address')
   ;
 
 /**
@@ -73,18 +75,17 @@ ExecuteTransactionKlass.prototype = {
       return Promise.resolve(r3);
     }
 
-    var insertedRec = await oThis.createTransactionLog();
+    // Create main transaction record in transaction logs
+    // This transaction uuid would be used throughout as process id too for all the further transactions.
+    oThis.transactionUuid = uuid.v4();
+    var inputParams = {from_uuid: oThis.fromUuid, to_uuid: oThis.toUuid,
+                        transaction_kind: oThis.transactionKind, token_symbol: oThis.tokenSymbol,
+                        gas_price: oThis.gasPrice, transaction_kind_id: oThis.transactionTypeRecord.id};
+    var insertedRec = await oThis.createTransactionLog(oThis.transactionUuid, inputParams,
+                    transactionLogConst.processingStatus, {}, null);
     oThis.transactionLogId = insertedRec.insertId;
 
-    await this.approveForBrandedToken(oThis);
-
-    var response = await oThis.sendAirdropPay();
-    if(response.isFailure()){
-      oThis.updateTransactionLog(oThis.transactionHash, transactionLogConst.failedStatus,
-        oThis.transactionLogId, response.err);
-      response.data['transaction_uuid'] = oThis.transactionUuid;
-      return Promise.resolve(response);
-    }
+    oThis.performTransactionSteps();
 
     return Promise.resolve(responseHelper.successWithData(
       {transaction_uuid: oThis.transactionUuid, transaction_hash: oThis.transactionHash,
@@ -198,17 +199,20 @@ ExecuteTransactionKlass.prototype = {
   /**
    * Create Entry in transaction logs
    *
+   * @param uuid
+   * @param inputParams
+   * @param status
+   * @param responseData
    */
-  createTransactionLog: function () {
+  createTransactionLog: function (uuid, inputParams, status, responseData, transactionHash) {
     const oThis = this;
 
-    oThis.transactionUuid = uuid.v4();
-    var inputParams = JSON.stringify({from_uuid: oThis.fromUuid, to_uuid: oThis.toUuid,
-                          transaction_kind: oThis.transactionKind, token_symbol: oThis.tokenSymbol,
-                          gas_price: oThis.gasPrice, transaction_kind_id: oThis.transactionTypeRecord.id});
-    return transactionLogObj.create({client_id: oThis.clientId, client_token_id: oThis.clientBrandedToken.id, input_params: inputParams,
-                              chain_type: transactionLogConst.utilityChainType, status: transactionLogConst.processingStatus,
-                              transaction_uuid: oThis.transactionUuid});
+    var ipp = JSON.stringify(inputParams)
+      , fpp = JSON.stringify(responseData);
+    return transactionLogObj.create({client_id: oThis.clientId, client_token_id: oThis.clientBrandedToken.id, input_params: ipp,
+                              chain_type: transactionLogConst.utilityChainType, status: status,
+                              transaction_uuid: uuid, process_uuid: oThis.transactionUuid,
+                              formatted_receipt: fpp, transaction_hash: transactionHash});
   },
 
   /**
@@ -237,41 +241,61 @@ ExecuteTransactionKlass.prototype = {
     const estimatedGasWei = basicHelper.convertToBigNumber(estimateGasResponse.data.gas_to_use).mul(
       basicHelper.convertToBigNumber(chainInteractionConstants.UTILITY_GAS_PRICE));
 
-    const transferSTPrimeBalanceObj = new openStPlatform.services.transaction.transfer.simpleTokenPrime({
+    const transferSTPrimeInput = {
       sender_address: oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid].ethereum_address,
       sender_passphrase: oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid].passphrase_d,
       recipient_address: oThis.userRecords[oThis.fromUuid].ethereum_address,
       amount_in_wei: estimatedGasWei.toString(10),
       options: {returnType: 'txReceipt', tag: 'GasRefill'}
-    });
+    };
+    const transferSTPrimeBalanceObj = new openStPlatform.services.transaction.transfer.simpleTokenPrime(transferSTPrimeInput);
 
     const transferResponse = await transferSTPrimeBalanceObj.perform();
+    var transferRespData = transferResponse.data;
+    var transferStatus = (transferResponse.isFailure() ? transactionLogConst.failedStatus : transactionLogConst.completeStatus);
+    oThis.createTransactionLog(transferRespData.transaction_uuid, transferSTPrimeInput, transferStatus,
+      {}, transferRespData.transaction_hash);
 
     if (transferResponse.isFailure()) {
+      transferResponse.data = Object.assign({error: "Failed while transferring gas."}, transferResponse.err);
       logger.notify('t_et_14', "Error in transfer of " + estimatedGasWei + "Wei Eth to Address - " + transferResponse);
       return Promise.resolve(transferResponse);
     }
 
-    const approveForBrandedToken = new openStPlatform.services.approve.brandedToken(
-      {
-        erc20_address: oThis.clientBrandedToken.token_erc20_address,
-        approver_address: oThis.userRecords[oThis.fromUuid].ethereum_address,
-        approver_passphrase: oThis.userRecords[oThis.fromUuid].passphrase_d,
-        approvee_address: oThis.clientBrandedToken.airdrop_contract_address,
-        to_approve_amount: toApproveAmount,
-        options: {returnType: 'txReceipt'}
-      });
+    const approveBTInput = {
+      erc20_address: oThis.clientBrandedToken.token_erc20_address,
+      approver_address: oThis.userRecords[oThis.fromUuid].ethereum_address,
+      approver_passphrase: oThis.userRecords[oThis.fromUuid].passphrase_d,
+      approvee_address: oThis.clientBrandedToken.airdrop_contract_address,
+      to_approve_amount: toApproveAmount,
+      options: {returnType: 'txReceipt'}
+    };
+    const approveForBrandedToken = new openStPlatform.services.approve.brandedToken(approveBTInput);
 
-    const approveResponse = await approveForBrandedToken.perform();
-
-    console.log('approveResponse---------> ', approveResponse);
+    var approveResponse = null;
+    var approveTransactionHash = null;
+    try {
+      approveResponse = await approveForBrandedToken.perform();
+      approveTransactionHash = approveResponse.data.transactionReceipt.data.rawTransactionReceipt.transactionHash;
+    } catch(err) {
+      approveResponse = responseHelper.error("t_et_15", err);
+    }
+    var approveRespData = approveResponse.data;
+    var approveStatus = (approveResponse.isFailure() ? transactionLogConst.failedStatus : transactionLogConst.completeStatus);
+    oThis.createTransactionLog(uuid.v4(), approveBTInput, approveStatus,
+      approveResponse.err, approveTransactionHash);
 
     if (approveResponse.isFailure()) {
+      approveResponse.data = Object.assign({error: "Failed while approving contract."}, approveResponse.err);
       logger.notify('t_et_15', "Error in Approve app/services/transaction/execute_transaction - ", approveResponse);
       return Promise.resolve(approveResponse);
     }
 
-    console.log('----------------------------------------------------------------------------------------------------');
+    // Mark user as approved in database for future transactions.
+    var managedAddress = new managedAddressesKlass();
+    managedAddress.update(['properties = properties | ?',
+      managedAddress.invertedProperties[managedAddressesConst.bTContractApproved]]).where({uuid: oThis.fromUuid}).fire();
+    new ManagedAddressCacheKlass({'uuids': [oThis.fromUuid]}).clear();
 
     return Promise.resolve(responseHelper.successWithData({}))
   },
@@ -279,7 +303,6 @@ ExecuteTransactionKlass.prototype = {
   /**
    * Call Airdrop pay method
    *
-   * @return {Promise<any>}
    */
   sendAirdropPay: async function(){
     const oThis = this;
@@ -289,7 +312,8 @@ ExecuteTransactionKlass.prototype = {
     var workerUser = oThis.userRecords[oThis.clientBrandedToken.worker_address_uuid];
     var reserveUser = oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid];
     if(!workerUser || !reserveUser){
-      return Promise.resolve(responseHelper.error("s_t_et_12", "Token not set."));
+      oThis.updateParentTransactionLog(transactionLogConst.failedStatus, {error: "Worker or reserve user not found. "});
+      return;
     }
 
     var ostPrices = await new ostPriceCacheKlass().fetch();
@@ -308,16 +332,15 @@ ExecuteTransactionKlass.prototype = {
       basicHelper.convertToWei(ostValue).toString(),
       oThis.userRecords[oThis.fromUuid].ethereum_address,
       oThis.gasPrice,
-      {tag:'airdrop.pay', returnType: 'txHash'});
+      {tag:oThis.transactionTypeRecord.name, returnType: 'txReceipt'});
 
     if(response.isFailure()){
-      return Promise.resolve(response);
+      oThis.updateParentTransactionLog(transactionLogConst.failedStatus, response.err);
+      return;
     }
 
     oThis.transactionHash = response.data.transaction_hash;
-    oThis.updateTransactionLog(oThis.transactionHash, transactionLogConst.processingStatus, oThis.transactionLogId);
-
-    return Promise.resolve(responseHelper.successWithData({}));
+    oThis.updateParentTransactionLog(transactionLogConst.completeStatus);
   },
 
   /**
@@ -327,17 +350,47 @@ ExecuteTransactionKlass.prototype = {
    * @param status
    * @param id
    */
-  updateTransactionLog: function(transactionHash, status, id, failedResponse) {
-    var qParams = {status: status, transaction_hash: transactionHash};
+  updateParentTransactionLog: function(status, failedResponse) {
+    const oThis = this;
+    var qParams = {status: status, transaction_hash: oThis.transactionHash};
     if(failedResponse){
       qParams['formatted_receipt'] = JSON.stringify(failedResponse);
     }
     transactionLogObj.edit(
       {
         qParams: qParams,
-        whereCondition: {id: id}
+        whereCondition: {id: oThis.transactionLogId}
       }
     )
+  },
+
+  /**
+   * Steps to perform when a transaction is executed.
+   *
+   * @return {Promise<void>}
+   */
+  performTransactionSteps: async function(){
+    const oThis = this;
+
+    var needApproveBT = true;
+
+    // If from user is a company user then no need for approve token.
+    needApproveBT = needApproveBT && (oThis.fromUuid != oThis.clientBrandedToken.reserve_address_uuid);
+
+    // If from user has approved BT once then don't need to approve again
+    console.log(oThis.userRecords[oThis.fromUuid].properties);
+    needApproveBT = needApproveBT && !(oThis.userRecords[oThis.fromUuid].properties.includes(managedAddressesConst.bTContractApproved));
+
+    // If Approval is needed and it failed then don't perform airdrop pay
+    if(needApproveBT){
+      var response = await oThis.approveForBrandedToken();
+      if(response.isFailure()){
+        oThis.updateParentTransactionLog(transactionLogConst.failedStatus, response.data);
+        return;
+      }
+    }
+
+    oThis.sendAirdropPay();
   }
 
 

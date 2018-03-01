@@ -50,7 +50,15 @@ GetTransactionDetailKlass.prototype = {
 
     await oThis._getEconomyUsers();
 
+    oThis.response.result_type = "transactions";
+    oThis.response.transactions = [];
+    for(var key in oThis.transactionMap){
+      var transactionData = oThis.transactionMap[key];
+      oThis.response.transactions.push(transactionData);
+    }
     console.log("oThis.response------------", oThis.response);
+
+    return Promise.resolve(responseHelper.successWithData(oThis.response))
   },
 
   _getTransactionHashes: async function () {
@@ -128,7 +136,7 @@ GetTransactionDetailKlass.prototype = {
 
     }
 
-    oThis.response.transactionMap = oThis.transactionMap;
+    // oThis.response.transactionMap = oThis.transactionMap;
 
     return Promise.resolve();
   },
