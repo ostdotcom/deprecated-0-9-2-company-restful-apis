@@ -14,6 +14,7 @@ const rootPrefix = '../../..'
   , PreGeneratedEncryptionSaltKlass = require(rootPrefix + '/app/models/pre_generated_encryption_salt')
   , kmsWrapper = require(rootPrefix + '/lib/authentication/kms_wrapper')
   , localCipher = require(rootPrefix + '/lib/encryptors/local_cipher')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
 
 const _private = {
