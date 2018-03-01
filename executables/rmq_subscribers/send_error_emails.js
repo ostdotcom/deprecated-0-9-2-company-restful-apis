@@ -15,6 +15,7 @@ const rootPrefix = '../..'
 ;
 
 ProcessLocker.canStartProcess({process_title: 'cra_send_error_mail'});
+ProcessLocker.endAfterTime({time_in_minutes: 60});
 
 // Load external packages
 const openSTNotification = require('@openstfoundation/openst-notification')
@@ -51,17 +52,38 @@ openSTNotification.subscribeEvent.rabbit(["email_error.#"], {queue: 'send_error_
     if (!waitingForEmail) {
       waitingForEmail = true;
       setTimeout(function () {
-        // Get errors and reset it for more errors
-        var send_for_email = JSON.parse(JSON.stringify(global.emailsAggregator));
-        global.emailsAggregator = {};
-
-        for (var subject in send_for_email) {
-          var emailPayload = send_for_email[subject];
-          emailPayload.body = "Total Error Count: " + emailPayload.count + "\n" + emailPayload.body;
-          applicationMailer.perform(emailPayload);
-        }
+        sendAggregatedEmail();
         waitingForEmail = false;
       }, 30000);
 
     }
   });
+
+/**
+ * Send Emails Aggregated by subject
+ *
+ */
+function sendAggregatedEmail() {
+  logger.info("Sending Aggregated Emails");
+  const send_for_email = JSON.parse(JSON.stringify(global.emailsAggregator));
+  global.emailsAggregator = {};
+
+  for (var subject in send_for_email) {
+    var emailPayload = send_for_email[subject];
+    emailPayload.body = "Total Error Count: " + emailPayload.count + "\n" + emailPayload.body;
+    applicationMailer.perform(emailPayload);
+  }
+};
+
+// handling gracefull process exit on getting SIGINT, SIGTERM.
+// Once signal found programme will stop consuming new messages. But need to clear running messages.
+process.on('SIGINT', function () {
+  logger.info('Received SIGINT, checking unAckCount.');
+
+  var f = function () {
+    sendAggregatedEmail();
+    process.exit(1);
+  };
+
+  setTimeout(f, 1000);
+});

@@ -78,12 +78,12 @@ startAirdropKlass.prototype = {
     const oThis = this;
 
     if (isNaN(oThis.amount) || oThis.amount < 0) {
-      return Promise.resolve(responseHelper.error("s_am_sa_1", "Invalid amount."));
+      return Promise.resolve(responseHelper.error("s_am_sa_1", "Invalid amount", "", [{amount: 'Invalid amount'}]));
     }
 
     if (![clientAirdropConst.allAddressesAirdropListType,
         clientAirdropConst.neverAirdroppedAddressesAirdropListType].includes(oThis.listType)) {
-      return Promise.resolve(responseHelper.error("s_am_sa_2", "Invalid List type to airdrop users."));
+      return Promise.resolve(responseHelper.error("s_am_sa_2", "Invalid List type to airdrop users", "", [{airdrop_list_type: 'Invalid List type to airdrop users'}]));
     }
 
     if (!oThis.tokenSymbol) {
@@ -158,13 +158,13 @@ startAirdropKlass.prototype = {
     }
     var response = await maObj.getFilteredActiveUsersCount(params);
     if (!response[0] || response[0].total_count == 0) {
-      return Promise.resolve(responseHelper.error("s_am_sa_6", "No users found to airdrop for this list type."));
+      return Promise.resolve(responseHelper.error("s_am_sa_6", "No users found to airdrop for this list type", "", [{airdrop_list_type: 'No users found to airdrop for this list type'}]));
     }
 
     var amountInWei = basicHelper.convertToWei(oThis.amount);
     var totalAmountToAirdrop = (parseInt(response[0].total_count) * oThis.amount);
     if (amountInWei.mul(response[0].total_count).toNumber() > resp.data.balance) {
-      return Promise.resolve(responseHelper.error("s_am_sa_7", "Insufficient funds to airdrop users."));
+      return Promise.resolve(responseHelper.error("s_am_sa_7", "Insufficient funds to airdrop users", "", [{amount: 'Insufficient funds to airdrop users'}]));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));

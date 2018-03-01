@@ -14,7 +14,10 @@ const rootPrefix = '../..'
   , ProcessLocker = new ProcessLockerKlass()
 ;
 
+var unAckCount = 0;
+
 ProcessLocker.canStartProcess({process_title: 'cra_single_worker_start_airdrop'});
+ProcessLocker.endAfterTime({time_in_minutes: 60});
 
 // Load external packages
 const openSTNotification = require('@openstfoundation/openst-notification');
@@ -34,6 +37,8 @@ openSTNotification.subscribeEvent.rabbit(["airdrop.start.#"],
 
     // Promise is required to be returned to manually ack messages in RMQ
     return new Promise(async function (onResolve, onReject) {
+
+      unAckCount++;
       // Process request
       const parsedParams = JSON.parse(params);
       logger.step('Consumed airdrop start params -> ', parsedParams);
@@ -47,10 +52,12 @@ openSTNotification.subscribeEvent.rabbit(["airdrop.start.#"],
         if (!response.isSuccess()) {
           logger.notify('e_rmqs_sa_1', 'Something went wrong in airdrop distribution', response, params);
         }
+        unAckCount--;
         // ack RMQ
         return onResolve();
       }).catch(function (err) {
         logger.notify('e_rmqs_sa_2', 'Something went wrong in airdrop distribution', err, params);
+        unAckCount--;
         // ack RMQ
         return onResolve();
       });
@@ -58,5 +65,23 @@ openSTNotification.subscribeEvent.rabbit(["airdrop.start.#"],
 
   }
 );
+
+// handling gracefull process exit on getting SIGINT, SIGTERM.
+// Once signal found programme will stop consuming new messages. But need to clear running messages.
+process.on('SIGINT', function () {
+  logger.info('Received SIGINT, checking unAckCount.');
+
+  var f = function(){
+    if (unAckCount === 0) {
+      process.exit(1);
+    } else {
+      logger.info('waiting for open tasks to be done.');
+      setTimeout(f, 1000);
+    }
+  };
+
+  setTimeout(f, 1000);
+});
+
 
 
