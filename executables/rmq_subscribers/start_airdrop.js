@@ -66,11 +66,10 @@ openSTNotification.subscribeEvent.rabbit(["airdrop.start.#"],
   }
 );
 
-// handling gracefull process exit on getting SIGINT, SIGTERM.
-// Once signal found programme will stop consuming new messages. But need to clear running messages.
-process.on('SIGINT', function () {
-  logger.info('Received SIGINT, checking unAckCount.');
 
+// Using a single function to handle multiple signals
+function handle() {
+  logger.info('Received Signal');
   var f = function(){
     if (unAckCount === 0) {
       process.exit(1);
@@ -81,7 +80,12 @@ process.on('SIGINT', function () {
   };
 
   setTimeout(f, 1000);
-});
+}
+
+// handling gracefull process exit on getting SIGINT, SIGTERM.
+// Once signal found programme will stop consuming new messages. But need to clear running messages.
+process.on('SIGINT', handle);
+process.on('SIGTERM', handle);
 
 
 

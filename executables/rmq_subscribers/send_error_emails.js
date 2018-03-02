@@ -75,15 +75,17 @@ function sendAggregatedEmail() {
   }
 };
 
-// handling gracefull process exit on getting SIGINT, SIGTERM.
-// Once signal found programme will stop consuming new messages. But need to clear running messages.
-process.on('SIGINT', function () {
-  logger.info('Received SIGINT, checking unAckCount.');
-
+// Using a single function to handle multiple signals
+function handle() {
+  logger.info('Received Signal');
   var f = function () {
     sendAggregatedEmail();
     process.exit(1);
   };
-
   setTimeout(f, 1000);
-});
+}
+
+// handling gracefull process exit on getting SIGINT, SIGTERM.
+// Once signal found programme will stop consuming new messages. But need to clear running messages.
+process.on('SIGINT', handle);
+process.on('SIGTERM', handle);
