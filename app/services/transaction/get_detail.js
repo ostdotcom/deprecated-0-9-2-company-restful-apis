@@ -105,6 +105,9 @@ GetTransactionDetailKlass.prototype = {
       , promiseArray = [];
 
     for (var uuid in oThis.transactionUuidToHashMap) {
+      if(!oThis.transactionUuidToHashMap[uuid]){
+        continue;
+      }
       const transactionHash = oThis.transactionUuidToHashMap[uuid]
         , getReceiptObj = new GetReceiptKlass({transaction_hash: transactionHash, chain: oThis.chain});
 

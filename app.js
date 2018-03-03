@@ -29,6 +29,7 @@ const rootPrefix = '.'
   , onBoardingRoutes = require(rootPrefix + '/routes/on_boarding')
   , stakeRoutes = require(rootPrefix + '/routes/stake')
   , clientUsersRoutes = require(rootPrefix + '/routes/client_users')
+  , clientUsersJwtRoutes = require(rootPrefix + '/routes/client_users_jwt')
   , clientRoutes = require(rootPrefix + '/routes/client')
   , addressRoutes = require(rootPrefix + '/routes/address')
   , simulatorRoutes = require(rootPrefix + '/routes/simulator')
@@ -214,6 +215,8 @@ if (cluster.isMaster) {
   app.use('/client', decodeJwt, clientRoutes);
 
   app.use('/simulator', decodeJwt, simulatorRoutes);
+
+  app.use('/client-users', decodeJwt, clientUsersJwtRoutes);
 
 // catch 404 and forward to error handler
   app.use(function (req, res, next) {

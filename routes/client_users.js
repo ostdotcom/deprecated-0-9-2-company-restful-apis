@@ -4,7 +4,6 @@ const express = require('express')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , listAddressesKlass = require(rootPrefix + '/app/services/client_users/list')
-  , getUsersDataKlass = require(rootPrefix + '/app/services/client_users/get_users_data')
   , startAirdropKlass = require(rootPrefix + '/app/services/airdrop_management/start_airdrop')
   , getAirdropStatusKlass = require(rootPrefix + '/app/services/airdrop_management/get_airdrop_status')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
@@ -108,13 +107,6 @@ router.post('/airdrop-tokens', function (req, res, next) {
 router.get('/airdrop/get-status', function (req, res, next) {
 
   Promise.resolve(routeHelper.performer(req, res, next, getAirdropStatusKlass, 'r_cu_7'));
-
-});
-
-/* List User for a client */
-router.get('/get-users-details', function (req, res, next) {
-
-  Promise.resolve(routeHelper.performer(req, res, next, getUsersDataKlass, 'r_cu_5'));
 
 });
 
