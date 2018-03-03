@@ -114,7 +114,7 @@ BasicHelperKlass.prototype = {
     if (typeof name !== "string") {
       return false;
     }
-    return (/^[a-z\s]{3,25}$/i).test(name);
+    return (/^[a-z\s]{3,15}$/i).test(name);
   },
 
   /**
