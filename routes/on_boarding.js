@@ -87,7 +87,7 @@ router.post('/grant-test-ost', function (req, res, next) {
     const decodedParams = req.decodedParams
       , ethAddress = decodedParams.ethereum_address
       , amount = decodedParams.amount
-      , weiConversion = new BigNumber(1000000000000000000)
+      , weiConversion = new BigNumber('1000000000000000000')
     ;
 
     // handle final response
@@ -122,7 +122,7 @@ router.post('/grant-eth', function (req, res, next) {
     const decodedParams = req.decodedParams
       , ethAddress = decodedParams.ethereum_address
       , amount = decodedParams.amount
-      , weiConversion = new BigNumber(1000000000000000000)
+      , weiConversion = new BigNumber('1000000000000000000')
     ;
 
     // handle final response

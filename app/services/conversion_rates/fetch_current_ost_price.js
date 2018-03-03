@@ -17,6 +17,7 @@ const rootPrefix = "../../.."
   , currencyConversionRateModel = require(rootPrefix + "/app/models/currency_conversion_rate")
   , conversionRateConstants = require(rootPrefix + "/lib/global_constant/conversion_rates")
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points')
 ;
 
 const priceOracle = OSTPriceOracle.priceOracle
@@ -161,6 +162,7 @@ FetchCurrentOSTPriceKlass.prototype = {
           return onResolve('error');
         } else if (priceInDecimal.isSuccess() && priceInDecimal.data.price == conversionRate) {
           await currencyConversionRateModel.updateStatus(dbRowId, conversionRateConstants.active_status());
+          new ostPriceCacheKlass().clear();
           logger.win("Price point updated in contract.");
           return onResolve('success');
         } else {
