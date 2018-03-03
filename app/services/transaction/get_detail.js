@@ -56,7 +56,6 @@ GetTransactionDetailKlass.prototype = {
       var transactionData = oThis.transactionMap[key];
       oThis.response.transactions.push(transactionData);
     }
-    console.log("oThis.response------------", oThis.response);
 
     return Promise.resolve(responseHelper.successWithData(oThis.response))
   },
@@ -68,7 +67,7 @@ GetTransactionDetailKlass.prototype = {
     ;
 
     const transactionLogRecords = await transactionLogObj.select(
-      'transaction_hash, transaction_uuid, input_params, client_token_id').where(
+      'transaction_hash, transaction_uuid, input_params, client_token_id, status').where(
       ['transaction_uuid in (?)', oThis.transactionUuids]).fire();
 
     for (var i = 0; i < transactionLogRecords.length; i++) {
@@ -111,7 +110,6 @@ GetTransactionDetailKlass.prototype = {
       const transactionHash = oThis.transactionUuidToHashMap[uuid]
         , getReceiptObj = new GetReceiptKlass({transaction_hash: transactionHash, chain: oThis.chain});
 
-      console.log("-----uuid---------transactionHash-----", uuid, transactionHash);
       promiseArray.push(getReceiptObj.perform());
     }
 
@@ -122,7 +120,7 @@ GetTransactionDetailKlass.prototype = {
         , data = transactionReceiptResponse.data;
       if (transactionReceiptResponse.isFailure()) continue;
 
-      console.log("data---->", data);
+      console.log("Transaction Receipt data------------------------------>", JSON.stringify(transactionReceiptResponse));
 
       const uuid = oThis.transactionHashToUuidMap[data.rawTransactionReceipt.transactionHash]
         , gasPriceBig = basicHelper.convertToBigNumber(oThis.transactionMap[uuid].gas_price)
