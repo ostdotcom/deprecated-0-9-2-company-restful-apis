@@ -5,7 +5,6 @@
  *
  * @param {object} params - this is object with keys.
  *                  transaction_uuids - Transaction UUIDs
- *                  chain - Chain name to look at (eg: utility or value)
  *
  * @module app/services/transaction/get_detail
  */
@@ -24,7 +23,6 @@ const GetTransactionDetailKlass = function (params) {
   const oThis = this;
 
   oThis.transactionUuids = params.transaction_uuids;
-  oThis.chain = params.chain;
 
   oThis.response = {};
   oThis.transactionUuidToHashMap = {};
@@ -34,6 +32,7 @@ const GetTransactionDetailKlass = function (params) {
   oThis.clientTokenMap = {};
   oThis.economyUserMap = {};
   oThis.transactionMap = {};
+  oThis.chainMaps = {};
 };
 
 GetTransactionDetailKlass.prototype = {
@@ -67,13 +66,14 @@ GetTransactionDetailKlass.prototype = {
     ;
 
     const transactionLogRecords = await transactionLogObj.select(
-      'transaction_hash, transaction_uuid, input_params, client_token_id, status').where(
+      'transaction_hash, transaction_uuid, input_params, client_token_id, status, chain_type, created_at').where(
       ['transaction_uuid in (?)', oThis.transactionUuids]).fire();
 
     for (var i = 0; i < transactionLogRecords.length; i++) {
       const currRecord = transactionLogRecords[i];
       oThis.transactionUuidToHashMap[currRecord.transaction_uuid] = currRecord.transaction_hash;
       oThis.transactionHashToUuidMap[currRecord.transaction_hash] = currRecord.transaction_uuid;
+      oThis.chainMaps[currRecord.transaction_uuid] = transactionLogObj.chainTypes[currRecord.chain_type];
 
       const inputParams = JSON.parse(currRecord.input_params);
       oThis.transactionTypeMap[inputParams.transaction_kind_id] = {};
@@ -92,6 +92,7 @@ GetTransactionDetailKlass.prototype = {
         transaction_hash: currRecord.transaction_hash,
         status: transactionLogObj.statuses[currRecord.status],
         gas_price: inputParams.gas_price,
+        transaction_timestamp: Math.floor(new Date(currRecord.created_at).getTime()/1000),
         uts: Date.now()
       };
     }
@@ -108,7 +109,7 @@ GetTransactionDetailKlass.prototype = {
         continue;
       }
       const transactionHash = oThis.transactionUuidToHashMap[uuid]
-        , getReceiptObj = new GetReceiptKlass({transaction_hash: transactionHash, chain: oThis.chain});
+        , getReceiptObj = new GetReceiptKlass({transaction_hash: transactionHash, chain: oThis.chainMaps[uuid]});
 
       promiseArray.push(getReceiptObj.perform());
     }
@@ -129,9 +130,8 @@ GetTransactionDetailKlass.prototype = {
       ;
 
       oThis.transactionMap[uuid].gas_used = gasUsedBig.toString(10);
-      oThis.transactionMap[uuid].gas_value = basicHelper.convertToNormal(gasValue).toString(10);
+      oThis.transactionMap[uuid].transaction_fee = basicHelper.convertToNormal(gasValue).toString(10);
       oThis.transactionMap[uuid].block_number = data.rawTransactionReceipt.blockNumber;
-      oThis.transactionMap[uuid].block_timestamp = '';
 
       oThis.transactionHashToReceiptMap[data.rawTransactionReceipt.transactionHash] = data;
 
