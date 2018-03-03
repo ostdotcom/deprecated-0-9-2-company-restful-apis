@@ -82,8 +82,8 @@ const editUser = {
         {
           uuid: userUuid,
           name: name,
-          total_airdropped_tokens: basicHelper.convertToNormal(totalAirdroppedTokens),
-          token_balance: basicHelper.convertToNormal(tokenBalance)
+          total_airdropped_tokens: basicHelper.convertToNormal(totalAirdroppedTokens).toString(10),
+          token_balance: basicHelper.convertToNormal(tokenBalance).toString(10)
         }
       ],
       meta: {

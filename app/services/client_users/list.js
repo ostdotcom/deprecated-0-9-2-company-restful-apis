@@ -91,8 +91,8 @@ listKlass.prototype = {
       usersList.push({
         name: object['name'],
         uuid: object['uuid'],
-        total_airdropped_tokens: basicHelper.convertToNormal(balanceData.totalAirdroppedTokens),
-        token_balance: basicHelper.convertToNormal(balanceData.tokenBalance)
+        total_airdropped_tokens: basicHelper.convertToNormal(balanceData.totalAirdroppedTokens).toString(10),
+        token_balance: basicHelper.convertToNormal(balanceData.tokenBalance).toString(10)
       })
 
     }
