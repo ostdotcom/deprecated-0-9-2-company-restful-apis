@@ -86,6 +86,10 @@ AddNew.prototype = {
       return Promise.resolve(responseHelper.error('tk_an_1', 'invalid Client'));
     }
 
+    if (name) {
+      name = name.trim()
+    }
+
     if(!basicHelper.isTxKindNameValid(name)){
       errors_object['name'] = 'Tx Kind name should contain btw 3 - 25 aplhabets.';
     }
@@ -96,6 +100,9 @@ AddNew.prototype = {
     if (currency_type == 'USD' ) {
       if(!currency_value || currency_value<=0){
         errors_object['currency_value'] = 'currency value in USD is required';
+      }
+      if(currency_value<0.01){
+        errors_object['currency_value'] = 'currency value is min capped at 0.01 USD';
       }
       if(currency_value>100){
         errors_object['currency_value'] = 'currency value is max capped at 100 USD';

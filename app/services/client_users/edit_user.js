@@ -31,6 +31,9 @@ const editUser = {
       return responseHelper.error("s_cu_eu_1", "Mandatory parameters missing");
     }
 
+    if (name) {
+      name = name.trim();
+    }
     if(!basicHelper.isUserNameValid(name)){
       errors_object['name'] = 'User name should contain btw 3 - 25 characters.';
     }

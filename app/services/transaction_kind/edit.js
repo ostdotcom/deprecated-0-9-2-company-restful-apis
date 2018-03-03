@@ -95,6 +95,9 @@ Edit.prototype = {
       if(currency_value>100){
         errors_object['currency_value'] = 'currency value is max capped at 100 USD';
       }
+      if(currency_value<0.01){
+        errors_object['currency_value'] = 'currency value is min capped at 0.01 USD';
+      }
       oThis.transactionKindObj['currency_type'] = oThis.params.currency_type;
       oThis.transactionKindObj['value_in_bt_wei'] = null;
       oThis.transactionKindObj['value_in_usd'] = currency_value;
@@ -130,6 +133,10 @@ Edit.prototype = {
 
     if(oThis.currentTransactionKind && oThis.currentTransactionKind['client_id'] != clientId){
       return Promise.resolve(responseHelper.error('tk_e_1', 'Unauthorised access.'));
+    }
+
+    if (name) {
+      name = name.trim();
     }
 
     if(name && oThis.currentTransactionKind && oThis.currentTransactionKind['name'].toLowerCase() != name.toLowerCase()){

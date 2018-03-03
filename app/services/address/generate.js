@@ -69,6 +69,9 @@ const generate = {
       , errors_object = {}
     ;
 
+    if (name) {
+      name = name.trim();
+    }
     if(name && !basicHelper.isUserNameValid(name)){
       errors_object['name'] = 'User name should contain btw 3 - 25 characters.';
     }
