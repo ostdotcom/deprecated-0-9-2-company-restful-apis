@@ -35,7 +35,10 @@ const dbName = "saas_airdrop_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.E
 ;
 
 const ClientAirdropKlass = function () {
+  const oThis = this;
+
   bitWiseHelperKlass.call(this);
+  ModelBaseKlass.call(this, {dbName: dbName});
 };
 
 ClientAirdropKlass.prototype = Object.create(ModelBaseKlass.prototype);
