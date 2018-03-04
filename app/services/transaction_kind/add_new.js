@@ -112,6 +112,9 @@ AddNew.prototype = {
       if(!currency_value || currency_value<=0 ){
         errors_object['currency_value'] = 'currency value in BT is required';
       }
+      if(currency_value<0.00001){
+        errors_object['currency_value'] = 'currency value is min capped at 0.00001 BT';
+      }
       if(currency_value>100 ){
         errors_object['currency_value'] = 'currency value is max capped at 100 BT';
       }

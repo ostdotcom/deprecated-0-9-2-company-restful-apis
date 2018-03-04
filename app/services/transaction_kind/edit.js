@@ -111,6 +111,9 @@ Edit.prototype = {
       if(currency_value>100 ){
         errors_object['currency_value'] = 'currency value is max capped at 100 BT';
       }
+      if(currency_value<0.00001){
+        errors_object['currency_value'] = 'currency value is min capped at 0.00001 BT';
+      }
       var value_in_bt_wei = basicHelper.convertToWei(currency_value);
       if(!basicHelper.isWeiValid(value_in_bt_wei)){
         errors_object['currency_value'] = 'Value in BT is not valid';
