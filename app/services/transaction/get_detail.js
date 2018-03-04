@@ -52,9 +52,12 @@ GetTransactionDetailKlass.prototype = {
 
     oThis.response.result_type = "transactions";
     oThis.response.transactions = [];
-    for(var key in oThis.transactionMap){
+    for(var i=0;i<oThis.transactionUuids.length;i++){
+      var key = oThis.transactionUuids[i];
       var transactionData = oThis.transactionMap[key];
-      oThis.response.transactions.push(transactionData);
+      if(transactionData){
+        oThis.response.transactions.push(transactionData);
+      }
     }
 
     return Promise.resolve(responseHelper.successWithData(oThis.response))
@@ -145,7 +148,6 @@ GetTransactionDetailKlass.prototype = {
       ;
 
       addressToNameMap[clientToken.airdrop_contract_addr.toLowerCase()] = 'airdrop';
-      logger.log('addressToNameMap', addressToNameMap);
       const getReceiptObj = new GetReceiptKlass(
           {
             transaction_hash: transactionHash,
