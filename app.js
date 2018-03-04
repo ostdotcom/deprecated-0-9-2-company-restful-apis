@@ -8,7 +8,6 @@
  */
 const express = require('express')
   , path = require('path')
-  , openSTNotification = require('@openstfoundation/openst-notification')
   , createNamespace = require('continuation-local-storage').createNamespace
   , requestSharedNameSpace = createNamespace('openST-Platform-NameSpace')
   , morgan = require('morgan')
@@ -113,6 +112,15 @@ const decodeJwt = function(req, res, next) {
 
 };
 
+// Set request debugging/logging details to shared namespace
+const appendRequestDebugInfo = function(req, res, next) {
+  requestSharedNameSpace.run(function() {
+    requestSharedNameSpace.set('reqId', req.id);
+    requestSharedNameSpace.set('startTime', req.startTime);
+    next();
+  });
+};
+
 // if the process is a master.
 if (cluster.isMaster) {
   // Set worker process title
@@ -178,15 +186,6 @@ if (cluster.isMaster) {
   // Load Morgan
   app.use(morgan('[:id][:endTime] Completed with ":status" in :response-time ms at :endDateTime -  ":res[content-length] bytes" - ":remote-addr" ":remote-user" - "HTTP/:http-version :method :url" - ":referrer" - ":user-agent"'));
 
-  // Set request debugging/logging details to shared namespace
-  app.use(function(req, res, next) {
-    requestSharedNameSpace.run(function() {
-      requestSharedNameSpace.set('reqId', req.id);
-      requestSharedNameSpace.set('startTime', req.startTime);
-      next();
-    });
-  });
-
   app.use(helmet());
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({extended: true}));
@@ -202,21 +201,21 @@ if (cluster.isMaster) {
   // Following are the routes
   app.use('/', rootRoutes);
 
-  app.use('/transaction', validateApiSignature, transactionRoutes);
+  app.use('/transaction', appendRequestDebugInfo, validateApiSignature, transactionRoutes);
 
-  app.use('/users', validateApiSignature, clientUsersRoutes);
+  app.use('/users', appendRequestDebugInfo, validateApiSignature, clientUsersRoutes);
 
-  app.use('/addresses', validateApiSignature, addressRoutes);
+  app.use('/addresses', appendRequestDebugInfo, validateApiSignature, addressRoutes);
 
-  app.use('/on-boarding', decodeJwt, onBoardingRoutes);
+  app.use('/on-boarding', appendRequestDebugInfo, decodeJwt, onBoardingRoutes);
 
-  app.use('/stake', decodeJwt, stakeRoutes);
+  app.use('/stake', appendRequestDebugInfo, decodeJwt, stakeRoutes);
 
-  app.use('/client', decodeJwt, clientRoutes);
+  app.use('/client', appendRequestDebugInfo, decodeJwt, clientRoutes);
 
-  app.use('/simulator', decodeJwt, simulatorRoutes);
+  app.use('/simulator', appendRequestDebugInfo, decodeJwt, simulatorRoutes);
 
-  app.use('/client-users', decodeJwt, clientUsersJwtRoutes);
+  app.use('/client-users', appendRequestDebugInfo, decodeJwt, clientUsersJwtRoutes);
 
 // catch 404 and forward to error handler
   app.use(function (req, res, next) {
