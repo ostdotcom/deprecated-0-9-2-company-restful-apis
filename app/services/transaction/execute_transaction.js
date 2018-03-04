@@ -24,6 +24,7 @@ const rootPrefix = '../../..'
   , conversionRatesConst = require(rootPrefix + '/lib/global_constant/conversion_rates')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , managedAddressesKlass = require(rootPrefix + '/app/models/managed_address')
+  , approveAmount = basicHelper.convertToWei('1000000000')
   ;
 
 /**
@@ -222,54 +223,14 @@ ExecuteTransactionKlass.prototype = {
    * @return {Promise.<void>}
    */
   approveForBrandedToken: async function () {
-    const oThis = this
-      , toApproveAmount = basicHelper.convertToWei('1000000000');
-
-    //transfer estimated gas to approvar.
-    if(oThis.fromUuid != oThis.clientBrandedToken.reserve_address_uuid) {
-
-      const estimateGasObj = new openStPlatform.services.transaction.estimateGas({
-        contract_name: 'brandedToken',
-        contract_address: oThis.clientBrandedToken.token_erc20_address,
-        chain: 'utility',
-        sender_address: oThis.userRecords[oThis.fromUuid].ethereum_address,
-        method_name: 'approve',
-        method_arguments: [oThis.userRecords[oThis.fromUuid].ethereum_address, toApproveAmount]
-      });
-
-      const estimateGasResponse = await estimateGasObj.perform();
-
-      const estimatedGasWei = basicHelper.convertToBigNumber(estimateGasResponse.data.gas_to_use).mul(
-        basicHelper.convertToBigNumber(chainInteractionConstants.UTILITY_GAS_PRICE));
-
-      const transferSTPrimeInput = {
-        sender_address: oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid].ethereum_address,
-        sender_passphrase: oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid].passphrase_d,
-        recipient_address: oThis.userRecords[oThis.fromUuid].ethereum_address,
-        amount_in_wei: estimatedGasWei.toString(10),
-        options: {returnType: 'txReceipt', tag: 'GasRefill'}
-      };
-      const transferSTPrimeBalanceObj = new openStPlatform.services.transaction.transfer.simpleTokenPrime(transferSTPrimeInput);
-
-      const transferResponse = await transferSTPrimeBalanceObj.perform();
-      var transferRespData = transferResponse.data;
-      var transferStatus = (transferResponse.isFailure() ? transactionLogConst.failedStatus : transactionLogConst.completeStatus);
-      oThis.createTransactionLog(transferRespData.transaction_uuid, transferSTPrimeInput, transferStatus,
-        {}, transferRespData.transaction_hash);
-
-      if (transferResponse.isFailure()) {
-        transferResponse.data = Object.assign({error: "Failed while transferring gas."}, transferResponse.err);
-        logger.notify('t_et_14', "Error in transfer of " + estimatedGasWei + "Wei Eth to Address - " + transferResponse);
-        return Promise.resolve(transferResponse);
-      }
-    }
+    const oThis = this;
 
     const approveBTInput = {
       erc20_address: oThis.clientBrandedToken.token_erc20_address,
       approver_address: oThis.userRecords[oThis.fromUuid].ethereum_address,
       approver_passphrase: oThis.userRecords[oThis.fromUuid].passphrase_d,
       approvee_address: oThis.clientBrandedToken.airdrop_contract_address,
-      to_approve_amount: toApproveAmount,
+      to_approve_amount: approveAmount,
       options: {returnType: 'txReceipt'}
     };
     const approveForBrandedToken = new openStPlatform.services.approve.brandedToken(approveBTInput);
@@ -284,6 +245,7 @@ ExecuteTransactionKlass.prototype = {
     }
     var approveRespData = approveResponse.data;
     var approveStatus = (approveResponse.isFailure() ? transactionLogConst.failedStatus : transactionLogConst.completeStatus);
+    delete approveBTInput.approver_passphrase;
     oThis.createTransactionLog(uuid.v4(), approveBTInput, approveStatus,
       approveResponse.err, approveTransactionHash);
 
@@ -300,6 +262,52 @@ ExecuteTransactionKlass.prototype = {
     new ManagedAddressCacheKlass({'uuids': [oThis.fromUuid]}).clear();
 
     return Promise.resolve(responseHelper.successWithData({}))
+  },
+
+  /**
+   * Refill gas for user if required for approving airdrop contract.
+   *
+   * @param oThis
+   * @return {Promise.<void>}
+   */
+  refillGasForUser: async function(){
+    const oThis = this;
+    const estimateGasObj = new openStPlatform.services.transaction.estimateGas({
+      contract_name: 'brandedToken',
+      contract_address: oThis.clientBrandedToken.token_erc20_address,
+      chain: 'utility',
+      sender_address: oThis.userRecords[oThis.fromUuid].ethereum_address,
+      method_name: 'approve',
+      method_arguments: [oThis.userRecords[oThis.fromUuid].ethereum_address, approveAmount]
+    });
+
+    const estimateGasResponse = await estimateGasObj.perform();
+
+    const estimatedGasWei = basicHelper.convertToBigNumber(estimateGasResponse.data.gas_to_use).mul(
+      basicHelper.convertToBigNumber(chainInteractionConstants.UTILITY_GAS_PRICE));
+
+    const transferSTPrimeInput = {
+      sender_address: oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid].ethereum_address,
+      sender_passphrase: oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid].passphrase_d,
+      recipient_address: oThis.userRecords[oThis.fromUuid].ethereum_address,
+      amount_in_wei: estimatedGasWei.toString(10),
+      options: {returnType: 'txReceipt', tag: 'GasRefill'}
+    };
+    const transferSTPrimeBalanceObj = new openStPlatform.services.transaction.transfer.simpleTokenPrime(transferSTPrimeInput);
+
+    const transferResponse = await transferSTPrimeBalanceObj.perform();
+    var transferRespData = transferResponse.data;
+    var transferStatus = (transferResponse.isFailure() ? transactionLogConst.failedStatus : transactionLogConst.completeStatus);
+    delete transferSTPrimeInput.sender_passphrase;
+    oThis.createTransactionLog(transferRespData.transaction_uuid, transferSTPrimeInput, transferStatus,
+      {}, transferRespData.transaction_hash);
+
+    if (transferResponse.isFailure()) {
+      transferResponse.data = Object.assign({error: "Failed while transferring gas."}, transferResponse.err);
+      logger.notify('t_et_14', "Error in transfer of " + estimatedGasWei + "Wei Eth to Address - " + transferResponse);
+      return Promise.resolve(transferResponse);
+    }
+    return Promise.resolve(responseHelper.successWithData());
   },
 
   /**
@@ -374,14 +382,20 @@ ExecuteTransactionKlass.prototype = {
   performTransactionSteps: async function(){
     const oThis = this;
 
-    var needApproveBT = true;
-
     // If from user has approved BT once then don't need to approve again
-    console.log(oThis.userRecords[oThis.fromUuid].properties);
-    needApproveBT = needApproveBT && !(oThis.userRecords[oThis.fromUuid].properties.includes(managedAddressesConst.bTContractApproved));
+    var needApproveBT = !(oThis.userRecords[oThis.fromUuid].properties.includes(managedAddressesConst.bTContractApproved));
 
     // If Approval is needed and it failed then don't perform airdrop pay
     if(needApproveBT){
+      // Refill gas of user to approve Airdrop contract
+      //transfer estimated gas to approver.
+      if(oThis.fromUuid != oThis.clientBrandedToken.reserve_address_uuid) {
+        var result = await oThis.refillGasForUser();
+        if(result.isFailure()){
+          oThis.updateParentTransactionLog(transactionLogConst.failedStatus, result.data);
+          return;
+        }
+      }
       var response = await oThis.approveForBrandedToken();
       if(response.isFailure()){
         oThis.updateParentTransactionLog(transactionLogConst.failedStatus, response.data);

@@ -11,6 +11,7 @@ var rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , util = require(rootPrefix + '/lib/util')
   , basicHelper = require(rootPrefix + '/helpers/basic')
+  , ClientTransactionTypeCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type')
   , ClientTransactionTypeKlass = require(rootPrefix + '/app/models/client_transaction_type')
   , clientTransactionTypeObj = new ClientTransactionTypeKlass()
 ;
@@ -193,6 +194,8 @@ Edit.prototype = {
           whereCondition: {id: oThis.clientTransactionId}
         }
       );
+      new ClientTransactionTypeCacheKlass({client_id: oThis.currentTransactionKind['client_id'],
+        transaction_kind: oThis.currentTransactionKind['name']}).clear();
     } catch(err){
       return Promise.resolve(responseHelper.error('tk_e_3', 'Something went wrong.'));
     }

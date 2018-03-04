@@ -138,12 +138,13 @@ GetTransactionDetailKlass.prototype = {
         continue;
       }
       const transactionHash = oThis.transactionUuidToHashMap[uuid]
-        , clientTokenId = oThis.transactionMap.client_token_id
+        , clientTokenId = oThis.transactionMap[uuid].client_token_id
         , clientToken = oThis.clientTokenMap[clientTokenId]
         , addressToNameMap = {}
       ;
 
       addressToNameMap[clientToken.airdrop_contract_addr.toLowerCase()] = 'airdrop';
+      console.log(addressToNameMap)
       const getReceiptObj = new GetReceiptKlass(
           {
             transaction_hash: transactionHash,
@@ -161,8 +162,6 @@ GetTransactionDetailKlass.prototype = {
         , data = transactionReceiptResponse.data;
       if (transactionReceiptResponse.isFailure()) continue;
 
-      console.log("Transaction Receipt data------------------------------>", JSON.stringify(transactionReceiptResponse));
-
       const uuid = oThis.transactionHashToUuidMap[data.rawTransactionReceipt.transactionHash]
         , gasPriceBig = basicHelper.convertToBigNumber(oThis.transactionMap[uuid].gas_price)
         , gasUsedBig = basicHelper.convertToBigNumber(data.rawTransactionReceipt.gasUsed)
@@ -172,6 +171,19 @@ GetTransactionDetailKlass.prototype = {
       oThis.transactionMap[uuid].gas_used = gasUsedBig.toString(10);
       oThis.transactionMap[uuid].transaction_fee = basicHelper.convertToNormal(gasValue).toString(10);
       oThis.transactionMap[uuid].block_number = data.rawTransactionReceipt.blockNumber;
+
+      if(data.formattedTransactionReceipt.eventsData.length > 0){
+        var ed = data.formattedTransactionReceipt.eventsData[0].events;
+        for(var j=0;j<ed.length;j++){
+          var ev = ed[j];
+          if(ev.name === "_tokenAmount" && ev.type === "uint256"){
+            oThis.transactionMap[uuid].bt_transfer_value = basicHelper.convertToNormal(ev.value).toString(10);
+          }
+          if(ev.name === "_commissionTokenAmount" && ev.type === "uint256"){
+            oThis.transactionMap[uuid].bt_commission_amount = basicHelper.convertToNormal(ev.value).toString(10);
+          }
+        }
+      }
 
       oThis.transactionHashToReceiptMap[data.rawTransactionReceipt.transactionHash] = data;
 
