@@ -140,12 +140,13 @@ const ManagedAddressKlassPrototype = {
 
     const oThis = this
       , clientId = params.client_id
-      , sortBy = params.sort_by
+      , orderBy = params.order_by
+      , orderType = params.order
       , filter = params.filter
     ;
 
     var pageNo = params.page_no
-      , orderBy = ''
+      , orderByStr = ''
       , paginationClause = '';
 
     if (!pageNo) {
@@ -154,10 +155,16 @@ const ManagedAddressKlassPrototype = {
       pageNo = parseInt(pageNo);
     }
 
-    if (sortBy == 'creation_time') {
-      orderBy = 'id DESC';
+    if (orderBy.toLowerCase() == 'name') {
+      orderByStr = 'name';
     } else {
-      orderBy = 'id ASC'
+      orderByStr = 'id';
+    }
+
+    if (orderType.toLowerCase() == 'asc'){
+      orderByStr += ' ASC';
+    }else{
+      orderByStr += ' DESC';
     }
 
     var whereClause = 'client_id = ?'
@@ -174,9 +181,9 @@ const ManagedAddressKlassPrototype = {
       whereClause,
       whereValues,
       {
-        order: orderBy,
-        limit: params.pageSize,
-        offset: params.pageSize * (pageNo - 1)
+        order: orderByStr,
+        limit: params.limit,
+        offset: params.offset
       }
     );
 
@@ -197,7 +204,7 @@ const ManagedAddressKlassPrototype = {
       invertedAddressTypes[managedAddressesConst.userAddressType]]
     ;
 
-    var offset = (totalUsers - numberOfRandomUsers - 1);
+    var offset = (totalUsers - numberOfRandomUsers + 1);
     offset = ((offset > 0) ? (Math.floor(Math.random() * offset)) : 0);
     return oThis.QueryDB.read(
       oThis.tableName,

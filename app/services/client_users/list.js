@@ -30,7 +30,7 @@ listKlass.prototype = {
     const oThis = this
       , pageSize = 26;
 
-    params.pageSize = pageSize;
+    params.limit = pageSize;
 
     if (!params.client_id) {
       return Promise.resolve(responseHelper.error('cu_l_1', 'invalid client id'));
@@ -38,8 +38,18 @@ listKlass.prototype = {
 
     if (!params.page_no || parseInt(params.page_no) < 1) {
       params.page_no = 1;
+      params.offset = 0
     } else {
       params.page_no = parseInt(params.page_no);
+      params.offset = ((params.limit - 1) * (params.page_no - 1))
+    }
+
+    if (!params.order_by || params.order_by.toString().toLowerCase() != 'name') {
+      params.order_by = 'creation_time';
+    }
+
+    if (!params.order || params.order.toString().toLowerCase() != 'asc') {
+      params.order = 'desc';
     }
 
     const queryResponse = await managedAddress.getByFilterAndPaginationParams(params);
@@ -57,17 +67,19 @@ listKlass.prototype = {
       }
 
       if (i === pageSize - 1) {
-        hasMore = true;
         continue;
       }
       ethereumAddresses.push(object['ethereum_address']);
     }
 
-    const economyUserBalance = new EconomyUserBalanceKlass({client_id: params.client_id, ethereum_addresses: ethereumAddresses})
+    const economyUserBalance = new EconomyUserBalanceKlass({
+        client_id: params.client_id,
+        ethereum_addresses: ethereumAddresses
+      })
       , userBalancesResponse = await economyUserBalance.perform()
     ;
 
-    var  balanceHashData = {};
+    var balanceHashData = {};
 
     if (!userBalancesResponse.isFailure()) {
       balanceHashData = userBalancesResponse.data;
@@ -100,7 +112,8 @@ listKlass.prototype = {
     var next_page_payload = {};
     if (hasMore) {
       next_page_payload = {
-        sort_by: params.sort_by,
+        order_by: params.order_by,
+        order: params.order,
         filter: params.filter,
         page_no: params.page_no + 1
       };
