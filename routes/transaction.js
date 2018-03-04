@@ -37,4 +37,12 @@ router.post('/execute', function (req, res, next) {
 
 });
 
+router.post('/fetch-detail', function (req, res, next) {
+
+  const getDetailTransactionKlass = require(rootPrefix + '/app/services/transaction/get_detail')
+
+  Promise.resolve(routeHelper.performer(req, res, next, getDetailTransactionKlass, 'r_tk_5'));
+
+});
+
 module.exports = router;
