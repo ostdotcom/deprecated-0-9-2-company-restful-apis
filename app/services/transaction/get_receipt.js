@@ -17,6 +17,7 @@ const GetReceiptKlass = function(params){
 
   oThis.transactionHash = params.transaction_hash;
   oThis.chain = params.chain;
+  oThis.addressToNameMap = params.address_to_name_map || {};
 
 };
 
@@ -35,7 +36,11 @@ GetReceiptKlass.prototype = {
     const oThis = this;
 
     const obj = new openStPlatform.services.transaction.getReceipt(
-      {transaction_hash: oThis.transactionHash, chain: oThis.chain}
+      {
+        transaction_hash: oThis.transactionHash,
+        chain: oThis.chain,
+        address_to_name_map: oThis.addressToNameMap
+      }
     );
 
     const response = await obj.perform();

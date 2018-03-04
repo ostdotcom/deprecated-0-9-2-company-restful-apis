@@ -41,12 +41,12 @@ GetTransactionDetailKlass.prototype = {
 
     await oThis._getTransactionHashes();
 
+    await oThis._getClientTokens();
+
     await oThis._getTransactionReceipts();
 
     await oThis._getTransactionTypes();
-
-    await oThis._getClientTokens();
-
+    
     await oThis._getEconomyUsers();
 
     oThis.response.result_type = "transactions";
@@ -100,6 +100,35 @@ GetTransactionDetailKlass.prototype = {
     return Promise.resolve();
   },
 
+  _getClientTokens: async function () {
+    const oThis = this
+      , clientTokensObj = new ClientBrandedTokenKlass()
+      , clientTokenIds = Object.keys(oThis.clientTokenMap)
+      , clientTokenRecords = await clientTokensObj.select('*').where(["id in (?)", clientTokenIds]).fire()
+    ;
+
+    for (var i = 0; i < clientTokenRecords.length; i++) {
+      const currRecord = clientTokenRecords[i]
+      ;
+
+      oThis.clientTokenMap[currRecord.id] = {
+        id: currRecord.id,
+        client_id: currRecord.client_id,
+        name: currRecord.name,
+        symbol: currRecord.symbol,
+        symbol_icon: currRecord.symbol_icon,
+        conversion_factor: currRecord.conversion_factor,
+        airdrop_contract_addr: currRecord.airdrop_contract_addr,
+        uts: Date.now()
+      };
+
+    }
+
+    oThis.response.client_tokens = oThis.clientTokenMap;
+
+    return Promise.resolve(responseHelper.successWithData({}))
+  },
+
   _getTransactionReceipts: async function () {
     const oThis = this
       , promiseArray = [];
@@ -109,7 +138,18 @@ GetTransactionDetailKlass.prototype = {
         continue;
       }
       const transactionHash = oThis.transactionUuidToHashMap[uuid]
-        , getReceiptObj = new GetReceiptKlass({transaction_hash: transactionHash, chain: oThis.chainMaps[uuid]});
+        , clientTokenId = oThis.transactionMap.client_token_id
+        , clientToken = oThis.clientTokenMap[clientTokenId]
+        , addressToNameMap = {}
+      ;
+
+      addressToNameMap[clientToken.airdrop_contract_addr.toLowerCase()] = 'airdrop';
+      const getReceiptObj = new GetReceiptKlass(
+          {
+            transaction_hash: transactionHash,
+            chain: oThis.chainMaps[uuid],
+            address_to_name_map: addressToNameMap
+          });
 
       promiseArray.push(getReceiptObj.perform());
     }
@@ -166,33 +206,6 @@ GetTransactionDetailKlass.prototype = {
     }
 
     oThis.response.transaction_types = oThis.transactionTypeMap;
-
-    return Promise.resolve(responseHelper.successWithData({}))
-  },
-
-  _getClientTokens: async function () {
-    const oThis = this
-      , clientTokensObj = new ClientBrandedTokenKlass()
-      , clientTokenIds = Object.keys(oThis.clientTokenMap)
-      , clientTokenRecords = await clientTokensObj.select('*').where(["id in (?)", clientTokenIds]).fire()
-    ;
-
-    for (var i = 0; i < clientTokenRecords.length; i++) {
-      const currRecord = clientTokenRecords[i]
-      ;
-
-      oThis.clientTokenMap[currRecord.id] = {
-        id: currRecord.id,
-        client_id: currRecord.client_id,
-        name: currRecord.name,
-        symbol: currRecord.symbol,
-        symbol_icon: currRecord.symbol_icon,
-        conversion_factor: currRecord.conversion_factor,
-        uts: Date.now()
-      };
-    }
-
-    oThis.response.client_tokens = oThis.clientTokenMap;
 
     return Promise.resolve(responseHelper.successWithData({}))
   },
