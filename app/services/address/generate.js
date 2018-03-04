@@ -101,6 +101,8 @@ const generate = {
     var userData = {};
     if(addressType != managedAddressConst.userAddressType){
       userData['id'] = insertedRec.insertId;
+    } else {
+      userData['id'] = addrUuid;
     }
 
     return responseHelper.successWithData({

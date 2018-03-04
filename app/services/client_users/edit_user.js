@@ -81,6 +81,7 @@ const editUser = {
       result_type: "economy_users",
       'economy_users': [
         {
+          id: userUuid,
           uuid: userUuid,
           name: name,
           total_airdropped_tokens: basicHelper.convertToNormal(totalAirdroppedTokens).toString(10),

@@ -332,17 +332,25 @@ ExecuteTransactionKlass.prototype = {
     var currencyType = ((oThis.transactionTypeRecord.currency_type == conversionRatesConst.usd_currency()) ?
       conversionRatesConst.usd_currency() : "");
 
-    var response = await airdropPayment.pay(workerUser.ethereum_address,
-      workerUser.passphrase_d,
-      oThis.userRecords[oThis.toUuid].ethereum_address,
-      basicHelper.convertToWei(oThis.transactionTypeRecord.currency_value).toString(),
-      reserveUser.ethereum_address,
-      basicHelper.convertToWei(oThis.transactionTypeRecord.commission_percent).toString(),
-      currencyType,
-      basicHelper.convertToWei(ostValue).toString(),
-      oThis.userRecords[oThis.fromUuid].ethereum_address,
-      oThis.gasPrice,
-      {tag:oThis.transactionTypeRecord.name, returnType: 'txReceipt'});
+    var commisionAmount = basicHelper.convertToWei(oThis.transactionTypeRecord.commission_percent).mul(
+      basicHelper.convertToWei(oThis.transactionTypeRecord.currency_value)).div(basicHelper.convertToWei('100')).toString();
+
+    var response = null;
+    try {
+      response = await airdropPayment.pay(workerUser.ethereum_address,
+        workerUser.passphrase_d,
+        oThis.userRecords[oThis.toUuid].ethereum_address,
+        basicHelper.convertToWei(oThis.transactionTypeRecord.currency_value).toString(),
+        reserveUser.ethereum_address,
+        commisionAmount,
+        currencyType,
+        basicHelper.convertToWei(ostValue).toString(),
+        oThis.userRecords[oThis.fromUuid].ethereum_address,
+        oThis.gasPrice,
+        {tag:oThis.transactionTypeRecord.name, returnType: 'txReceipt'});
+    } catch(err) {
+      response = responseHelper.error("t_et_16", err);
+    }
 
     if(response.isFailure()){
       oThis.updateParentTransactionLog(transactionLogConst.failedStatus, response.err);

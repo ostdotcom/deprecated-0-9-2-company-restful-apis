@@ -5,6 +5,8 @@ const rootPrefix = '../../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
   , managedAddress = new ManagedAddressKlass()
+  , EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
 
 /**
@@ -35,6 +37,15 @@ GetUsersDataKlass.prototype = {
       return Promise.resolve(responseHelper.error("s_cu_gud_1", "No Data found"));
     }
 
+    const economyUserBalance = new EconomyUserBalanceKlass({client_id: oThis.clientId, ethereum_addresses: oThis.ethAddresses})
+      , userBalancesResponse = await economyUserBalance.perform()
+      ;
+
+    var balanceHashData = null;
+    if (!userBalancesResponse.isFailure()) {
+      balanceHashData = userBalancesResponse.data;
+    }
+
     var response = {};
     for (var i = 0; i < users.length; i++) {
       var user = users[i];
@@ -42,6 +53,10 @@ GetUsersDataKlass.prototype = {
       if (user['client_id'] != oThis.clientId) {
         return Promise.resolve(responseHelper.error("s_cu_gud_2", "Invalid client details."));
       }
+
+      const balanceData = balanceHashData[user['ethereum_address']];
+      Object.assign(user, {total_airdropped_tokens: basicHelper.convertToNormal(balanceData.totalAirdroppedTokens).toString(10),
+        token_balance: basicHelper.convertToNormal(balanceData.tokenBalance).toString(10)});
 
       response[user['ethereum_address']] = user;
     }

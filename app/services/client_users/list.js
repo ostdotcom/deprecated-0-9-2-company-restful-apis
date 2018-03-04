@@ -101,6 +101,7 @@ listKlass.prototype = {
       const balanceData = balanceHashData[object['ethereum_address']];
 
       usersList.push({
+        id: object['uuid'],
         name: object['name'],
         uuid: object['uuid'],
         total_airdropped_tokens: basicHelper.convertToNormal(balanceData.totalAirdroppedTokens).toString(10),
