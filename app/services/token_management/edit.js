@@ -1,13 +1,18 @@
 "use strict";
 
+const openStPlatform = require('@openstfoundation/openst-platform')
+;
+
 const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
-  , clientBrandedTokenObj = new ClientBrandedTokenKlass()
   , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
   , ClientSecuredBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
-  , openStPlatform = require('@openstfoundation/openst-platform')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+;
+
+const clientBrandedTokenObj = new ClientBrandedTokenKlass()
 ;
 
 const EditBrandedTokenKlass = function (params) {
@@ -124,7 +129,7 @@ EditBrandedTokenKlass.prototype = {
 
     const handleOpenStPlatformSuccess = function (getBTDetailsRsp) {
       if(getBTDetailsRsp.isSuccess()){
-        console.log(getBTDetailsRsp.data);
+        logger.log(getBTDetailsRsp.data);
         const simpleStakeContractAddr = getBTDetailsRsp.data.simple_stake_contract_address;
         if (simpleStakeContractAddr) {
           oThis.brandedTokenAr.simple_stake_contract_addr = simpleStakeContractAddr;

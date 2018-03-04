@@ -41,7 +41,6 @@ const PreGeneratedManagedAddressKlassPrototype = {
   },
 
   getUnusedAddressCount: async function () {
-    console.log("==============");
     const oThis = this;
     const result = await oThis.QueryDB.read(
       oThis.tableName,

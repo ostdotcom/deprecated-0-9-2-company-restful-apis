@@ -12,6 +12,7 @@ const rootPrefix = '../../..'
   , ucBalanceFetcherKlass = require(rootPrefix + '/app/services/address/utilityChainBalancesFetcher')
   , vcBalanceFetcherKlass = require(rootPrefix + '/app/services/address/valueChainBalancesFetcher')
   , ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
 /**
@@ -84,7 +85,7 @@ FetchBalances.prototype = {
 
     }
 
-    console.log(JSON.stringify(responseData));
+    logger.log(JSON.stringify(responseData));
 
     return Promise.resolve(responseHelper.successWithData(responseData));
 

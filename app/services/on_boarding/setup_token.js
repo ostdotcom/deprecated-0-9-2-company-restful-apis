@@ -158,8 +158,6 @@ SetupToken.prototype = {
 
     await Promise.all(promisesArray);
 
-    console.log("oThis.reserve_managed_address_id------", oThis.reserve_managed_address_id);
-
     return Promise.resolve(responseHelper.successWithData({}));
 
   },

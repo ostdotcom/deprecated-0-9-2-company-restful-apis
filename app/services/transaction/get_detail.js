@@ -17,6 +17,7 @@ const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
   , basicHelper = require(rootPrefix + '/helpers/basic')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
 const GetTransactionDetailKlass = function (params) {
@@ -144,7 +145,7 @@ GetTransactionDetailKlass.prototype = {
       ;
 
       addressToNameMap[clientToken.airdrop_contract_addr.toLowerCase()] = 'airdrop';
-      console.log(addressToNameMap)
+      logger.log('addressToNameMap', addressToNameMap);
       const getReceiptObj = new GetReceiptKlass(
           {
             transaction_hash: transactionHash,
