@@ -25,7 +25,8 @@ const editUser = {
    */
   perform: async function (clientId, userUuid, name) {
 
-    const oThis = this;
+    const oThis = this
+      , errors_object = {};
 
     if (!clientId || !userUuid) {
       return responseHelper.error("s_cu_eu_1", "Mandatory parameters missing");
