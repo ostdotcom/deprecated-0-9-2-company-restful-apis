@@ -142,7 +142,7 @@ Edit.prototype = {
     if(name && oThis.currentTransactionKind && oThis.currentTransactionKind['name'].toLowerCase() != name.toLowerCase()){
 
       if(!basicHelper.isTxKindNameValid(name)){
-        errors_object['name'] = 'Tx Kind name should contain btw 3 - 25 aplhabets.';
+        errors_object['name'] = 'Tx Kind name should contain btw 3 - 15 aplhabets.';
       } else {
         var existingTKind = await clientTransactionTypeObj.getTransactionByName({clientId: clientId, name: name});
         if(existingTKind.length > 0 && oThis.clientTransactionId != existingTKind.id){

@@ -91,7 +91,7 @@ AddNew.prototype = {
     }
 
     if(!basicHelper.isTxKindNameValid(name)){
-      errors_object['name'] = 'Tx Kind name should contain btw 3 - 25 aplhabets.';
+      errors_object['name'] = 'Tx Kind name should contain btw 3 - 15 aplhabets.';
     }
     if(!kind || !clientTransactionTypeObj.invertedKinds[kind]){
       errors_object['kind'] = 'invalid kind';
