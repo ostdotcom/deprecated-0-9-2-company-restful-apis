@@ -89,7 +89,7 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
     const ucOwnerBalanceBigNumberInWei = ucOwnerBalanceResponse.data.balance;
 
     if (ucOwnerBalanceBigNumberInWei.lessThan(minUCOBalanceInWei)) {
-      logger.notify('e_fa_e_cboco_1', 'ETHER Balance Of Utility Chain Owner is LOW',
+      logger.notify('e_fa_e_cboco_1', 'ETHER Balance Of Utility Chain Owner is LOW - ' + oThis._valueChainAddressFor('utilityChainOwner'),
         {
           utility_chain_owner_balance_eth: basicHelper.convertToNormal(ucOwnerBalanceBigNumberInWei),
           min_required_balance: oThis._valueChainMinBalanceFor('utilityChainOwner')
