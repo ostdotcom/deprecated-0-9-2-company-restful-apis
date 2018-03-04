@@ -82,7 +82,7 @@ List.prototype = {
             kind: res.kind,
             currency_type: res.currency_type,
             currency_value: currency_value,
-            commission_percent: res.commission_percent,
+            commission_percent: res.commission_percent.toString(10),
             status: res.status
           }
         );
