@@ -10,7 +10,16 @@ const express = require('express')
   , routeHelper = require(rootPrefix + '/routes/helper')
 ;
 
-/* Create User for a client */
+/**
+ * Create a new user
+ *
+ * @name Create User
+ *
+ * @route {GET} {base_url}/users/create
+ *
+ * @routeparam {String} :name - Name of the user
+ *
+ */
 router.post('/create', function (req, res, next) {
   const performer = function() {
     const decodedParams = req.decodedParams
@@ -32,7 +41,17 @@ router.post('/create', function (req, res, next) {
   });
 });
 
-/* Edit User of a client */
+/**
+ * Edit existing user details
+ *
+ * @name Edit User
+ *
+ * @route {GET} {base_url}/users/edit
+ *
+ * @routeparam {String} :uuid - User's uuid whose details need to be updated
+ * @routeparam {String} :name - New name of the user
+ *
+ */
 router.post('/edit', function (req, res, next) {
   const performer = function() {
     const decodedParams = req.decodedParams
@@ -55,7 +74,19 @@ router.post('/edit', function (req, res, next) {
   });
 });
 
-/* List User for a client */
+/**
+ * List all users
+ *
+ * @name List Users
+ *
+ * @route {GET} {base_url}/users/list
+ *
+ * @routeparam {Integer} :page_no - page number
+ * @routeparam {String} :filter - filter to be applied on list. Possible values: 'all' or 'never_airdropped'. Default is: 'all'
+ * @routeparam {String} :order_by - Order the list by 'creation_time' or 'name'. Default is: 'name'
+ * @routeparam {String} :order - Order users in 'desc' or 'asc'. Default is: 'desc'
+ *
+ */
 router.post('/list', function (req, res, next) {
 
   const performer = function() {
@@ -79,7 +110,17 @@ router.post('/list', function (req, res, next) {
 
 });
 
-/* Airdrop tokens to users of a client */
+/**
+ * Airdrop tokens to users
+ *
+ * @name Airdrop Tokens
+ *
+ * @route {GET} {base_url}/users/airdrop-tokens
+ *
+ * @routeparam {Decimal} :amount - Branded token amount to airdrop
+ * @routeparam {String} :list_type - List to which tokens need to be airdropped. Possible values: 'all' or 'never_airdropped'. Default is: 'all'
+ *
+ */
 router.post('/airdrop-tokens', function (req, res, next) {
 
   const performer = function() {
@@ -104,6 +145,16 @@ router.post('/airdrop-tokens', function (req, res, next) {
 });
 
 /* Get status of Airdrop request */
+/**
+ * Get status of airdrop token request
+ *
+ * @name Airdrop Tokens Status
+ *
+ * @route {GET} {base_url}/users/airdrop/get-status
+ *
+ * @routeparam {Decimal} :airdrop_uuid - Token airdrop uuid
+ *
+ */
 router.get('/airdrop/get-status', function (req, res, next) {
 
   Promise.resolve(routeHelper.performer(req, res, next, getAirdropStatusKlass, 'r_cu_7'));
