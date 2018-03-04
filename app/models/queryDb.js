@@ -52,7 +52,7 @@ QueryDB.prototype = {
         // get a timestamp before running the query
         var pre_query = Date.now();
         var qry = oThis.onReadConnection().query(q, whereClauseValues, function (err, result, fields) {
-          logger.info("(%s ms) %s", (Date.now() - pre_query), qry.sql);
+          logger.info("("+(Date.now() - pre_query)+" ms)",  qry.sql);
           if (err) {
             onReject(err);
           } else {
@@ -74,7 +74,7 @@ QueryDB.prototype = {
         // get a timestamp before running the query
         var pre_query = Date.now();
         var qry = oThis.onReadConnection().query(q, function (err, result, fields) {
-          logger.info("(%s ms) %s", (Date.now() - pre_query), qry.sql);
+          logger.info("("+(Date.now() - pre_query)+" ms)", qry.sql);
           if (err) {
             onReject(err);
           } else {
@@ -100,7 +100,7 @@ QueryDB.prototype = {
         // get a timestamp before running the query
         var pre_query = Date.now();
         var qry = oThis.onWriteConnection().query(q, [queryArgs], function (err, result, fields) {
-          logger.info("(%s ms) %s", (Date.now() - pre_query), qry.sql);
+          logger.info("("+(Date.now() - pre_query)+" ms)", qry.sql);
           if (err) {
             onReject(err);
           } else {
@@ -127,7 +127,7 @@ QueryDB.prototype = {
         // get a timestamp before running the query
         var pre_query = Date.now();
         var qry = oThis.onWriteConnection().query(q, [queryArgs], function (err, result, fields) {
-          logger.info("(%s ms) %s", (Date.now() - pre_query), qry.sql);
+          logger.info("("+(Date.now() - pre_query)+" ms)", qry.sql);
           if (err) {
             onReject(err);
           } else {
@@ -164,7 +164,7 @@ QueryDB.prototype = {
           , q = 'UPDATE '+tableName+' set '+fields+' where '+whereClause;
 
         var qry = oThis.onWriteConnection().query(q, queryArgs, function (err, result, fields) {
-          logger.info("(%s ms) %s", (Date.now() - pre_query), qry.sql);
+          logger.info("("+(Date.now() - pre_query)+" ms)", qry.sql);
           if (err) {
             onReject(err);
           } else {
