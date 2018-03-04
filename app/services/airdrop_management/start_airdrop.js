@@ -164,7 +164,15 @@ startAirdropKlass.prototype = {
     var amountInWei = basicHelper.convertToWei(oThis.amount);
     var totalAmountToAirdrop = (parseInt(response[0].total_count) * oThis.amount);
     if (amountInWei.mul(response[0].total_count).toNumber() > resp.data.balance) {
-      return Promise.resolve(responseHelper.error("s_am_sa_7", "Insufficient funds to airdrop users", "", [{amount: 'Insufficient funds to airdrop users'}]));
+      return Promise.resolve(
+        responseHelper.error(
+          "s_am_sa_7",
+          "Insufficient funds to airdrop users",
+          "",
+          [{amount: 'Insufficient funds to airdrop users'}],
+          {sendErrorEmail: false}
+        )
+      );
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
