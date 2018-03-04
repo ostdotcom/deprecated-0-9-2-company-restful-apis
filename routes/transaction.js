@@ -37,7 +37,7 @@ router.post('/execute', function (req, res, next) {
 
 });
 
-router.post('/fetch-detail', function (req, res, next) {
+router.post('/fetch-details', function (req, res, next) {
 
   const getDetailTransactionKlass = require(rootPrefix + '/app/services/transaction/get_detail')
 
