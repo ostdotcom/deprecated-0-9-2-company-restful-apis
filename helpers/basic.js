@@ -97,10 +97,11 @@ BasicHelperKlass.prototype = {
    * @return {boolean}
    */
   isBTNameValid: function (name) {
+    const oThis = this;
     if (typeof name !== "string") {
       return false;
     }
-    return (/^[a-z0-9\s]{1,}$/i).test(name);
+    return (/^[a-z0-9\s]{1,}$/i).test(name) && !oThis.hasStopWords(name);
   },
 
   /**
@@ -111,10 +112,11 @@ BasicHelperKlass.prototype = {
    * @return {boolean}
    */
   isTxKindNameValid: function (name) {
+    const oThis = this;
     if (typeof name !== "string") {
       return false;
     }
-    return (/^[a-z\s]{3,15}$/i).test(name);
+    return (/^[a-z\s]{3,15}$/i).test(name) && !oThis.hasStopWords(name);
   },
 
   /**
@@ -125,10 +127,11 @@ BasicHelperKlass.prototype = {
    * @return {boolean}
    */
   isUserNameValid: function (name) {
+    const oThis = this;
     if (typeof name !== "string") {
       return false;
     }
-    return (/^[a-z0-9\s]{3,25}$/i).test(name);
+    return (/^[a-z0-9\s]{3,25}$/i).test(name) && !oThis.hasStopWords(name);
   },
 
   /**
@@ -172,6 +175,21 @@ BasicHelperKlass.prototype = {
     }
     return /^0x[0-9a-fA-F]{64}$/.test(uuid);
   },
+
+  /**
+   * Check if string has stop words
+   *
+   * @param {string} string
+   *
+   * @return {boolean}
+   */
+  hasStopWords: function (string) {
+    if (typeof string !== "string") {
+      return false;
+    }
+    var reg_ex = /\b(?:anal|anus|arse|ballsack|bitch|biatch|blowjob|blow job|bollock|bollok|boner|boob|bugger|bum|butt|buttplug|clitoris|cock|coon|crap|cunt|dick|dildo|dyke|fag|feck|fellate|fellatio|felching|fuck|f u c k|fudgepacker|fudge packer|flange|Goddamn|God damn|homo|jerk|Jew|jizz|Kike|knobend|knob end|labia|muff|nigger|nigga|penis|piss|poop|prick|pube|pussy|scrotum|sex|shit|s hit|sh1t|slut|smegma|spunk|tit|tosser|turd|twat|vagina|wank|whore|porn)\b/i;
+    return reg_ex.test(string);
+  }
 
 };
 
