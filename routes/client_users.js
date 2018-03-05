@@ -6,6 +6,7 @@ const express = require('express')
   , listAddressesKlass = require(rootPrefix + '/app/services/client_users/list')
   , startAirdropKlass = require(rootPrefix + '/app/services/airdrop_management/start_airdrop')
   , getAirdropStatusKlass = require(rootPrefix + '/app/services/airdrop_management/get_airdrop_status')
+  , ucBalanceFetcherKlass = require(rootPrefix + '/app/services/address/utilityChainBalancesFetcher')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , routeHelper = require(rootPrefix + '/routes/helper')
 ;
@@ -158,6 +159,31 @@ router.post('/airdrop-tokens', function (req, res, next) {
 router.get('/airdrop/get-status', function (req, res, next) {
 
   Promise.resolve(routeHelper.performer(req, res, next, getAirdropStatusKlass, 'r_cu_7'));
+
+});
+
+/* Get status of Airdrop request */
+router.get('/get-st-prime-balance', function (req, res, next) {
+
+  const performer = function() {
+
+    const decodedParams = req.decodedParams
+        , params = {'client_id': decodedParams.client_id, 'address_uuid': decodedParams.uuid, 'balance_types': ['ostPrime']}
+        , ucBalanceFetcher = new ucBalanceFetcherKlass(params);
+
+    // handle final response
+    const handleResponse = function (response) {
+      return response.renderResponse(res);
+    };
+
+    return ucBalanceFetcher.perform().then(handleResponse);
+
+  };
+
+  Promise.resolve(performer()).catch(function (err) {
+    logger.notify('r_cu_8', 'Something went wrong', err);
+    responseHelper.error('r_cu_8', 'Something went wrong').renderResponse(res)
+  });
 
 });
 

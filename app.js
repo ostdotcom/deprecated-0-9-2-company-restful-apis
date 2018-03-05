@@ -205,8 +205,6 @@ if (cluster.isMaster) {
 
   app.use('/users', appendRequestDebugInfo, validateApiSignature, clientUsersRoutes);
 
-  app.use('/addresses', appendRequestDebugInfo, validateApiSignature, addressRoutes);
-
   app.use('/on-boarding', appendRequestDebugInfo, decodeJwt, onBoardingRoutes);
 
   app.use('/stake', appendRequestDebugInfo, decodeJwt, stakeRoutes);
