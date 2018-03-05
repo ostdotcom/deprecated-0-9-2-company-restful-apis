@@ -59,6 +59,7 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
       const balanceBigNumberInWei = balanceResponse.data.balance;
 
       if (balanceBigNumberInWei.lessThan(minBalanceInWei)) {
+        logger.info("Funding ST' to ", userName);
         await oThis._transferSTPrimeBalance(ethereumAddress, minBalanceInWei)
       }
     }
@@ -67,6 +68,7 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
     // keep threshold for utility chain owner sufficiently high so that it is able to fund high no of refills
     const utilityChainOwnerResponse = await oThis._checkBalanceOfChainOwner();
 
+    logger.info("Can exit now");
     process.exit(0);
 
   },

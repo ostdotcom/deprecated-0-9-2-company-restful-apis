@@ -19,6 +19,7 @@
 const rootPrefix = '../../..'
   , FundClientAddressKlass = require(rootPrefix + '/app/services/address/fund_client_address')
   , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
 /**
@@ -59,13 +60,16 @@ FundUsersWithSTPrimeFromReserveKlass.prototype = {
       const promiseArray = [];
 
       for(var i = 0; i < batchedClientIds.length; i++) {
+        logger.info("Funding ST' for client id ", batchedClientIds[i]);
         const fundClientAddressObj = new FundClientAddressKlass({client_id: batchedClientIds[i]});
         promiseArray.push(fundClientAddressObj.perform());
       }
 
+      logger.info("Waiting for all promises");
       await Promise.all(promiseArray);
     }
 
+    logger.info("Can exit now");
     process.exit(0);
   }
 
