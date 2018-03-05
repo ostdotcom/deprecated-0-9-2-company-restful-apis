@@ -49,12 +49,20 @@ FundClientAddressKlass.prototype = {
   _MIN_BALANCE: basicHelper.convertToWei(1),
 
   /**
+   * Minimum balance for reserve address after which alerts will be sent
+   *
+   * @constant
+   * @private
+   */
+  _MIN_ALERT_BALANCE_RESERVE: basicHelper.convertToWei(10),
+
+  /**
    * Minimum balance for reserve address
    *
    * @constant
    * @private
    */
-  _MIN_BALANCE_FOR_RESERVE: basicHelper.convertToWei(10),
+  _MIN_AVAILABLE_BALANCE_RESERVE: basicHelper.convertToWei(1.1),
 
   /**
    * To Transfer Balance
@@ -74,9 +82,12 @@ FundClientAddressKlass.prototype = {
 
     await oThis._setAddresses();
 
-    await oThis._transferStPrimeIfNeeded();
+    var r = await oThis._checkBalanceOfReserveAddress();
+    if (r.isFailure()) {
+      return Promise.resolve(r);
+    }
 
-    await oThis._checkBalanceOfReserveAddress();
+    await oThis._transferStPrimeIfNeeded();
 
     return Promise.resolve(responseHelper.successWithData({}));
   },
@@ -156,7 +167,8 @@ FundClientAddressKlass.prototype = {
       , managedAddressObj = new ManagedAddressKlass()
       , reserveAddrObj = oThis.addrTypeToAddrMap[managedAddressObj.invertedAddressTypes[managedAddressesConst.reserveAddressType]]
       , ethereumAddress = reserveAddrObj.ethereum_address
-      , minReserveAddrBalanceInWei = oThis._MIN_BALANCE_FOR_RESERVE
+      , minReserveAddrBalanceInWei = oThis._MIN_ALERT_BALANCE_RESERVE
+      , minReserveAddrBalanceToProceedInWei = oThis._MIN_AVAILABLE_BALANCE_RESERVE
       , fetchBalanceObj = new openStPlatform.services.balance.simpleTokenPrime({address: ethereumAddress})
       , balanceResponse = await fetchBalanceObj.perform()
     ;
@@ -172,6 +184,10 @@ FundClientAddressKlass.prototype = {
           min_required_balance: basicHelper.convertToNormal(minReserveAddrBalanceInWei)
         }
       );
+    }
+
+    if (balanceBigNumberInWei.lessThan(minReserveAddrBalanceToProceedInWei)) {
+      return Promise.resolve(responseHelper.error('s_a_fca_1', 'Not enough balance'));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
