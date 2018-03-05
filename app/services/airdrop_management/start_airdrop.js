@@ -11,6 +11,7 @@ const rootPrefix = '../../..'
   , openStPlatform = require('@openstfoundation/openst-platform')
   , openSTNotification = require('@openstfoundation/openst-notification')
   , BTSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
+  , BTCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
   , ManagedAddressesCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , clientAirdropModel = require(rootPrefix + '/app/models/client_airdrop')
@@ -31,11 +32,11 @@ const startAirdropKlass = function (params) {
   const oThis = this;
 
   oThis.clientId = params.client_id;
-  oThis.tokenSymbol = params.token_symbol;
   oThis.amount = params.amount;
   oThis.listType = params.list_type;
   oThis.clientBrandedToken = null;
   oThis.airdropUuid = null;
+  oThis.tokenSymbol = null;
 };
 
 startAirdropKlass.prototype = {
@@ -85,6 +86,14 @@ startAirdropKlass.prototype = {
         clientAirdropConst.neverAirdroppedAddressesAirdropListType].includes(oThis.listType)) {
       return Promise.resolve(responseHelper.error("s_am_sa_2", "Invalid List type to airdrop users", "", [{airdrop_list_type: 'Invalid List type to airdrop users'}]));
     }
+
+    const btCache = new BTCacheKlass({clientId: oThis.clientId})
+      , btCacheRsp = await btCache.fetch();
+
+    if (btCacheRsp.isFailure()) {
+      return Promise.resolve(cacheRsp);
+    }
+    oThis.tokenSymbol = btCacheRsp.data.symbol;
 
     if (!oThis.tokenSymbol) {
       return Promise.resolve(responseHelper.error("s_am_sa_3", "Invalid Token Symbol"));

@@ -15,6 +15,7 @@ const rootPrefix = '../../..'
   , clientTransactionTypeConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
   , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
   , BTSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
+  , BTCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
   , transactionLogKlass = require(rootPrefix + '/app/models/transaction_log')
   , transactionLogObj = new transactionLogKlass()
@@ -43,11 +44,12 @@ const ExecuteTransactionKlass = function (params){
   const oThis = this;
 
   oThis.clientId = params.client_id;
-  oThis.tokenSymbol = params.token_symbol;
   oThis.fromUuid = params.from_uuid;
   oThis.toUuid = params.to_uuid;
   oThis.transactionKind = params.transaction_kind;
   oThis.gasPrice = '50000000000';
+
+  oThis.tokenSymbol = null;
   oThis.transactionTypeRecord = null;
   oThis.userRecords = null;
   oThis.transactionHash = null;
@@ -91,6 +93,46 @@ ExecuteTransactionKlass.prototype = {
     return Promise.resolve(responseHelper.successWithData(
       {transaction_uuid: oThis.transactionUuid, transaction_hash: oThis.transactionHash,
         from_uuid: oThis.fromUuid, to_uuid: oThis.toUuid, transaction_kind: oThis.transactionKind}));
+  },
+
+  /**
+   * Validate Client Token
+   *
+   * @Sets clientBrandedToken
+   * @return {Promise<ResultBase>}
+   */
+  validateClientToken: async function(){
+    const oThis = this;
+
+    if(!oThis.tokenSymbol){
+      return Promise.resolve(responseHelper.error("s_t_et_6", "Invalid Token Symbol"));
+    }
+
+    const btCache = new BTCacheKlass({clientId: oThis.clientId})
+      , btCacheRsp = await btCache.fetch();
+
+    if (btCacheRsp.isFailure()) {
+      return Promise.resolve(cacheRsp);
+    }
+    oThis.tokenSymbol = btCacheRsp.data.symbol;
+
+    var btSecureCache = new BTSecureCacheKlass({tokenSymbol: oThis.tokenSymbol});
+    const cacheRsp = await btSecureCache.fetch();
+    if (cacheRsp.isFailure()) {
+      return Promise.resolve(cacheRsp);
+    }
+
+    if(oThis.clientId != cacheRsp.data.client_id){
+      return Promise.resolve(responseHelper.error("s_t_et_7", "Invalid Token Symbol"));
+    }
+
+    if(!cacheRsp.data.worker_address_uuid){
+      return Promise.resolve(responseHelper.error("s_t_et_11", "Token not set."));
+    }
+
+    oThis.clientBrandedToken = cacheRsp.data;
+
+    return Promise.resolve(responseHelper.successWithData({}))
   },
 
   /**
@@ -163,38 +205,6 @@ ExecuteTransactionKlass.prototype = {
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
-  },
-
-  /**
-   * Validate Client Token
-   *
-   * @Sets clientBrandedToken
-   * @return {Promise<ResultBase>}
-   */
-  validateClientToken: async function(){
-    const oThis = this;
-
-    if(!oThis.tokenSymbol){
-      return Promise.resolve(responseHelper.error("s_t_et_6", "Invalid Token Symbol"));
-    }
-
-    var btSecureCache = new BTSecureCacheKlass({tokenSymbol: oThis.tokenSymbol});
-    const cacheRsp = await btSecureCache.fetch();
-    if (cacheRsp.isFailure()) {
-      return Promise.resolve(cacheRsp);
-    }
-
-    if(oThis.clientId != cacheRsp.data.client_id){
-      return Promise.resolve(responseHelper.error("s_t_et_7", "Invalid Token Symbol"));
-    }
-
-    if(!cacheRsp.data.worker_address_uuid){
-      return Promise.resolve(responseHelper.error("s_t_et_11", "Token not set."));
-    }
-
-    oThis.clientBrandedToken = cacheRsp.data;
-
-    return Promise.resolve(responseHelper.successWithData({}))
   },
 
   /**

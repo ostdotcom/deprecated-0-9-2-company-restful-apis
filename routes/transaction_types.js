@@ -5,7 +5,7 @@ const express = require('express')
 ;
 
 /* Get transaction block info for a transaction hash */
-router.get('/kind/get-all', function (req, res, next) {
+router.get('/list', function (req, res, next) {
 
   const transactionListKlass = require(rootPrefix + '/app/services/transaction_kind/list');
 
@@ -13,7 +13,7 @@ router.get('/kind/get-all', function (req, res, next) {
 
 });
 
-router.post('/kind/new', function (req, res, next) {
+router.post('/create', function (req, res, next) {
 
   const newTransactionKlass = require(rootPrefix + '/app/services/transaction_kind/add_new');
 
@@ -21,7 +21,7 @@ router.post('/kind/new', function (req, res, next) {
 
 });
 
-router.post('/kind/edit', function (req, res, next) {
+router.post('/edit', function (req, res, next) {
 
   const editTransactionKlass = require(rootPrefix + '/app/services/transaction_kind/edit');
 
@@ -29,8 +29,15 @@ router.post('/kind/edit', function (req, res, next) {
 
 });
 
+router.post('/execute', function (req, res, next) {
 
-router.post('/fetch-details', function (req, res, next) {
+  const executeTransactionKlass = require(rootPrefix + '/app/services/transaction/execute_transaction');
+
+  Promise.resolve(routeHelper.performer(req, res, next, executeTransactionKlass, 'r_tk_4'));
+
+});
+
+router.post('/status', function (req, res, next) {
 
   const getDetailTransactionKlass = require(rootPrefix + '/app/services/transaction/get_detail');
 
