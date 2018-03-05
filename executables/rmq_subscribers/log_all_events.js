@@ -98,7 +98,7 @@ var bulkInsertInLog = function () {
 var handle = function () {
   logger.info('Received Signal');
   var f = async function () {
-    if (tasksPending === 0) {
+    if (tasksPending <= 0) {
       await bulkInsertInLog();
       logger.info("Exiting the process now");
       process.exit(1);

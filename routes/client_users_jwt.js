@@ -13,4 +13,12 @@ router.get('/get-details', function (req, res, next) {
 
 });
 
+router.get('/get-addresses-by-uuid', function (req, res, next) {
+
+  const GetAddressesByUuidKlass = require(rootPrefix + '/app/services/client_users/get_addresses_by_uuid');
+
+  Promise.resolve(routeHelper.performer(req, res, next, GetAddressesByUuidKlass, 'r_cuj_2'));
+
+});
+
 module.exports = router;
