@@ -30,7 +30,6 @@ const rootPrefix = '.'
   , clientUsersRoutes = require(rootPrefix + '/routes/client_users')
   , clientUsersJwtRoutes = require(rootPrefix + '/routes/client_users_jwt')
   , clientRoutes = require(rootPrefix + '/routes/client')
-  , addressRoutes = require(rootPrefix + '/routes/address')
   , simulatorRoutes = require(rootPrefix + '/routes/simulator')
   , inputValidator = require(rootPrefix + '/lib/authentication/validate_signature')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
