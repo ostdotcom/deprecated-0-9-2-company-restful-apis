@@ -21,6 +21,8 @@ const rootPrefix = '../../..'
 ;
 
 const GetTransactionDetailKlass = function (params) {
+  params = params || {};
+
   const oThis = this;
 
   oThis.transactionUuids = JSON.parse(params.transaction_uuids || '[]');
