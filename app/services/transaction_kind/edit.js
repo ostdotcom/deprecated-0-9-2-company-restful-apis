@@ -216,6 +216,7 @@ Edit.prototype = {
           currency_type: oThis.params.currency_type,
           currency_value: oThis.params.currency_value,
           device_id: oThis.params.device_id,
+          commission_percent: oThis.params.commission_percent,
           uts: Date.now()
         }]
       }
