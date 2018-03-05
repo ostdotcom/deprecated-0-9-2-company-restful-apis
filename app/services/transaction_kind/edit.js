@@ -32,7 +32,7 @@ var rootPrefix = '../../..'
  */
 const Edit = function(params){
 
-  this.params = params;
+  this.params = params || {};
   this.transactionKindObj = {};
 
 };
@@ -73,7 +73,7 @@ Edit.prototype = {
       , clientId = oThis.params.client_id
       , name = oThis.params.name
       , kind = oThis.params.kind
-      , currency_type = oThis.params.currency_type
+      , currency_type = (oThis.params.currency_type || '').toUpperCase()
       , currency_value = oThis.params.currency_value
       , commission_percent = oThis.params.commission_percent
       , errors_object = {}

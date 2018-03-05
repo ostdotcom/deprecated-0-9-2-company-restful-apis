@@ -34,7 +34,7 @@ const AddNew = function(params){
 
   var oThis = this;
 
-  oThis.params = params;
+  oThis.params = params || {};
 
   oThis.transactionKindObj = {};
 
@@ -76,7 +76,7 @@ AddNew.prototype = {
       , client_id = oThis.params.client_id
       , name = oThis.params.name
       , kind = oThis.params.kind
-      , currency_type = oThis.params.currency_type
+      , currency_type = (oThis.params.currency_type || '').toUpperCase()
       , currency_value = oThis.params.currency_value
       , commission_percent = oThis.params.commission_percent
       , errors_object = {}
@@ -124,7 +124,7 @@ AddNew.prototype = {
       }
       oThis.transactionKindObj.value_in_bt_wei = basicHelper.formatWeiToString(value_in_bt_wei);
     } else {
-      errors_object['currency_type'] = 'Atleast one currency type(usd or bt) to mention';
+      errors_object['currency_type'] = 'Atleast one currency type(USD or BT) to mention';
     }
 
     if(!commission_percent || commission_percent < 0){
