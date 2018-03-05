@@ -169,7 +169,7 @@ startAirdropKlass.prototype = {
           "s_am_sa_7",
           "Insufficient funds to airdrop users",
           "",
-          [{amount: 'Insufficient funds to airdrop users'}],
+          [{amount: 'Available token amount is insufficient. Please mint more tokens or reduce the amount to complete the process.'}],
           {sendErrorEmail: false}
         )
       );

@@ -90,14 +90,8 @@ Edit.prototype = {
     }
 
     if (currency_type == 'USD') {
-      if(!currency_value || currency_value<=0 ){
-        errors_object['currency_value'] = 'Value in USD is required';
-      }
-      if(currency_value>100){
-        errors_object['currency_value'] = 'currency value is max capped at 100 USD';
-      }
-      if(currency_value<0.01){
-        errors_object['currency_value'] = 'currency value is min capped at 0.01 USD';
+      if(!currency_value || currency_value < 0.01 || currency_value > 100){
+        errors_object['currency_value'] = 'Value of a transaction in $USD is out of range. Min value is 0.01$ and Max value is 100$';
       }
       oThis.transactionKindObj['currency_type'] = oThis.params.currency_type;
       oThis.transactionKindObj['value_in_bt_wei'] = null;
@@ -105,14 +99,8 @@ Edit.prototype = {
 
     } else if (currency_type == 'BT'){
       oThis.params.value_in_usd = null;
-      if(!currency_value || currency_value<=0){
-        errors_object['currency_value'] = 'Value in BT is required';
-      }
-      if(currency_value>100 ){
-        errors_object['currency_value'] = 'currency value is max capped at 100 BT';
-      }
-      if(currency_value<0.00001){
-        errors_object['currency_value'] = 'currency value is min capped at 0.00001 BT';
+      if(!currency_value || currency_value < 0.00001 || currency_value>100){
+        errors_object['currency_value'] = 'Value of a transaction is out of range. Min value is 0.00001 and Max value is 100';
       }
       var value_in_bt_wei = basicHelper.convertToWei(currency_value);
       if(!basicHelper.isWeiValid(value_in_bt_wei)){
@@ -146,8 +134,11 @@ Edit.prototype = {
     if(name && oThis.currentTransactionKind && oThis.currentTransactionKind['name'].toLowerCase() != name.toLowerCase()){
 
       if(!basicHelper.isTxKindNameValid(name)){
-        errors_object['name'] = 'Tx Kind name should contain btw 3 - 15 aplhabets.';
-      } else {
+        errors_object['name'] = 'Only letters, numbers and spaces allowed. (Max 20 characters)';
+      } else if (basicHelper.hasStopWords(name)) {
+        errors_object['name'] = 'Come on, the ' + name + ' you entered is inappropriate. Please choose a nicer word.';
+      }
+      else {
         var existingTKind = await clientTransactionTypeObj.getTransactionByName({clientId: clientId, name: name});
         if(existingTKind.length > 0 && oThis.clientTransactionId != existingTKind.id){
           errors_object['name'] = "Transaction kind name '"+ name +"' already present.";

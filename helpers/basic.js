@@ -116,7 +116,7 @@ BasicHelperKlass.prototype = {
     if (typeof name !== "string") {
       return false;
     }
-    return (/^[a-z\s]{3,15}$/i).test(name) && !oThis.hasStopWords(name);
+    return (/^[a-z0-9\s]{3,20}$/i).test(name);
   },
 
   /**
@@ -131,7 +131,7 @@ BasicHelperKlass.prototype = {
     if (typeof name !== "string") {
       return false;
     }
-    return (/^[a-z0-9\s]{3,25}$/i).test(name) && !oThis.hasStopWords(name);
+    return (/^[a-z0-9\s]{3,20}$/i).test(name);
   },
 
   /**
