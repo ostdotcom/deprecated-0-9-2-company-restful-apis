@@ -19,7 +19,7 @@ const dbName = "saas_airdrop_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.E
     '4':clientAirdropConst.failedStatus
   }
   , stepsComplete = {
-    '1':clientAirdropConst.userIdentifiedStepComplete,
+    '1':clientAirdropConst.usersIdentifiedStepComplete,
     '2':clientAirdropConst.tokensTransferedStepComplete,
     '4':clientAirdropConst.contractApprovedStepComplete,
     '8':clientAirdropConst.allocationDoneStepComplete
