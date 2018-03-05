@@ -29,17 +29,10 @@ router.post('/kind/edit', function (req, res, next) {
 
 });
 
-router.post('/execute', function (req, res, next) {
-
-  const executeTransactionKlass = require(rootPrefix + '/app/services/transaction/execute_transaction')
-
-  Promise.resolve(routeHelper.performer(req, res, next, executeTransactionKlass, 'r_tk_4'));
-
-});
 
 router.post('/fetch-details', function (req, res, next) {
 
-  const getDetailTransactionKlass = require(rootPrefix + '/app/services/transaction/get_detail')
+  const getDetailTransactionKlass = require(rootPrefix + '/app/services/transaction/get_detail');
 
   Promise.resolve(routeHelper.performer(req, res, next, getDetailTransactionKlass, 'r_tk_5'));
 
