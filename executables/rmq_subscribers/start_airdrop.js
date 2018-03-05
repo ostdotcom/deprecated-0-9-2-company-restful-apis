@@ -71,7 +71,7 @@ openSTNotification.subscribeEvent.rabbit(["airdrop.start.#"],
 function handle() {
   logger.info('Received Signal');
   var f = function(){
-    if (unAckCount === 0) {
+    if (unAckCount <= 0) {
       process.exit(1);
     } else {
       logger.info('waiting for open tasks to be done.');
