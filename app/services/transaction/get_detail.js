@@ -23,7 +23,7 @@ const rootPrefix = '../../..'
 const GetTransactionDetailKlass = function (params) {
   const oThis = this;
 
-  oThis.transactionUuids = params.transaction_uuids;
+  oThis.transactionUuids = JSON.parse(params.transaction_uuids || '[]');
 
   oThis.response = {};
   oThis.transactionUuidToHashMap = {};

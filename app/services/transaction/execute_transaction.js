@@ -104,10 +104,6 @@ ExecuteTransactionKlass.prototype = {
   validateClientToken: async function(){
     const oThis = this;
 
-    if(!oThis.tokenSymbol){
-      return Promise.resolve(responseHelper.error("s_t_et_6", "Invalid Token Symbol"));
-    }
-
     const btCache = new BTCacheKlass({clientId: oThis.clientId})
       , btCacheRsp = await btCache.fetch();
 
@@ -115,6 +111,10 @@ ExecuteTransactionKlass.prototype = {
       return Promise.resolve(cacheRsp);
     }
     oThis.tokenSymbol = btCacheRsp.data.symbol;
+
+    if(!oThis.tokenSymbol){
+      return Promise.resolve(responseHelper.error("s_t_et_6", "Invalid Token Symbol"));
+    }
 
     var btSecureCache = new BTSecureCacheKlass({tokenSymbol: oThis.tokenSymbol});
     const cacheRsp = await btSecureCache.fetch();
