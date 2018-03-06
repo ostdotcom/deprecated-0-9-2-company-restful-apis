@@ -78,7 +78,7 @@ startAirdropKlass.prototype = {
   validateInput: async function () {
     const oThis = this;
 
-    if (isNaN(oThis.amount) || oThis.amount < 0) {
+    if (isNaN(oThis.amount) || oThis.amount <= 0) {
       return Promise.resolve(responseHelper.error("s_am_sa_1", "Invalid amount", "", [{amount: 'Invalid amount'}]));
     }
 
