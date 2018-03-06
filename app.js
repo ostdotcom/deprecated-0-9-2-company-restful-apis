@@ -192,27 +192,26 @@ if (cluster.isMaster) {
   app.use(express.static(path.join(__dirname, 'public')));
 
   /*
-    The below piece of code should always be before routes.
+    The sanitizer() piece of code should always be before routes for jwt and after validateApiSignature for sdk.
     Docs: https://www.npmjs.com/package/express-sanitized
   */
-  app.use(sanitizer());
 
   // Following are the routes
   app.use('/', rootRoutes);
 
-  app.use('/transaction-types', appendRequestDebugInfo, validateApiSignature, transactionRoutes);
+  app.use('/transaction-types', appendRequestDebugInfo, validateApiSignature, sanitizer(), transactionRoutes);
 
-  app.use('/users', appendRequestDebugInfo, validateApiSignature, clientUsersRoutes);
+  app.use('/users', appendRequestDebugInfo, validateApiSignature, sanitizer(), clientUsersRoutes);
 
-  app.use('/on-boarding', appendRequestDebugInfo, decodeJwt, onBoardingRoutes);
+  app.use('/on-boarding', sanitizer(), appendRequestDebugInfo, decodeJwt, onBoardingRoutes);
 
-  app.use('/stake', appendRequestDebugInfo, decodeJwt, stakeRoutes);
+  app.use('/stake', sanitizer(), appendRequestDebugInfo, decodeJwt, stakeRoutes);
 
-  app.use('/client', appendRequestDebugInfo, decodeJwt, clientRoutes);
+  app.use('/client', sanitizer(), appendRequestDebugInfo, decodeJwt, clientRoutes);
 
-  app.use('/simulator', appendRequestDebugInfo, decodeJwt, simulatorRoutes);
+  app.use('/simulator', sanitizer(), appendRequestDebugInfo, decodeJwt, simulatorRoutes);
 
-  app.use('/client-users', appendRequestDebugInfo, decodeJwt, clientUsersJwtRoutes);
+  app.use('/client-users', sanitizer(), appendRequestDebugInfo, decodeJwt, clientUsersJwtRoutes);
 
 // catch 404 and forward to error handler
   app.use(function (req, res, next) {
