@@ -49,3 +49,28 @@ define("UTILITY_PRICE_ORACLES", po_contracts);
 
 //Workers contract address to setup workers and deploy airdropcontract
 define('UTILITY_WORKERS_CONTRACT_ADDRESS', process.env.OST_UTILITY_WORKERS_CONTRACT_ADDRESS);
+
+//Map of all addresses which would be needed to unlocked via Key Store File
+//Every other address will be unlocked via private_key
+const addresses_to_unlock_via_keystore_file = [
+  process.env.OST_FOUNDATION_ADDR,
+  process.env.OST_UTILITY_CHAIN_OWNER_ADDR,
+  process.env.OST_STAKER_ADDR,
+  process.env.OST_REDEEMER_ADDR,
+  process.env.OST_VALUE_REGISTRAR_ADDR,
+  process.env.OST_UTILITY_REGISTRAR_ADDR,
+  process.env.OST_VALUE_DEPLOYER_ADDR,
+  process.env.OST_UTILITY_DEPLOYER_ADDR,
+  process.env.OST_VALUE_OPS_ADDR,
+  process.env.OST_UTILITY_OPS_ADDR
+];
+
+var addresses_to_unlock_via_keystore_file_map = {}
+for(var i=0; i<addresses_to_unlock_via_keystore_file.length; i++) {
+  var addr = addresses_to_unlock_via_keystore_file[i];
+  if (addr) {
+    addresses_to_unlock_via_keystore_file_map[addr.toLowerCase()] = 1;
+  }
+}
+
+define('ADDRESSES_TO_UNLOCK_VIA_KEYSTORE_FILE_MAP', addresses_to_unlock_via_keystore_file_map);
