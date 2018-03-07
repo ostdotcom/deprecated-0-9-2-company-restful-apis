@@ -74,7 +74,7 @@ const generate = {
     }
 
     if((name || name === '') && !basicHelper.isUserNameValid(name)){
-      errors_object['name'] = 'Only letters, numbers and spaces allowed. (Max 20 characters)';
+      errors_object['name'] = 'Only letters, numbers and spaces allowed. (3 to 20 characters)';
     }
     if((name || name === '') && basicHelper.hasStopWords(name)){
       errors_object['name'] = 'Come on, the ' + name + ' you entered is inappropriate. Please choose a nicer word.';
