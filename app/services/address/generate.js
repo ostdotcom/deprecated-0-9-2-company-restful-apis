@@ -9,6 +9,7 @@ const rootPrefix = '../../..'
   , managedAddressObj = new ManagedAddressKlass()
   , AddressesEncryptorKlass = require(rootPrefix + '/lib/encryptors/addresses_encryptor')
   , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
+  , internalEthAddrUuidMapCacheKlass = require(rootPrefix + '/lib/cache_management/internal_eth_address_uuid_map')
   , managedAddressConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , ManagedAddressSaltKlass = require(rootPrefix + '/app/models/managed_address_salt')
   , managedAddressSaltObj = new ManagedAddressSaltKlass()
@@ -26,11 +27,12 @@ const _private = {
    *
    * @param company_managed_address_id
    * @param clientId
+   * @param addrUuid
+   * @param addressType
    * @return {ResultBase}
    */
-  processAddressInBackground: async function (company_managed_address_id, clientId) {
+  processAddressInBackground: async function (company_managed_address_id, clientId, addrUuid, addressType) {
 
-    // REplace with Pankaj method to generate private key
     const addrGenerator = new openStPlatform.utils.generateUnlockedAddress({chain: 'utility'})
         , generateAddrRsp = await addrGenerator.perform();
 
@@ -48,7 +50,19 @@ const _private = {
       return Promise.resolve(responseHelper.error('s_ad_g_5', 'Something Went Wrong'));
     }
 
-    await _private.updateInDb(company_managed_address_id, eth_address, privateKey_d, generateSaltRsp.data['managed_address_salt_id']);
+    await _private.updateInDb(
+        company_managed_address_id,
+        eth_address, privateKey_d,
+        generateSaltRsp.data['managed_address_salt_id']
+    );
+
+    const managedAddressCache = new ManagedAddressCacheKlass({'uuids': [addrUuid]});
+    managedAddressCache.clear();
+
+    if (addressType == managedAddressConst.internalChainIndenpendentAddressType) {
+      const internalEthAddrUuidMapCache = new internalEthAddrUuidMapCacheKlass({'address': eth_address});
+      internalEthAddrUuidMapCache.clear();
+    }
 
     return responseHelper.successWithData({ethereum_address: eth_address});
 
@@ -172,7 +186,7 @@ const generate = {
       });
 
     if (insertedRec.affectedRows > 0) {
-      _private.processAddressInBackground(insertedRec.insertId, clientId);
+      _private.processAddressInBackground(insertedRec.insertId, clientId, addrUuid, addressType);
     }
 
     const managedAddressCache = new ManagedAddressCacheKlass({'uuids': [addrUuid]});
