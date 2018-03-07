@@ -11,7 +11,7 @@ const rootPrefix = '.'
 ;
 
 //Always Include Module overrides First
-// require(rootPrefix + '/module_overrides/index');
+require(rootPrefix + '/module_overrides/index');
 
 const express = require('express')
   , path = require('path')
