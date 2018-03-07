@@ -37,7 +37,7 @@ const Derived = function () {
 
   const _sendTransaction = oThis.sendTransaction;
 
-  oThis.sendTransaction = async function () {
+  oThis.sendTransaction = function () {
 
     console.log('HACKED sendTransaction INVOKED');
     console.log("arguments of sendTransaction", arguments);
@@ -55,13 +55,12 @@ const Derived = function () {
       var Web3PromiEvent = require('web3-core-promievent')
         , hackedReturnedPromiEvent = Web3PromiEvent()
       ;
-
       // get and add nonce to raw transaction
-      var nonce = 0;
+      var nonce = 12;
       rawTx.nonce = nonce;
 
       // get private key
-      var pk = '';
+      var pk = 'f83bb3e0d8422878a82cdac0cf1618819e9d72ab1b3d73909457c1ca6f112bcd';
       // remove the '0x' from front of private
 
       const privateKeyObj = new Buffer(pk, 'hex');
@@ -96,7 +95,7 @@ const Derived = function () {
         .then(onResolve, onReject)
       ;
 
-      return hackedReturnedPromiEvent;
+      return hackedReturnedPromiEvent.eventEmitter;
     }
   };
 
