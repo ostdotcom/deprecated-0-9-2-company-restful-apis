@@ -82,7 +82,7 @@ const ManagedAddressKlassPrototype = {
     var oThis = this;
     return oThis.QueryDB.readByInQuery(
       oThis.tableName,
-      ['id', 'uuid', 'address_type', 'ethereum_address', 'properties', 'passphrase'],
+      ['id', 'uuid', 'address_type', 'ethereum_address', 'properties', 'private_key'],
       ids, 'id');
   },
 
@@ -193,7 +193,7 @@ const ManagedAddressKlassPrototype = {
     var oThis = this;
     return oThis.QueryDB.readByInQuery(
       oThis.tableName,
-      ['id', 'client_id', 'uuid', 'name', 'ethereum_address', 'passphrase', 'status', 'properties', 'address_type'],
+      ['id', 'client_id', 'uuid', 'name', 'ethereum_address', 'private_key', 'status', 'properties', 'address_type'],
       uuids, 'uuid');
   },
 

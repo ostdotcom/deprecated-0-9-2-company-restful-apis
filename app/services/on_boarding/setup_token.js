@@ -174,6 +174,7 @@ SetupToken.prototype = {
       , managedAddressModelObj = new ManagedAddressModelKlass();
 
     return new Promise(async function (onResolve, onReject) {
+
       if (oThis.existingToken && oThis.existingToken.reserve_managed_address_id) {
 
         oThis.reserve_managed_address_id = oThis.existingToken.reserve_managed_address_id;
