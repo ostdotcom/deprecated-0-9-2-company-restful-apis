@@ -16,6 +16,7 @@ const rootPrefix = '../../..'
   , localCipher = require(rootPrefix + '/lib/encryptors/local_cipher')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , openStPlatform = require('@openstfoundation/openst-platform')
 ;
 
 const _private = {
@@ -30,13 +31,21 @@ const _private = {
   processAddressInBackground: async function (company_managed_address_id, clientId) {
 
     // REplace with Pankaj method to generate private key
-    var eth_address = '0xc77D19BeC57F08fC538a89a847cB0d570bBd4c89'
-    var privateKey_d = '71054851dfc944a8687df70d45a04506d10d4b5ece76a956d2bea136034b3ca8';
+    const addrGenerator = new openStPlatform.utils.generateUnlockedAddress({chain: 'utility'})
+        , generateAddrRsp = await addrGenerator.perform();
+
+    if (generateAddrRsp.isFailure()) {
+      logger.notify('s_ad_g_4', 'Something Went Wrong', generateAddrRsp.toHash);
+      return Promise.resolve(responseHelper.error('s_ad_g_4', 'Something Went Wrong'));
+    }
+
+    var eth_address = generateAddrRsp.data['address'];
+    var privateKey_d = generateAddrRsp.data['privateKey'];
 
     var generateSaltRsp = await _private.generateManagedAddressSalt(clientId);
     if (generateSaltRsp.isFailure()) {
-      logger.notify('s_ad_g_4', 'Something Went Wrong', generateSaltRsp.toHash);
-      return Promise.resolve(responseHelper.error('s_ad_g_4', 'Something Went Wrong'));
+      logger.notify('s_ad_g_5', 'Something Went Wrong', generateSaltRsp.toHash);
+      return Promise.resolve(responseHelper.error('s_ad_g_5', 'Something Went Wrong'));
     }
 
     await _private.updateInDb(company_managed_address_id, eth_address, privateKey_d, generateSaltRsp.data['managed_address_salt_id']);
