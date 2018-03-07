@@ -20,7 +20,111 @@ const rootPrefix = '../../..'
   , openStPlatform = require('@openstfoundation/openst-platform')
 ;
 
-const _private = {
+/**
+ * If Eth Address & Passphrase is passed insert in db else call platform to generate a fresh pair and then insert
+ *
+ * @param {object} params -
+ *                  addressType - type of address
+ *                  clientId - client id for which address is to be generated
+ *                  ethAddress - address to be used
+ *                  privateKey - private key to be used
+ *                  name - user name
+ * @constructor
+ */
+const GenerateAddressKlass = function(params){
+
+  const oThis = this;
+
+  if (!params) {
+    params = {};
+  }
+
+  console.log(params);
+
+  oThis.addressType = params['addressType'];
+  oThis.clientId = params['clientId'];
+  oThis.ethAddress = params['ethAddress'];
+  oThis.privateKey = params['privateKey'];
+  oThis.name = params['name'];
+
+};
+
+GenerateAddressKlass.prototype = {
+
+  /**
+   *
+   * Perform operation of generating new address
+   * @return {Promise<*>}
+   */
+  perform: async function () {
+
+    var oThis = this
+        , name = oThis.name
+        , clientId = oThis.clientId
+        , addressType = oThis.addressType
+        , addrUuid = uuid.v4()
+        , errors_object = {}
+    ;
+
+    // Client id is mandatory for all address types but for internalChainIndenpendentAddressType
+    if ((!clientId || clientId === '') && addressType != managedAddressConst.internalChainIndenpendentAddressType) {
+      errors_object['client_id'] = 'Mandatory client missing';
+    }
+
+    if (name) {
+      name = name.trim();
+    }
+
+    if(name && !basicHelper.isUserNameValid(name)){
+      errors_object['name'] = 'Only letters, numbers and spaces allowed. (Max 20 characters)';
+    }
+    if(name && basicHelper.hasStopWords(name)){
+      errors_object['name'] = 'Come on, the ' + name + ' you entered is inappropriate. Please choose a nicer word.';
+    }
+
+    if(Object.keys(errors_object).length > 0){
+      return responseHelper.error('s_a_g_1', 'invalid params', '', [errors_object]);
+    }
+
+    const insertedRec = await managedAddressObj.create(
+        {
+          client_id: clientId,
+          name: name,
+          uuid: addrUuid,
+          address_type: addressType,
+          status: 'active'
+        });
+
+    if (insertedRec.affectedRows > 0) {
+      oThis._processAddressInBackground(insertedRec.insertId, addrUuid);
+    }
+
+    const managedAddressCache = new ManagedAddressCacheKlass({'uuids': [addrUuid]});
+    managedAddressCache.clear();
+
+    var userData = {};
+    if(addressType != managedAddressConst.userAddressType){
+      userData['id'] = insertedRec.insertId;
+    } else {
+      userData['id'] = addrUuid;
+    }
+
+    return responseHelper.successWithData({
+      result_type: "economy_users",
+      'economy_users': [
+        Object.assign(userData, {
+          uuid: addrUuid,
+          name: name || '',
+          total_airdropped_tokens: 0,
+          token_balance: 0
+        })
+      ],
+      meta: {
+        next_page_payload: {}
+      }
+    });
+
+  },
 
   /**
    * After returning response, in background create address salt etc.
@@ -31,26 +135,39 @@ const _private = {
    * @param addressType
    * @return {ResultBase}
    */
-  processAddressInBackground: async function (company_managed_address_id, clientId, addrUuid, addressType) {
+  _processAddressInBackground: async function (company_managed_address_id, addrUuid) {
 
-    const addrGenerator = new openStPlatform.utils.generateUnlockedAddress({chain: 'utility'})
-        , generateAddrRsp = await addrGenerator.perform();
+    const OThis = this
+        , clientId = OThis.clientId
+        , addressType = OThis.addressType;
 
-    if (generateAddrRsp.isFailure()) {
-      logger.notify('s_ad_g_4', 'Something Went Wrong', generateAddrRsp.toHash);
-      return Promise.resolve(responseHelper.error('s_ad_g_4', 'Something Went Wrong'));
+    if (!OThis.ethAddress || !OThis.privateKey) {
+
+      const addrGenerator = new openStPlatform.utils.generateUnlockedAddress({chain: 'utility'})
+          , generateAddrRsp = await addrGenerator.perform();
+
+      if (generateAddrRsp.isFailure()) {
+        logger.notify('s_ad_g_4', 'Something Went Wrong', generateAddrRsp.toHash);
+        return Promise.resolve(responseHelper.error('s_ad_g_4', 'Something Went Wrong'));
+      }
+
+      var eth_address = generateAddrRsp.data['address'];
+      var privateKey_d = generateAddrRsp.data['privateKey'];
+
+    } else {
+
+      var eth_address = OThis.ethAddress;
+      var privateKey_d = OThis.privateKey;
+
     }
 
-    var eth_address = generateAddrRsp.data['address'];
-    var privateKey_d = generateAddrRsp.data['privateKey'];
-
-    var generateSaltRsp = await _private.generateManagedAddressSalt(clientId);
+    var generateSaltRsp = await OThis._generateManagedAddressSalt(clientId);
     if (generateSaltRsp.isFailure()) {
       logger.notify('s_ad_g_5', 'Something Went Wrong', generateSaltRsp.toHash);
       return Promise.resolve(responseHelper.error('s_ad_g_5', 'Something Went Wrong'));
     }
 
-    await _private.updateInDb(
+    await OThis._updateInDb(
         company_managed_address_id,
         eth_address, privateKey_d,
         generateSaltRsp.data['managed_address_salt_id']
@@ -74,7 +191,7 @@ const _private = {
    * @return {promise<result>}
    *
    */
-  generateManagedAddressSalt: async function (clientId) {
+  _generateManagedAddressSalt: async function (clientId) {
 
     var oThis = this;
 
@@ -114,7 +231,7 @@ const _private = {
    * @param clientId
    * @return {Promise<*>}
    */
-  updateInDb: async function (company_managed_address_id, eth_address, privateKeyD, managed_address_salt_id) {
+  _updateInDb: async function (company_managed_address_id, eth_address, privateKeyD, managed_address_salt_id) {
 
     var obj = new AddressesEncryptorKlass({managedAddressSaltId: managed_address_salt_id});
 
@@ -138,84 +255,5 @@ const _private = {
 
   }
 
-};
-
-const generate = {
-
-  /**
-   *
-   * Perform operation of generating new address
-   *
-   * @param clientId
-   * @param addressType
-   * @param name
-   * @return {Promise<*>}
-   */
-  perform: async function (clientId, addressType, name) {
-
-    var oThis = this
-      , name = name
-      , addrUuid = uuid.v4()
-      , errors_object = {}
-    ;
-
-    if (name) {
-      name = name.trim();
-    }
-
-    if((name || name === '') && !basicHelper.isUserNameValid(name)){
-      errors_object['name'] = 'Only letters, numbers and spaces allowed. (Max 20 characters)';
-    }
-    if((name || name === '') && basicHelper.hasStopWords(name)){
-      errors_object['name'] = 'Come on, the ' + name + ' you entered is inappropriate. Please choose a nicer word.';
-    }
-
-    if(Object.keys(errors_object).length > 0){
-      return responseHelper.error('s_a_g_1', 'invalid params', '', [errors_object]);
-    }
-
-    name = name || '';
-
-    const insertedRec = await managedAddressObj.create(
-      {
-        client_id: clientId,
-        name: name,
-        uuid: addrUuid,
-        address_type: addressType,
-        status: 'active'
-      });
-
-    if (insertedRec.affectedRows > 0) {
-      _private.processAddressInBackground(insertedRec.insertId, clientId, addrUuid, addressType);
-    }
-
-    const managedAddressCache = new ManagedAddressCacheKlass({'uuids': [addrUuid]});
-    managedAddressCache.clear();
-
-    var userData = {};
-    if(addressType != managedAddressConst.userAddressType){
-      userData['id'] = insertedRec.insertId;
-    } else {
-      userData['id'] = addrUuid;
-    }
-
-    return responseHelper.successWithData({
-      result_type: "economy_users",
-      'economy_users': [
-        Object.assign(userData, {
-          uuid: addrUuid,
-          name: name,
-          total_airdropped_tokens: 0,
-          token_balance: 0
-        })
-      ],
-      meta: {
-        next_page_payload: {}
-      }
-    });
-
-  }
-
-};
-
-module.exports = generate;
+}
+module.exports = GenerateAddressKlass;

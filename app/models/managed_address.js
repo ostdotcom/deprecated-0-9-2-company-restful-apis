@@ -18,7 +18,8 @@ const dbName = "saas_client_economy_" + coreConstants.SUB_ENVIRONMENT + "_" + co
     '1': managedAddressesConst.userAddressType,
     '2': managedAddressesConst.reserveAddressType,
     '3': managedAddressesConst.workerAddressType,
-    '4': managedAddressesConst.airdropHolderAddressType
+    '4': managedAddressesConst.airdropHolderAddressType,
+    '5': managedAddressesConst.internalChainIndenpendentAddressType
   }
   , invertedAddressTypes = util.invert(addressTypes)
   , properties = {
