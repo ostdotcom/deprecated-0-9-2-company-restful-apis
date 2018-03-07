@@ -6,6 +6,13 @@
  * * Date: 23/10/2017
  * * Reviewed by: Sunil
  */
+
+const rootPrefix = '.'
+;
+
+//Always Include Module overrides First
+require(rootPrefix + '/module_overrides/index');
+
 const express = require('express')
   , path = require('path')
   , createNamespace = require('continuation-local-storage').createNamespace
@@ -20,8 +27,7 @@ const express = require('express')
   , http = require('http')
 ;
 
-const rootPrefix = '.'
-  , rootRoutes = require(rootPrefix + '/routes/root')
+const rootRoutes = require(rootPrefix + '/routes/root')
   , jwtAuth = require(rootPrefix + '/lib/jwt/jwt_auth')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , transactionRoutes = require(rootPrefix + '/routes/transaction_types')
