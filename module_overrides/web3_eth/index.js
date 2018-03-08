@@ -64,7 +64,7 @@ const Derived = function () {
       const sanitize = function() {
         // convert to hex
         var value = new BigNumber(rawTx.value || 0);
-        rawTx.value = value.toString(16);
+        rawTx.value = '0x' + value.toString(16);
       };
 
       const getPrivateKey = async function () {
