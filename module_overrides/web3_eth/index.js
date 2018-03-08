@@ -8,7 +8,7 @@ const BasePackage = require(basePackage)
   , Tx = require('ethereumjs-tx')
 ;
 
-const rootPrefix = '..'
+const rootPrefix = '../..'
 ;
 
 var requireData
@@ -138,7 +138,7 @@ const Derived = function () {
           .on('receipt', onReceipt)
           .on('error', onError)
           .then(onResolve, onReject)
-        ;
+          ;
       };
 
       const asyncPerformer = async function () {
@@ -173,6 +173,6 @@ require.cache[resolvedId] = {
 };
 
 // NOTE::THIS SHOULD NOT BE TAKEN AT THE TOP.
-nonceManagerKlass = require(rootPrefix + '/lib/nonce_management/nonce_manager');
+nonceManagerKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_manager');
 
 module.exports = Derived;

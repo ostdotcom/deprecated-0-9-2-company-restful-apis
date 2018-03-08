@@ -6,7 +6,7 @@ const basePackage = 'web3-eth-personal'
 const BasePackage = require(basePackage)
 ;
 
-const rootPrefix = '..'
+const rootPrefix = '../..'
 ;
 
 var requireData
@@ -24,7 +24,8 @@ for (var k in require.cache) {
 }
 
 const Derived = function () {
-  var oThis = this;
+  var oThis = this
+  ;
 
   //Constructor sometimes return other instance of object.
   //Always have a safety-net

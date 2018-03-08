@@ -88,7 +88,7 @@ const NonceCacheKlassPrototype = {
           }
         } catch (err) {
           //Format the error
-          logger.error("lib/nonce_management/nonce_manager.js:getNonce:wait inside catch ", err);
+          logger.error("module_overrides/web3_eth/nonce_manager.js:getNonce:wait inside catch ", err);
           return onResolve(responseHelper.error('l_nm_getNonce_1', 'Something went wrong'));
         }        
       };
@@ -105,7 +105,7 @@ const NonceCacheKlassPrototype = {
         }
       } catch (err) {
         //Format the error
-        logger.error("lib/nonce_management/nonce_manager.js:getNonce inside catch ", err);
+        logger.error("module_overrides/web3_eth/nonce_manager.js:getNonce inside catch ", err);
         return onResolve(responseHelper.error('l_nm_getNonce_2', 'Something went wrong'));
       }        
 
@@ -288,7 +288,7 @@ const NonceCacheKlassPrototype = {
         });
       } catch (err) {
         //Format the error
-        logger.error("lib/nonce_management/nonce_manager.js:getNonceFromGethNode inside catch ", err);
+        logger.error("module_overrides/web3_eth/nonce_manager.js:getNonceFromGethNode inside catch ", err);
         return onResolve(responseHelper.error('l_nm_getNonceFromGethNode_2', 'Something went wrong'));
       }      
     });    

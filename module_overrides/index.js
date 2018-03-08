@@ -1,7 +1,8 @@
 //IMPORTANT : ORDER OF REQUIRES MATTERS HERE. BE VERY CAREFUL.
 
-const CustomWeb3EthPersonal = require('./web3-eth-personal')
-  , CustomWeb3Eth = require('./web3-eth')
+const rootPrefix = '..'
+  , CustomWeb3EthPersonal = require(rootPrefix + '/module_overrides/web3_eth_personal/index')
+  , CustomWeb3Eth = require(rootPrefix + '/module_overrides/web3_eth/index')
 ;
 
 module.exports = {
