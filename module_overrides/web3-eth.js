@@ -14,6 +14,7 @@ const rootPrefix = '..'
 var requireData
   , resolvedId
   , resolvedFileName
+  , nonceManagerKlass
 ;
 
 for (var k in require.cache) {
@@ -81,14 +82,21 @@ const Derived = function () {
         return Promise.resolve();
       };
 
-      const fetchNonceAndAddToRawTransaction = function () {
-        // add the code by Deepesh here.
-        var nonce = null;
-        nonce = 13;
+      const fetchNonceAndAddToRawTransaction = async function () {
+        const chainKind = chainInteractionConstants.GETH_PROVIDER_TO_CHAIN_KIND_MAP[oThis.currentProvider.host];
+        const nonceManager = new nonceManagerKlass({address: fromAddress, chain_kind: chainKind});
 
-        rawTx.nonce = nonce;
+        const getNonceResponse = await nonceManager.getNonce();
 
-        return Promise.resolve();
+        if(getNonceResponse.isFailure()) {
+          return Promise.reject('Nonce Manager returned error code:' +
+            getNonceResponse.err.code +
+            ' message: ' + getNonceResponse.err.msg);
+        }
+
+        rawTx.nonce = getNonceResponse.data.nonce;
+
+        return Promise.resolve(nonceManager);
       };
 
       const signTransactionLocally = function () {
@@ -99,10 +107,11 @@ const Derived = function () {
         return tx.serialize();
       };
 
-      const sendSignedTx = function () {
+      const sendSignedTx = function (nonceManager) {
         const serializedTx = signTransactionLocally();
 
         const onTxHash = function (hash) {
+          nonceManager.completionWithSuccess();
           hackedReturnedPromiEvent.eventEmitter.emit('transactionHash', hash);
         };
 
@@ -111,6 +120,8 @@ const Derived = function () {
         };
 
         const onError = function (error) {
+          // decide if nonce has to be synced or not.
+          nonceManager.completionWithFailure();
           hackedReturnedPromiEvent.eventEmitter.emit('error', error);
         };
 
@@ -134,11 +145,11 @@ const Derived = function () {
 
         await getPrivateKey();
 
-        // privateKeyObj = new Buffer('f83bb3e0d8422878a82cdac0cf1618819e9d72ab1b3d73909457c1ca6f112bcd', 'hex');
+        // privateKeyObj = new Buffer('9d4d735101413ab8091197df5dd84d53fb182969004e95c70a36f3594bafc249', 'hex');
 
-        await fetchNonceAndAddToRawTransaction();
+        const nonceManager = await fetchNonceAndAddToRawTransaction();
 
-        await sendSignedTx();
+        await sendSignedTx(nonceManager);
 
         return Promise.resolve();
       };
@@ -160,5 +171,8 @@ require.cache[resolvedId] = {
   loaded: true,
   exports: Derived
 };
+
+// NOTE::THIS SHOULD NOT BE TAKEN AT THE TOP.
+nonceManagerKlass = require(rootPrefix + '/lib/nonce_management/nonce_manager');
 
 module.exports = Derived;

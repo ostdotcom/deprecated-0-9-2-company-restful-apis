@@ -39,6 +39,24 @@ define("ST_PRIME_UUID", process.env.OST_OPENSTUTILITY_ST_PRIME_UUID);
 define("SIMPLE_TOKEN_CONTRACT_ADDR", process.env.OST_SIMPLE_TOKEN_CONTRACT_ADDR);
 define("STAKER_ADDR", process.env.OST_STAKER_ADDR);
 
+const OST_VALUE_GETH_RPC_PROVIDERS = JSON.parse(process.env.OST_VALUE_GETH_RPC_PROVIDERS);
+define('OST_VALUE_GETH_RPC_PROVIDERS', OST_VALUE_GETH_RPC_PROVIDERS);
+
+const OST_UTILITY_GETH_RPC_PROVIDERS = JSON.parse(process.env.OST_UTILITY_GETH_RPC_PROVIDERS);
+define('OST_UTILITY_GETH_RPC_PROVIDERS', OST_UTILITY_GETH_RPC_PROVIDERS);
+
+const providerHostToChainKindMap = {};
+
+for(var i = 0; i < OST_VALUE_GETH_RPC_PROVIDERS.length; i ++) {
+  providerHostToChainKindMap[OST_VALUE_GETH_RPC_PROVIDERS[i]] = 'value';
+}
+
+for(var i = 0; i < OST_UTILITY_GETH_RPC_PROVIDERS.length; i ++) {
+  providerHostToChainKindMap[OST_UTILITY_GETH_RPC_PROVIDERS[i]] = 'utility';
+}
+
+define('GETH_PROVIDER_TO_CHAIN_KIND_MAP', providerHostToChainKindMap);
+
 // Price oracle details
 var po_contracts = {};
 try {
