@@ -194,7 +194,8 @@ const ManagedAddressKlassPrototype = {
     var oThis = this;
     return oThis.QueryDB.readByInQuery(
       oThis.tableName,
-      ['id', 'client_id', 'uuid', 'name', 'ethereum_address', 'private_key', 'status', 'properties', 'address_type'],
+      ['id', 'client_id', 'uuid', 'name', 'ethereum_address', 'private_key',
+        'status', 'properties', 'address_type', 'managed_address_salt_id'],
       uuids, 'uuid');
   },
 
