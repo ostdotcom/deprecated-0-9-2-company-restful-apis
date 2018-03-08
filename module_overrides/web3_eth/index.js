@@ -75,7 +75,10 @@ const Derived = function () {
         }
 
         // get private key - this should be the private key without 0x at the beginning.
-        const privateKey = fetchPrivateKeyRsp.data['private_key_d'];
+        var privateKey = fetchPrivateKeyRsp.data['private_key_d'];
+        if(privateKey.slice(0, 2).toLowerCase() === '0x'){
+          privateKey = privateKey.substr(2);
+        }
 
         privateKeyObj = new Buffer(privateKey, 'hex');
 
