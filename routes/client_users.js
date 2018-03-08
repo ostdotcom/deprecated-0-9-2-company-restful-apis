@@ -22,24 +22,33 @@ const express = require('express')
  *
  */
 router.post('/create', function (req, res, next) {
+
   const performer = function() {
+
     const decodedParams = req.decodedParams
-      , generateAddress = require(rootPrefix + '/app/services/address/generate')
+      , GenerateEthAddressKlass = require(rootPrefix + '/app/services/address/generate')
     ;
-    var clientId = decodedParams.client_id;
-    var name = decodedParams.name;
+
+    const generateEthAddress = new GenerateEthAddressKlass({
+      addressType: managedAddressesConst.userAddressType,
+      clientId: decodedParams.client_id,
+      name: decodedParams.name
+    });
 
     // handle final response
     const handleResponse = function (response) {
       return response.renderResponse(res);
     };
-    return generateAddress.perform(clientId, managedAddressesConst.userAddressType, name).then(handleResponse);
+
+    return generateEthAddress.perform().then(handleResponse);
+
   };
 
   Promise.resolve(performer()).catch(function (err) {
     logger.notify('r_cu_1', 'Something went wrong', err);
     responseHelper.error('r_cu_1', 'Something went wrong').renderResponse(res)
   });
+
 });
 
 /**

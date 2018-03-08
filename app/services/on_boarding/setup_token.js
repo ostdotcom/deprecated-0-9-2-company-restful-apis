@@ -12,7 +12,7 @@ const uuid = require('uuid')
 
 const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , generateEthAddress = require(rootPrefix + '/app/services/address/generate')
+  , GenerateEthAddressKlass = require(rootPrefix + '/app/services/address/generate')
   , kmsWrapper = require(rootPrefix + '/lib/authentication/kms_wrapper')
   , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
   , clientBrandedToken = new ClientBrandedTokenKlass()
@@ -184,7 +184,11 @@ SetupToken.prototype = {
 
       } else {
 
-        var r = await generateEthAddress.perform(oThis.clientId, managedAddressesConst.reserveAddressType);
+        const generateEthAddress = new GenerateEthAddressKlass({
+          addressType: managedAddressConst.reserveAddressType,
+          clientId: oThis.clientId
+        });
+        var r = await generateEthAddress.perform();
         if (r.isFailure()) return onResolve(r);
         const resultData = r.data[r.data.result_type][0];
         oThis.reserve_managed_address_id = resultData.id;
