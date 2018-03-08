@@ -6,6 +6,7 @@ var basePackage = 'web3-eth'
 const BasePackage = require(basePackage)
   , Buffer = require('safe-buffer').Buffer
   , Tx = require('ethereumjs-tx')
+  , BigNumber = require('bignumber.js')
 ;
 
 const rootPrefix = '../..'
@@ -59,6 +60,12 @@ const Derived = function () {
       ;
 
       var privateKeyObj;
+
+      const sanitize = function() {
+        // convert to hex
+        var value = new BigNumber(rawTx.value || 0);
+        rawTx.value = value.toString(16);
+      };
 
       const getPrivateKey = async function () {
         const fetchPrivateKeyObj = new fetchPrivateKeyKlass({'address': fromAddress})
@@ -145,6 +152,8 @@ const Derived = function () {
       };
 
       const asyncPerformer = async function () {
+
+        sanitize();
 
         await getPrivateKey();
 
