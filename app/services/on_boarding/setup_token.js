@@ -185,7 +185,7 @@ SetupToken.prototype = {
       } else {
 
         const generateEthAddress = new GenerateEthAddressKlass({
-          addressType: managedAddressConst.reserveAddressType,
+          addressType: managedAddressesConst.reserveAddressType,
           clientId: oThis.clientId
         });
         var r = await generateEthAddress.perform();
@@ -219,7 +219,11 @@ SetupToken.prototype = {
         oThis.workerAddrUuid = manageAddrObj[0].uuid;
         return onResolve(responseHelper.successWithData({}));
       } else {
-        var r = await generateEthAddress.perform(oThis.clientId, managedAddressesConst.workerAddressType);
+        const generateEthAddress = new GenerateEthAddressKlass({
+            addressType: managedAddressesConst.workerAddressType,
+            clientId: oThis.clientId
+        });
+        var r = await generateEthAddress.perform();
         if (r.isFailure()) return onResolve(r);
         const resultData = r.data[r.data.result_type][0];
         oThis.worker_managed_address_id = resultData.id;
@@ -251,7 +255,11 @@ SetupToken.prototype = {
         oThis.airdropHolderAddrUuid = manageAddrObj[0].uuid;
         return onResolve(responseHelper.successWithData({}));
       } else {
-        var r = await generateEthAddress.perform(oThis.clientId, managedAddressesConst.airdropHolderAddressType);
+        const generateEthAddress = new GenerateEthAddressKlass({
+            addressType: managedAddressesConst.airdropHolderAddressType,
+            clientId: oThis.clientId
+        });
+        var r = await generateEthAddress.perform();
         if (r.isFailure()) return onResolve(r);
         const resultData = r.data[r.data.result_type][0];
         oThis.airdrop_holder_managed_address_id = resultData.id;
