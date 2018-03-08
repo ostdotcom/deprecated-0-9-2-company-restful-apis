@@ -55,8 +55,13 @@ GetUsersDataKlass.prototype = {
       }
 
       const balanceData = balanceHashData[user['ethereum_address']];
-      Object.assign(user, {total_airdropped_tokens: basicHelper.convertToNormal(balanceData.totalAirdroppedTokens).toString(10),
-        token_balance: basicHelper.convertToNormal(balanceData.tokenBalance).toString(10)});
+      Object.assign(
+        user,
+        {
+          total_airdropped_tokens: basicHelper.convertToNormal(balanceData.totalAirdroppedTokens).toString(10),
+          balance_airdrop_amount: basicHelper.convertToNormal(balanceData.balanceAirdropAmount).toString(10),
+          token_balance: basicHelper.convertToNormal(balanceData.tokenBalance).toString(10)
+        });
 
       response[user['ethereum_address']] = user;
     }
