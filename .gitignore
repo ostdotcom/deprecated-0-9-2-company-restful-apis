@@ -37,3 +37,5 @@ node_modules
 # Debug log from npm
 npm-debug.log
 .vscode
+
+.DS_Store
