@@ -52,48 +52,98 @@ const Derived = function () {
     } else {
       console.log('WEB3_OVERRIDE: sendTransaction using private key from address:', fromAddress);
 
-      var Web3PromiEvent = require('web3-core-promievent')
+      const Web3PromiEvent = require('web3-core-promievent')
         , hackedReturnedPromiEvent = Web3PromiEvent()
+        , fetchPrivateKeyKlass = require(rootPrefix + '/lib/key_management/fetch_private_key.js')
       ;
-      // get and add nonce to raw transaction
-      var nonce = 12;
-      rawTx.nonce = nonce;
 
-      // get private key
-      var pk = 'f83bb3e0d8422878a82cdac0cf1618819e9d72ab1b3d73909457c1ca6f112bcd';
-      // remove the '0x' from front of private
+      var privateKeyObj;
 
-      const privateKeyObj = new Buffer(pk, 'hex');
-      const tx = new Tx(rawTx);
-      tx.sign(privateKeyObj);
-      const serializedTx = tx.serialize();
+      const getPrivateKey = async function () {
+        const fetchPrivateKeyObj = new fetchPrivateKeyKlass({'address': fromAddress})
+          , fetchPrivateKeyRsp = await fetchPrivateKeyObj.perform()
+        ;
 
-      const onTxHash = function(hash){
-        hackedReturnedPromiEvent.eventEmitter.emit('transactionHash', hash);
+        if (fetchPrivateKeyRsp.isFailure()) {
+          const errorMsg = 'Private key not found for address: ' + fromAddress;
+
+          hackedReturnedPromiEvent.eventEmitter.emit('error', errorMsg);
+          hackedReturnedPromiEvent.reject(errorMsg);
+
+          return Promise.reject(errorMsg);
+        }
+
+        // get private key - this should be the private key without 0x at the beginning.
+        const privateKey = fetchPrivateKeyRsp.data['private_key_d'];
+
+        privateKeyObj = new Buffer(privateKey, 'hex');
+
+        return Promise.resolve();
       };
 
-      const onReceipt = function(receipt){
-        hackedReturnedPromiEvent.eventEmitter.emit('receipt', receipt);
+      const fetchNonceAndAddToRawTransaction = function () {
+        // add the code by Deepesh here.
+        var nonce = null;
+        nonce = 13;
+
+        rawTx.nonce = nonce;
+
+        return Promise.resolve();
       };
 
-      const onError = function(error){
-        hackedReturnedPromiEvent.eventEmitter.emit('error', error);
+      const signTransactionLocally = function () {
+        const tx = new Tx(rawTx);
+
+        tx.sign(privateKeyObj);
+
+        return tx.serialize();
       };
 
-      const onResolve = function() {
-        hackedReturnedPromiEvent.resolve.apply(hackedReturnedPromiEvent, arguments);
+      const sendSignedTx = function () {
+        const serializedTx = signTransactionLocally();
+
+        const onTxHash = function (hash) {
+          hackedReturnedPromiEvent.eventEmitter.emit('transactionHash', hash);
+        };
+
+        const onReceipt = function (receipt) {
+          hackedReturnedPromiEvent.eventEmitter.emit('receipt', receipt);
+        };
+
+        const onError = function (error) {
+          hackedReturnedPromiEvent.eventEmitter.emit('error', error);
+        };
+
+        const onResolve = function () {
+          hackedReturnedPromiEvent.resolve.apply(hackedReturnedPromiEvent, arguments);
+        };
+
+        const onReject = function () {
+          hackedReturnedPromiEvent.reject.apply(hackedReturnedPromiEvent, arguments);
+        };
+
+        return oThis.sendSignedTransaction('0x' + serializedTx.toString('hex'))
+          .on('transactionHash', onTxHash)
+          .on('receipt', onReceipt)
+          .on('error', onError)
+          .then(onResolve, onReject)
+        ;
       };
 
-      const onReject = function() {
-        hackedReturnedPromiEvent.reject.apply(hackedReturnedPromiEvent, arguments);
+      const asyncPerformer = async function () {
+
+        await getPrivateKey();
+
+        // privateKeyObj = new Buffer('f83bb3e0d8422878a82cdac0cf1618819e9d72ab1b3d73909457c1ca6f112bcd', 'hex');
+
+        await fetchNonceAndAddToRawTransaction();
+
+        await sendSignedTx();
+
+        return Promise.resolve();
       };
 
-      oThis.sendSignedTransaction('0x' + serializedTx.toString('hex'))
-        .on('transactionHash', onTxHash)
-        .on('receipt', onReceipt)
-        .on('error', onError)
-        .then(onResolve, onReject)
-      ;
+      asyncPerformer();
 
       return hackedReturnedPromiEvent.eventEmitter;
     }
