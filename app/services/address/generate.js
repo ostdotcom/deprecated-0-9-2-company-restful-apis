@@ -96,7 +96,7 @@ GenerateAddressKlass.prototype = {
         });
 
     if (insertedRec.affectedRows > 0) {
-      await oThis._processAddressInBackground(insertedRec.insertId, addrUuid);
+      oThis._processAddressInBackground(insertedRec.insertId, addrUuid);
     }
 
     const managedAddressCache = new ManagedAddressCacheKlass({'uuids': [addrUuid]});

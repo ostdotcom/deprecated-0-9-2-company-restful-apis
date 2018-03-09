@@ -33,7 +33,7 @@ DeployPlatformKlass.prototype = {
    */
   perform: async function(){
 
-    var generateAddressObj = new generateInternalAddressesKlass()
+    var generateAddressObj = new generateInternalAddressesKlass({addresses_count: 15})
       , addressesArr = await generateAddressObj.perform();
 
     if(!addressesArr || addressesArr.length <= 0){

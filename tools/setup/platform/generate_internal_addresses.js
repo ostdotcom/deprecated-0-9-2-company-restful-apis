@@ -16,8 +16,14 @@ const rootPrefix = "../../.."
 /**
  * Generate Internal addresses required for setup.
  *
+ * @param {object} params -
+*                  addresses_count - number of addresses to generate.
  */
-const generateInternalAddressesKlass = function(){};
+const generateInternalAddressesKlass = function(params){
+  const oThis = this;
+
+  oThis.addrGenerationCount = params.addresses_count;
+};
 
 generateInternalAddressesKlass.prototype = {
 
@@ -27,9 +33,10 @@ generateInternalAddressesKlass.prototype = {
    * @return {Promise<Array>}
    */
   perform: async function(){
+    const oThis = this;
     var addressesArr = [];
 
-    for(var i=0;i<15;i++){
+    for(var i=0;i<oThis.addrGenerationCount;i++){
       const addrGenerator = new openStPlatform.services.utils.generateRawKey()
         , generateAddrRsp = addrGenerator.perform();
 
