@@ -10,6 +10,7 @@ const BasePackage = require(basePackage)
 ;
 
 const rootPrefix = '../..'
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
 var requireData
@@ -61,7 +62,11 @@ const Derived = function () {
 
       var privateKeyObj;
 
-      var txHashObtained = false;
+      var txHashObtained = false
+        , retryCount = 0
+      ;
+
+      const maxRetryFor = 2;
 
       const sanitize = function() {
         // convert to hex
@@ -119,7 +124,13 @@ const Derived = function () {
         return tx.serialize();
       };
 
+      const executeTx = async function() {
+        const nonceManager = await fetchNonceAndAddToRawTransaction();
+        await sendSignedTx(nonceManager);
+      };
+
       const sendSignedTx = function (nonceManager) {
+
         const serializedTx = signTransactionLocally();
 
         const onTxHash = async function (hash) {
@@ -135,9 +146,22 @@ const Derived = function () {
         };
 
         const onError = async function (error) {
-          // decide if nonce has to be synced or not.
-          await nonceManager.completionWithFailure(true);
-          hackedReturnedPromiEvent.eventEmitter.emit('error', error);
+          const nonceTooLowError = error.message.indexOf('nonce too low') > -1;
+          if(nonceTooLowError && retryCount < maxRetryFor) {
+            logger.info('NONCE too low error. retrying with higher nonce.');
+            retryCount = retryCount + 1;
+
+            // clear the nonce
+            await nonceManager.completionWithFailure(true);
+
+            // retry
+            executeTx();
+          } else {
+            logger.error('error', error);
+            await nonceManager.completionWithFailure();
+            hackedReturnedPromiEvent.eventEmitter.emit('error', error);
+            hackedReturnedPromiEvent.reject.apply(hackedReturnedPromiEvent, error);
+          }
         };
 
         const onResolve = function () {
@@ -145,7 +169,8 @@ const Derived = function () {
         };
 
         const onReject = function () {
-          hackedReturnedPromiEvent.reject.apply(hackedReturnedPromiEvent, arguments);
+          logger.error(JSON.stringify(arguments));
+          // hackedReturnedPromiEvent.reject.apply(hackedReturnedPromiEvent, arguments);
         };
 
         return oThis.sendSignedTransaction('0x' + serializedTx.toString('hex'))
@@ -153,6 +178,7 @@ const Derived = function () {
           .on('receipt', onReceipt)
           .on('error', onError)
           .then(onResolve, onReject)
+          .catch(onReject)
           ;
       };
 
@@ -162,11 +188,7 @@ const Derived = function () {
 
         await getPrivateKey();
 
-        // privateKeyObj = new Buffer('9d4d735101413ab8091197df5dd84d53fb182969004e95c70a36f3594bafc249', 'hex');
-
-        const nonceManager = await fetchNonceAndAddToRawTransaction();
-
-        await sendSignedTx(nonceManager);
+        executeTx();
 
         return Promise.resolve();
       };
