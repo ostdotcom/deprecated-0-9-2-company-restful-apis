@@ -57,6 +57,8 @@ define("AWS_REGION", process.env.CR_AWS_REGION);
 // KMS details
 define("KMS_API_KEY_ARN", process.env.CR_API_KEY_KMS_ARN);
 define("KMS_API_KEY_ID", process.env.CR_API_KEY_KMS_ID);
+define("KMS_MANAGED_ADDR_KEY_ARN", process.env.CR_MANAGED_ADDRESS_KMS_ARN);
+define("KMS_MANAGED_ADDR_KEY_ID", process.env.CR_MANAGED_ADDRESS_KMS_ID);
 
 // JWT details
 define('SAAS_API_SECRET_KEY', process.env.CA_SAAS_API_SECRET_KEY);

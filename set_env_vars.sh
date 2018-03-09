@@ -35,8 +35,8 @@ export CR_AWS_REGION='us-east-1'
 # KMS details
 export CR_API_KEY_KMS_ARN='arn:aws:kms:us-east-1:604850698061:key'
 export CR_API_KEY_KMS_ID='eab8148d-fd9f-451d-9eb9-16c115645635'
-export CR_MANAGED_ADDRESS_KMS_ARN=''
-export CR_MANAGED_ADDRESS_KMS_ID=''
+export CR_MANAGED_ADDRESS_KMS_ARN='arn:aws:kms:us-east-1:604850698061:key'
+export CR_MANAGED_ADDRESS_KMS_ID='eab8148d-fd9f-451d-9eb9-16c115645635'
 
 # JWT details
 export CA_SAAS_API_SECRET_KEY='1somethingsarebetterkeptinenvironemntvariables'

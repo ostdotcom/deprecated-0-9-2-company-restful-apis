@@ -13,8 +13,7 @@ const rootPrefix = '../../..'
   , managedAddressConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , ManagedAddressSaltKlass = require(rootPrefix + '/app/models/managed_address_salt')
   , managedAddressSaltObj = new ManagedAddressSaltKlass()
-  , kmsWrapper = require(rootPrefix + '/lib/authentication/kms_wrapper')
-  , localCipher = require(rootPrefix + '/lib/encryptors/local_cipher')
+  , kmsWrapperKlass = require(rootPrefix + '/lib/authentication/kms_wrapper')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , openStPlatform = require('@openstfoundation/openst-platform')
@@ -199,7 +198,8 @@ GenerateAddressKlass.prototype = {
 
     try {
 
-      const newKey = await kmsWrapper.generateDataKey();
+      var KMSObject = new kmsWrapperKlass('managedAddresses');
+      const newKey = await KMSObject.generateDataKey();
 
       const addressSalt = newKey["CiphertextBlob"];
 

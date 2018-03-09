@@ -13,7 +13,7 @@ const uuid = require('uuid')
 const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , GenerateEthAddressKlass = require(rootPrefix + '/app/services/address/generate')
-  , kmsWrapper = require(rootPrefix + '/lib/authentication/kms_wrapper')
+  , kmsWrapperKlass = require(rootPrefix + '/lib/authentication/kms_wrapper')
   , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
   , clientBrandedToken = new ClientBrandedTokenKlass()
   , ManagedAddressSaltKlass = require(rootPrefix + '/app/models/managed_address_salt')
@@ -114,7 +114,9 @@ SetupToken.prototype = {
    */
   setClientAddressSalt: async function () {
     var oThis = this;
-    const newKey = await kmsWrapper.generateDataKey();
+
+    var KMSObject = new kmsWrapperKlass('managedAddresses');
+    const newKey = await KMSObject.generateDataKey();
 
     const addressSalt = newKey["CiphertextBlob"];
 

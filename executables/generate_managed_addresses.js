@@ -23,7 +23,7 @@ shell.config.silent = true;
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , PreGeneratedManagedAddressKlass = require(rootPrefix + '/app/models/pre_generated_managed_address')
   , PreGeneratedEncryptionSaltKlass = require(rootPrefix + '/app/models/pre_generated_encryption_salt')
-  , kmsWrapper = require(rootPrefix + '/lib/authentication/kms_wrapper')
+  , kmsWrapperKlass = require(rootPrefix + '/lib/authentication/kms_wrapper')
   , localCipher = require(rootPrefix + '/lib/encryptors/local_cipher')
   , utils = require(rootPrefix + '/lib/util')
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
@@ -147,7 +147,8 @@ GenerateManagedAddressesKlass.prototype = {
     const oThis = this;
 
     // Get new key from KMS
-    var addressSaltKMSObj = await kmsWrapper.generateDataKey()
+    var KMSObject = new kmsWrapperKlass('managedAddresses');
+    var addressSaltKMSObj = await KMSObject.generateDataKey()
       , kmsCipherBlob = addressSaltKMSObj["CiphertextBlob"]
       , kmsPlainText = addressSaltKMSObj["Plaintext"];
 
@@ -169,7 +170,7 @@ var temp = async function () {
   var PreGeneratedEncryptionSaltKlass = require(rootPrefix + '/app/models/pre_generated_encryption_salt')
   var PreGeneratedManagedAddressKlass = require(rootPrefix + '/app/models/pre_generated_managed_address');
   var localCipher = require(rootPrefix + '/lib/encryptors/local_cipher');
-  var kmsWrapper = require(rootPrefix + '/lib/authentication/kms_wrapper');
+  var kmsWrapperKlass = require(rootPrefix + '/lib/authentication/kms_wrapper');
 
   var preGeneratedManagedAddressObj = new PreGeneratedManagedAddressKlass();
   var prefetchedAddress = await preGeneratedManagedAddressObj.findById(1);
@@ -179,7 +180,8 @@ var temp = async function () {
   var saltResult = await preGeneratedEncryptionSaltObj.findById(pregeneratedAddress.pre_generated_encryption_salt_id);
   var saltDetail = saltResult[0];
 
-  var addressSaltKMSObj = await kmsWrapper.decrypt(saltDetail.encryption_salt);
+  var KMSObject = new kmsWrapperKlass('managedAddresses');
+  var addressSaltKMSObj = await KMSObject.decrypt(saltDetail.encryption_salt);
 
   var kmsPlainText = addressSaltKMSObj["Plaintext"];
 
