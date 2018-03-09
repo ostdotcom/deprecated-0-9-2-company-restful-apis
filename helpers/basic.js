@@ -177,6 +177,20 @@ BasicHelperKlass.prototype = {
   },
 
   /**
+   * Check if eth address is valid or not
+   *
+   * @param {string} address - address
+   *
+   * @return {boolean}
+   */
+  isEthAddressValid: function (address) {
+    if (typeof address !== "string") {
+      return false;
+    }
+    return /^0x[0-9a-fA-F]{40}$/.test(address);
+  },
+
+  /**
    * Check if string has stop words
    *
    * @param {string} string

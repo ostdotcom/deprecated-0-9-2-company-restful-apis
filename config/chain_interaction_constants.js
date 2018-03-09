@@ -39,6 +39,24 @@ define("ST_PRIME_UUID", process.env.OST_OPENSTUTILITY_ST_PRIME_UUID);
 define("SIMPLE_TOKEN_CONTRACT_ADDR", process.env.OST_SIMPLE_TOKEN_CONTRACT_ADDR);
 define("STAKER_ADDR", process.env.OST_STAKER_ADDR);
 
+const OST_VALUE_GETH_RPC_PROVIDERS = JSON.parse(process.env.OST_VALUE_GETH_RPC_PROVIDERS);
+define('OST_VALUE_GETH_RPC_PROVIDERS', OST_VALUE_GETH_RPC_PROVIDERS);
+
+const OST_UTILITY_GETH_RPC_PROVIDERS = JSON.parse(process.env.OST_UTILITY_GETH_RPC_PROVIDERS);
+define('OST_UTILITY_GETH_RPC_PROVIDERS', OST_UTILITY_GETH_RPC_PROVIDERS);
+
+const providerHostToChainKindMap = {};
+
+for(var i = 0; i < OST_VALUE_GETH_RPC_PROVIDERS.length; i ++) {
+  providerHostToChainKindMap[OST_VALUE_GETH_RPC_PROVIDERS[i]] = 'value';
+}
+
+for(var i = 0; i < OST_UTILITY_GETH_RPC_PROVIDERS.length; i ++) {
+  providerHostToChainKindMap[OST_UTILITY_GETH_RPC_PROVIDERS[i]] = 'utility';
+}
+
+define('GETH_PROVIDER_TO_CHAIN_KIND_MAP', providerHostToChainKindMap);
+
 // Price oracle details
 var po_contracts = {};
 try {
@@ -52,20 +70,9 @@ define('UTILITY_WORKERS_CONTRACT_ADDRESS', process.env.OST_UTILITY_WORKERS_CONTR
 
 //Map of all addresses which would be needed to unlocked via Key Store File
 //Every other address will be unlocked via private_key
-const addresses_to_unlock_via_keystore_file = [
-  process.env.OST_FOUNDATION_ADDR,
-  process.env.OST_UTILITY_CHAIN_OWNER_ADDR,
-  process.env.OST_STAKER_ADDR,
-  process.env.OST_REDEEMER_ADDR,
-  process.env.OST_VALUE_REGISTRAR_ADDR,
-  process.env.OST_UTILITY_REGISTRAR_ADDR,
-  process.env.OST_VALUE_DEPLOYER_ADDR,
-  process.env.OST_UTILITY_DEPLOYER_ADDR,
-  process.env.OST_VALUE_OPS_ADDR,
-  process.env.OST_UTILITY_OPS_ADDR
-];
+const addresses_to_unlock_via_keystore_file = [];
 
-var addresses_to_unlock_via_keystore_file_map = {}
+var addresses_to_unlock_via_keystore_file_map = {};
 for(var i=0; i<addresses_to_unlock_via_keystore_file.length; i++) {
   var addr = addresses_to_unlock_via_keystore_file[i];
   if (addr) {

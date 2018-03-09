@@ -2,6 +2,10 @@
 export CR_ENVIRONMENT='development'
 export CR_SUB_ENVIRONMENT='sandbox'
 
+# chain constants
+export OST_VALUE_GETH_RPC_PROVIDERS='["http://127.0.0.1:8545"]'
+export OST_UTILITY_GETH_RPC_PROVIDERS='["http://127.0.0.1:9546"]'
+
 # Database details
 
 export CR_MYSQL_CONNECTION_POOL_SIZE='5'

@@ -12,7 +12,7 @@ const uuid = require('uuid')
 
 const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , generateAddress = require(rootPrefix + '/app/services/address/generate')
+  , GenerateEthAddressKlass = require(rootPrefix + '/app/services/address/generate')
   , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
@@ -111,7 +111,15 @@ CreateDummyUsers.prototype = {
     var promiseResolvers = [];
 
     for (var i = 0; i < oThis.numberOfUsers; i++) {
-      promiseResolvers.push(generateAddress.perform(oThis.clientId, managedAddressesConst.userAddressType, "User " + i));
+
+      const generateEthAddress = new GenerateEthAddressKlass({
+        addressType: managedAddressesConst.userAddressType,
+        clientId: oThis.clientId,
+        name: "User " + i
+      });
+
+      promiseResolvers.push(generateEthAddress.perform());
+
     }
 
     const resolversData = await Promise.all(promiseResolvers);

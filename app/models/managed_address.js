@@ -18,7 +18,8 @@ const dbName = "saas_client_economy_" + coreConstants.SUB_ENVIRONMENT + "_" + co
     '1': managedAddressesConst.userAddressType,
     '2': managedAddressesConst.reserveAddressType,
     '3': managedAddressesConst.workerAddressType,
-    '4': managedAddressesConst.airdropHolderAddressType
+    '4': managedAddressesConst.airdropHolderAddressType,
+    '5': managedAddressesConst.internalChainIndenpendentAddressType
   }
   , invertedAddressTypes = util.invert(addressTypes)
   , properties = {
@@ -82,7 +83,7 @@ const ManagedAddressKlassPrototype = {
     var oThis = this;
     return oThis.QueryDB.readByInQuery(
       oThis.tableName,
-      ['id', 'uuid', 'address_type', 'ethereum_address', 'properties', 'passphrase'],
+      ['id', 'uuid', 'address_type', 'ethereum_address', 'properties', 'private_key'],
       ids, 'id');
   },
 
@@ -193,7 +194,8 @@ const ManagedAddressKlassPrototype = {
     var oThis = this;
     return oThis.QueryDB.readByInQuery(
       oThis.tableName,
-      ['id', 'client_id', 'uuid', 'name', 'ethereum_address', 'passphrase', 'status', 'properties', 'address_type'],
+      ['id', 'client_id', 'uuid', 'name', 'ethereum_address', 'private_key',
+        'status', 'properties', 'address_type', 'managed_address_salt_id'],
       uuids, 'uuid');
   },
 

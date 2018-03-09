@@ -11,7 +11,7 @@ const rootPrefix = '.'
 ;
 
 //Always Include Module overrides First
-// require(rootPrefix + '/module_overrides/index');
+require(rootPrefix + '/module_overrides/index');
 
 const express = require('express')
   , path = require('path')
@@ -236,7 +236,7 @@ if (cluster.isMaster) {
    * Get port from environment and store in Express.
    */
 
-  var port = normalizePort(process.env.PORT || '4001');
+  var port = normalizePort(process.env.PORT || '7001');
   app.set('port', port);
 
   /**

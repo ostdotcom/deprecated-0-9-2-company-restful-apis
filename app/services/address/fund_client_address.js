@@ -17,7 +17,6 @@ const rootPrefix = '../../..'
   , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
   , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , AddressEncryptorKlass = require(rootPrefix + '/lib/encryptors/addresses_encryptor')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
@@ -136,8 +135,7 @@ FundClientAddressKlass.prototype = {
       , airdropHolderAddrObj = oThis.addrTypeToAddrMap[managedAddressObj.invertedAddressTypes[managedAddressesConst.airdropHolderAddressType]]
     ;
 
-    const addressEncryptor = new AddressEncryptorKlass(oThis.clientId);
-    const reservePassphraseD = await addressEncryptor.decrypt(reserveAddrObj.passphrase);
+    const reservePassphraseD = 'no_password';
 
     if(await oThis._isTransferRequired(workerAddrObj.ethereum_address)) {
       //transfer to worker
@@ -152,6 +150,7 @@ FundClientAddressKlass.prototype = {
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
+
   },
 
   /**

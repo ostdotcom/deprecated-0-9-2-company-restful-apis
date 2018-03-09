@@ -24,13 +24,13 @@ const ManagedAddressSaltKlassPrototype = {
 
   enums: {},
 
-  getByClientId: function (clientId) {
+  getById: function (id) {
     var oThis = this;
     return oThis.QueryDB.read(
       oThis.tableName,
       [],
-      'client_id=?',
-      [clientId]);
+      'id=?',
+      [id]);
   }
 
 };

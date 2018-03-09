@@ -7,10 +7,13 @@
  * @module executables/rmq_subscribers/start_airdrop
  *
  */
+const rootPrefix = '../..';
+
+//Always Include Module overrides First
+require(rootPrefix + '/module_overrides/index');
 
 // Include Process Locker File
-const rootPrefix = '../..'
-  , ProcessLockerKlass = require(rootPrefix + '/lib/process_locker')
+const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker')
   , ProcessLocker = new ProcessLockerKlass()
 ;
 
