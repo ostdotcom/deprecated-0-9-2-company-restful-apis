@@ -1,6 +1,7 @@
 "use strict";
 
 const openStPlatform = require('@openstfoundation/openst-platform')
+  , openSTNotification = require('@openstfoundation/openst-notification')
 ;
 
 const rootPrefix = '../../..'
@@ -9,6 +10,7 @@ const rootPrefix = '../../..'
   , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
   , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
   , ClientSecuredBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
+  , chainIntConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
@@ -30,6 +32,7 @@ const EditBrandedTokenKlass = function (params) {
   oThis.conversion_factor = oThis.params.conversion_factor;
 
   oThis.brandedTokenAr = null;
+  oThis.publish_data = {};
 
 };
 
@@ -43,6 +46,9 @@ EditBrandedTokenKlass.prototype = {
     if(r.isFailure()) return Promise.resolve(r);
 
     r = await oThis.setSimpleStakeContractAddress();
+    if(r.isFailure()) return Promise.resolve(r);
+
+    r = await oThis.publishUpdateEvent();
     if(r.isFailure()) return Promise.resolve(r);
 
     r = await oThis.editToken();
@@ -73,12 +79,18 @@ EditBrandedTokenKlass.prototype = {
       return Promise.resolve(responseHelper.error('tm_e_3', 'Unauthorized access'));
     }
 
+    if(oThis.symbol != oThis.brandedTokenAr.symbol) {
+      oThis.publish_data.symbol = oThis.brandedTokenAr.symbol;
+    }
+
     if(oThis.name && basicHelper.isBTNameValid(oThis.name) && oThis.name != oThis.brandedTokenAr.name){
       oThis.brandedTokenAr.name = oThis.name;
+      oThis.publish_data.name = oThis.name;
     }
 
     if(oThis.symbol_icon && oThis.symbol_icon != oThis.brandedTokenAr.symbol_icon){
       oThis.brandedTokenAr.symbol_icon = oThis.symbol_icon;
+      oThis.publish_data.symbol_icon = oThis.symbol_icon;
     }
 
     if(oThis.token_erc20_address && basicHelper.isAddressValid(oThis.token_erc20_address) &&
@@ -103,6 +115,7 @@ EditBrandedTokenKlass.prototype = {
       oThis.conversion_factor != oThis.brandedTokenAr.conversion_factor
     ){
       oThis.brandedTokenAr.conversion_factor = oThis.conversion_factor;
+      oThis.publish_data.ost_to_bt_conversion_factor = oThis.conversion_factor;
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -144,6 +157,35 @@ EditBrandedTokenKlass.prototype = {
 
   },
 
+
+  publishUpdateEvent: function () {
+
+    var oThis = this;
+
+    if(Object.keys(oThis.publish_data).length == 0 || !oThis.brandedTokenAr.token_erc20_address){
+      return Promise.resolve(responseHelper.successWithData({}));
+    }
+    openSTNotification.publishEvent.perform(
+      {
+        topics: ['entity.branded_token'],
+        publisher: 'OST',
+        message: {
+          kind: 'shared_entity',
+          payload: {
+            entity: 'branded_token',
+            identifier: {
+              erc20_contract_address: oThis.brandedTokenAr.token_erc20_address,
+              chain_id: chainIntConstants.UTILITY_CHAIN_ID
+            },
+            operation: 'update',
+            data: oThis.publish_data
+          }
+        }
+      }
+    );
+    return Promise.resolve(responseHelper.successWithData({}));
+  },
+
   editToken: async function () {
 
     var oThis = this;
@@ -155,7 +197,7 @@ EditBrandedTokenKlass.prototype = {
           id: oThis.brandedTokenAr.id
         }
       }
-    )
+    );
 
     return Promise.resolve(responseHelper.successWithData({}));
 
