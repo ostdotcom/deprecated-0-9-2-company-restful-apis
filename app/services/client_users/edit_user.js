@@ -37,7 +37,7 @@ const editUser = {
     }
 
     if(!basicHelper.isUserNameValid(name)){
-      errors_object['name'] = 'Only letters, numbers and spaces allowed. (Max 20 characters)';
+      errors_object['name'] = 'Only letters, numbers and spaces allowed. (3 to 20 characters)';
     }
 
     if(basicHelper.hasStopWords(name)){
