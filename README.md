@@ -2,41 +2,65 @@
 
 * Setup Company API. Instrunctions are published: https://github.com/OpenSTFoundation/company-api/blob/master/README.md
 
+# Setup Saas
+
 * Install required packages
 ```bash
 > npm install
 ```
 
-# Setup Saas
+* Install RabbitMQ
+```bash
+> brew install rabbitmq
+```
+
+* Start redis
+```bash
+> sudo redis-server --port 6379  --requirepass 'st123'
+```
+
+* Start memcached
+```bash
+> memcached -p 11211 -d
+```
+
+* Start RMQ for platform
+```bash
+> brew services start rabbitmq
+```
 
 * Setup Platform
 ```bash
 > source set_env_vars.sh
+> export OST_DEFAULT_TTL='3600'
+> export OST_REDIS_HOST='127.0.0.1'
+> export OST_REDIS_PORT=6379
+> export OST_REDIS_PASS=st123
+> export OST_REDIS_TLS_ENABLED=0
 > export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform
 > echo "export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform" >> ~/.bash_profile
 > node tools/setup/platform/deploy.js
 ```
 
-* Enable memcached for platform
+* Enable redis for platform
 ```bash
 > vim $HOME/openst-setup/openst_env_vars.sh
-export OST_CACHING_ENGINE='memcached'
 export OST_MEMCACHE_SERVERS='127.0.0.1:11211'
-memcached -p 11211 -d
+export OST_REDIS_HOST='127.0.0.1'
+export OST_REDIS_PORT=6379
+export OST_REDIS_PASS=st123
+export OST_REDIS_TLS_ENABLED=0
 ```
 
-* Enable RMQ for platform
+* Enable memcached for SAAS
 ```bash
-
-# Start rabbmitMQ 
-> brew services start rabbitmq
-
-# RMQ in browser
-http://127.0.0.1:15672
-
-# Configure environment variables 
 > vim $HOME/openst-setup/openst_env_vars.sh
+export OST_MEMCACHE_SERVERS='127.0.0.1:11211'
+```
 
+* Enable RabbitMQ for platform
+```bash
+> vim $HOME/openst-setup/openst_env_vars.sh
 export OST_RMQ_SUPPORT='1'
 export OST_RMQ_HOST='127.0.0.1'
 export OST_RMQ_PORT='5672'
@@ -45,12 +69,14 @@ export OST_RMQ_PASSWORD='guest'
 export OST_RMQ_HEARTBEATS='30'
 ```
 
-* Setup Price Oracle
+* Start Utility Chain
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
-> node $OPENST_PLATFORM_PATH/tools/setup/start_services.js
+> node $HOME/openst-setup/bin/run-utility.sh
+```
 
-
+* Setup Price Oracle
+```bash
 > vim $HOME/openst-setup/openst_env_vars.sh
 export OST_UTILITY_PRICE_ORACLES='{}'
 
@@ -65,8 +91,6 @@ export OST_UTILITY_PRICE_ORACLES='{"OST":{"USD":"0x60Fa2655AD1F08DfC3e1DAd9b31e4
 * Setup Workers Contract
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
-> node $OPENST_PLATFORM_PATH/tools/setup/start_services.js
-
 > node tools/setup/payments/set_worker.js
 
 > vim $HOME/openst-setup/openst_env_vars.sh
@@ -82,26 +106,63 @@ NOTE: Manually create data MySQL mentioned in $OP_MYSQL_DATABASE
 > node node_modules/@openstfoundation/openst-payments/migrations/create_tables.js
 ```
 
-# Start Services
+# Start SAAS Services
 
-* Start Platform
-  * For just utility chain interaction
-  ```bash
-  > cd company-restful-apis
-  > source $HOME/openst-setup/openst_env_vars.sh
-  > sh $HOME/openst-setup/bin/run-utility.sh
-  ```
-
-  * For both chain interactions
-  ```bash
-  > cd company-restful-apis
-  > source $HOME/openst-setup/openst_env_vars.sh
-  > node $OPENST_PLATFORM_PATH/tools/setup/start_services.js
-  ```
-  
-* Start APIs
+* Start redis
 ```bash
-> cd company-restful-apis
+> sudo redis-server --port 6379  --requirepass 'st123'
+```
+
+* Start memcached
+```bash
+> memcached -p 11211 -d
+```bash
+
+* Start RMQ for platform (RMQ in browser: http://127.0.0.1:15672)
+```bash
+> brew services start rabbitmq
+```bash
+
+* Start MySQL
+```bash
+> mysql.server start
+```
+
+* Start value chain in new terminal
+```bash
+> source $HOME/openst-setup/openst_env_vars.sh
+> sh $HOME/openst-setup/bin/run-value.sh
+```
+  
+* Start utility chain in new terminal
+```bash
+> source $HOME/openst-setup/openst_env_vars.sh
+> sh $HOME/openst-setup/bin/run-utility.sh
+```
+
+* Start Register Branded Token Intercom in new terminal
+```bash
+> source $HOME/openst-setup/openst_env_vars.sh
+> source set_env_vars.sh
+> executables/inter_comm/register_branded_token.js
+```
+
+* Start Stake & Mint Intercom in new terminal
+```bash
+> source $HOME/openst-setup/openst_env_vars.sh
+> source set_env_vars.sh
+> executables/inter_comm/stake_and_mint.js
+```
+
+* Start Stake & Mint Processor Intercom in new terminal
+```bash
+> source $HOME/openst-setup/openst_env_vars.sh
+> source set_env_vars.sh
+> executables/inter_comm/stake_and_mint_processor.js
+```
+  
+* Start APIs in new terminal
+```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
 > node app.js
