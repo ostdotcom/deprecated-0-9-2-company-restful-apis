@@ -7,6 +7,8 @@
 > npm install
 ```
 
+# Setup Saas
+
 * Setup Platform
 ```bash
 > source set_env_vars.sh
