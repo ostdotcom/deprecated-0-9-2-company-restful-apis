@@ -61,6 +61,8 @@ const Derived = function () {
 
       var privateKeyObj;
 
+      var txHashObtained = false;
+
       const sanitize = function() {
         // convert to hex
         var value = new BigNumber(rawTx.value || 0);
@@ -120,8 +122,11 @@ const Derived = function () {
       const sendSignedTx = function (nonceManager) {
         const serializedTx = signTransactionLocally();
 
-        const onTxHash = function (hash) {
-          nonceManager.completionWithSuccess();
+        const onTxHash = async function (hash) {
+          if(!txHashObtained) {
+            txHashObtained = true;
+            await nonceManager.completionWithSuccess();
+          }
           hackedReturnedPromiEvent.eventEmitter.emit('transactionHash', hash);
         };
 
@@ -129,9 +134,9 @@ const Derived = function () {
           hackedReturnedPromiEvent.eventEmitter.emit('receipt', receipt);
         };
 
-        const onError = function (error) {
+        const onError = async function (error) {
           // decide if nonce has to be synced or not.
-          nonceManager.completionWithFailure();
+          await nonceManager.completionWithFailure(true);
           hackedReturnedPromiEvent.eventEmitter.emit('error', error);
         };
 
