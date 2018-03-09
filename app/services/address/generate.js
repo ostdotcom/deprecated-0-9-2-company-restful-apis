@@ -143,7 +143,7 @@ GenerateAddressKlass.prototype = {
 
     if (!OThis.ethAddress || !OThis.privateKey) {
 
-      const addrGenerator = new openStPlatform.services.utils.generateUnlockedAddress({chain: 'utility'})
+      const addrGenerator = new openStPlatform.services.utils.generateRawKey()
           , generateAddrRsp = await addrGenerator.perform();
 
       if (generateAddrRsp.isFailure()) {
