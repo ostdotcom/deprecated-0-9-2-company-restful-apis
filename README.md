@@ -32,6 +32,7 @@
 * Setup Platform
 ```bash
 > source set_env_vars.sh
+# Temporarily set redis caching engine for platform. We will set it permanently later on.
 > export OST_CACHING_ENGINE='redis'
 > export OST_DEFAULT_TTL='36000'
 > export OST_REDIS_HOST='127.0.0.1'
