@@ -9,6 +9,7 @@ const rootPrefix = '../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , coreConstants = require(rootPrefix + '/config/core_constants')
   , waitTimeout = 50000 //50 seconds
   , waitTimeInterval = 100 //100 milliseconds
 ;
