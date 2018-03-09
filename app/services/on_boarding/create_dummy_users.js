@@ -113,7 +113,7 @@ CreateDummyUsers.prototype = {
     for (var i = 0; i < oThis.numberOfUsers; i++) {
 
       const generateEthAddress = new GenerateEthAddressKlass({
-        addressType: managedAddressConst.userAddressType,
+        addressType: managedAddressesConst.userAddressType,
         clientId: oThis.clientId,
         name: "User " + i
       });
