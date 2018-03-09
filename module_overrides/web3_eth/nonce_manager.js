@@ -9,7 +9,8 @@ const rootPrefix = '../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , waitTimeout = 15000 //15 seconds
+  , waitTimeout = 50000 //50 seconds
+  , waitTimeInterval = 100 //100 milliseconds
 ;
 
 /**
@@ -38,7 +39,7 @@ const NonceManagerKlass = function(params) {
   oThis.chainKind = params['chain_kind'];
 
   // Set cacheImplementer to perform caching operations
-  oThis.cacheImplementer = new openStCache.cache('redis', false);
+  oThis.cacheImplementer = new openStCache.cache(coreConstants.BALANCE_AND_NONCE_ONLY_CACHE_ENGINE, false);
 
   // Set cache key for nonce
   oThis.cacheKey = `nonce_${oThis.chainKind}_${oThis.address}`;
@@ -80,7 +81,7 @@ const NonceCacheKlassPrototype = {
         const nonceResponse = await oThis.cacheImplementer.get(oThis.cacheKey);
         if (nonceResponse.isSuccess() && nonceResponse.data.response != null) {
           console.log("nonceResponse: ", nonceResponse);
-          return responseHelper.successWithData({nonce: nonceResponse.data.response});
+          return responseHelper.successWithData({nonce: parseInt(nonceResponse.data.response)});
         } else {
           return await oThis._syncNonce();
         }
@@ -102,7 +103,7 @@ const NonceCacheKlassPrototype = {
           }
           const isLocked = await oThis.isLocked();
           if (isLocked) {
-            setTimeout(wait, 100); // 100 milliseconds
+            setTimeout(wait, waitTimeInterval);
           } else {
             return onResolve(acquireLockAndReturn());
           }
@@ -126,7 +127,7 @@ const NonceCacheKlassPrototype = {
       } catch (err) {
         //Format the error
         logger.error("module_overrides/web3_eth/nonce_manager.js:getNonce inside catch ", err);
-        return onResolve(responseHelper.error('l_nm_getNonce_2', 'Something went wrong'));
+        return onResolve(responseHelper.error('l_nm_getNonce_3', 'Something went wrong'));
       }
 
     });
@@ -192,10 +193,12 @@ const NonceCacheKlassPrototype = {
     ;
     console.log("oThis.cacheLockKey: ",oThis.cacheLockKey);
     if (lockResponse.isSuccess()) {
+      // Response should be 1 to call it acquired.
       if (lockResponse.data.response == 1) {
         return Promise.resolve(responseHelper.successWithData({}));
       }
-      // revert
+      // Revert the increased lock if value is not 1.
+      // Means someone else has acquired the lock already.
       await oThis.cacheImplementer.decrement(oThis.cacheLockKey);
     }
     return Promise.resolve(responseHelper.error("l_nm_acquireLock_1", "unable to acquire lock"));
@@ -209,11 +212,11 @@ const NonceCacheKlassPrototype = {
    * @private
    * @ignore
    */
-  _releaseLock: async function() {
+  _releaseLock: function() {
     const oThis = this
     ;
 
-    return await oThis.cacheImplementer.decrement(oThis.cacheLockKey);
+    return oThis.cacheImplementer.decrement(oThis.cacheLockKey);
 
   },
 
@@ -258,7 +261,7 @@ const NonceCacheKlassPrototype = {
     const oThis = this
       , allNoncePromise = []
       , allGethNodes = (oThis.chainKind == 'value') ? chainInteractionConstants.OST_VALUE_GETH_RPC_PROVIDERS :
-      chainInteractionConstants.OST_UTILITY_GETH_RPC_PROVIDERS
+        chainInteractionConstants.OST_UTILITY_GETH_RPC_PROVIDERS
     ;
 
     for (var i = allGethNodes.length - 1; i >= 0; i--) {
