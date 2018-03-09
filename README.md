@@ -7,7 +7,7 @@
 
 * Setup Platform
 ```bash
-> cd company-restful-apis
+> source set_env_vars.sh
 > export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform
 > echo "export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform" >> ~/.bash_profile
 > node tools/setup/platform/deploy.js
@@ -51,7 +51,7 @@ export OST_RMQ_HEARTBEATS='30'
 export OST_UTILITY_PRICE_ORACLES='{}'
 
 > source $HOME/openst-setup/openst_env_vars.sh
-> node node_modules/@ostdotcom/ost-price-oracle/tools/deploy/price_oracle.js OST USD $OST_UTILITY_GAS_PRICE
+> node tools/setup/price-oracle/deploy.js
 
 > vim $HOME/openst-setup/openst_env_vars.sh
 # 3rd party contract address
@@ -63,8 +63,7 @@ export OST_UTILITY_PRICE_ORACLES='{"OST":{"USD":"0x60Fa2655AD1F08DfC3e1DAd9b31e4
 > source $HOME/openst-setup/openst_env_vars.sh
 > node $OPENST_PLATFORM_PATH/tools/setup/start_services.js
 
-
-> node node_modules/@openstfoundation/openst-payments/tools/deploy/workers.js $OST_UTILITY_GAS_PRICE $OST_UTILITY_CHAIN_ID
+> node tools/setup/payments/set_worker.js
 
 > vim $HOME/openst-setup/openst_env_vars.sh
 # 3rd party contract address
@@ -109,7 +108,6 @@ NOTE: Manually create data MySQL mentioned in $OP_MYSQL_DATABASE
 */60 * * * * node executables/update_price_oracle_price_points.js >> log/update_price_oracle_price_points.log
 */5 * * * * node executables/rmq_subscribers/send_error_emails.js >> log/send_error_emails.log
 */5 * * * * node executables/rmq_subscribers/start_airdrop.js >> log/start_airdrop.log
-*/5 * * * * node executables/generate_managed_addresses.js >> log/generate_managed_addresses.log
 */5 * * * * node executables/fund_addresses/by_reserve/st_prime.js >> log/fund_addresses/by_reserve/st_prime.log
 */5 * * * * node executables/fund_addresses/by_utility_chain_owner/eth.js >> log/fund_addresses_by_utility_chain_owner/eth.log
 */5 * * * * node executables/fund_addresses/by_utility_chain_owner/st_prime.js >> log/fund_addresses_by_utility_chain_owner/st_prime.log
