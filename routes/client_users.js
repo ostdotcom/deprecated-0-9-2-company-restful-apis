@@ -122,7 +122,7 @@ router.post('/list', function (req, res, next) {
  * @routeparam {String} :list_type - List to which tokens need to be airdropped. Possible values: 'all' or 'never_airdropped'. Default is: 'all'
  *
  */
-router.post('/airdrop-tokens', function (req, res, next) {
+router.post('/airdrop/drop', function (req, res, next) {
 
   const performer = function() {
 
@@ -156,7 +156,7 @@ router.post('/airdrop-tokens', function (req, res, next) {
  * @routeparam {Decimal} :airdrop_uuid - Token airdrop uuid
  *
  */
-router.get('/airdrop/get-status', function (req, res, next) {
+router.get('/airdrop/status', function (req, res, next) {
 
   Promise.resolve(routeHelper.performer(req, res, next, getAirdropStatusKlass, 'r_cu_7'));
 
