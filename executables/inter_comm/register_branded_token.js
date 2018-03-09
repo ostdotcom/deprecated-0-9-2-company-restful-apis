@@ -21,7 +21,7 @@ require(rootPrefix + '/module_overrides/index');
 const openStPlatform = require('@openstfoundation/openst-platform')
 ;
 
-const logger = require(rootPrefix + '/helpers/custom_console_logger')
+const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , RegisterBrandedTokenInterComm = openStPlatform.services.interComm.registerBrandedToken
 ;
 
