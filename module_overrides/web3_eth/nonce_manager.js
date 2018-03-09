@@ -22,7 +22,7 @@ const NonceManagerKlass = function(params) {
   const oThis = this
   ;
 
-  oThis.address = params['address'];
+  oThis.address = params['address'].toLowerCase();
   oThis.chainKind = params['chain_kind'];
   oThis.chainId = (oThis.chainKind == 'value') ? chainInteractionConstants.VALUE_CHAIN_ID :
                                                   chainInteractionConstants.UTILITY_CHAIN_ID;
@@ -31,10 +31,10 @@ const NonceManagerKlass = function(params) {
   oThis.cacheImplementer = openStCache.cache;
 
   // Set cache key for nonce
-  oThis.cacheKey = `nonce_${oThis.chainId}_${oThis.address}`;
+  oThis.cacheKey = `nonce_${oThis.chainKind}_${oThis.address}`;
 
   // Set cache key for nonce lock
-  oThis.cacheLockKey = `nonce_${oThis.chainId}_${oThis.address}_lock`;
+  oThis.cacheLockKey = `nonce_${oThis.chainKind}_${oThis.address}_lock`;
 };
 
 const NonceCacheKlassPrototype = {
@@ -117,13 +117,12 @@ const NonceCacheKlassPrototype = {
    *
    * @return {promise<result>}
    */
-  completionWithSuccess: function() {
+  completionWithSuccess: async function() {
     const oThis = this
     ;
 
-    oThis._increment();
+    await oThis._increment();
     return oThis._releaseLock();
-
   },
 
   /**
@@ -136,10 +135,12 @@ const NonceCacheKlassPrototype = {
   completionWithFailure: async function(shouldSyncNonce) {
     const oThis = this
     ;
+
     if (shouldSyncNonce) {
       await oThis._syncNonce();
-    } 
-    oThis._releaseLock();
+    }
+
+    return oThis._releaseLock();
   },
 
   /**
