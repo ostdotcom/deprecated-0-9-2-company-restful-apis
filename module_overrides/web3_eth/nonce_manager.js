@@ -38,7 +38,7 @@ const NonceManagerKlass = function(params) {
   oThis.chainKind = params['chain_kind'];
 
   // Set cacheImplementer to perform caching operations
-  oThis.cacheImplementer = openStCache.cache;
+  oThis.cacheImplementer = new openStCache.cache('redis', false);
 
   // Set cache key for nonce
   oThis.cacheKey = `nonce_${oThis.chainKind}_${oThis.address}`;
@@ -77,6 +77,7 @@ const NonceCacheKlassPrototype = {
       if (acquireLockResponse.isSuccess()) {
         const nonceResponse = await oThis.cacheImplementer.get(oThis.cacheKey);
         if (nonceResponse.isSuccess() && nonceResponse.data.response != null) {
+          console.log("nonceResponse: ", nonceResponse);
           return responseHelper.successWithData({nonce: nonceResponse.data.response});
         } else {
           return await oThis._syncNonce();
@@ -91,6 +92,7 @@ const NonceCacheKlassPrototype = {
       const startTime =  _getTimeStamp();
       const wait = async function() {
         try {
+          console.log("waiting for lock to release");
           if (_getTimeStamp()-startTime > waitTimeout) {
             //Format the error
             logger.error("module_overrides/web3_eth/nonce_manager.js:getNonce:wait");
@@ -137,6 +139,7 @@ const NonceCacheKlassPrototype = {
     const oThis = this
     ;
 
+    console.log("completionWithSuccess");
     await oThis._increment();
     return await oThis._releaseLock();
 
@@ -153,6 +156,7 @@ const NonceCacheKlassPrototype = {
     const oThis = this
     ;
 
+    console.log("completionWithFailure");
     if (shouldSyncNonce) {
       await oThis._syncNonce();
     }
@@ -184,7 +188,7 @@ const NonceCacheKlassPrototype = {
     const oThis = this
       , lockResponse = await oThis.cacheImplementer.increment(oThis.cacheLockKey)
     ;
-
+    console.log("lockResponse: ",lockResponse);
     if (lockResponse.isSuccess()) {
       if (lockResponse.data.response == 1) {
         return Promise.resolve(responseHelper.successWithData({}));
@@ -281,6 +285,7 @@ const NonceCacheKlassPrototype = {
     }
     if (isNonceCountAvailable) {
       const setNonceResponse = await oThis.cacheImplementer.set(oThis.cacheKey, maxNonceCount.toNumber());
+      console.log("setNonceResponse: ", setNonceResponse);
       if (setNonceResponse.isSuccess()) {
         return responseHelper.successWithData({nonce: maxNonceCount.toNumber()});
       }

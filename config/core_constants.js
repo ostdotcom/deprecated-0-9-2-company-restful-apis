@@ -12,6 +12,9 @@ function define(name, value) {
 }
 
 // package variables for current repo
+define("CACHE_ENGINE", process.env.OST_CACHING_ENGINE);
+
+// package variables for current repo
 define("PACKAGE_NAME", packageFile.name);
 define("PACKAGE_VERSION", packageFile.version);
 
