@@ -1,5 +1,7 @@
 # Pre Setup
 
+* Setup Company API. Instrunctions are published: https://github.com/OpenSTFoundation/company-api/blob/master/README.md
+
 * Install required packages
 ```bash
 > npm install
