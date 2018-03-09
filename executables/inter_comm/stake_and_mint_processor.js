@@ -20,8 +20,7 @@ require(rootPrefix + '/module_overrides/index');
 const openStPlatform = require('@openstfoundation/openst-platform')
 ;
 
-const rootPrefix = '../..'
-  , logger = require(rootPrefix + '/helpers/custom_console_logger')
+const logger = require(rootPrefix + '/helpers/custom_console_logger')
   , StakeAndMintProcessorInterCommKlass = openStPlatform.services.interComm.stakeAndMintProcessor
 ;
 
