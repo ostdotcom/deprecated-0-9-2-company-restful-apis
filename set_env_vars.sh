@@ -6,22 +6,24 @@ export CR_SUB_ENVIRONMENT='sandbox'
 export OST_VALUE_GETH_RPC_PROVIDERS='["http://127.0.0.1:8545"]'
 export OST_UTILITY_GETH_RPC_PROVIDERS='["http://127.0.0.1:9546"]'
 
-# Database details
+# Cache Engine
+export CR_ONLY_CACHE_ENGINE='memcached'
 
+# Database details
 export CR_MYSQL_CONNECTION_POOL_SIZE='5'
 
 export CR_DEFAULT_MYSQL_HOST='127.0.0.1'
 export CR_DEFAULT_MYSQL_USER='root'
-export CR_DEFAULT_MYSQL_PASSWORD='root'
+export CR_DEFAULT_MYSQL_PASSWORD=''
 
 export CR_CA_SHARED_MYSQL_HOST='127.0.0.1'
 export CR_CA_SHARED_MYSQL_USER='root'
-export CR_CA_SHARED_MYSQL_PASSWORD='root'
+export CR_CA_SHARED_MYSQL_PASSWORD=''
 
 # DB details of openst-payments.
 export OP_MYSQL_HOST='127.0.0.1'
 export OP_MYSQL_USER='root'
-export OP_MYSQL_PASSWORD='root'
+export OP_MYSQL_PASSWORD=''
 export OP_MYSQL_DATABASE=openst_payments_${CR_SUB_ENVIRONMENT}_${CR_ENVIRONMENT}
 export OP_MYSQL_CONNECTION_POOL_SIZE='5'
 

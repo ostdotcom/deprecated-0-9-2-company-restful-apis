@@ -11,6 +11,22 @@ function define(name, value) {
   });
 }
 
+// Balance and Cache only cache engine.
+// NOTE: Should always be redis
+// Other required connection variables will still be read from cache flavour related variables
+if (process.env.OST_CACHE_ENGINE!='redis') {
+  throw 'SAAS and other packages need OST_CACHE_ENGINE = "redis" ENV variable for Balance and Nonce management'
+}
+define("BALANCE_AND_NONCE_ONLY_CACHE_ENGINE", process.env.OST_CACHE_ENGINE);
+
+// Saas only cache engine
+// NOTE: Should always be memcached
+// Other required connection variables will still be read from cache flavour related variables
+if (process.env.CR_ONLY_CACHE_ENGINE!='memcached') {
+  throw 'SAAS need CR_ONLY_CACHE_ENGINE = "memcached" ENV variable for custom caching'
+}
+define("SAAS_ONLY_CACHE_ENGINE", process.env.CR_ONLY_CACHE_ENGINE);
+
 // package variables for current repo
 define("PACKAGE_NAME", packageFile.name);
 define("PACKAGE_VERSION", packageFile.version);
