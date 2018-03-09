@@ -42,7 +42,7 @@ const NonceManagerKlass = function(params) {
 
   // Set cache key for nonce
   oThis.cacheKey = `nonce_${oThis.chainKind}_${oThis.address}`;
-
+  console.log("oThis.cacheKey: ",oThis.cacheKey);
   // Set cache key for nonce lock
   oThis.cacheLockKey = `nonce_${oThis.chainKind}_${oThis.address}_lock`;
 };
@@ -59,6 +59,7 @@ const NonceCacheKlassPrototype = {
       , lockStatusResponse = await oThis.cacheImplementer.get(oThis.cacheLockKey)
     ;
 
+    console.log("lockStatusResponse.data.response: ",lockStatusResponse.data.response);
     return lockStatusResponse.isSuccess() && lockStatusResponse.data.response > 0;
 
   },
@@ -72,6 +73,7 @@ const NonceCacheKlassPrototype = {
     const oThis = this
     ;
 
+    console.log("getNonce called");
     const acquireLockAndReturn = async function() {
       const acquireLockResponse = await oThis._acquireLock();
       if (acquireLockResponse.isSuccess()) {
@@ -188,7 +190,7 @@ const NonceCacheKlassPrototype = {
     const oThis = this
       , lockResponse = await oThis.cacheImplementer.increment(oThis.cacheLockKey)
     ;
-    console.log("lockResponse: ",lockResponse);
+    console.log("oThis.cacheLockKey: ",oThis.cacheLockKey);
     if (lockResponse.isSuccess()) {
       if (lockResponse.data.response == 1) {
         return Promise.resolve(responseHelper.successWithData({}));
@@ -285,7 +287,7 @@ const NonceCacheKlassPrototype = {
     }
     if (isNonceCountAvailable) {
       const setNonceResponse = await oThis.cacheImplementer.set(oThis.cacheKey, maxNonceCount.toNumber());
-      console.log("setNonceResponse: ", setNonceResponse);
+      console.log("maxNonceCount: ", maxNonceCount.toNumber());
       if (setNonceResponse.isSuccess()) {
         return responseHelper.successWithData({nonce: maxNonceCount.toNumber()});
       }
