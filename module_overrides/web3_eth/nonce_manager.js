@@ -11,7 +11,7 @@ const rootPrefix = '../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , coreConstants = require(rootPrefix + '/config/core_constants')
   , waitTimeout = 50000 //50 seconds
-  , waitTimeInterval = 100 //100 milliseconds
+  , waitTimeInterval = 5 //5 milliseconds
 ;
 
 /**
@@ -106,7 +106,13 @@ const NonceCacheKlassPrototype = {
           if (isLocked) {
             setTimeout(wait, waitTimeInterval);
           } else {
-            return onResolve(acquireLockAndReturn());
+            //return onResolve(acquireLockAndReturn());
+            const acquireLockResponse = await acquireLockAndReturn();
+            if (acquireLockResponse.isSuccess()) {
+              return onResolve(acquireLockResponse);
+            }else{
+              wait();
+            }
           }
         } catch (err) {
           //Format the error
@@ -120,7 +126,13 @@ const NonceCacheKlassPrototype = {
         // if the lock is not aquired then lock the nonce key for usage and return the nonce count
         const isLocked = await oThis.isLocked();
         if (!isLocked) {
-          return onResolve(acquireLockAndReturn());
+          const acquireLockResponse = await acquireLockAndReturn();
+          if (acquireLockResponse.isSuccess()) {
+            return onResolve(acquireLockResponse);
+          }else{
+            wait();
+          }
+
         } else {
           // the key is already locked. Now wait for it to get unlocked.
           return wait();
