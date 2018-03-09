@@ -45,11 +45,10 @@
 > node tools/setup/platform/deploy.js
 ```
 
-* Enable redis for platform
+* Enable Redis for platform
 ```bash
 > vim $HOME/openst-setup/openst_env_vars.sh
 export OST_CACHING_ENGINE='redis'
-export OST_MEMCACHE_SERVERS='127.0.0.1:11211'
 export OST_DEFAULT_TTL='36000'
 export OST_REDIS_HOST='127.0.0.1'
 export OST_REDIS_PORT=6379
