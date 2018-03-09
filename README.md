@@ -107,10 +107,16 @@ NOTE: Manually create data MySQL mentioned in $OP_MYSQL_DATABASE
 
 * Start Cronjobs
 ```base
-*/60 * * * * node executables/update_price_oracle_price_points.js >> log/update_price_oracle_price_points.log
-*/5 * * * * node executables/rmq_subscribers/send_error_emails.js >> log/send_error_emails.log
-*/5 * * * * node executables/rmq_subscribers/start_airdrop.js >> log/start_airdrop.log
-*/5 * * * * node executables/fund_addresses/by_reserve/st_prime.js >> log/fund_addresses/by_reserve/st_prime.log
-*/5 * * * * node executables/fund_addresses/by_utility_chain_owner/eth.js >> log/fund_addresses_by_utility_chain_owner/eth.log
-*/5 * * * * node executables/fund_addresses/by_utility_chain_owner/st_prime.js >> log/fund_addresses_by_utility_chain_owner/st_prime.log
+# Every hour
+node executables/update_price_oracle_price_points.js >> log/update_price_oracle_price_points.log
+# Every five minutes
+node executables/rmq_subscribers/send_error_emails.js >> log/send_error_emails.log
+# Every minute
+node executables/rmq_subscribers/start_airdrop.js >> log/start_airdrop.log
+# Every five minutes
+node executables/fund_addresses/by_reserve/st_prime.js >> log/fund_addresses/by_reserve/st_prime.log
+# Every five minutes
+node executables/fund_addresses/by_utility_chain_owner/eth.js >> log/fund_addresses_by_utility_chain_owner/eth.log
+# Every five minutes
+node executables/fund_addresses/by_utility_chain_owner/st_prime.js >> log/fund_addresses_by_utility_chain_owner/st_prime.log
 ```
