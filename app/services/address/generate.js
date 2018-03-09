@@ -96,7 +96,7 @@ GenerateAddressKlass.prototype = {
         });
 
     if (insertedRec.affectedRows > 0) {
-      oThis._processAddressInBackground(insertedRec.insertId, addrUuid);
+      await oThis._processAddressInBackground(insertedRec.insertId, addrUuid);
     }
 
     const managedAddressCache = new ManagedAddressCacheKlass({'uuids': [addrUuid]});
@@ -144,7 +144,7 @@ GenerateAddressKlass.prototype = {
     if (!OThis.ethAddress || !OThis.privateKey) {
 
       const addrGenerator = new openStPlatform.services.utils.generateRawKey()
-          , generateAddrRsp = await addrGenerator.perform();
+          , generateAddrRsp = addrGenerator.perform();
 
       if (generateAddrRsp.isFailure()) {
         logger.notify('s_ad_g_4', 'Something Went Wrong', generateAddrRsp.toHash);

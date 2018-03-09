@@ -47,7 +47,7 @@ const ExecuteTransactionKlass = function (params){
   oThis.fromUuid = params.from_uuid;
   oThis.toUuid = params.to_uuid;
   oThis.transactionKind = params.transaction_kind;
-  oThis.gasPrice = '50000000000';
+  oThis.gasPrice = chainInteractionConstants.UTILITY_GAS_PRICE;
 
   oThis.tokenSymbol = null;
   oThis.transactionTypeRecord = null;

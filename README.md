@@ -9,7 +9,8 @@
 ```bash
 > cd company-restful-apis
 > export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform
-> node $OPENST_PLATFORM_PATH/tools/setup/index.js
+> echo "export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform" >> ~/.bash_profile
+> node tools/setup/platform/deploy.js
 ```
 
 * Enable memcached for platform
@@ -43,7 +44,6 @@ export OST_RMQ_HEARTBEATS='30'
 * Setup Price Oracle
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
-> export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform
 > node $OPENST_PLATFORM_PATH/tools/setup/start_services.js
 
 
@@ -61,7 +61,6 @@ export OST_UTILITY_PRICE_ORACLES='{"OST":{"USD":"0x60Fa2655AD1F08DfC3e1DAd9b31e4
 * Setup Workers Contract
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
-> export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform
 > node $OPENST_PLATFORM_PATH/tools/setup/start_services.js
 
 
@@ -75,7 +74,6 @@ export OST_UTILITY_WORKERS_CONTRACT_ADDRESS='0x549B7A418f88F02cF366E4999bda858BB
 * Run openST Payments migrations
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
-> export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform
 > source set_env_vars.sh
 NOTE: Manually create data MySQL mentioned in $OP_MYSQL_DATABASE 
 > node node_modules/@openstfoundation/openst-payments/migrations/create_tables.js
@@ -88,7 +86,6 @@ NOTE: Manually create data MySQL mentioned in $OP_MYSQL_DATABASE
   ```bash
   > cd company-restful-apis
   > source $HOME/openst-setup/openst_env_vars.sh
-  > export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform
   > sh $HOME/openst-setup/bin/run-utility.sh
   ```
 
@@ -96,7 +93,6 @@ NOTE: Manually create data MySQL mentioned in $OP_MYSQL_DATABASE
   ```bash
   > cd company-restful-apis
   > source $HOME/openst-setup/openst_env_vars.sh
-  > export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform
   > node $OPENST_PLATFORM_PATH/tools/setup/start_services.js
   ```
   
