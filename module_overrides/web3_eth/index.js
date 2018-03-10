@@ -47,7 +47,33 @@ const Derived = function () {
 
     const chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
       , rawTx = arguments['0']
-      , fromAddress = rawTx.from;
+      , fromAddress = rawTx.from
+      , gasPrice = String( rawTx.gasPrice || 0)
+      , bnGasPrice = new BigNumber( gasPrice )
+      , chainKind = chainInteractionConstants.GETH_PROVIDER_TO_CHAIN_KIND_MAP[oThis.currentProvider.host]
+      , UTILITY_GAS_PRICE = chainInteractionConstants.UTILITY_GAS_PRICE
+      , VALUE_GAS_PRICE   = chainInteractionConstants.VALUE_GAS_PRICE
+    ;
+
+    var chainGasPrice
+      , bnChainGasPrice
+    ;
+    if ( String( chainKind ).toLowerCase() === "value" ) {
+      chainGasPrice = VALUE_GAS_PRICE; //<-- Change this to VALUE_GAS_PRICE
+    } else {
+      chainGasPrice = UTILITY_GAS_PRICE;
+    }
+    bnChainGasPrice = new BigNumber( chainGasPrice );
+
+    if ( bnGasPrice.isNaN() || bnGasPrice.lessThan( 1 ) ) {
+      if ( bnChainGasPrice.isZero() ) {
+        console.log("WARN :: Gas Price for chainKind", chainKind, "is zero.");
+      } else {
+        rawTx.gasPrice = chainGasPrice;
+        console.log("Auto-corrected gas price to", rawTx.gasPrice );
+        console.trace("WARN :: sendTransaction called without setting gas price.\nPlease see trace for more info");
+      }
+    }
 
     if (chainInteractionConstants.ADDRESSES_TO_UNLOCK_VIA_KEYSTORE_FILE_MAP[fromAddress.toLowerCase()]) {
       console.log('WEB3_OVERRIDE: sendTransaction using passphrase from address:', fromAddress);
