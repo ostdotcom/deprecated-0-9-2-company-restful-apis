@@ -43,7 +43,7 @@ SetWorkerKlass.prototype = {
       'USD',
       oThis.priceOracleContractAddress,
       oThis.gasPrice,
-      {returnType: "txHash", tag: "setPriceOracle.saas"}
+      {returnType: "txHash", tag: ""}
     );
 
     return Promise.resolve(r);

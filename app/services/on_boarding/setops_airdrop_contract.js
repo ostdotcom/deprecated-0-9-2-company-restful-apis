@@ -84,7 +84,7 @@ SetopsAirdropContractClass.prototype = {
       oThis.utilityDeployerAddress,
       oThis.utilityDeployerPassphrase,
       oThis.utilityOpsAddress,
-      {returnType: "txHash", tag: 'setOpsAddress.saas'}
+      {returnType: "txHash", tag: ''}
     );
 
     if(r.isFailure()){
@@ -96,8 +96,6 @@ SetopsAirdropContractClass.prototype = {
 
   registerAirdrop: async function () {
     var oThis = this;
-    //return openStPayments.airdropManager.setupAirdrop(oThis.airDropContractAddress, oThis.chainId);
-
     return openStPayments.airdropManager.registerAirdrop(oThis.airDropContractAddress, oThis.chainId);
   }
 
