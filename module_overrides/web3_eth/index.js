@@ -178,8 +178,8 @@ const Derived = function () {
         };
 
         return oThis.sendSignedTransaction('0x' + serializedTx.toString('hex'))
-          .on('transactionHash', onTxHash)
-          .on('receipt', onReceipt)
+          .once('transactionHash', onTxHash)
+          .once('receipt', onReceipt)
           .on('error', onError)
           .then(onResolve, onReject)
           .catch(onReject)
