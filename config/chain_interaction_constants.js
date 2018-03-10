@@ -18,6 +18,7 @@ define("VALUE_OPS_ADDR", process.env.OST_VALUE_OPS_ADDR);
 define("UTILITY_REGISTRAR_ADDR", process.env.OST_UTILITY_REGISTRAR_ADDR);
 define("UTILITY_OPS_ADDR", process.env.OST_UTILITY_OPS_ADDR);
 
+define("FOUNDATION_ADDR", process.env.OST_FOUNDATION_ADDR);
 
 define("UTILITY_CHAIN_ID", process.env.OST_UTILITY_CHAIN_ID);
 define("UTILITY_GAS_PRICE", process.env.OST_UTILITY_GAS_PRICE);
