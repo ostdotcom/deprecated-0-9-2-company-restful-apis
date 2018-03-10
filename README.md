@@ -90,7 +90,7 @@ export OST_UTILITY_PRICE_ORACLES='{}'
 
 > vim $HOME/openst-setup/openst_env_vars.sh
 # 3rd party contract address
-export OST_UTILITY_PRICE_ORACLES='{"OST":{"USD":"0x60Fa2655AD1F08DfC3e1DAd9b31e4DD817a36f9D"}}'
+export OST_UTILITY_PRICE_ORACLES='{"OST":{"USD":"0x51E7D0eC231c25D16bC3d949C9AEE8772B7f2332"}}'
 ```
 
 * Setup Workers Contract
@@ -101,7 +101,7 @@ export OST_UTILITY_PRICE_ORACLES='{"OST":{"USD":"0x60Fa2655AD1F08DfC3e1DAd9b31e4
 
 > vim $HOME/openst-setup/openst_env_vars.sh
 # 3rd party contract address
-export OST_UTILITY_WORKERS_CONTRACT_ADDRESS='0x549B7A418f88F02cF366E4999bda858BB8815451'
+export OST_UTILITY_WORKERS_CONTRACT_ADDRESS='0xFc036D20ee2134aC5DC688410D6684Ceec948962'
 ```
 
 * Run openST Payments migrations
@@ -150,23 +150,30 @@ NOTE: Manually create data MySQL mentioned in $OP_MYSQL_DATABASE
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> executables/inter_comm/register_branded_token.js
+> node executables/inter_comm/register_branded_token.js $HOME/openst-setup/logs/register_branded_token.data
 ```
 
 * Start Stake & Mint Intercom in new terminal
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> executables/inter_comm/stake_and_mint.js
+> node executables/inter_comm/stake_and_mint.js $HOME/openst-setup/logs/stake_and_mint.data
 ```
 
 * Start Stake & Mint Processor Intercom in new terminal
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> executables/inter_comm/stake_and_mint_processor.js
+> node executables/inter_comm/stake_and_mint_processor.js $HOME/openst-setup/logs/stake_and_mint_processor.data
 ```
   
+* Start Airdrop Processor in new terminal
+```bash
+> source $HOME/openst-setup/openst_env_vars.sh
+> source set_env_vars.sh
+> node executables/rmq_subscribers/start_airdrop.js $HOME/openst-setup/logs/start_airdrop.data
+```
+
 * Start APIs in new terminal
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
