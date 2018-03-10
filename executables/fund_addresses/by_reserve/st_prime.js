@@ -15,9 +15,14 @@
  * @module executables/fund_addresses/by_reserve/st_prime
  */
 
-// Load Packages
 const rootPrefix = '../../..'
-  , FundClientAddressKlass = require(rootPrefix + '/app/services/address/fund_client_address')
+;
+
+//Always Include Module overrides First
+require(rootPrefix + '/module_overrides/index');
+
+// Load Packages
+const FundClientAddressKlass = require(rootPrefix + '/app/services/address/fund_client_address')
   , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;

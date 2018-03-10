@@ -6,8 +6,13 @@
  * @module executables/update_price_oracle_price_points
  */
 
-const rootPrefix = ".."
-  , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
+const rootPrefix = '..'
+;
+
+//Always Include Module overrides First
+require(rootPrefix + '/module_overrides/index');
+
+const chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , conversionRateConstants = require(rootPrefix + "/lib/global_constant/conversion_rates")
   , logger = require(rootPrefix + "/lib/logger/custom_console_logger")
 ;

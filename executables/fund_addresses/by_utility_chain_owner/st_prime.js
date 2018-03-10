@@ -18,12 +18,17 @@
  * @module executables/fund_addresses/by_utility_chain_owner/st_prime
  */
 
+const rootPrefix = '../../..'
+;
+
+//Always Include Module overrides First
+require(rootPrefix + '/module_overrides/index');
+
 // load External Packages
 const openStPlatform = require('@openstfoundation/openst-platform');
 
 // Load Packages
-const rootPrefix = '../../..'
-  , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
+const chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
