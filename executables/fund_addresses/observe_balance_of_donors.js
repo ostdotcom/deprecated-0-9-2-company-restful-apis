@@ -9,6 +9,7 @@
 const rootPrefix = "../.."
     , logger = require(rootPrefix + "/lib/logger/custom_console_logger")
     , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
+    , openStPlatform = require('@openstfoundation/openst-platform')
 ;
 
 /**
@@ -29,9 +30,9 @@ balanceObserververKlass.prototype = {
 
     const oThis = this;
 
-    await _observeFoundationEthBalance();
+    await oThis._observeFoundationEthBalance();
 
-    await _observeUtilityChainOwnerEthBalance();
+    await oThis._observeUtilityChainOwnerEthBalance();
 
     if (Object.keys(oThis.notifyLogs) > 0) {
 
@@ -56,8 +57,8 @@ balanceObserververKlass.prototype = {
 
       const ethBalance = ethBalanceRsp.data.balance;
 
-      if (ethBalance < _minFoundationEthBalance) {
-        oThis.notifyLogs['foundationEthBalance'] = 'FoundationEthBalance is less than : ' + _minFoundationEthBalance + ' ETH';
+      if (ethBalance < oThis._minFoundationEthBalance) {
+        oThis.notifyLogs['foundationEthBalance'] = 'FoundationEthBalance is less than : ' + oThis._minFoundationEthBalance + ' ETH';
       }
 
     }
@@ -79,8 +80,8 @@ balanceObserververKlass.prototype = {
 
       const ethBalance = ethBalanceRsp.data.balance;
 
-      if (ethBalance < _minUtilityChainOwnerEthBalance) {
-        oThis.notifyLogs['utilityChainOwnerEthBalance'] = 'UtilityChainOwnerEthBalance is less than : ' + _minUtilityChainOwnerEthBalance + ' ETH';
+      if (ethBalance < oThis._minUtilityChainOwnerEthBalance) {
+        oThis.notifyLogs['utilityChainOwnerEthBalance'] = 'UtilityChainOwnerEthBalance is less than : ' + oThis._minUtilityChainOwnerEthBalance + ' ETH';
       }
 
     }

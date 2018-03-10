@@ -15,7 +15,7 @@ function define(name, value) {
 // NOTE: Should always be redis
 // Other required connection variables will still be read from cache flavour related variables
 if (process.env.OST_CACHING_ENGINE!='redis') {
-  throw 'SAAS and other packages need OST_CACHE_ENGINE = "redis" ENV variable for Balance and Nonce management'
+  throw 'SAAS and other packages need OST_CACHING_ENGINE = "redis" ENV variable for Balance and Nonce management'
 }
 define("BALANCE_AND_NONCE_ONLY_CACHE_ENGINE", process.env.OST_CACHING_ENGINE);
 
