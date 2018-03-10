@@ -85,6 +85,7 @@ export OST_RMQ_HEARTBEATS='30'
 export OST_UTILITY_PRICE_ORACLES='{}'
 
 > source $HOME/openst-setup/openst_env_vars.sh
+> source set_env_vars.sh
 > node tools/setup/price-oracle/deploy.js
 
 > vim $HOME/openst-setup/openst_env_vars.sh
