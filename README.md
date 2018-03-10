@@ -76,7 +76,7 @@ export OST_RMQ_HEARTBEATS='30'
 * Start Utility Chain
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
-> node $HOME/openst-setup/bin/run-utility.sh
+> sh $HOME/openst-setup/bin/run-utility.sh
 ```
 
 * Setup Price Oracle
