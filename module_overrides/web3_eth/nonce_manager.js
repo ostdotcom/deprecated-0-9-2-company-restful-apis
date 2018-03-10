@@ -14,6 +14,27 @@ const rootPrefix = '../..'
   , waitTimeInterval = 5 //5 milliseconds
 ;
 
+
+const instanceMap = {};
+function getInstanceKey( fromAddress, chainKind ) {
+  var args = Array.prototype.slice.call(arguments);
+  return args.join("_");
+}
+function getInstance( instanceKey ) {
+  console.log("getInstance :: instanceKey", instanceKey );
+  return instanceMap[ instanceKey ];
+}
+function setInstance(instance, instanceKey ) {
+  if ( instanceMap[ instanceKey ] ) {
+    console.log("Dude! I already have an instance with this key.");
+    return false;
+  }
+
+  instanceMap[ instanceKey ] = instance;
+  return true;
+}
+
+
 /**
  * Utility function to get timestamp
  *
@@ -34,10 +55,31 @@ function _getTimeStamp() {
 const NonceManagerKlass = function(params) {
 
   const oThis = this
+      , fromAddress   = params['address'].toLowerCase()
+      , chainKind     = params['chain_kind']
   ;
 
-  oThis.address = params['address'].toLowerCase();
-  oThis.chainKind = params['chain_kind'];
+  //Throw Here.
+
+  //Check for existing instance
+  var instanceKey = getInstanceKey( fromAddress, chainKind )
+    , existingInstance = getInstance( instanceKey )
+  ;
+  if ( existingInstance ) {
+    console.log("existingInstance FOUND!");
+    return existingInstance;
+  } else {
+    setInstance(oThis, instanceKey);
+  }
+
+  console.log("creating new instance");
+
+
+
+  oThis.address = fromAddress;
+  oThis.chainKind = chainKind;
+  oThis.promiseQueue = [];
+  oThis.processedQueue = [];
 
   // Set cacheImplementer to perform caching operations
   oThis.cacheImplementer = new openStCache.cache(coreConstants.BALANCE_AND_NONCE_ONLY_CACHE_ENGINE, false);
@@ -50,6 +92,10 @@ const NonceManagerKlass = function(params) {
 };
 
 const NonceCacheKlassPrototype = {
+
+  address: null,
+  chainKind: null,
+  promiseQueue: null,
 
   /**
    * Query if the lock is acquired for the given nonce key
@@ -73,10 +119,92 @@ const NonceCacheKlassPrototype = {
    */
   getNonce: function() {
     const oThis = this
+      , queueTimeStamp = _getTimeStamp()
+      , promiseContext = {
+        startTimestamp: queueTimeStamp,
+        nonce: -1,
+        promiseObj: null,
+        resolve: null,
+        reject: null,
+        promiseAction: "QUEUED"
+      }
+      , promiseObj = new Promise( function (resolve, reject) {
+        promiseContext.resolve = resolve;
+        promiseContext.reject = reject;
+      })
+
     ;
 
     console.log("getNonce called");
-    const acquireLockAndReturn = async function() {
+
+    promiseContext.promiseObj = promiseObj;
+
+    oThis.promiseQueue.push( promiseContext );
+    oThis.processNext();
+
+    return promiseObj;
+  },
+
+  isProcessing: false,
+  processNext: async function () {
+    const oThis = this
+    ;
+
+    if ( oThis.isProcessing ) {
+      return;
+    }
+
+    if ( oThis.promiseQueue.length == 0 ) {
+      return;
+    }
+
+    oThis.isProcessing = true;
+
+    const promiseContext = oThis.promiseQueue[ 0 ]
+    ;
+
+    const onResolve = function ( result ) {
+      const unshiftedContext = oThis.promiseQueue.shift();
+      oThis.processedQueue.push( unshiftedContext );
+
+      if ( promiseContext == unshiftedContext ) {
+        console.log("Correct context removed");
+      } else {
+        console.log("We PLEASE FIND ME....... IMPORTANT");
+      }
+
+      setTimeout(function () {
+        oThis.isProcessing = false;
+        oThis.processNext();
+      }, 1);
+
+      promiseContext.nonce = result.success ? result.data.nonce : "---FAILED---";
+      promiseContext.promiseAction = "RESOLVED";
+      var resolve = promiseContext.resolve;
+      resolve( result );
+    };
+
+    const onReject = function ( reason ) {
+      const unshiftedContext = oThis.promiseQueue.shift();
+      oThis.processedQueue.push( unshiftedContext );
+
+      if ( promiseContext == unshiftedContext ) {
+        console.log("Correct context removed");
+      } else {
+        console.log("We PLEASE FIND ME....... IMPORTANT");
+      }
+
+      setTimeout(function () {
+        oThis.isProcessing = false;
+        oThis.processNext();
+      }, 1);
+
+      var reject = promiseContext.reject;
+      promiseContext.promiseAction = "REJECTED";
+      reject( reason );
+    };
+
+    const acquireLockAndReturn = async function () {
       const acquireLockResponse = await oThis._acquireLock();
       if (acquireLockResponse.isSuccess()) {
         const nonceResponse = await oThis.cacheImplementer.get(oThis.cacheKey);
@@ -91,59 +219,58 @@ const NonceCacheKlassPrototype = {
       }
     };
 
-    return new Promise(async function(onResolve, onReject) {
 
-      const startTime =  _getTimeStamp();
-      const wait = async function() {
-        try {
-          console.log("waiting for lock to release");
-          if (_getTimeStamp()-startTime > waitTimeout) {
-            //Format the error
-            logger.error("module_overrides/web3_eth/nonce_manager.js:getNonce:wait");
-            return onResolve(responseHelper.error('l_nm_getNonce_1', 'getNonce timeout'));
-          }
-          const isLocked = await oThis.isLocked();
-          if (isLocked) {
-            setTimeout(wait, waitTimeInterval);
-          } else {
-            //return onResolve(acquireLockAndReturn());
-            const acquireLockResponse = await acquireLockAndReturn();
-            if (acquireLockResponse.isSuccess()) {
-              return onResolve(acquireLockResponse);
-            }else{
-              wait();
-            }
-          }
-        } catch (err) {
-          //Format the error
-          logger.error("module_overrides/web3_eth/nonce_manager.js:getNonce:wait inside catch ", err);
-          return onResolve(responseHelper.error('l_nm_getNonce_2', 'Something went wrong'));
-        }
-      };
-
+    const startTime =  promiseContext.startTimestamp;
+    const wait = async function() {
       try {
-        // if the lock is aquired then wait for unlock
-        // if the lock is not aquired then lock the nonce key for usage and return the nonce count
+        console.log("waiting for lock to release");
+        if (_getTimeStamp()-startTime > waitTimeout) {
+          //Format the error
+          logger.error("module_overrides/web3_eth/nonce_manager.js:getNonce:wait");
+          return onResolve(responseHelper.error('l_nm_getNonce_1', 'getNonce timeout', {p1:"123"}));
+        }
         const isLocked = await oThis.isLocked();
-        if (!isLocked) {
+        if (isLocked) {
+          setTimeout(wait, waitTimeInterval);
+        } else {
+          //return onResolve(acquireLockAndReturn());
           const acquireLockResponse = await acquireLockAndReturn();
           if (acquireLockResponse.isSuccess()) {
             return onResolve(acquireLockResponse);
           }else{
             wait();
           }
-
-        } else {
-          // the key is already locked. Now wait for it to get unlocked.
-          return wait();
         }
       } catch (err) {
         //Format the error
-        logger.error("module_overrides/web3_eth/nonce_manager.js:getNonce inside catch ", err);
-        return onResolve(responseHelper.error('l_nm_getNonce_3', 'Something went wrong'));
+        logger.error("module_overrides/web3_eth/nonce_manager.js:getNonce:wait inside catch ", err);
+        return onResolve(responseHelper.error('l_nm_getNonce_2', 'Something went wrong'));
       }
+    };
 
-    });
+    try {
+      // if the lock is aquired then wait for unlock
+      // if the lock is not aquired then lock the nonce key for usage and return the nonce count
+      const isLocked = await oThis.isLocked();
+      if (!isLocked) {
+        const acquireLockResponse = await acquireLockAndReturn();
+        if (acquireLockResponse.isSuccess()) {
+          return onResolve(acquireLockResponse);
+        }else{
+          wait();
+        }
+
+      } else {
+        // the key is already locked. Now wait for it to get unlocked.
+        return wait();
+      }
+    } catch (err) {
+      //Format the error
+      logger.error("module_overrides/web3_eth/nonce_manager.js:getNonce inside catch ", err);
+      return onResolve(responseHelper.error('l_nm_getNonce_3', 'Something went wrong'));
+    }
+
+
   },
 
   /**
@@ -151,10 +278,12 @@ const NonceCacheKlassPrototype = {
    *
    * @return {promise<result>}
    */
+  completionSuccessCnt:0,
   completionWithSuccess: async function() {
     const oThis = this
     ;
 
+    oThis.completionSuccessCnt ++;
     console.log("completionWithSuccess");
     await oThis._increment();
     return await oThis._releaseLock();
@@ -168,10 +297,12 @@ const NonceCacheKlassPrototype = {
    *
    * @return {promise<result>}
    */
+  completionFailureCnt:0,
   completionWithFailure: async function(shouldSyncNonce) {
     const oThis = this
     ;
 
+    oThis.completionFailureCnt ++;
     console.log("completionWithFailure");
     if (shouldSyncNonce) {
       await oThis._syncNonce();
@@ -283,7 +414,6 @@ const NonceCacheKlassPrototype = {
       const web3UtilityRpcProvider = new Web3(gethURL);
       web3UtilityRpcProvider.chainKind = oThis.chain_kind;
       allNoncePromise.push(oThis._getNonceFromGethNode(web3UtilityRpcProvider));
-
     }
 
     const allNoncePromiseResult = await Promise.all(allNoncePromise);
@@ -348,3 +478,10 @@ const NonceCacheKlassPrototype = {
 Object.assign(NonceManagerKlass.prototype, NonceCacheKlassPrototype);
 
 module.exports = NonceManagerKlass;
+
+
+
+//Code for debug.
+NonceManagerKlass.getInstanceKey = getInstanceKey;
+NonceManagerKlass.getInstance = getInstance;
+NonceManagerKlass.setInstance = getInstanceKey;

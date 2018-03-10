@@ -157,6 +157,10 @@ const Derived = function () {
             // retry
             executeTx();
           } else {
+            if(txHashObtained){
+              // neglect if hash was already given.
+              return;
+            }
             logger.error('error', error);
             await nonceManager.completionWithFailure();
             hackedReturnedPromiEvent.eventEmitter.emit('error', error);
