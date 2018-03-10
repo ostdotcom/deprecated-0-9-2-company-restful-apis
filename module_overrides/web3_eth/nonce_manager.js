@@ -404,6 +404,7 @@ const NonceCacheKlassPrototype = {
   _syncNonce: async function(){
     const oThis = this
       , allNoncePromise = []
+      , allPendingTransactionPromise = []
       , allGethNodes = (oThis.chainKind == 'value') ? chainInteractionConstants.OST_VALUE_GETH_RPC_PROVIDERS :
         chainInteractionConstants.OST_UTILITY_GETH_RPC_PROVIDERS
     ;
@@ -413,25 +414,84 @@ const NonceCacheKlassPrototype = {
 
       const web3UtilityRpcProvider = new Web3(gethURL);
       web3UtilityRpcProvider.chainKind = oThis.chain_kind;
+      web3UtilityRpcProvider.extend({
+        methods: [{
+          name: 'pendingTransactions',
+          call: 'txpool_content',
+        }]
+      });
       allNoncePromise.push(oThis._getNonceFromGethNode(web3UtilityRpcProvider));
+      allPendingTransactionPromise.push(oThis._getPendingTransactionsFromGethNode(web3UtilityRpcProvider));
     }
 
-    const allNoncePromiseResult = await Promise.all(allNoncePromise);
+    var x = await Promise.all([Promise.all(allNoncePromise), Promise.all(allPendingTransactionPromise)]);
+    const allNoncePromiseResult = x[0];
+    const allPendingTransactionPromiseResult = x[1];
 
     var maxNonceCount = new BigNumber(0)
       , isNonceCountAvailable = false
+      , allPendingNonce = new Array()
     ;
 
+    // get the nonce count from the trasaction object
+    const getNonceFromUnminedTransaction = function (unminedTransactions) {
+      const allNonce = new Array();
+      if (unminedTransactions) {
+        for (var nouneKey in unminedTransactions) {
+          const transactionObj = unminedTransactions[nouneKey];
+          if (transactionObj.nonce) {
+            allNonce.push(new BigNumber(transactionObj.nonce));
+          }
+        }
+      }
+      return allNonce;
+    };
+
+    // get the nounce count from pending transations
+    const getPendingNonce = function(pendingTransactions) {
+      var allNonce = new Array();
+      for (var key in pendingTransactions){
+        if (key.toLowerCase() === oThis.address) {
+          allNonce = allNonce.concat(getNonceFromUnminedTransaction(pendingTransactions[key]));
+        }
+      }
+      return allNonce;
+    };
+
+    // check nonce count from pending transactions
+    for (var i = allPendingTransactionPromiseResult.length - 1; i >= 0; i--){
+      const currentPendingTransactionResponse =  allPendingTransactionPromiseResult[i];
+      if (currentPendingTransactionResponse.isFailure()) {
+        continue;
+      }
+
+      const pendingTransaction = currentPendingTransactionResponse.data.pending_transaction;
+
+      if (pendingTransaction) {
+        allPendingNonce = allPendingNonce.concat(getPendingNonce(pendingTransaction.pending));
+        allPendingNonce = allPendingNonce.concat(getPendingNonce(pendingTransaction.queued));
+      }
+    }
+
+    // check nonce count from mined transactions
     for (var i = allNoncePromiseResult.length - 1; i >= 0; i--) {
       const currentNonceResponse =  allNoncePromiseResult[i];
       if (currentNonceResponse.isFailure()) {
         continue;
       }
+
       isNonceCountAvailable = true;
-      const currentNonce = new BigNumber(currentNonceResponse.data.nonce);
+      const currentNonce = new BigNumber(currentNonceResponse.data.mined_transaction_count);
       maxNonceCount = BigNumber.max(currentNonce, maxNonceCount);
     }
-    if (isNonceCountAvailable) {
+
+    if (isNonceCountAvailable || allPendingNonce.length > 0) {
+      if (allPendingNonce.length > 0) {
+        for (var i = allPendingNonce.length - 1; i >= 0; i--) {
+          const pendingNonceCount = new BigNumber(allPendingNonce[i]);
+          maxNonceCount = BigNumber.max(pendingNonceCount.plus(1), maxNonceCount);
+        }
+      }
       const setNonceResponse = await oThis.cacheImplementer.set(oThis.cacheKey, maxNonceCount.toNumber());
       console.log("maxNonceCount: ", maxNonceCount.toNumber());
       if (setNonceResponse.isSuccess()) {
@@ -458,17 +518,49 @@ const NonceCacheKlassPrototype = {
 
     return new Promise(function(onResolve, onReject) {
       try {
-        web3Provider.eth.getTransactionCount(oThis.address, 'pending',function(error, result) {
+        web3Provider.eth.getTransactionCount(oThis.address, function(error, result) {
           if (error) {
             return onResolve(responseHelper.error('l_nm_getNonceFromGethNode_1', error));
           } else {
-            return onResolve(responseHelper.successWithData({nonce: result}));
+            return onResolve(responseHelper.successWithData({mined_transaction_count: result}));
           }
         });
       } catch (err) {
         //Format the error
         logger.error("module_overrides/web3_eth/nonce_manager.js:getNonceFromGethNode inside catch ", err);
         return onResolve(responseHelper.error('l_nm_getNonceFromGethNode_2', 'Something went wrong'));
+      }
+    });
+  },
+
+
+  /**
+   * Get pending transactions
+   *
+   * @param {object} web3Provider - web3 object
+   *
+   * @return {promise<result>}
+   * @private
+   * @ignore
+   */
+  _getPendingTransactionsFromGethNode: async function(web3Provider){
+    const oThis = this
+    ;
+
+    return new Promise(async function(onResolve, onReject) {
+      try {
+
+        const pendingTransaction = await web3Provider.pendingTransactions();
+        console.log("pendingTransaction: ",pendingTransaction);
+        if (pendingTransaction) {
+          return onResolve(responseHelper.successWithData({pending_transaction: pendingTransaction}));
+        }
+        return onResolve(responseHelper.error('l_nm_getPendingTransactionsFromGethNode_1', 'Something went wrong'));
+
+      } catch (err) {
+        //Format the error
+        logger.error("module_overrides/web3_eth/nonce_manager.js:getPendingTransactionsFromGethNode inside catch ", err);
+        return onResolve(responseHelper.error('l_nm_getPendingTransactionsFromGethNode_2', 'Something went wrong'));
       }
     });
   },
