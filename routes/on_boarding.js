@@ -103,7 +103,7 @@ router.post('/grant-test-ost', function (req, res, next) {
       sender_name: "foundation",
       recipient_address: ethAddress,
       amount_in_wei: (new BigNumber(amount)).mul(weiConversion).toNumber(),
-      options: {tag: "testOST", returnType: "txHash"}
+      options: {tag: "", returnType: "txHash"}
     });
     return obj.perform().then(handleResponse);
 
@@ -138,7 +138,7 @@ router.post('/grant-eth', function (req, res, next) {
       sender_name: "foundation",
       recipient_address: ethAddress,
       amount_in_wei: (new BigNumber(amount)).mul(weiConversion).toNumber(),
-      options: {tag: "grantEth", returnType: "txHash"}
+      options: {tag: "", returnType: "txHash"}
     });
     return obj.perform().then(handleResponse);
 

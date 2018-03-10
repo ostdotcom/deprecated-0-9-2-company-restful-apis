@@ -301,7 +301,7 @@ ExecuteTransactionKlass.prototype = {
       sender_passphrase: oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid].passphrase_d,
       recipient_address: oThis.userRecords[oThis.fromUuid].ethereum_address,
       amount_in_wei: estimatedGasWei.toString(10),
-      options: {returnType: 'txReceipt', tag: 'GasRefill'}
+      options: {returnType: 'txReceipt', tag: ''}
     };
     const transferSTPrimeBalanceObj = new openStPlatform.services.transaction.transfer.simpleTokenPrime(transferSTPrimeInput);
 

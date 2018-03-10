@@ -241,7 +241,7 @@ FundClientAddressKlass.prototype = {
       sender_passphrase: reservePassphrase,
       recipient_address: recipientAddress,
       amount_in_wei: transferAmountInWei,
-      options: {returnType: 'txReceipt', tag: 'GasRefill'}
+      options: {returnType: 'txReceipt', tag: ''}
     });
 
     const transferResponse = await transferSTPrimeBalanceObj.perform();

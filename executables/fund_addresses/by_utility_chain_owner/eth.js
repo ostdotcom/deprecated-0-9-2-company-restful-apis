@@ -143,7 +143,7 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
         sender_name: 'utilityChainOwner',
         recipient_address: ethereumAddress,
         amount_in_wei: transferAmountInWei,
-        options: {returnType: 'txReceipt', tag: 'GasRefill'}
+        options: {returnType: 'txReceipt', tag: ''}
       })
     ;
 
