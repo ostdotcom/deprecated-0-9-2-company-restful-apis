@@ -96,6 +96,7 @@ export OST_UTILITY_PRICE_ORACLES='{"OST":{"USD":"0x60Fa2655AD1F08DfC3e1DAd9b31e4
 * Setup Workers Contract
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
+> source set_env_vars.sh
 > node tools/setup/payments/set_worker.js
 
 > vim $HOME/openst-setup/openst_env_vars.sh
