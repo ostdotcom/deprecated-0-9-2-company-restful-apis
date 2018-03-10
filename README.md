@@ -186,4 +186,6 @@ node executables/fund_addresses/by_reserve/st_prime.js >> log/fund_addresses/by_
 node executables/fund_addresses/by_utility_chain_owner/eth.js >> log/fund_addresses_by_utility_chain_owner/eth.log
 # Every five minutes
 node executables/fund_addresses/by_utility_chain_owner/st_prime.js >> log/fund_addresses_by_utility_chain_owner/st_prime.log
+# Every five minutes
+node executables/fund_addresses/observe_balance_of_donors.js >> log/observe_balance_of_donors.log
 ```

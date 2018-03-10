@@ -40,6 +40,8 @@ balanceObserververKlass.prototype = {
 
     }
 
+    process.exit(1);
+
   },
 
   /**
