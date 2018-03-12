@@ -11,6 +11,7 @@ const BasePackage = require(basePackage)
 
 const rootPrefix = '../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
 ;
 
 var requireData
@@ -45,8 +46,7 @@ const Derived = function () {
     console.log('HACKED sendTransaction INVOKED');
     console.log("arguments of sendTransaction", arguments);
 
-    const chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
-      , rawTx = arguments['0']
+    const rawTx = arguments['0']
       , fromAddress = rawTx.from
       , gasPrice = String( rawTx.gasPrice || 0)
       , bnGasPrice = new BigNumber( gasPrice )
