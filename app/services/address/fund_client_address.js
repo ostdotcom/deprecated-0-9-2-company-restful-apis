@@ -176,14 +176,14 @@ FundClientAddressKlass.prototype = {
 
     const balanceBigNumberInWei = basicHelper.convertToBigNumber(balanceResponse.data.balance);
 
-    if (balanceBigNumberInWei.lessThan(minReserveAddrBalanceInWei)) {
-      logger.notify('s_a_fca_1', 'ST PRIME Balance Of Reserve Address is LOW - ' + ethereumAddress,
-        {
-          balance_st_prime: basicHelper.convertToNormal(balanceBigNumberInWei),
-          min_required_balance: basicHelper.convertToNormal(minReserveAddrBalanceInWei)
-        }
-      );
-    }
+    // if (balanceBigNumberInWei.lessThan(minReserveAddrBalanceInWei)) {
+    //   logger.notify('s_a_fca_1', 'ST PRIME Balance Of Reserve Address is LOW - ' + ethereumAddress,
+    //     {
+    //       balance_st_prime: basicHelper.convertToNormal(balanceBigNumberInWei),
+    //       min_required_balance: basicHelper.convertToNormal(minReserveAddrBalanceInWei)
+    //     }
+    //   );
+    // }
 
     if (balanceBigNumberInWei.lessThan(minReserveAddrBalanceToProceedInWei)) {
       return Promise.resolve(responseHelper.error('s_a_fca_1', 'Not enough balance'));
