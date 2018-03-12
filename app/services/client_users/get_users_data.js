@@ -54,7 +54,13 @@ GetUsersDataKlass.prototype = {
         return Promise.resolve(responseHelper.error("s_cu_gud_2", "Invalid client details."));
       }
 
-      const balanceData = balanceHashData[user['ethereum_address']];
+      var balanceData = balanceHashData[user['ethereum_address']];
+
+      if (!balanceData) {
+        var lowerCasedAddr = user['ethereum_address'].toLowerCase();
+        balanceData = balanceHashData[lowerCasedAddr];
+      }
+
       Object.assign(
         user,
         {

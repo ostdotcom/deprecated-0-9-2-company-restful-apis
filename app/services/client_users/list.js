@@ -102,7 +102,11 @@ listKlass.prototype = {
 
       logger.info("object['ethereum_address'] ", object['ethereum_address']);
 
-      const balanceData = balanceHashData[object['ethereum_address']];
+      var balanceData = balanceHashData[object['ethereum_address']];
+      if (!balanceData) {
+        var lowerCasedAddr = object['ethereum_address'].toLowerCase();
+        balanceData = balanceHashData[lowerCasedAddr];
+      }
 
       usersList.push({
         id: object['uuid'],
