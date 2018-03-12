@@ -16,6 +16,9 @@ const rootPrefix = "../../.."
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , BTSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
   , executeTransactionKlass = require(rootPrefix + '/app/services/transaction/execute_transaction')
+  , EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
+  , ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points')
   ;
 
 /**
@@ -27,40 +30,169 @@ const rootPrefix = "../../.."
  * @Constructor
  */
 const simulateRandomTransactionKlass = function(params){
+
   const oThis = this;
 
   oThis.clientId = params.client_id;
   oThis.tokenSymbol = params.token_symbol;
+  oThis.prioritizeCompanyTxs = params.prioritize_company_txs;
 
-  oThis.randomTrxType = null;
+  oThis.clientBrandedToken = {};
+  oThis.randomTrxTypes = [];
+  oThis.maxTxTypesToAttempt = 10;
+  oThis.maxUsersToAttempt = 50;
+  oThis.maxUserBtBalance = 0;
+
+  oThis.conversionFactor = null;
+  oThis.ostUSDPrice = null;
   oThis.randomUsers = [];
+  
 };
 
 simulateRandomTransactionKlass.prototype = {
 
   perform: async function(){
+
     const oThis = this;
 
-    // Fetch random transaction
-    var r = await oThis.fetchRandomTransactionType();
+    // Fetch client branded token
+    var r = await oThis.fetchClientBrandedToken();
     if(r.isFailure()){
       return Promise.resolve(r);
     }
 
-    var randomCount = 1;
-    if(oThis.randomTrxType.kind == clientTxTypesConst.userToUserKind){
-      randomCount = 2;
+    // Fetch client branded token
+    var r = await oThis.fetchConversionFactors();
+    if(r.isFailure()){
+      return Promise.resolve(r);
     }
 
     // Fetch Random users
-    var r1 = await oThis.fetchRandomUsers(randomCount);
-    if(r1.isFailure()){
+    var r = await oThis.fetchRandomUsers();
+    if(r.isFailure()){
       return Promise.resolve(r1);
     }
 
-    var r2 = await oThis.sendTransaction();
+    // Fetch Txs and Filter out some transaction kinds (if needed)
+    var r = await oThis.fetchRandomTransactionTypes();
+    if(r.isFailure()){
+      return Promise.resolve(r1);
+    }
 
-    return Promise.resolve(r2);
+    // Fetch tx params
+    var r = await oThis.fetchTxParams();
+    if(r.isFailure()){
+      return Promise.resolve(r);
+    }
+
+    var r = await oThis.sendTransaction(r.data);
+
+    return Promise.resolve(r);
+
+  },
+
+  /**
+   * Fetch client bt details
+   *
+   * @return {Promise<any>}
+   */
+  fetchClientBrandedToken: async function() {
+
+    const oThis = this;
+    var btSecureCache = new BTSecureCacheKlass({tokenSymbol: oThis.tokenSymbol});
+    const cacheRsp = await btSecureCache.fetch();
+
+    if (cacheRsp.isFailure()) {
+      return Promise.resolve(responseHelper.error("s_tr_srt_1", "Invalid Token Symbol"));
+    }
+
+    oThis.clientBrandedToken = cacheRsp.data;
+
+    return Promise.resolve(responseHelper.successWithData({}));
+
+  },
+
+  /**
+   * Fetch conversion factors
+   *
+   * @return {Promise<any>}
+   */
+  fetchConversionFactors:  async function() {
+
+    const oThis = this;
+
+    oThis.conversionFactor = basicHelper.convertToBigNumber(oThis.clientBrandedToken['conversion_factor']);
+
+    const ostPrices = await new ostPriceCacheKlass().fetch();
+
+    oThis.ostUSDPrice = basicHelper.convertToBigNumber(ostPrices['data']['OST']['USD']);
+
+    return Promise.resolve(responseHelper.successWithData({}));
+
+  },
+
+  /**
+   * Fetch Random users from database which have enough balance to perform tx
+   *
+   * @return {Promise<any>}
+   */
+  fetchRandomUsers: async function(){
+
+    const oThis = this;
+
+    var countCacheObj = new ClientUsersCntCacheKlass({client_id: oThis.clientId});
+    var resp = await countCacheObj.fetch();
+    if(resp.isFailure() || parseInt(resp.data) <= 0){
+      return Promise.resolve(responseHelper.error('s_tr_srt_1', 'No active users for client.'));
+    }
+
+    var users = await managedAddressObj.getRandomActiveUsers(
+        oThis.clientId, oThis.maxUsersToAttempt, parseInt(resp.data)
+    );
+
+    var usersCount = users.length;
+
+    if(usersCount < 2){
+      return Promise.resolve(responseHelper.error('s_tr_srt_2', 'No active users for client.'));
+    }
+
+    var userEthAddresses = [];
+    for(var i=0; i<usersCount; i++) {
+      userEthAddresses.push(users[i].ethereum_address);
+    }
+
+    const economyUserBalance = new EconomyUserBalanceKlass({client_id: oThis.clientId, ethereum_addresses: userEthAddresses})
+        , userBalancesResponse = await economyUserBalance.perform()
+    ;
+
+    var balanceHashData = null
+        , userBalance = null
+        , user = null;
+
+    if (userBalancesResponse.isFailure()) {
+      return Promise.resolve(responseHelper.error('s_tr_srt_3', 'could not fetch balances'));
+    } else {
+      balanceHashData = userBalancesResponse.data;
+    }
+
+    for(var i=0; i<usersCount; i++) {
+      user = users[i];
+      userBalance = balanceHashData[user.ethereum_address];
+      if (userBalance) {
+        userBalance = basicHelper.convertToNormal(userBalance.tokenBalance)
+      } else {
+        userBalance = 0
+      }
+      if (userBalance.gt(oThis.maxUserBtBalance)) {
+        oThis.maxUserBtBalance = userBalance;
+      }
+      user['bt_balance'] = userBalance;
+    }
+
+    oThis.randomUsers = basicHelper.shuffleArray(users); // shuffle is important
+
+    return Promise.resolve(responseHelper.successWithData({}));
+
   },
 
   /**
@@ -68,7 +200,8 @@ simulateRandomTransactionKlass.prototype = {
    *
    * @return {Promise<any>}
    */
-  fetchRandomTransactionType: async function(){
+  fetchRandomTransactionTypes: async function(){
+
     const oThis = this;
     var countCacheObj = new ClientTrxTypeCntCacheKlass({clientId: oThis.clientId});
     var resp = await countCacheObj.fetch();
@@ -76,44 +209,191 @@ simulateRandomTransactionKlass.prototype = {
       return Promise.resolve(responseHelper.error('s_tr_srt_4', 'No active transactions for client.'));
     }
 
-    var params = {clientId: oThis.clientId,
-                  limit: 1,
-                  offset: Math.floor(Math.random() * parseInt(resp.data))};
+    var offset = (parseInt(resp.data) - oThis.maxTxTypesToAttempt + 1);
+    offset = ((offset > 0) ? (Math.floor(Math.random() * offset)) : 0);
+
+    var params = {
+      clientId: oThis.clientId,
+      limit: oThis.maxTxTypesToAttempt,
+      offset: offset
+    };
+
     var trxTypes = await clientTrxTypeObj.getAll(params);
+
     if(!trxTypes[0]){
-      return Promise.resolve(responseHelper.error('s_tr_srt_5', 'No active transactions for client.'));
+      return Promise.resolve(responseHelper.error('s_tr_srt_6', 'No active transactions for client.'));
     }
 
-    oThis.randomTrxType = trxTypes[0];
+    if (oThis.prioritizeCompanyTxs) {
+
+      var companyTxs = []
+          , otherTxs = []
+          , tx = null;
+
+      // seperate company txs from others
+      for(var i=0; i<trxTypes.length; i++) {
+
+        tx = trxTypes[i];
+
+        if (!oThis.canExecuteTxKind(tx)) {
+          continue;
+        }
+
+        if (tx.kind === clientTxTypesConst.companyToUserKind) {
+          companyTxs.push(tx);
+        } else {
+          otherTxs.push(tx);
+        }
+
+      }
+
+      otherTxs = basicHelper.shuffleArray(trxTypes);
+      companyTxs = basicHelper.shuffleArray(companyTxs);
+
+      oThis.randomTrxTypes = companyTxs.concat(otherTxs);
+
+    } else {
+
+      var txs = [];
+
+      for(var i=0; i<trxTypes.length; i++) {
+
+        tx = trxTypes[i];
+
+        if (!oThis.canExecuteTxKind(tx)) {
+          continue;
+        } else {
+          txs.push(tx);
+        }
+
+      }
+
+      if (txs.length > 0) {
+        oThis.randomTrxTypes = basicHelper.shuffleArray(txs); // shuffle is important
+      } else {
+        oThis.randomTrxTypes = [trxTypes[0]]; // as all txs do not fulfil user balance condition. add first so that it fails
+      }
+
+    }
 
     return Promise.resolve(responseHelper.successWithData({}));
+
   },
 
   /**
-   * Fetch Random users from database
+   * fetch tx params by looking at users & tx types and verifying balances
    *
-   * @param numberOfUsers
    * @return {Promise<any>}
    */
-  fetchRandomUsers: async function(numberOfUsers){
+  fetchTxParams: async function(){
+
     const oThis = this;
-    var countCacheObj = new ClientUsersCntCacheKlass({client_id: oThis.clientId});
-    var resp = await countCacheObj.fetch();
-    if(resp.isFailure() || parseInt(resp.data) <= 0){
-      return Promise.resolve(responseHelper.error('s_tr_srt_1', 'No active users for client.'));
+
+    var randomTrxType = null
+        , txBtValue = null
+        , txParams = {client_id: oThis.clientId, token_symbol: oThis.tokenSymbol}
+        , randomFromUser = null
+        , randomToUser = null;
+
+    for(var i=0; i<oThis.randomTrxTypes.length; i++) {
+
+      randomTrxType = oThis.randomTrxTypes[i];
+      txBtValue = oThis.getTxBtValue(randomTrxType);
+
+      if (randomTrxType.kind === clientTxTypesConst.companyToUserKind) {
+
+        // we could add a check here to fetch reserve balance
+        txParams['transaction_kind'] = randomTrxType.name;
+        txParams['from_uuid'] = oThis.clientBrandedToken['reserve_address_uuid'];
+        txParams['to_uuid'] = oThis.randomUsers[0]['uuid'];
+        break;
+
+      } else {
+
+        txParams['transaction_kind'] = randomTrxType.name;
+
+        var breakOuterLoop = false;
+
+        for(var j=0; j<oThis.randomUsers.length; j++) {
+
+          randomFromUser = oThis.randomUsers[j];
+          txParams['from_uuid'] = randomFromUser['uuid'];
+
+          if (randomTrxType.kind === clientTxTypesConst.userToCompanyKind) {
+            txParams['to_uuid'] = oThis.clientBrandedToken['reserve_address_uuid'];
+          } else {
+            randomToUser = oThis.randomUsers[j+1];
+            if(!randomToUser) {
+              randomToUser = oThis.randomUsers[0];
+            }
+            txParams['to_uuid'] = randomToUser['uuid'];
+          }
+
+          if (randomFromUser['bt_balance'].gt(txBtValue)) {
+            breakOuterLoop = true;
+            break;
+          }
+
+        }
+
+        if (breakOuterLoop) {
+          break;
+        }
+
+      }
+
     }
 
-    var users = await managedAddressObj.getRandomActiveUsers(oThis.clientId, numberOfUsers, parseInt(resp.data));
-    if(!users[0]){
-      return Promise.resolve(responseHelper.error('s_tr_srt_2', 'No active users for client.'));
+    return Promise.resolve(responseHelper.successWithData(txParams));
+
+  },
+
+  /**
+   * Check if this tx can be executed
+   *
+   * @return {Boolean}
+   */
+  canExecuteTxKind: function(tx) {
+
+    const oThis = this;
+
+    return (oThis.getTxBtValue(tx) <= oThis.maxUserBtBalance);
+
+  },
+
+  /**
+   * Convert Bt to Fiat
+   *
+   * @return {BigNumber}
+   */
+  convertBtToFiat: function(txFiatValue) {
+    const oThis = this;
+    const txOstValue = txFiatValue.div(oThis.ostUSDPrice);
+    return txOstValue.mul(oThis.conversionFactor);
+  },
+
+  /**
+   * Get Tx BT Value
+   *
+   * @return {BigNumber}
+   */
+  getTxBtValue(tx) {
+
+    const oThis = this;
+
+    var txBtValue = null
+        , txFiatValue = null
+    ;
+
+    if (tx.currency_type === clientTxTypesConst.btCurrencyType) {
+      txBtValue = basicHelper.convertToNormal(tx.value_in_bt_wei);
+    } else {
+      txFiatValue = basicHelper.convertToBigNumber(tx.value_in_usd);
+      txBtValue = oThis.convertBtToFiat(txFiatValue);
     }
 
-    if(users.length < numberOfUsers){
-      return Promise.resolve(responseHelper.error('s_tr_srt_3', 'No active users for this type of transaction.'));
-    }
-    oThis.randomUsers = users;
+    return txBtValue;
 
-    return Promise.resolve(responseHelper.successWithData({}));
   },
 
   /**
@@ -121,42 +401,24 @@ simulateRandomTransactionKlass.prototype = {
    *
    * @return {Promise<any>}
    */
-  sendTransaction: async function(){
+  sendTransaction: async function(txParams){
+
     const oThis = this;
 
-    var btSecureCache = new BTSecureCacheKlass({tokenSymbol: oThis.tokenSymbol});
-    const cacheRsp = await btSecureCache.fetch();
-    if (cacheRsp.isFailure()) {
-      return Promise.resolve(responseHelper.error("s_tr_srt_6", "Invalid Token Symbol"));
-    }
-
-    if(oThis.clientId != cacheRsp.data.client_id){
-      return Promise.resolve(responseHelper.error("s_tr_srt_7", "Invalid Token Symbol"));
-    }
-
-    var from_uuid = null,
-        to_uuid = null;
-    if(oThis.randomTrxType.kind == clientTxTypesConst.userToUserKind){
-      from_uuid = oThis.randomUsers[0].uuid;
-      to_uuid = oThis.randomUsers[1].uuid;
-    } else if(oThis.randomTrxType.kind == clientTxTypesConst.userToCompanyKind){
-      from_uuid = oThis.randomUsers[0].uuid;
-      to_uuid = cacheRsp.data.reserve_address_uuid;
-    } else if(oThis.randomTrxType.kind == clientTxTypesConst.companyToUserKind){
-      from_uuid = cacheRsp.data.reserve_address_uuid;
-      to_uuid = oThis.randomUsers[0].uuid;
-    }
-
-    if(!from_uuid || !to_uuid){
+    if(!txParams.from_uuid || !txParams.to_uuid){
       return Promise.resolve(responseHelper.error("s_tr_srt_8", "Something went wrong."));
     }
 
-    var obj = new executeTransactionKlass({client_id: oThis.clientId, token_symbol: oThis.tokenSymbol,
-                                            transaction_kind: oThis.randomTrxType.name,
-                                            from_uuid: from_uuid, to_uuid: to_uuid});
+    if(txParams.from_uuid === txParams.to_uuid){
+      return Promise.resolve(responseHelper.error("s_tr_srt_9", "Something went wrong."));
+    }
+
+    var obj = new executeTransactionKlass(txParams);
     var resp = await obj.perform();
     return Promise.resolve(resp);
+
   }
+
 };
 
 module.exports = simulateRandomTransactionKlass;

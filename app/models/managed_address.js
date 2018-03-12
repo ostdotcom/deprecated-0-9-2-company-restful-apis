@@ -210,7 +210,7 @@ const ManagedAddressKlassPrototype = {
     offset = ((offset > 0) ? (Math.floor(Math.random() * offset)) : 0);
     return oThis.QueryDB.read(
       oThis.tableName,
-      ['id', 'client_id', 'uuid'],
+      ['id', 'client_id', 'uuid', 'ethereum_address'],
       'client_id = ? AND status=? AND address_type=?',
       valueFields,
       {
