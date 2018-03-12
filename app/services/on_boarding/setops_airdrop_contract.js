@@ -12,7 +12,8 @@ const openStPayments = require('@openstfoundation/openst-payments');
 const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , chainIntConstants = require(rootPrefix + '/config/chain_interaction_constants')
-  , clientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
+  , clinetBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
+  , ApproveContractKlass = require(rootPrefix + '/lib/transactions/approve_contract')
 ;
 
 const SetopsAirdropContractClass = function (params) {
@@ -29,6 +30,7 @@ const SetopsAirdropContractClass = function (params) {
   oThis.gasPrice = chainIntConstants.UTILITY_GAS_PRICE;
 
   oThis.airDropContractAddress = '';
+  oThis.btContractAddress = '';
 
 };
 
@@ -44,7 +46,10 @@ SetopsAirdropContractClass.prototype = {
     r = await oThis.registerAirdrop();
     if (r.isFailure()) return Promise.resolve(r);
 
-    return await oThis.setops();
+    r = await oThis.setops();
+    if (r.isFailure()) return Promise.resolve(r);
+
+    return await oThis.approveReserveForAirdropContract();
 
   },
 
@@ -56,15 +61,21 @@ SetopsAirdropContractClass.prototype = {
       return Promise.resolve(responseHelper.error('ob_spo_2', 'Mandatory params missing.'));
     }
 
-    const clientBrandedTokenObj = new clientBrandedTokenKlass();
-    const clientBrandedToken = await clientBrandedTokenObj.getBySymbol(oThis.tokenSymbol);
-    const brandedToken = clientBrandedToken[0];
+    const clientBrandedTokenObj = new clinetBrandedTokenCacheKlass({tokenSymbol: oThis.tokenSymbol});
+    const clientBrandedToken = await clientBrandedTokenObj.fetch();
+    if(clientBrandedToken.isFailure()){
+      return Promise.resolve(responseHelper.error('ob_spo_3', 'Token not found.'));
+    }
+
+    const brandedToken = clientBrandedToken.data;
 
     if (brandedToken.client_id != oThis.clientId) {
       return Promise.resolve(responseHelper.error('ob_spo_1', 'Unauthorised request'));
     }
 
-    oThis.airDropContractAddress = brandedToken.airdrop_contract_addr;
+    oThis.airDropContractAddress = brandedToken.airdrop_contract_address;
+    oThis.btContractAddress = brandedToken.token_erc20_address;
+    oThis.reserveUuid = brandedToken.reserve_address_uuid;
 
     if (!oThis.airDropContractAddress) {
       return Promise.resolve(responseHelper.error('ob_spo_3', 'Airdrop contract address is mandatory.'));
@@ -97,6 +108,18 @@ SetopsAirdropContractClass.prototype = {
   registerAirdrop: async function () {
     var oThis = this;
     return openStPayments.airdropManager.registerAirdrop(oThis.airDropContractAddress, oThis.chainId);
+  },
+
+  /**
+   * Approve Reserve of client for Airdrop contract
+   *
+   * @return {Promise<void>}
+   */
+  approveReserveForAirdropContract: async function(){
+    const oThis = this;
+    var inputParams = {approverUuid: oThis.reserveUuid, token_erc20_address: oThis.btContractAddress,
+      approvee_address: oThis.airDropContractAddress, return_type: 'txReceipt'};
+    return new ApproveContractKlass(inputParams).perform();
   }
 
 };

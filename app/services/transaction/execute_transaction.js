@@ -8,7 +8,6 @@
 const rootPrefix = '../../..'
   , uuid = require("uuid")
   , OpenSTPayment = require('@openstfoundation/openst-payments')
-  , openStPlatform = require('@openstfoundation/openst-platform')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , clientTransactionTypeCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type')
@@ -24,8 +23,9 @@ const rootPrefix = '../../..'
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , conversionRatesConst = require(rootPrefix + '/lib/global_constant/conversion_rates')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
-  , managedAddressesKlass = require(rootPrefix + '/app/models/managed_address')
-  , approveAmount = basicHelper.convertToWei('1000000000')
+  , approveAmount = basicHelper.convertToWei('1000000000000000')
+  , ApproveContractKlass = require(rootPrefix + '/lib/transactions/approve_contract')
+  , TransferStPrimeKlass = require(rootPrefix + '/lib/transactions/stPrime_transfer')
   ;
 
 /**
@@ -88,6 +88,7 @@ ExecuteTransactionKlass.prototype = {
                     transactionLogConst.processingStatus, {}, null);
     oThis.transactionLogId = insertedRec.insertId;
 
+    // Transaction would be set in background & response would be returned with uuid.
     oThis.performTransactionSteps();
 
     return Promise.resolve(responseHelper.successWithData(
@@ -126,7 +127,8 @@ ExecuteTransactionKlass.prototype = {
       return Promise.resolve(responseHelper.error("s_t_et_7", "Invalid Token Symbol"));
     }
 
-    if(!cacheRsp.data.worker_address_uuid){
+    // Client Token has not been set if worker uuid or token address or airdrop address not present.
+    if(!cacheRsp.data.worker_address_uuid || !cacheRsp.data.token_erc20_address || !cacheRsp.data.airdrop_contract_address){
       return Promise.resolve(responseHelper.error("s_t_et_11", "Token not set."));
     }
 
@@ -158,7 +160,8 @@ ExecuteTransactionKlass.prototype = {
       return Promise.resolve(responseHelper.error("s_t_et_3", "Invalid user Ids."));
     }
 
-    if(!cacheFetchResponse.data[oThis.fromUuid] || cacheFetchResponse.data[oThis.fromUuid].client_id != oThis.clientId){
+    var fromUSer = cacheFetchResponse.data[oThis.fromUuid];
+    if(!fromUSer || fromUSer.client_id != oThis.clientId || fromUSer.status != managedAddressesConst.activeStatus){
       return Promise.resolve(responseHelper.error("s_t_et_4", "Invalid From user."));
     }
 
@@ -167,7 +170,8 @@ ExecuteTransactionKlass.prototype = {
       return Promise.resolve(responseHelper.error("s_t_et_9", "Invalid From Company user."));
     }
 
-    if(!cacheFetchResponse.data[oThis.toUuid] || cacheFetchResponse.data[oThis.toUuid].client_id != oThis.clientId){
+    var toUser = cacheFetchResponse.data[oThis.toUuid];
+    if(!toUser || toUser.client_id != oThis.clientId || toUser.status != managedAddressesConst.activeStatus){
       return Promise.resolve(responseHelper.error("s_t_et_5", "Invalid To user."));
     }
 
@@ -235,43 +239,17 @@ ExecuteTransactionKlass.prototype = {
   approveForBrandedToken: async function () {
     const oThis = this;
 
-    const approveBTInput = {
-      erc20_address: oThis.clientBrandedToken.token_erc20_address,
-      approver_address: oThis.userRecords[oThis.fromUuid].ethereum_address,
-      approver_passphrase: oThis.userRecords[oThis.fromUuid].passphrase_d,
-      approvee_address: oThis.clientBrandedToken.airdrop_contract_address,
-      to_approve_amount: approveAmount,
-      options: {returnType: 'txReceipt'}
-    };
-    const approveForBrandedToken = new openStPlatform.services.approve.brandedToken(approveBTInput);
+    var inputParams = {approverUuid: oThis.fromUuid, token_erc20_address: oThis.clientBrandedToken.token_erc20_address,
+                  approvee_address: oThis.clientBrandedToken.airdrop_contract_address, return_type: 'txReceipt'};
+    var approveResponse = await new ApproveContractKlass(inputParams).perform();
 
-    var approveResponse = null;
-    var approveTransactionHash = null;
-    try {
-      approveResponse = await approveForBrandedToken.perform();
-      approveTransactionHash = approveResponse.data.transactionReceipt.data.rawTransactionReceipt.transactionHash;
-    } catch(err) {
-      approveResponse = responseHelper.error("t_et_15", err);
-    }
-    var approveRespData = approveResponse.data;
+    inputParams = approveResponse.data['input_params'];
+    var error = approveResponse.data['error']
+      , approveTransactionHash = approveResponse.data['transaction_hash'];
     var approveStatus = (approveResponse.isFailure() ? transactionLogConst.failedStatus : transactionLogConst.completeStatus);
-    delete approveBTInput.approver_passphrase;
-    oThis.createTransactionLog(uuid.v4(), approveBTInput, approveStatus,
-      approveResponse.err, approveTransactionHash);
-
-    if (approveResponse.isFailure()) {
-      approveResponse.data = Object.assign({error: "Failed while approving contract."}, approveResponse.err);
-      logger.notify('t_et_15', "Error in Approve app/services/transaction/execute_transaction - ", approveResponse);
-      return Promise.resolve(approveResponse);
-    }
-
-    // Mark user as approved in database for future transactions.
-    var managedAddress = new managedAddressesKlass();
-    managedAddress.update(['properties = properties | ?',
-      managedAddress.invertedProperties[managedAddressesConst.bTContractApproved]]).where({uuid: oThis.fromUuid}).fire();
-    new ManagedAddressCacheKlass({'uuids': [oThis.fromUuid]}).clear();
-
-    return Promise.resolve(responseHelper.successWithData({}))
+    oThis.createTransactionLog(uuid.v4(), inputParams, approveStatus,
+                            error, approveTransactionHash);
+    return Promise.resolve(approveResponse);
   },
 
   /**
@@ -281,43 +259,21 @@ ExecuteTransactionKlass.prototype = {
    * @return {Promise.<void>}
    */
   refillGasForUser: async function(){
+
     const oThis = this;
-    const estimateGasObj = new openStPlatform.services.transaction.estimateGas({
-      contract_name: 'brandedToken',
-      contract_address: oThis.clientBrandedToken.token_erc20_address,
-      chain: 'utility',
-      sender_address: oThis.userRecords[oThis.fromUuid].ethereum_address,
-      method_name: 'approve',
-      method_arguments: [oThis.userRecords[oThis.fromUuid].ethereum_address, approveAmount]
-    });
 
-    const estimateGasResponse = await estimateGasObj.perform();
+    var inputParams = {sender_uuid: oThis.clientBrandedToken.reserve_address_uuid,
+      token_erc20_address: oThis.clientBrandedToken.token_erc20_address,
+      receiver_uuid: oThis.fromUuid, method_args: {name: 'approve', amount: approveAmount}};
+    var refillGasResponse = await new TransferStPrimeKlass(inputParams).perform();
 
-    const estimatedGasWei = basicHelper.convertToBigNumber(estimateGasResponse.data.gas_to_use).mul(
-      basicHelper.convertToBigNumber(chainInteractionConstants.UTILITY_GAS_PRICE));
-
-    const transferSTPrimeInput = {
-      sender_address: oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid].ethereum_address,
-      sender_passphrase: oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid].passphrase_d,
-      recipient_address: oThis.userRecords[oThis.fromUuid].ethereum_address,
-      amount_in_wei: estimatedGasWei.toString(10),
-      options: {returnType: 'txReceipt', tag: ''}
-    };
-    const transferSTPrimeBalanceObj = new openStPlatform.services.transaction.transfer.simpleTokenPrime(transferSTPrimeInput);
-
-    const transferResponse = await transferSTPrimeBalanceObj.perform();
-    var transferRespData = transferResponse.data;
-    var transferStatus = (transferResponse.isFailure() ? transactionLogConst.failedStatus : transactionLogConst.completeStatus);
-    delete transferSTPrimeInput.sender_passphrase;
-    oThis.createTransactionLog(transferRespData.transaction_uuid, transferSTPrimeInput, transferStatus,
-      {}, transferRespData.transaction_hash);
-
-    if (transferResponse.isFailure()) {
-      transferResponse.data = Object.assign({error: "Failed while transferring gas."}, transferResponse.err);
-      logger.notify('t_et_14', "Error in transfer of " + estimatedGasWei + "Wei Eth to Address - " + transferResponse);
-      return Promise.resolve(transferResponse);
-    }
-    return Promise.resolve(responseHelper.successWithData());
+    inputParams = refillGasResponse.data['input_params'];
+    var error = refillGasResponse.data['error']
+      , TransactionHash = refillGasResponse.data['transaction_hash'];
+    var refillStatus = (refillGasResponse.isFailure() ? transactionLogConst.failedStatus : transactionLogConst.completeStatus);
+    oThis.createTransactionLog(uuid.v4(), inputParams, refillStatus,
+      error, TransactionHash);
+    return Promise.resolve(refillGasResponse);
   },
 
   /**
@@ -410,13 +366,13 @@ ExecuteTransactionKlass.prototype = {
       if(oThis.fromUuid != oThis.clientBrandedToken.reserve_address_uuid) {
         var result = await oThis.refillGasForUser();
         if(result.isFailure()){
-          oThis.updateParentTransactionLog(transactionLogConst.failedStatus, result.data);
+          oThis.updateParentTransactionLog(transactionLogConst.failedStatus, result.data['error']);
           return;
         }
       }
       var response = await oThis.approveForBrandedToken();
       if(response.isFailure()){
-        oThis.updateParentTransactionLog(transactionLogConst.failedStatus, response.data);
+        oThis.updateParentTransactionLog(transactionLogConst.failedStatus, response.data['error']);
         return;
       }
     }
