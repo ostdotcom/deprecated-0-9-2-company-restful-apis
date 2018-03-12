@@ -157,7 +157,7 @@ EditBrandedTokenKlass.prototype = {
 
     publish_data.name = oThis.brandedTokenAr.name;
     publish_data.ost_to_bt_conversion_factor = oThis.brandedTokenAr.conversion_factor;
-    if(oThis.brandedTokenAr.symbol_icon) publish_data.symbol_icon = oThis.brandedTokenAr.symbol_icon;
+    publish_data.symbol_icon = oThis.brandedTokenAr.symbol_icon;
     publish_data.symbol = oThis.brandedTokenAr.symbol;
 
     if(Object.keys(publish_data).length == 0 || !oThis.brandedTokenAr.token_erc20_address){
