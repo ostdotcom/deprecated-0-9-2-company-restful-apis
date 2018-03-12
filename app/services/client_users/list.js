@@ -85,6 +85,8 @@ listKlass.prototype = {
       balanceHashData = userBalancesResponse.data;
     }
 
+    logger.info("balanceHashData ", balanceHashData);
+
     for (var i = 0; i < length; i++) {
 
       const object = queryResponse[i];
@@ -98,14 +100,16 @@ listKlass.prototype = {
         continue;
       }
 
+      logger.info("object['ethereum_address'] ", object['ethereum_address']);
+
       const balanceData = balanceHashData[object['ethereum_address']];
 
       usersList.push({
         id: object['uuid'],
         name: object['name'],
         uuid: object['uuid'],
-        total_airdropped_tokens: basicHelper.convertToNormal(balanceData.totalAirdroppedTokens).toString(10),
-        token_balance: basicHelper.convertToNormal(balanceData.tokenBalance).toString(10)
+        total_airdropped_tokens: basicHelper.convertToNormal((balanceData || {}).totalAirdroppedTokens).toString(10),
+        token_balance: basicHelper.convertToNormal((balanceData || {}).tokenBalance).toString(10)
       })
 
     }
