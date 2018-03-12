@@ -198,3 +198,12 @@ node executables/fund_addresses/by_utility_chain_owner/st_prime.js >> log/fund_a
 # Every five minutes
 node executables/fund_addresses/observe_balance_of_donors.js >> log/observe_balance_of_donors.log
 ```
+
+# Helper Scripts
+
+* Filling up missing nonce
+```
+c = require('./fire_brigade/fill_up_missing_nonce');
+o = new c({from_address: '0x6bEeE57355885BAd8018814A0B0E93F368148c37', to_address: '0x180bA8f73897C0CB26d76265fC7868cfd936E617', chain_kind: 'value', missing_nonce: 25})
+o.perform();
+```
