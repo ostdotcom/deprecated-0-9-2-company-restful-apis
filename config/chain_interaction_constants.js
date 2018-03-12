@@ -57,7 +57,7 @@ for(var i = 0; i < OST_UTILITY_GETH_RPC_PROVIDERS.length; i ++) {
   providerHostToChainKindMap[OST_UTILITY_GETH_RPC_PROVIDERS[i]] = 'utility';
 }
 
-providerHostToChainKindMap[process.env.UTILITY_GETH_RPC_PROVIDER] = 'utility';
+providerHostToChainKindMap[process.env.OST_UTILITY_GETH_RPC_PROVIDER] = 'utility';
 
 define('GETH_PROVIDER_TO_CHAIN_KIND_MAP', providerHostToChainKindMap);
 
