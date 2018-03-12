@@ -32,7 +32,6 @@ const EditBrandedTokenKlass = function (params) {
   oThis.conversion_factor = oThis.params.conversion_factor;
 
   oThis.brandedTokenAr = null;
-  oThis.publish_data = {};
 
 };
 
@@ -79,18 +78,12 @@ EditBrandedTokenKlass.prototype = {
       return Promise.resolve(responseHelper.error('tm_e_3', 'Unauthorized access'));
     }
 
-    if(oThis.symbol != oThis.brandedTokenAr.symbol) {
-      oThis.publish_data.symbol = oThis.brandedTokenAr.symbol;
-    }
-
     if(oThis.name && basicHelper.isBTNameValid(oThis.name) && oThis.name != oThis.brandedTokenAr.name){
       oThis.brandedTokenAr.name = oThis.name;
-      oThis.publish_data.name = oThis.name;
     }
 
     if(oThis.symbol_icon && oThis.symbol_icon != oThis.brandedTokenAr.symbol_icon){
       oThis.brandedTokenAr.symbol_icon = oThis.symbol_icon;
-      oThis.publish_data.symbol_icon = oThis.symbol_icon;
     }
 
     if(oThis.token_erc20_address && basicHelper.isAddressValid(oThis.token_erc20_address) &&
@@ -115,7 +108,6 @@ EditBrandedTokenKlass.prototype = {
       oThis.conversion_factor != oThis.brandedTokenAr.conversion_factor
     ){
       oThis.brandedTokenAr.conversion_factor = oThis.conversion_factor;
-      oThis.publish_data.ost_to_bt_conversion_factor = oThis.conversion_factor;
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -160,9 +152,15 @@ EditBrandedTokenKlass.prototype = {
 
   publishUpdateEvent: function () {
 
-    var oThis = this;
+    var oThis = this
+      , publish_data = {};
 
-    if(Object.keys(oThis.publish_data).length == 0 || !oThis.brandedTokenAr.token_erc20_address){
+    publish_data.name = oThis.brandedTokenAr.name;
+    publish_data.ost_to_bt_conversion_factor = oThis.brandedTokenAr.conversion_factor;
+    if(oThis.brandedTokenAr.symbol_icon) publish_data.symbol_icon = oThis.brandedTokenAr.symbol_icon;
+    publish_data.symbol = oThis.brandedTokenAr.symbol;
+
+    if(Object.keys(publish_data).length == 0 || !oThis.brandedTokenAr.token_erc20_address){
       return Promise.resolve(responseHelper.successWithData({}));
     }
     openSTNotification.publishEvent.perform(
@@ -178,7 +176,7 @@ EditBrandedTokenKlass.prototype = {
               chain_id: chainIntConstants.UTILITY_CHAIN_ID
             },
             operation: 'update',
-            data: oThis.publish_data
+            data: publish_data
           }
         }
       }
