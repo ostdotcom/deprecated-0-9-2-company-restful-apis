@@ -40,6 +40,8 @@ const rootRoutes = require(rootPrefix + '/routes/root')
   , inputValidator = require(rootPrefix + '/lib/authentication/validate_signature')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , customMiddleware = require(rootPrefix + '/helpers/custom_middleware')
+  , SystemServiceStatusesCacheKlass = require('./lib/cache_management/system_service_statuses')
+  , systemServiceStatusesCache = new SystemServiceStatusesCacheKlass({})
 ;
 
 morgan.token('id', function getId (req) {
@@ -126,6 +128,18 @@ const appendRequestDebugInfo = function(req, res, next) {
   });
 };
 
+// check system service statuses and return error if they are down
+const checkSystemServiceStatuses = async function(req, res, next) {
+
+  const statusRsp = await systemServiceStatusesCache.fetch();
+  if (statusRsp.isSuccess && statusRsp.data && statusRsp.data['saas_api_available'] != 1) {
+    return responseHelper.error('a_4', 'Something went wrong').renderResponse(res);
+  }
+
+  next();
+
+};
+
 // if the process is a master.
 if (cluster.isMaster) {
   // Set worker process title
@@ -205,19 +219,19 @@ if (cluster.isMaster) {
   // Following are the routes
   app.use('/', rootRoutes);
 
-  app.use('/transaction-types', appendRequestDebugInfo, validateApiSignature, sanitizer(), transactionRoutes);
+  app.use('/transaction-types', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), transactionRoutes);
 
-  app.use('/users', appendRequestDebugInfo, validateApiSignature, sanitizer(), clientUsersRoutes);
+  app.use('/users', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), clientUsersRoutes);
 
-  app.use('/on-boarding', sanitizer(), appendRequestDebugInfo, decodeJwt, onBoardingRoutes);
+  app.use('/on-boarding', sanitizer(), checkSystemServiceStatuses, appendRequestDebugInfo, decodeJwt, onBoardingRoutes);
 
-  app.use('/stake', sanitizer(), appendRequestDebugInfo, decodeJwt, stakeRoutes);
+  app.use('/stake', sanitizer(), checkSystemServiceStatuses, appendRequestDebugInfo, decodeJwt, stakeRoutes);
 
-  app.use('/client', sanitizer(), appendRequestDebugInfo, decodeJwt, clientRoutes);
+  app.use('/client', sanitizer(), checkSystemServiceStatuses, appendRequestDebugInfo, decodeJwt, clientRoutes);
 
-  app.use('/simulator', sanitizer(), appendRequestDebugInfo, decodeJwt, simulatorRoutes);
+  app.use('/simulator', sanitizer(), checkSystemServiceStatuses, appendRequestDebugInfo, decodeJwt, simulatorRoutes);
 
-  app.use('/client-users', sanitizer(), appendRequestDebugInfo, decodeJwt, clientUsersJwtRoutes);
+  app.use('/client-users', sanitizer(), checkSystemServiceStatuses, appendRequestDebugInfo, decodeJwt, clientUsersJwtRoutes);
 
 // catch 404 and forward to error handler
   app.use(function (req, res, next) {
