@@ -3,8 +3,6 @@
 const rootPrefix = '../../..'
   , openStPlatform = require('@openstfoundation/openst-platform')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , ethBalanceCacheKlass = require(rootPrefix + '/lib/cache_management/ethBalance')
-  , ostBalanceCacheKlass = require(rootPrefix + '/lib/cache_management/ostBalance')
   , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
   , ClientBrandedTokenSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
@@ -18,7 +16,7 @@ const rootPrefix = '../../..'
  *
  * @constructor
  */
-const utilityChainBalancesFetcherKlass = function (params) {
+const UtilityChainBalancesFetcherKlass = function (params) {
 
   const oThis = this;
 
@@ -30,7 +28,7 @@ const utilityChainBalancesFetcherKlass = function (params) {
 
 };
 
-utilityChainBalancesFetcherKlass.prototype = {
+UtilityChainBalancesFetcherKlass.prototype = {
 
   /**
    * fetch data from from UC in Wei
@@ -178,4 +176,4 @@ utilityChainBalancesFetcherKlass.prototype = {
 
 };
 
-module.exports = utilityChainBalancesFetcherKlass;
+module.exports = UtilityChainBalancesFetcherKlass;
