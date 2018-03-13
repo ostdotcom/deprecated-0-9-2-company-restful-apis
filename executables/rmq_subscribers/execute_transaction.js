@@ -16,10 +16,13 @@ require(rootPrefix + '/module_overrides/index');
 const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker')
   , ProcessLocker = new ProcessLockerKlass()
 ;
+const args = process.argv
+  , processId = args[2]
+;
 
 var unAckCount = 0;
 
-ProcessLocker.canStartProcess({process_title: 'cra_single_worker_start_airdrop'});
+ProcessLocker.canStartProcess({process_title: 'cra_single_worker_execute_transaction'+processId});
 ProcessLocker.endAfterTime({time_in_minutes: 60});
 
 // Load external packages
@@ -34,7 +37,7 @@ openSTNotification.subscribeEvent.rabbit(["newTransaction.execute"],
   {
     queue: 'new_transactions',
     ackRequired: 1,
-    prefetch: 5
+    prefetch: 50
   },
   function (params) {
 
