@@ -3,6 +3,7 @@
 const Web3 = require('web3')
   , BigNumber = require('bignumber.js')
   , openStCache = require('@openstfoundation/openst-cache')
+  , web3InstanceMap = {}
 ;
 
 const rootPrefix = '../..'
@@ -13,6 +14,27 @@ const rootPrefix = '../..'
   , waitTimeout = 50000 //50 seconds
   , waitTimeInterval = 5 //5 milliseconds
 ;
+
+const getWeb3Instance = function (gethURL, chainKind) {
+  const existingInstance = web3InstanceMap[gethURL];
+  if (existingInstance){
+    return existingInstance;
+  }
+
+  const newInstance = new Web3(gethURL);
+
+  newInstance.chainKind = chainKind;
+  newInstance.extend({
+    methods: [{
+      name: 'pendingTransactions',
+      call: 'txpool_content',
+    }]
+  });
+
+  web3InstanceMap[gethURL] = newInstance;
+
+  return newInstance;
+};
 
 
 const instanceMap = {};
@@ -227,7 +249,7 @@ const NonceCacheKlassPrototype = {
         if (_getTimeStamp()-startTime > waitTimeout) {
           //Format the error
           logger.error("module_overrides/web3_eth/nonce_manager.js:getNonce:wait");
-          return onResolve(responseHelper.error('l_nm_getNonce_1', 'getNonce timeout', {p1:"123"}));
+          return onResolve(responseHelper.error('l_nm_getNonce_1', 'getNonce timeout'));
         }
         const isLocked = await oThis.isLocked();
         if (isLocked) {
@@ -412,14 +434,7 @@ const NonceCacheKlassPrototype = {
     for (var i = allGethNodes.length - 1; i >= 0; i--) {
       const gethURL = allGethNodes[i];
 
-      const web3UtilityRpcProvider = new Web3(gethURL);
-      web3UtilityRpcProvider.chainKind = oThis.chain_kind;
-      web3UtilityRpcProvider.extend({
-        methods: [{
-          name: 'pendingTransactions',
-          call: 'txpool_content',
-        }]
-      });
+      const web3UtilityRpcProvider = getWeb3Instance(gethURL, oThis.chain_kind);
       allNoncePromise.push(oThis._getNonceFromGethNode(web3UtilityRpcProvider));
       allPendingTransactionPromise.push(oThis._getPendingTransactionsFromGethNode(web3UtilityRpcProvider));
     }
