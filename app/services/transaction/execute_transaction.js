@@ -8,6 +8,7 @@
 const rootPrefix = '../../..'
   , uuid = require("uuid")
   , OpenSTPayment = require('@openstfoundation/openst-payments')
+  , openSTNotification = require('@openstfoundation/openst-notification')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , clientTransactionTypeCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type')
@@ -16,8 +17,7 @@ const rootPrefix = '../../..'
   , BTSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
   , BTCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
-  , transactionLogKlass = require(rootPrefix + '/app/models/transaction_log')
-  , transactionLogObj = new transactionLogKlass()
+  , transactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points')
   , basicHelper = require(rootPrefix + '/helpers/basic')
@@ -33,6 +33,8 @@ const rootPrefix = '../../..'
  * @constructor
  *
  * @param {object} params - external passed parameters
+ * @param {number} params.transactionLogId - transaction log id
+ * @param {string} params.transactionUuid - transaction uuid.
  * @param {number} params.client_id - client id who is performing a transaction.
  * @param {string} params.token_symbol - Token symbol whose transaction would be executed.
  * @param {String} params.from_uuid - UUID of from user's address.
@@ -43,19 +45,20 @@ const rootPrefix = '../../..'
 const ExecuteTransactionKlass = function (params){
   const oThis = this;
 
+  oThis.transactionLogId = params.transactionLogId;
+  oThis.transactionUuid = params.transactionUuid;
   oThis.clientId = params.client_id;
   oThis.fromUuid = params.from_uuid;
   oThis.toUuid = params.to_uuid;
   oThis.transactionKind = params.transaction_kind;
   oThis.gasPrice = chainInteractionConstants.UTILITY_GAS_PRICE;
 
+  oThis.inSync = params.runInSync || 0;
   oThis.tokenSymbol = null;
   oThis.transactionTypeRecord = null;
   oThis.userRecords = null;
   oThis.transactionHash = null;
-  oThis.transactionUuid = null;
   oThis.clientBrandedToken = null;
-  oThis.transactionLogId = null;
 };
 
 ExecuteTransactionKlass.prototype = {
@@ -63,37 +66,97 @@ ExecuteTransactionKlass.prototype = {
   perform: async function(){
     const oThis = this;
 
-    var r1 = await oThis.validateClientToken();
-    if(r1.isFailure()){
-      return Promise.resolve(r1);
-    }
+    var r;
 
-    var r2 = await oThis.validateTransactionKind();
-    if(r2.isFailure()){
-      return Promise.resolve(r2);
-    }
+    r = await oThis.fetchTransactionLog();
+    if(r.isFailure()) return Promise.resolve(r);
 
-    var r3 = await oThis.validateUsers();
-    if(r3.isFailure()){
-      return Promise.resolve(r3);
-    }
+    r = await oThis.validateClientToken();
+    if(r.isFailure()) return Promise.resolve(r);
+
+    r = await oThis.validateTransactionKind();
+    if(r.isFailure()) return Promise.resolve(r);
+
+    r = await oThis.validateUsers();
+    if(r.isFailure()) return Promise.resolve(r);
 
     // Create main transaction record in transaction logs
     // This transaction uuid would be used throughout as process id too for all the further transactions.
-    oThis.transactionUuid = uuid.v4();
-    var inputParams = {from_uuid: oThis.fromUuid, to_uuid: oThis.toUuid,
-                        transaction_kind: oThis.transactionKind, token_symbol: oThis.tokenSymbol,
-                        gas_price: oThis.gasPrice, transaction_kind_id: oThis.transactionTypeRecord.id};
-    var insertedRec = await oThis.createTransactionLog(oThis.transactionUuid, inputParams,
-                    transactionLogConst.processingStatus, {}, null);
-    oThis.transactionLogId = insertedRec.insertId;
+    // Don't Create new transaction log if already passed.
+    if(!oThis.transactionLogId){
+      oThis.transactionUuid = uuid.v4();
+      var inputParams = {from_uuid: oThis.fromUuid, to_uuid: oThis.toUuid,
+        transaction_kind: oThis.transactionKind, token_symbol: oThis.tokenSymbol,
+        gas_price: oThis.gasPrice, transaction_kind_id: oThis.transactionTypeRecord.id};
+
+      var insertedRec = await oThis.createTransactionLog(oThis.transactionUuid, inputParams,
+        transactionLogConst.processingStatus, {}, null);
+      oThis.transactionLogId = insertedRec.insertId;
+    }
 
     // Transaction would be set in background & response would be returned with uuid.
-    oThis.performTransactionSteps();
+    if(oThis.inSync == 1){
+      await oThis.performTransactionSteps();
+    } else {
+      //set in RMQ
+      const setToRMQ = await openSTNotification.publishEvent.perform(
+        {
+          topics: ['newTransaction.execute'],
+          publisher: 'OST',
+          message: {
+            kind: 'execute_transaction',
+            payload: {
+              transactionLogId: oThis.transactionLogId,
+              transactionUuid: oThis.transactionUuid
+            }
+          }
+        }
+      );
+      console.log("---setToRMQ---------------------------------------------------", setToRMQ);
+      //if could not set to RMQ run in async.
+      if(setToRMQ.isFailure() || setToRMQ.data.publishedToRmq==0){
+        oThis.performTransactionSteps();
+      }
+    }
 
     return Promise.resolve(responseHelper.successWithData(
       {transaction_uuid: oThis.transactionUuid, transaction_hash: oThis.transactionHash,
         from_uuid: oThis.fromUuid, to_uuid: oThis.toUuid, transaction_kind: oThis.transactionKind}));
+  },
+
+  /**
+   * Get params of transaction from transaction log.
+   *
+   * @Sets clientId, fromUuid, toUuid, transactionKind, gasPrice
+   * @return {Promise<ResultBase>}
+   */
+  fetchTransactionLog: async function () {
+    const oThis = this;
+    if(!oThis.transactionLogId) return Promise.resolve(responseHelper.successWithData({}));
+
+    const transactionLogs = await new transactionLogModel().select('*').where(['id=?', oThis.transactionLogId]).fire()
+      , transactionLog = transactionLogs[0];
+
+    if(transactionLog.transaction_uuid !== oThis.transactionUuid){
+      return Promise.resolve(responseHelper.successWithData({}));
+    }
+    console.log("transactionLog.status---", transactionLog.status);
+    console.log("(new transactionLogModel().statuses[transactionLogConst.processingStatus])",  (new transactionLogModel().statuses[transactionLogConst.processingStatus]));
+
+    if((new transactionLogModel().statuses[transactionLog.status]) != transactionLogConst.processingStatus){
+      return Promise.resolve(
+        responseHelper.error("s_t_et_1", "Only processing statuses are allowed here.", null, {}, {sendErrorEmail: false})
+      )
+    }
+    const ransaction_params = JSON.parse(transactionLog.input_params);
+
+    oThis.clientId = transactionLog.client_id;
+    oThis.fromUuid = ransaction_params.from_uuid;
+    oThis.toUuid = ransaction_params.to_uuid;
+    oThis.transactionKind = ransaction_params.transaction_kind;
+    oThis.gasPrice = ransaction_params.gas_price;
+
+    return Promise.resolve(responseHelper.successWithData({}))
   },
 
   /**
@@ -114,7 +177,7 @@ ExecuteTransactionKlass.prototype = {
     oThis.tokenSymbol = btCacheRsp.data.symbol;
 
     if(!oThis.tokenSymbol){
-      return Promise.resolve(responseHelper.error("s_t_et_6", "Invalid Token Symbol"));
+      return Promise.resolve(responseHelper.error("s_t_et_2", "Invalid Token Symbol", null, {}, {sendErrorEmail: false}));
     }
 
     var btSecureCache = new BTSecureCacheKlass({tokenSymbol: oThis.tokenSymbol});
@@ -124,12 +187,12 @@ ExecuteTransactionKlass.prototype = {
     }
 
     if(oThis.clientId != cacheRsp.data.client_id){
-      return Promise.resolve(responseHelper.error("s_t_et_7", "Invalid Token Symbol"));
+      return Promise.resolve(responseHelper.error("s_t_et_3", "Invalid Token Symbol", null, {}, {sendErrorEmail: false}));
     }
 
     // Client Token has not been set if worker uuid or token address or airdrop address not present.
     if(!cacheRsp.data.worker_address_uuid || !cacheRsp.data.token_erc20_address || !cacheRsp.data.airdrop_contract_address){
-      return Promise.resolve(responseHelper.error("s_t_et_11", "Token not set."));
+      return Promise.resolve(responseHelper.error("s_t_et_4", "Token not set", null, {}, {sendErrorEmail: false}));
     }
 
     oThis.clientBrandedToken = cacheRsp.data;
@@ -147,7 +210,7 @@ ExecuteTransactionKlass.prototype = {
     const oThis = this;
 
     if(!oThis.fromUuid || !oThis.toUuid || oThis.fromUuid == oThis.toUuid){
-      return Promise.resolve(responseHelper.error("s_t_et_8", "Invalid users."));
+      return Promise.resolve(responseHelper.error("s_t_et_5", "Invalid users.", null, {}, {sendErrorEmail: false}));
     }
 
     const managedAddressCache = new ManagedAddressCacheKlass({'uuids':
@@ -157,27 +220,27 @@ ExecuteTransactionKlass.prototype = {
     const cacheFetchResponse = await managedAddressCache.fetchDecryptedData(['passphrase']);
 
     if (cacheFetchResponse.isFailure()) {
-      return Promise.resolve(responseHelper.error("s_t_et_3", "Invalid user Ids."));
+      return Promise.resolve(responseHelper.error("s_t_et_6", "Invalid user Ids", null, {}, {sendErrorEmail: false}));
     }
 
     var fromUSer = cacheFetchResponse.data[oThis.fromUuid];
     if(!fromUSer || fromUSer.client_id != oThis.clientId || fromUSer.status != managedAddressesConst.activeStatus){
-      return Promise.resolve(responseHelper.error("s_t_et_4", "Invalid From user."));
+      return Promise.resolve(responseHelper.error("s_t_et_7", "Invalid From user", null, {}, {sendErrorEmail: false}));
     }
 
     if(oThis.clientBrandedToken.kind == clientTransactionTypeConst.companyToUserKind &&
       oThis.fromUuid != oThis.clientBrandedToken.reserve_address_uuid){
-      return Promise.resolve(responseHelper.error("s_t_et_9", "Invalid From Company user."));
+      return Promise.resolve(responseHelper.error("s_t_et_8", "Invalid From Company user", null, {}, {sendErrorEmail: false}));
     }
 
     var toUser = cacheFetchResponse.data[oThis.toUuid];
     if(!toUser || toUser.client_id != oThis.clientId || toUser.status != managedAddressesConst.activeStatus){
-      return Promise.resolve(responseHelper.error("s_t_et_5", "Invalid To user."));
+      return Promise.resolve(responseHelper.error("s_t_et_9", "Invalid To user", null, {}, {sendErrorEmail: false}));
     }
 
     if(oThis.clientBrandedToken.kind == clientTransactionTypeConst.userToCompanyKind &&
       oThis.toUuid != oThis.clientBrandedToken.reserve_address_uuid){
-      return Promise.resolve(responseHelper.error("s_t_et_10", "Invalid To Company user."));
+      return Promise.resolve(responseHelper.error("s_t_et_10", "Invalid To Company user", null, {}, {sendErrorEmail: false}));
     }
 
     oThis.userRecords = cacheFetchResponse.data;
@@ -194,7 +257,7 @@ ExecuteTransactionKlass.prototype = {
     const oThis = this;
 
     if(!oThis.transactionKind){
-      return Promise.resolve(responseHelper.error("s_t_et_1", "Mandatory parameters missing"));
+      return Promise.resolve(responseHelper.error("s_t_et_11", "Mandatory parameters missing", null, {}, {sendErrorEmail: false}));
     }
 
     var cacheObj = new clientTransactionTypeCacheKlass({client_id: oThis.clientId, transaction_kind: oThis.transactionKind});
@@ -205,7 +268,7 @@ ExecuteTransactionKlass.prototype = {
     oThis.transactionTypeRecord = cachedResp.data;
 
     if(oThis.transactionTypeRecord.status != clientTransactionTypeConst.activeStatus){
-      return Promise.resolve(responseHelper.error("s_t_et_2", "Invalid transaction kind."));
+      return Promise.resolve(responseHelper.error("s_t_et_12", "Invalid transaction kind", null, {}, {sendErrorEmail: false}));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -224,7 +287,7 @@ ExecuteTransactionKlass.prototype = {
 
     var ipp = JSON.stringify(inputParams)
       , fpp = JSON.stringify(responseData);
-    return transactionLogObj.create({client_id: oThis.clientId, client_token_id: oThis.clientBrandedToken.id, input_params: ipp,
+    return new transactionLogModel().create({client_id: oThis.clientId, client_token_id: oThis.clientBrandedToken.id, input_params: ipp,
                               chain_type: transactionLogConst.utilityChainType, status: status,
                               transaction_uuid: uuid, process_uuid: oThis.transactionUuid,
                               formatted_receipt: fpp, transaction_hash: transactionHash});
@@ -247,7 +310,7 @@ ExecuteTransactionKlass.prototype = {
     var error = approveResponse.data['error']
       , approveTransactionHash = approveResponse.data['transaction_hash'];
     var approveStatus = (approveResponse.isFailure() ? transactionLogConst.failedStatus : transactionLogConst.completeStatus);
-    oThis.createTransactionLog(uuid.v4(), inputParams, approveStatus,
+    await oThis.createTransactionLog(uuid.v4(), inputParams, approveStatus,
                             error, approveTransactionHash);
     return Promise.resolve(approveResponse);
   },
@@ -271,7 +334,7 @@ ExecuteTransactionKlass.prototype = {
     var error = refillGasResponse.data['error']
       , TransactionHash = refillGasResponse.data['transaction_hash'];
     var refillStatus = (refillGasResponse.isFailure() ? transactionLogConst.failedStatus : transactionLogConst.completeStatus);
-    oThis.createTransactionLog(uuid.v4(), inputParams, refillStatus,
+    await oThis.createTransactionLog(uuid.v4(), inputParams, refillStatus,
       error, TransactionHash);
     return Promise.resolve(refillGasResponse);
   },
@@ -288,8 +351,8 @@ ExecuteTransactionKlass.prototype = {
     var workerUser = oThis.userRecords[oThis.clientBrandedToken.worker_address_uuid];
     var reserveUser = oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid];
     if(!workerUser || !reserveUser){
-      oThis.updateParentTransactionLog(transactionLogConst.failedStatus, {error: "Worker or reserve user not found. "});
-      return;
+      await oThis.updateParentTransactionLog(transactionLogConst.failedStatus, {error: "Worker or reserve user not found. "});
+      return Promise.resolve(responseHelper.error('s_t_et_13', "Worker or reserve user not found", null, {}, {sendErrorEmail: false}));
     }
 
     var ostPrices = await new ostPriceCacheKlass().fetch();
@@ -315,16 +378,17 @@ ExecuteTransactionKlass.prototype = {
         oThis.gasPrice,
         {tag:oThis.transactionTypeRecord.name, returnType: 'txReceipt'});
     } catch(err) {
-      response = responseHelper.error("t_et_16", err);
+      response = responseHelper.error("s_t_et_14", err);
     }
 
     if(response.isFailure()){
-      oThis.updateParentTransactionLog(transactionLogConst.failedStatus, response.err);
-      return;
+      await oThis.updateParentTransactionLog(transactionLogConst.failedStatus, response.err);
+      return Promise.resolve(response);
     }
 
     oThis.transactionHash = response.data.transaction_hash;
-    oThis.updateParentTransactionLog(transactionLogConst.completeStatus);
+    await oThis.updateParentTransactionLog(transactionLogConst.completeStatus);
+    return Promise.resolve(responseHelper.successWithData({}));
   },
 
   /**
@@ -340,7 +404,7 @@ ExecuteTransactionKlass.prototype = {
     if(failedResponse){
       qParams['formatted_receipt'] = JSON.stringify(failedResponse);
     }
-    transactionLogObj.edit(
+    new transactionLogModel().edit(
       {
         qParams: qParams,
         whereCondition: {id: oThis.transactionLogId}
@@ -366,18 +430,19 @@ ExecuteTransactionKlass.prototype = {
       if(oThis.fromUuid != oThis.clientBrandedToken.reserve_address_uuid) {
         var result = await oThis.refillGasForUser();
         if(result.isFailure()){
-          oThis.updateParentTransactionLog(transactionLogConst.failedStatus, result.data['error']);
-          return;
+          await oThis.updateParentTransactionLog(transactionLogConst.failedStatus, result.data['error']);
+          return Promise.resolve(result);
         }
       }
       var response = await oThis.approveForBrandedToken();
       if(response.isFailure()){
-        oThis.updateParentTransactionLog(transactionLogConst.failedStatus, response.data['error']);
-        return;
+        await oThis.updateParentTransactionLog(transactionLogConst.failedStatus, response.data['error']);
+        return Promise.resolve(response);
       }
     }
 
-    oThis.sendAirdropPay();
+    var resp = await oThis.sendAirdropPay();
+    return Promise.resolve(resp);
   }
 
 
