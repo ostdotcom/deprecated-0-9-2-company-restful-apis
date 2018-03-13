@@ -357,7 +357,7 @@ simulateRandomTransactionKlass.prototype = {
 
     const oThis = this;
 
-    return (oThis.getTxBtValue(tx) <= oThis.maxUserBtBalance);
+    return basicHelper.convertToBigNumber(oThis.getTxBtValue(tx)).lte(oThis.maxUserBtBalance);
 
   },
 
