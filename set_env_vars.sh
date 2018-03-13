@@ -10,7 +10,7 @@ export OST_UTILITY_GETH_RPC_PROVIDERS='["http://127.0.0.1:9546"]'
 export CR_ONLY_CACHE_ENGINE='memcached'
 
 # Database details
-export CR_MYSQL_CONNECTION_POOL_SIZE='5'
+export CR_MYSQL_CONNECTION_POOL_SIZE='2'
 
 export CR_DEFAULT_MYSQL_HOST='127.0.0.1'
 export CR_DEFAULT_MYSQL_USER='root'
