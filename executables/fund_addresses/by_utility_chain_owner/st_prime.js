@@ -212,12 +212,12 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
    * @private
    */
   _utilityChainData: {
-    utilityChainOwner: {minBalance: '10', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR},
-    staker: {minBalance: '1', address: chainInteractionConstants.STAKER_ADDR},
-    redeemer: {minBalance: '1', address: chainInteractionConstants.REDEEMER_ADDR},
-    utilityRegistrar: {minBalance: '1', address: chainInteractionConstants.UTILITY_REGISTRAR_ADDR},
-    utilityDeployer: {minBalance: '1', address: chainInteractionConstants.UTILITY_DEPLOYER_ADDR},
-    utilityOps: {minBalance: '1', address: chainInteractionConstants.UTILITY_OPS_ADDR}
+    utilityChainOwner: {minBalance: '60', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR},
+    staker: {minBalance: '10', address: chainInteractionConstants.STAKER_ADDR},
+    redeemer: {minBalance: '10', address: chainInteractionConstants.REDEEMER_ADDR},
+    utilityRegistrar: {minBalance: '10', address: chainInteractionConstants.UTILITY_REGISTRAR_ADDR},
+    utilityDeployer: {minBalance: '10', address: chainInteractionConstants.UTILITY_DEPLOYER_ADDR},
+    utilityOps: {minBalance: '10', address: chainInteractionConstants.UTILITY_OPS_ADDR}
   },
 
   /**

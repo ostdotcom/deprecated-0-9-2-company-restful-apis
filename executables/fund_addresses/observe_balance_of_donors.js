@@ -107,11 +107,11 @@ balanceObserververKlass.prototype = {
 
   // thresholds
 
-  _minFoundationEthBalance: 10,
+  _minFoundationEthBalance: 60,
 
-  _minUtilityChainOwnerEthBalance: 10
+  _minUtilityChainOwnerEthBalance: 60
 
-}
+};
 
 // perform action
 const balanceObserververKlassObj = new balanceObserververKlass();
