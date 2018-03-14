@@ -201,7 +201,8 @@ startAirdropKlass.prototype = {
       airdrop_uuid: oThis.airdropUuid, client_id: oThis.clientId,
       client_branded_token_id: oThis.clientBrandedToken.id,
       common_airdrop_amount_in_wei: basicHelper.convertToWei(oThis.amount).toNumber(),
-      airdrop_list_type: oThis.listType, status: clientAirdropConst.incompleteStatus
+      airdrop_list_type: oThis.listType,
+      status: clientAirdropConst.incompleteStatus
     });
 
     // Publish Airdrop event
