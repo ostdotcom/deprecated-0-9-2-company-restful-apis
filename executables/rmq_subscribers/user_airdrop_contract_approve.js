@@ -38,7 +38,7 @@ openSTNotification.subscribeEvent.rabbit(["newTransaction.execute"],
   {
     queue: 'new_transactions',
     ackRequired: 1,
-    prefetch: 1
+    prefetch: 50
   },
   function (params) {
 
