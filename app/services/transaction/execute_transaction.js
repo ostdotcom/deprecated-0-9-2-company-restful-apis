@@ -99,6 +99,8 @@ ExecuteTransactionKlass.prototype = {
       await oThis.performTransactionSteps();
     } else {
       //set in RMQ
+      var t1 = new Date();
+      console.log("---setToRMQ---------------------------------------------------", t1);
       const setToRMQ = await openSTNotification.publishEvent.perform(
         {
           topics: ['newTransaction.execute'],
@@ -112,7 +114,8 @@ ExecuteTransactionKlass.prototype = {
           }
         }
       );
-      console.log("---setToRMQ---------------------------------------------------", setToRMQ);
+      var t2 = new Date();
+      console.log("---setToRMQ---------------------------------------------------", setToRMQ, '---', t2, '-diff-', (t2-t1), 'ms');
       //if could not set to RMQ run in async.
       if(setToRMQ.isFailure() || setToRMQ.data.publishedToRmq==0){
         oThis.performTransactionSteps();
