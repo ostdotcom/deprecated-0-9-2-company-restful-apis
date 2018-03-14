@@ -95,32 +95,7 @@ ExecuteTransactionKlass.prototype = {
     }
 
     // Transaction would be set in background & response would be returned with uuid.
-    if(oThis.inSync == 1){
-      await oThis.performTransactionSteps();
-    } else {
-      //set in RMQ
-      var t1 = new Date();
-      console.log("---setToRMQ---------------------------------------------------", t1);
-      const setToRMQ = await openSTNotification.publishEvent.perform(
-        {
-          topics: ['newTransaction.execute'],
-          publisher: 'OST',
-          message: {
-            kind: 'execute_transaction',
-            payload: {
-              transactionLogId: oThis.transactionLogId,
-              transactionUuid: oThis.transactionUuid
-            }
-          }
-        }
-      );
-      var t2 = new Date();
-      console.log("---setToRMQ---------------------------------------------------", setToRMQ, '---', t2, '-diff-', (t2-t1), 'ms');
-      //if could not set to RMQ run in async.
-      if(setToRMQ.isFailure() || setToRMQ.data.publishedToRmq==0){
-        oThis.performTransactionSteps();
-      }
-    }
+    await oThis.executeTransaction();
 
     return Promise.resolve(responseHelper.successWithData(
       {transaction_uuid: oThis.transactionUuid, transaction_hash: oThis.transactionHash,
@@ -413,6 +388,45 @@ ExecuteTransactionKlass.prototype = {
         whereCondition: {id: oThis.transactionLogId}
       }
     )
+  },
+
+  executeTransaction: async function () {
+    const oThis = this;
+
+    try{
+
+      if (oThis.inSync == 1) {
+        await oThis.performTransactionSteps();
+      } else {
+        //set in RMQ
+        var t1 = new Date();
+        console.log("---setToRMQ---------------------------------------------------", t1);
+        const setToRMQ = await openSTNotification.publishEvent.perform(
+          {
+            topics: ['newTransaction.execute'],
+            publisher: 'OST',
+            message: {
+              kind: 'execute_transaction',
+              payload: {
+                transactionLogId: oThis.transactionLogId,
+                transactionUuid: oThis.transactionUuid
+              }
+            }
+          }
+        );
+        var t2 = new Date();
+        console.log("---setToRMQ---------------------------------------------------", setToRMQ, '---', t2, '-diff-', (t2 - t1), 'ms');
+        //if could not set to RMQ run in async.
+        if (setToRMQ.isFailure() || setToRMQ.data.publishedToRmq == 0) {
+          oThis.performTransactionSteps();
+        }
+      }
+    } catch (err) {
+      await oThis.updateParentTransactionLog(transactionLogConst.failedStatus, err);
+      logger.error("executeTransaction Caught in Error catch..", err);
+    }
+
+    return Promise.resolve(responseHelper.successWithData({}))
   },
 
   /**

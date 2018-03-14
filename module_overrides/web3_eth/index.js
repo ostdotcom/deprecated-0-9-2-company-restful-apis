@@ -153,7 +153,7 @@ const Derived = function () {
         const fetchNonceResult = await fetchNonceAndAddToRawTransaction();
 
         if(fetchNonceResult.isFailure()) {
-          hackedReturnedPromiEvent.reject(fetchNonceResult.err.msg);
+          hackedReturnedPromiEvent.reject({message: fetchNonceResult.err.msg});
           return Promise.resolve();
         }
 

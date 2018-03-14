@@ -129,7 +129,6 @@ const NonceCacheKlassPrototype = {
       , lockStatusResponse = await oThis.cacheImplementer.get(oThis.cacheLockKey)
     ;
 
-    console.log("lockStatusResponse.data.response: ",lockStatusResponse.data.response);
     return lockStatusResponse.isSuccess() && lockStatusResponse.data.response > 0;
 
   },
@@ -245,7 +244,6 @@ const NonceCacheKlassPrototype = {
     const startTime =  promiseContext.startTimestamp;
     const wait = async function() {
       try {
-        console.log("waiting for lock to release");
         if (_getTimeStamp()-startTime > waitTimeout) {
           //Format the error
           logger.error("module_overrides/web3_eth/nonce_manager.js:getNonce:wait");
