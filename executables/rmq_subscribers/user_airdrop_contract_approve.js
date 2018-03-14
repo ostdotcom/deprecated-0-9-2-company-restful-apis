@@ -2,9 +2,10 @@
 
 /**
  *
- * Start Airdrop for a client token by subscribing to RMQ events.<br><br>
+ * Start airdrop contract approval for users by subscribing to RMQ events.<br><br>
  *
- * @module executables/rmq_subscribers/start_airdrop
+ * @module executables/rmq_subscribers/user_airdrop_contract_approve
+ *
  *
  */
 const rootPrefix = '../..';
