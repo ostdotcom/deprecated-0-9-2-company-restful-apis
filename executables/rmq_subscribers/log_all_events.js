@@ -14,7 +14,7 @@ const rootPrefix = '../..'
   , ProcessLocker = new ProcessLockerKlass()
 ;
 
-ProcessLocker.canStartProcess({process_title: 'cra_single_worker_log_all_events'});
+ProcessLocker.canStartProcess({process_title: 'executables_rmq_subscribers_log_all_events'});
 ProcessLocker.endAfterTime({time_in_minutes: 60});
 
 // Load external packages

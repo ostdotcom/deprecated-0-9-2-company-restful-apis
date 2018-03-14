@@ -19,7 +19,7 @@ const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker')
 
 var unAckCount = 0;
 
-ProcessLocker.canStartProcess({process_title: 'cra_single_worker_start_airdrop'});
+ProcessLocker.canStartProcess({process_title: 'executables_rmq_subscribers_start_airdrop'});
 ProcessLocker.endAfterTime({time_in_minutes: 60});
 
 // Load external packages

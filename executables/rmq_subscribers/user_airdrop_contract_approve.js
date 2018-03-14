@@ -23,7 +23,7 @@ const args = process.argv
 
 var unAckCount = 0;
 
-ProcessLocker.canStartProcess({process_title: 'cra_single_worker_execute_transaction'+processId});
+ProcessLocker.canStartProcess({process_title: 'executables_rmq_subscribers_user_airdrop_contract_approve'+processId});
 ProcessLocker.endAfterTime({time_in_minutes: 60});
 
 // Load external packages
