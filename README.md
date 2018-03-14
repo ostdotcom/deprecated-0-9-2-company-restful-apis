@@ -222,11 +222,11 @@ node executables/rmq_subscribers/send_error_emails.js >> log/send_error_emails.l
 # Every minute
 node executables/rmq_subscribers/start_airdrop.js >> log/start_airdrop.log
 # Every five minutes
-node executables/fund_addresses/by_reserve/st_prime.js >> log/fund_addresses/by_reserve/st_prime.log
+node executables/fund_addresses/by_reserve/st_prime.js >> log/fund_addresses_by_reserve_st_prime.log
 # Every five minutes
-node executables/fund_addresses/by_utility_chain_owner/eth.js >> log/fund_addresses_by_utility_chain_owner/eth.log
+node executables/fund_addresses/by_utility_chain_owner/eth.js >> log/fund_addresses_by_utility_chain_owner_eth.log
 # Every five minutes
-node executables/fund_addresses/by_utility_chain_owner/st_prime.js >> log/fund_addresses_by_utility_chain_owner/st_prime.log
+node executables/fund_addresses/by_utility_chain_owner/st_prime.js >> log/fund_addresses_by_utility_chain_owner_st_prime.log
 # Every five minutes
 node executables/fund_addresses/observe_balance_of_donors.js >> log/observe_balance_of_donors.log
 ```
