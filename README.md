@@ -184,13 +184,6 @@ NOTE: Manually create data MySQL mentioned in $OP_MYSQL_DATABASE
 > source set_env_vars.sh
 > node executables/inter_comm/stake_and_mint_processor.js $HOME/openst-setup/logs/stake_and_mint_processor.data
 ```
-  
-* Start Airdrop Processor in new terminal
-```bash
-> source $HOME/openst-setup/openst_env_vars.sh
-> source set_env_vars.sh
-> node executables/rmq_subscribers/start_airdrop.js $HOME/openst-setup/logs/start_airdrop.data
-```
 
 * Start Processor to execute transactions in new terminal
 ```bash
