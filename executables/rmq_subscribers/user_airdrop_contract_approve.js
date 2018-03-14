@@ -34,9 +34,9 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , userAirdropContractApproveKlass = require(rootPrefix + '/lib/airdrop_management/distribute_tokens/user_airdrop_contract_approve')
 ;
 
-openSTNotification.subscribeEvent.rabbit(["newTransaction.execute"],
+openSTNotification.subscribeEvent.rabbit(["airdrop.approve.contract"],
   {
-    queue: 'new_transactions',
+    queue: 'user_airdrop_contract_approve_from_restful_apis',
     ackRequired: 1,
     prefetch: 50
   },

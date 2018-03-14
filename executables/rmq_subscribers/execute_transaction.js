@@ -33,9 +33,9 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , executeTransactionKlass = require(rootPrefix + '/app/services/transaction/execute_transaction')
 ;
 
-openSTNotification.subscribeEvent.rabbit(["newTransaction.execute"],
+openSTNotification.subscribeEvent.rabbit(["transaction.execute"],
   {
-    queue: 'new_transactions',
+    queue: 'transaction_execute_from_restful_apis',
     ackRequired: 1,
     prefetch: 50
   },

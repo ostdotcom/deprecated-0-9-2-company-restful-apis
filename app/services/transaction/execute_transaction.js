@@ -403,7 +403,7 @@ ExecuteTransactionKlass.prototype = {
         console.log("---setToRMQ---------------------------------------------------", t1);
         const setToRMQ = await openSTNotification.publishEvent.perform(
           {
-            topics: ['newTransaction.execute'],
+            topics: ['transaction.execute'],
             publisher: 'OST',
             message: {
               kind: 'execute_transaction',
