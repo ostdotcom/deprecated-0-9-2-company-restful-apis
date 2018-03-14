@@ -564,7 +564,7 @@ const NonceCacheKlassPrototype = {
       try {
 
         const pendingTransaction = await web3Provider.pendingTransactions();
-        console.log("pendingTransaction: ",pendingTransaction);
+
         if (pendingTransaction) {
           return onResolve(responseHelper.successWithData({pending_transaction: pendingTransaction}));
         }

@@ -63,20 +63,21 @@ openSTNotification.subscribeEvent.rabbit(["newTransaction.execute"],
       try{
         executeTransactionObj.perform().then(function (response) {
           if (!response.isSuccess()) {
-            logger.error('e_rmqs_et_1', 'Something went wrong in transaction execution', response, params);
+            logger.error('e_rmqs_et_1', 'Something went wrong in transaction execution unAckCount ->', unAckCount, response, params);
           }
           unAckCount--;
+          logger.info("------ unAckCount -> ", unAckCount);
           // ack RMQ
           return onResolve();
         }).catch(function (err) {
-          logger.error('e_rmqs_et_2', 'Something went wrong in transaction execution', err, params);
+          logger.error('e_rmqs_et_2', 'Something went wrong in transaction execution. unAckCount ->', unAckCount, err, params);
           unAckCount--;
           // ack RMQ
           return onResolve();
         });
       } catch(err) {
         unAckCount--;
-        logger.error("Listener could not process transaction.. Catch.");
+        logger.error("Listener could not process transaction.. Catch. unAckCount -> ", unAckCount);
         return onResolve();
       }
     });
