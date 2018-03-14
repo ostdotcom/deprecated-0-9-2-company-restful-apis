@@ -29,7 +29,7 @@
 > brew services start rabbitmq
 ```
 
-* Setup Platform
+* Export ENV vars before Setup Platform
 ```bash
 > source set_env_vars.sh
 # Temporarily set redis caching engine for Platform and memcached for SAAS. We will set it permanently later on.
@@ -41,8 +41,26 @@
 > export OST_REDIS_TLS_ENABLED=0
 > export OST_MEMCACHE_SERVERS='127.0.0.1:11211'
 > export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform
+> export OST_UTILITY_GAS_PRICE='0x0'
+> export OST_VALUE_GAS_PRICE='0xBA43B7400'
 > echo "export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform" >> ~/.bash_profile
+```
+
+* Change the gas price for deployment steps for utility chain to 0
+```bash
+vim $OPENST_PLATFORM_PATH/tools/setup/config.js
+Change the utility chain gas price (OST_UTILITY_GAS_PRICE) to '0x0'. 
+```
+
+* Setup Platform
+```
 > node tools/setup/platform/deploy.js
+```
+
+* Change the gas price for utility chain to 3B9ACA00, i.e. 1 GWie
+```bash
+> vim $HOME/openst-setup/openst_env_vars.sh
+export OST_UTILITY_GAS_PRICE='3B9ACA00'
 ```
 
 * Enable Redis for platform
@@ -90,7 +108,7 @@ export OST_UTILITY_PRICE_ORACLES='{}'
 
 > vim $HOME/openst-setup/openst_env_vars.sh
 # 3rd party contract address
-export OST_UTILITY_PRICE_ORACLES='{"OST":{"USD":"0x51E7D0eC231c25D16bC3d949C9AEE8772B7f2332"}}'
+export OST_UTILITY_PRICE_ORACLES='{"OST":{"USD":"0xA8A5fadFdDc4D1987Cd303296B7964834178e661"}}'
 ```
 
 * Setup Workers Contract
@@ -101,7 +119,7 @@ export OST_UTILITY_PRICE_ORACLES='{"OST":{"USD":"0x51E7D0eC231c25D16bC3d949C9AEE
 
 > vim $HOME/openst-setup/openst_env_vars.sh
 # 3rd party contract address
-export OST_UTILITY_WORKERS_CONTRACT_ADDRESS='0xFc036D20ee2134aC5DC688410D6684Ceec948962'
+export OST_UTILITY_WORKERS_CONTRACT_ADDRESS='0xEBF2d9f14a4c072862530fD46ea48C0b466E3d1D'
 ```
 
 * Run openST Payments migrations
