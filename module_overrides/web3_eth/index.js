@@ -12,6 +12,7 @@ const BasePackage = require(basePackage)
 const rootPrefix = '../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
 ;
 
 var requireData
@@ -132,14 +133,12 @@ const Derived = function () {
         const getNonceResponse = await nonceManager.getNonce();
 
         if(getNonceResponse.isFailure()) {
-          return Promise.reject('Nonce Manager returned error code:' +
-            getNonceResponse.err.code +
-            ' message: ' + getNonceResponse.err.msg);
+          return Promise.resolve(getNonceResponse);
         }
 
         rawTx.nonce = getNonceResponse.data.nonce;
 
-        return Promise.resolve(nonceManager);
+        return Promise.resolve(responseHelper.successWithData({nonceManager: nonceManager}));
       };
 
       const signTransactionLocally = function () {
@@ -151,7 +150,14 @@ const Derived = function () {
       };
 
       const executeTx = async function() {
-        const nonceManager = await fetchNonceAndAddToRawTransaction();
+        const fetchNonceResult = await fetchNonceAndAddToRawTransaction();
+
+        if(fetchNonceResult.isFailure()) {
+          hackedReturnedPromiEvent.reject(fetchNonceResult.err.msg);
+          return Promise.resolve();
+        }
+
+        const nonceManager = fetchNonceResult.data.nonceManager;
         await sendSignedTx(nonceManager);
       };
 
