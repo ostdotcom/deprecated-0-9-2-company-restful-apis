@@ -189,6 +189,8 @@ Manager.prototype = {
     //Update the stats.
     oThis.timedOutCount ++;
 
+    logMe && console.log(oThis.name, ":: _onTimedout :: promise has timedout");
+
     //Give a callback.
     //Dev-Note: This callback should not be triggered inside setTimeout.
     //Give the instance creator a chance to do something with promiseContext.
