@@ -118,8 +118,8 @@ AddNew.prototype = {
       errors_object['currency_type'] = 'Atleast one currency type(USD or BT) to mention';
     }
 
-    if(!commission_percent || commission_percent < 0){
-      errors_object['commission_percent'] = 'invalid commission_percent';
+    if(!commission_percent || parseInt(commission_percent) < 0 || parseFloat(commission_percent) > 100){
+      errors_object['commission_percent'] = 'Invalid Commission Percentage.';
     }
 
     var existingTKind = await clientTransactionTypeObj.getTransactionByName({clientId: client_id, name: name});

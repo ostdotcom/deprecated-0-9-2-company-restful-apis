@@ -112,8 +112,8 @@ Edit.prototype = {
 
     }
 
-    if(commission_percent && parseInt(commission_percent) < 0){
-      errors_object['commission_percent'] = 'invalid commission_percent';
+    if(commission_percent && (parseInt(commission_percent) < 0 || parseFloat(commission_percent) > 100)){
+      errors_object['commission_percent'] = 'Invalid Commission Percentage.';
     }
 
     var qResult = await oThis.getCurrentTransactionKind();
