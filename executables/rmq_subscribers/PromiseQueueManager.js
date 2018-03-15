@@ -46,22 +46,22 @@ Manager.prototype = {
   , timeoutInMilliSecs: defaultTimeout
 
 
-  , onPromiseResolved: function ( promiseContext ) {
+  , onPromiseResolved: function ( resolvedValue, promiseContext ) {
     //onPromiseResolved will be executed when the any promise is resolved.
     //This callback method should be set by instance creator.
     //It can be set using options parameter in constructor.
     const oThis = this;
 
-    verboseLog && console.log(oThis.name, " :: a promise has been resolved.");
+    verboseLog && console.log(oThis.name, " :: a promise has been resolved. resolvedValue:", resolvedValue);
   }
 
-  , onPromiseRejected: function ( promiseContext ) {
+  , onPromiseRejected: function ( rejectReason, promiseContext ) {
     //onPromiseRejected will be executed when the any promise is timedout.
     //This callback method should be set by instance creator.
     //It can be set using options parameter in constructor.
     const oThis = this;
 
-    verboseLog && console.log(oThis.name, " :: a promise has been rejected.");
+    verboseLog && console.log(oThis.name, " :: a promise has been rejected. rejectReason: ", rejectReason);
   }
 
   , onPromiseTimedout: function ( promiseContext ) {
@@ -86,9 +86,10 @@ Manager.prototype = {
   //This callback method should be set by instance creator.
   //It can be set using options parameter in constructor.
   //Ideally, you should set this inside SIGINT/SIGTERM handlers.
+  
   , onAllPromisesCompleted: null
 
-  , createPromise: function () {
+  , createPromise: function ( executorParams ) {
     //Call this method to create a new promise.
 
     const oThis = this;
@@ -96,7 +97,7 @@ Manager.prototype = {
 
     const executor        = oThis.promiseExecutor
         , pcOptions       = oThis.getPromiseContextOptions()
-        , newPC           = new PromiseContext( executor, pcOptions )
+        , newPC           = new PromiseContext( executor, pcOptions, executorParams )
     ;
 
 
@@ -335,10 +336,25 @@ Manager.Examples = {
     }
   },
 
-  random: function ( len ) {
+  executorWithParams: function ( len ) {
+    len = len || 50;
 
-  },
+    const manager = new Manager(function ( resolve, reject, params ) {
+      //promiseExecutor
+      setTimeout(function () {
+        resolve( params );
+      }, 1000);
+    }
+    , {
+      onAllPromisesCompleted: function () {
+        console.log("Examples.executorWithParams :: onAllPromisesCompleted triggered");
+        manager.logInfo();
+      }
+      , timeoutInMilliSecs : 5000
+    });
 
-
-
+    for( var cnt = 0; cnt < len; cnt++ ) {
+      manager.createPromise( cnt );
+    }
+  }
 }

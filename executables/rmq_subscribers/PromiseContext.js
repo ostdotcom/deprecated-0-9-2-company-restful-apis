@@ -5,16 +5,16 @@ const logMe = true
     , defaultTimeout = 30000
 ;
 
-const PromiseContext = module.exports = function ( executor, options ) {
+const PromiseContext = module.exports = function ( executor, options, executorParams ) {
   const oThis = this;
 
   // Take Care of Options
   options = options || {};
   Object.assign(oThis, options);
 
-  const wrappedExecutor = oThis.createWrappedExecutor( executor );
+  const wrappedExecutor = oThis.createWrappedExecutor( executor, executorParams );
   oThis.createTimeout();
-  oThis.promise = new Promise( oThis.wrappedExecutor );
+  oThis.promise = new Promise( wrappedExecutor );
   oThis.creationTs = Date.now();
 
 };
@@ -62,14 +62,14 @@ PromiseContext.prototype = {
 
 
   , wrappedExecutor : null
-  , createWrappedExecutor: function ( executor ) {
+  , createWrappedExecutor: function ( executor, executorParams ) {
       const oThis = this;
 
       //  The actual executor function that is passed on to the subscribers.
       oThis.wrappedExecutor = function (resolve, reject) {
         const wrappedResolve = oThis.createWrappedResolve( resolve );
         const wrappedReject  = oThis.createWrappedReject( reject );
-        executor && executor( wrappedResolve, wrappedReject );
+        executor && executor( wrappedResolve, wrappedReject, executorParams );
         oThis.executionTs = Date.now();
       };
 
@@ -90,14 +90,15 @@ PromiseContext.prototype = {
         oThis.logInfo();
         return;
       }
-      // Invoke resolve method. Don't bother about arguments, pass it on as is.
-      resolve.apply(null, arguments);
 
       // Update the flags.
       oThis.isResolved  = true;
 
       // Trigger Callback if available.
       oThis.onResolved && oThis.onResolved( resolvedValue, oThis );
+
+      // Invoke resolve method. Don't bother about arguments, pass it on as is.
+      resolve.apply(null, arguments);
 
       // Clean Up
       oThis.cleanup();
@@ -119,14 +120,15 @@ PromiseContext.prototype = {
         oThis.logInfo();
         return;
       }
-      // Invoke reject method. Don't bother about arguments, pass it on as is.
-      reject.apply(null, arguments);
 
       // Update the flags.
       oThis.isRejected  = true;
 
       // Trigger Callback if available.
       oThis.onRejected && oThis.onRejected( reason, oThis );
+
+      // Invoke reject method. Don't bother about arguments, pass it on as is.
+      reject.apply(null, arguments);
 
       // Clean Up
       oThis.cleanup();
@@ -149,6 +151,9 @@ PromiseContext.prototype = {
         return;
       }
 
+      // Update the flags.
+      oThis.hasTimedout = true;
+
       // Trigger Callback if available. Do it first so that something can be done about it from outside.
       if ( oThis.onTimedout ) {
         oThis.onTimedout( oThis );
@@ -161,12 +166,6 @@ PromiseContext.prototype = {
         logMe && console.log("PromiseContext :: a promise has timedout. Forcefully Rejecting it.");
         oThis.reject("Promise TimedOut");
       }
-
-
-      // Update the flags.
-      oThis.hasTimedout = true;
-
-
 
       // IMPORTANT: DO NOT CLEAN UP HERE.
       // The code using this class may want to retry.
