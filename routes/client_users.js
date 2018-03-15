@@ -97,7 +97,7 @@ router.post('/edit', function (req, res, next) {
  * @routeparam {String} :order - Order users in 'desc' or 'asc'. Default is: 'desc'
  *
  */
-router.post('/list', function (req, res, next) {
+router.get('/list', function (req, res, next) {
 
   const performer = function() {
 
