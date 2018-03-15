@@ -206,19 +206,23 @@ ExecuteTransactionKlass.prototype = {
       return Promise.resolve(responseHelper.error("s_t_et_7", "Invalid From user", null, {}, {sendErrorEmail: false}));
     }
 
-    if(oThis.clientBrandedToken.kind == clientTransactionTypeConst.companyToUserKind &&
-      oThis.fromUuid != oThis.clientBrandedToken.reserve_address_uuid){
-      return Promise.resolve(responseHelper.error("s_t_et_8", "Invalid From Company user", null, {}, {sendErrorEmail: false}));
-    }
-
     var toUser = cacheFetchResponse.data[oThis.toUuid];
     if(!toUser || toUser.client_id != oThis.clientId || toUser.status != managedAddressesConst.activeStatus){
-      return Promise.resolve(responseHelper.error("s_t_et_9", "Invalid To user", null, {}, {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error("s_t_et_8", "Invalid To user", null, {}, {sendErrorEmail: false}));
     }
 
-    if(oThis.clientBrandedToken.kind == clientTransactionTypeConst.userToCompanyKind &&
-      oThis.toUuid != oThis.clientBrandedToken.reserve_address_uuid){
-      return Promise.resolve(responseHelper.error("s_t_et_10", "Invalid To Company user", null, {}, {sendErrorEmail: false}));
+    if(oThis.transactionTypeRecord.kind === clientTransactionTypeConst.companyToUserKind){
+      if(oThis.fromUuid !== oThis.clientBrandedToken.reserve_address_uuid){
+        return Promise.resolve(responseHelper.error("s_t_et_9", "Invalid From Company user", null, {}, {sendErrorEmail: false}));
+      }
+    } else if(oThis.transactionTypeRecord.kind === clientTransactionTypeConst.userToCompanyKind){
+      if(oThis.toUuid !== oThis.clientBrandedToken.reserve_address_uuid){
+        return Promise.resolve(responseHelper.error("s_t_et_10", "Invalid To Company user", null, {}, {sendErrorEmail: false}));
+      }
+    } else if(oThis.transactionTypeRecord.kind === clientTransactionTypeConst.userToUserKind){
+      if([oThis.fromUuid, oThis.toUuid].includes(oThis.clientBrandedToken.reserve_address_uuid)){
+        return Promise.resolve(responseHelper.error("s_t_et_11", "Reserve cannot be part of User to User Transaction", null, {}, {sendErrorEmail: false}));
+      }
     }
 
     oThis.userRecords = cacheFetchResponse.data;
@@ -235,7 +239,7 @@ ExecuteTransactionKlass.prototype = {
     const oThis = this;
 
     if(!oThis.transactionKind){
-      return Promise.resolve(responseHelper.error("s_t_et_11", "Mandatory parameters missing", null, {}, {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error("s_t_et_12", "Mandatory parameters missing", null, {}, {sendErrorEmail: false}));
     }
 
     var cacheObj = new clientTransactionTypeCacheKlass({client_id: oThis.clientId, transaction_kind: oThis.transactionKind});
@@ -246,7 +250,7 @@ ExecuteTransactionKlass.prototype = {
     oThis.transactionTypeRecord = cachedResp.data;
 
     if(oThis.transactionTypeRecord.status != clientTransactionTypeConst.activeStatus){
-      return Promise.resolve(responseHelper.error("s_t_et_12", "Invalid transaction kind", null, {}, {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error("s_t_et_13", "Invalid transaction kind", null, {}, {sendErrorEmail: false}));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -330,7 +334,7 @@ ExecuteTransactionKlass.prototype = {
     var reserveUser = oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid];
     if(!workerUser || !reserveUser){
       await oThis.updateParentTransactionLog(transactionLogConst.failedStatus, {error: "Worker or reserve user not found. "});
-      return Promise.resolve(responseHelper.error('s_t_et_13', "Worker or reserve user not found", null, {}, {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error('s_t_et_14', "Worker or reserve user not found", null, {}, {sendErrorEmail: false}));
     }
 
     var ostPrices = await new ostPriceCacheKlass().fetch();
@@ -356,7 +360,7 @@ ExecuteTransactionKlass.prototype = {
         oThis.gasPrice,
         {tag:oThis.transactionTypeRecord.name, returnType: 'txReceipt'});
     } catch(err) {
-      response = responseHelper.error("s_t_et_14", err);
+      response = responseHelper.error("s_t_et_15", err);
     }
 
     if(response.isFailure()){
