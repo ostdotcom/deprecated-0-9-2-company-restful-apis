@@ -213,15 +213,18 @@ ExecuteTransactionKlass.prototype = {
 
     if(oThis.transactionTypeRecord.kind === clientTransactionTypeConst.companyToUserKind){
       if(oThis.fromUuid !== oThis.clientBrandedToken.reserve_address_uuid){
-        return Promise.resolve(responseHelper.error("s_t_et_9", "Invalid From Company user", null, {}, {sendErrorEmail: false}));
+        return Promise.resolve(responseHelper.error("s_t_et_9", "Invalid from Company user uuid", null, {}, {sendErrorEmail: false}));
       }
     } else if(oThis.transactionTypeRecord.kind === clientTransactionTypeConst.userToCompanyKind){
       if(oThis.toUuid !== oThis.clientBrandedToken.reserve_address_uuid){
-        return Promise.resolve(responseHelper.error("s_t_et_10", "Invalid To Company user", null, {}, {sendErrorEmail: false}));
+        return Promise.resolve(responseHelper.error("s_t_et_10", "Invalid to Company user uuid", null, {}, {sendErrorEmail: false}));
       }
     } else if(oThis.transactionTypeRecord.kind === clientTransactionTypeConst.userToUserKind){
-      if([oThis.fromUuid, oThis.toUuid].includes(oThis.clientBrandedToken.reserve_address_uuid)){
-        return Promise.resolve(responseHelper.error("s_t_et_11", "Reserve cannot be part of User to User Transaction", null, {}, {sendErrorEmail: false}));
+      if(oThis.fromUuid === oThis.clientBrandedToken.reserve_address_uuid){
+        return Promise.resolve(responseHelper.error("s_t_et_11", "Unexpected uuid in From field", null, {}, {sendErrorEmail: false}));
+      }
+      if(oThis.toUuid === oThis.clientBrandedToken.reserve_address_uuid){
+        return Promise.resolve(responseHelper.error("s_t_et_11", "Unexpected uuid in To field", null, {}, {sendErrorEmail: false}));
       }
     }
 

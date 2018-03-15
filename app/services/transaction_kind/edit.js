@@ -120,7 +120,7 @@ Edit.prototype = {
     oThis.currentTransactionKind = qResult[0];
 
     if(!oThis.currentTransactionKind || oThis.currentTransactionKind.length==0){
-      errors_object['kind'] = 'invalid kind';
+      errors_object['kind'] = 'Invalid Client Transaction Id.';
     }
 
     if(oThis.currentTransactionKind && oThis.currentTransactionKind['client_id'] != clientId){
