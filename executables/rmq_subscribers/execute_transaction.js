@@ -24,7 +24,7 @@ const args = process.argv
 var unAckCount = 0;
 
 ProcessLocker.canStartProcess({process_title: 'executables_rmq_subscribers_execute_transaction'+processId});
-ProcessLocker.endAfterTime({time_in_minutes: 60});
+//ProcessLocker.endAfterTime({time_in_minutes: 60});
 
 // Load external packages
 const openSTNotification = require('@openstfoundation/openst-notification');
@@ -78,7 +78,7 @@ const promiseExecutor = function (onResolve, onReject, params ) {
 
 const PromiseQueueManager = new PromiseQueueManagerKlass(promiseExecutor, {
   name: "execute_tx_promise_queue_manager"
-  , timeoutInMilliSecs: 5 * 60 * 1000
+  , timeoutInMilliSecs: 3 * 60 * 1000
 });
 
 
