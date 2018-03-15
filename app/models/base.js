@@ -55,7 +55,7 @@ const ModelBaseKlassPrototype = {
 
         const queryGenerator = oThis.generate();
         if(queryGenerator.isSuccess()){
-          logger.log(queryGenerator.data.query, queryGenerator.data.queryData);
+          //logger.log(queryGenerator.data.query, queryGenerator.data.queryData);
         }
 
         var pre_query = Date.now();

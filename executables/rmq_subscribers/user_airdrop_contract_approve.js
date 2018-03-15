@@ -38,7 +38,7 @@ openSTNotification.subscribeEvent.rabbit(["airdrop.approve.contract"],
   {
     queue: 'user_airdrop_contract_approve_from_restful_apis',
     ackRequired: 1,
-    prefetch: 50
+    prefetch: 5
   },
   function (params) {
 
