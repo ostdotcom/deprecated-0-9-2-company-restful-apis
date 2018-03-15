@@ -12,6 +12,7 @@ var rootPrefix = '../../..'
   , util = require(rootPrefix + '/lib/util')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , ClientTransactionTypeCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type')
+  , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
   , ClientTransactionTypeKlass = require(rootPrefix + '/app/models/client_transaction_type')
   , clientTransactionTypeObj = new ClientTransactionTypeKlass()
 ;
@@ -114,6 +115,10 @@ Edit.prototype = {
 
     if(commission_percent && (parseInt(commission_percent) < 0 || parseFloat(commission_percent) > 100)){
       errors_object['commission_percent'] = 'Invalid Commission Percentage.';
+    }
+
+    if(parseFloat(commission_percent) > 0 && kind != clientTxTypesConst.userToUserKind){
+      errors_object['commission_percent'] = 'Commission Percentage is allowed only for user to user Transactions.';
     }
 
     var qResult = await oThis.getCurrentTransactionKind();

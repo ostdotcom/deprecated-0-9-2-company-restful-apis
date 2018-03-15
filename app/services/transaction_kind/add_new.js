@@ -14,6 +14,7 @@ var rootPrefix = '../../..'
   , ClientTransactionTypeKlass = require(rootPrefix + '/app/models/client_transaction_type')
   , clientTransactionTypeObj = new ClientTransactionTypeKlass()
   , ClientTxKindCntCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type_count')
+  , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
 ;
 
 /**
@@ -120,6 +121,10 @@ AddNew.prototype = {
 
     if(!commission_percent || parseInt(commission_percent) < 0 || parseFloat(commission_percent) > 100){
       errors_object['commission_percent'] = 'Invalid Commission Percentage.';
+    }
+
+    if(parseFloat(commission_percent) > 0 && kind != clientTxTypesConst.userToUserKind){
+      errors_object['commission_percent'] = 'Commission Percentage is allowed only for user to user Transactions.';
     }
 
     var existingTKind = await clientTransactionTypeObj.getTransactionByName({clientId: client_id, name: name});
