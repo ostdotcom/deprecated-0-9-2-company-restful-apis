@@ -99,7 +99,7 @@ openSTNotification.subscribeEvent.rabbit([topicPrefix+"transaction.execute"],
   {
     queue: topicPrefix+'transaction_execute_from_restful_apis',
     ackRequired: 1,
-    prefetch: ((slowProcessor || '') == 'slow') ? 5 : 100
+    prefetch: ((slowProcessor || '') == 'slow') ? 25 : 100
   },
   function (params) {
 
