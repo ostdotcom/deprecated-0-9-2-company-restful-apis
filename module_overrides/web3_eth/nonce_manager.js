@@ -2,7 +2,6 @@
 
 const Web3 = require('web3')
   , BigNumber = require('bignumber.js')
-  , openStCache = require('@openstfoundation/openst-cache')
   , web3InstanceMap = {}
 ;
 
@@ -11,6 +10,7 @@ const rootPrefix = '../..'
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , coreConstants = require(rootPrefix + '/config/core_constants')
+  , cacheImplementer = require(rootPrefix + '/lib/cache_management/balance_and_nonce_cache_engine')
   , waitTimeout = 50000 //50 seconds
   , waitTimeInterval = 5 //5 milliseconds
 ;
@@ -104,7 +104,7 @@ const NonceManagerKlass = function(params) {
   oThis.processedQueue = [];
 
   // Set cacheImplementer to perform caching operations
-  oThis.cacheImplementer = new openStCache.cache(coreConstants.BALANCE_AND_NONCE_ONLY_CACHE_ENGINE, false);
+  oThis.cacheImplementer = cacheImplementer;
 
   // Set cache key for nonce
   oThis.cacheKey = `nonce_${oThis.chainKind}_${oThis.address}`;

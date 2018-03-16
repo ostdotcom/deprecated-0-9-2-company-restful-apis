@@ -1,9 +1,7 @@
-openStCache = require('@openstfoundation/openst-cache')
-;
-
 const rootPrefix = '..'
   , coreConstants = require(rootPrefix + '/config/core_constants')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , cacheImplementer = require(rootPrefix + '/lib/cache_management/balance_and_nonce_cache_engine')
 ;
 
 const ClearNonceCache = function(params) {
@@ -21,7 +19,6 @@ ClearNonceCache.prototype = {
 
     const nonceCacheKey = `nonce_${oThis.chainKind}_${oThis.address}`
       , nonceLockCacheKey = `nonce_${oThis.chainKind}_${oThis.address}_lock`
-      , cacheImplementer = new openStCache.cache(coreConstants.BALANCE_AND_NONCE_ONLY_CACHE_ENGINE, false)
     ;
 
     await cacheImplementer.del(nonceCacheKey);
