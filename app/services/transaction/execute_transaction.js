@@ -135,6 +135,10 @@ ExecuteTransactionKlass.prototype = {
     oThis.transactionKind = ransaction_params.transaction_kind;
     oThis.gasPrice = ransaction_params.gas_price;
 
+    if(oThis.clientId == 1054 || oThis.clientId == 1518 || oThis.clientId == 1456 || oThis.clientId == 1992 || oThis.clientId == 1082 || oThis.clientId == 1092){
+      return Promise.resolve(responseHelper.error('move_to_new_queue', 'lifo fire'));
+    }
+
     return Promise.resolve(responseHelper.successWithData({}))
   },
 

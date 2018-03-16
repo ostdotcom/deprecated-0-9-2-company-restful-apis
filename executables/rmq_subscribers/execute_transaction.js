@@ -56,6 +56,9 @@ const promiseExecutor = function (onResolve, onReject, params ) {
   try{
     executeTransactionObj.perform().then(function (response) {
       if (!response.isSuccess()) {
+        if(response.err.code=='move_to_new_queue'){
+          publishToSlowQueue(parsedParams)
+        }
         logger.error('e_rmqs_et_1', 'Something went wrong in transaction execution unAckCount ->', unAckCount, response, params);
       }
       unAckCount--;
@@ -73,6 +76,18 @@ const promiseExecutor = function (onResolve, onReject, params ) {
     logger.error("Listener could not process transaction.. Catch. unAckCount -> ", unAckCount);
     return onResolve();
   }
+};
+
+const publishToSlowQueue = async function (parsedParams) {
+
+  await openSTNotification.publishEvent.perform(
+    {
+      topics: ['slow.transaction.execute'],
+      publisher: parsedParams.publisher,
+      message: parsedParams.message
+    }
+  );
+
 };
 
 const PromiseQueueManager = new PromiseQueueManagerKlass(promiseExecutor, {
