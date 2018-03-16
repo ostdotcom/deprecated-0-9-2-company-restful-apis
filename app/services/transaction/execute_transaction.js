@@ -64,12 +64,12 @@ const ExecuteTransactionKlass = function (params){
 
 ExecuteTransactionKlass.prototype = {
 
-  perform: async function(){
+  perform: async function(slowProcessor){
     const oThis = this;
 
     var r;
 
-    r = await oThis.fetchTransactionLog();
+    r = await oThis.fetchTransactionLog(slowProcessor);
     if(r.isFailure()) return Promise.resolve(r);
 
     r = await oThis.validateClientToken();
@@ -109,7 +109,7 @@ ExecuteTransactionKlass.prototype = {
    * @Sets clientId, fromUuid, toUuid, transactionKind, gasPrice
    * @return {Promise<ResultBase>}
    */
-  fetchTransactionLog: async function () {
+  fetchTransactionLog: async function (slowProcessor) {
     const oThis = this;
     if(!oThis.transactionLogId) return Promise.resolve(responseHelper.successWithData({}));
 
@@ -135,7 +135,7 @@ ExecuteTransactionKlass.prototype = {
     oThis.transactionKind = ransaction_params.transaction_kind;
     oThis.gasPrice = ransaction_params.gas_price;
 
-    if(oThis.clientId == 1054 || oThis.clientId == 1518 || oThis.clientId == 1456 || oThis.clientId == 1992 || oThis.clientId == 1082 || oThis.clientId == 1092){
+    if((!slowProcessor) && (oThis.clientId == 1054 || oThis.clientId == 1518 || oThis.clientId == 1456 || oThis.clientId == 1992 || oThis.clientId == 1082 || oThis.clientId == 1092)){
       return Promise.resolve(responseHelper.error('move_to_new_queue', 'lifo fire'));
     }
 

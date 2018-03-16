@@ -24,7 +24,7 @@ const args = process.argv
 
 var unAckCount = 0;
 
-ProcessLocker.canStartProcess({process_title: 'executables_rmq_subscribers_execute_transaction'+processId+'-'+slowProcessor});
+ProcessLocker.canStartProcess({process_title: 'executables_rmq_subscribers_execute_transaction'+processId+'-'+(slowProcessor || '')});
 //ProcessLocker.endAfterTime({time_in_minutes: 60});
 
 // Load external packages
@@ -54,9 +54,9 @@ const promiseExecutor = function (onResolve, onReject, params ) {
   ;
 
   try{
-    executeTransactionObj.perform().then(function (response) {
+    executeTransactionObj.perform(slowProcessor).then(function (response) {
       if (!response.isSuccess()) {
-        if(response.err.code=='move_to_new_queue'){
+        if(response.err.msg=='lifo fire'){
           publishToSlowQueue(parsedParams)
         }
         logger.error('e_rmqs_et_1', 'Something went wrong in transaction execution unAckCount ->', unAckCount, response, params);
@@ -79,15 +79,13 @@ const promiseExecutor = function (onResolve, onReject, params ) {
 };
 
 const publishToSlowQueue = async function (parsedParams) {
-
-  await openSTNotification.publishEvent.perform(
+  openSTNotification.publishEvent.perform(
     {
       topics: ['slow.transaction.execute'],
       publisher: parsedParams.publisher,
       message: parsedParams.message
     }
-  );
-
+  ).then(console.log, console.log);
 };
 
 const PromiseQueueManager = new PromiseQueueManagerKlass(promiseExecutor, {
@@ -101,7 +99,7 @@ openSTNotification.subscribeEvent.rabbit([topicPrefix+"transaction.execute"],
   {
     queue: topicPrefix+'transaction_execute_from_restful_apis',
     ackRequired: 1,
-    prefetch: 50
+    prefetch: ((slowProcessor || '') == 'slow') ? 5 : 100
   },
   function (params) {
 
