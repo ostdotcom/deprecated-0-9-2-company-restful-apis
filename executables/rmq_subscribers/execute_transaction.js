@@ -19,11 +19,12 @@ const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker')
 ;
 const args = process.argv
   , processId = args[2]
+  , slowProcessor = args[3]
 ;
 
 var unAckCount = 0;
 
-ProcessLocker.canStartProcess({process_title: 'executables_rmq_subscribers_execute_transaction'+processId});
+ProcessLocker.canStartProcess({process_title: 'executables_rmq_subscribers_execute_transaction'+processId+'-'+slowProcessor});
 //ProcessLocker.endAfterTime({time_in_minutes: 60});
 
 // Load external packages
@@ -33,8 +34,6 @@ const openSTNotification = require('@openstfoundation/openst-notification');
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , executeTransactionKlass = require(rootPrefix + '/app/services/transaction/execute_transaction')
 ;
-
-
 
 const promiseExecutor = function (onResolve, onReject, params ) {
 
@@ -81,10 +80,11 @@ const PromiseQueueManager = new PromiseQueueManagerKlass(promiseExecutor, {
   , timeoutInMilliSecs: 3 * 60 * 1000
 });
 
+var topicPrefix = slowProcessor ? 'slow.' : '';
 
-openSTNotification.subscribeEvent.rabbit(["transaction.execute"],
+openSTNotification.subscribeEvent.rabbit([topicPrefix+"transaction.execute"],
   {
-    queue: 'transaction_execute_from_restful_apis',
+    queue: topicPrefix+'transaction_execute_from_restful_apis',
     ackRequired: 1,
     prefetch: 50
   },
@@ -95,7 +95,6 @@ openSTNotification.subscribeEvent.rabbit(["transaction.execute"],
 
   }
 );
-
 
 // Using a single function to handle multiple signals
 function handle() {
@@ -122,17 +121,6 @@ function handle() {
   };
 
   setTimeout(f, 1000);
-  // The OLD Way - End
-
-
-  // The New Way.
-  // PromiseQueueManager.onAllPromisesCompleted = function () {
-  //     console.log("SIGINT/SIGTERM handle :: No pending Promises.");
-  //     process.exit( 0 );    
-  // };
-
-
-
 
 }
 
