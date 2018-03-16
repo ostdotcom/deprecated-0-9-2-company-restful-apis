@@ -347,18 +347,18 @@ ExecuteTransactionKlass.prototype = {
       conversionRatesConst.usd_currency() : "");
 
     var commisionAmount = basicHelper.convertToWei(oThis.transactionTypeRecord.commission_percent).mul(
-      basicHelper.convertToWei(oThis.transactionTypeRecord.currency_value)).div(basicHelper.convertToWei('100')).toString();
+      basicHelper.convertToWei(oThis.transactionTypeRecord.currency_value)).div(basicHelper.convertToWei('100')).toString(10);
 
     var response = null;
     try {
       response = await airdropPayment.pay(workerUser.ethereum_address,
         workerUser.passphrase_d,
         oThis.userRecords[oThis.toUuid].ethereum_address,
-        basicHelper.convertToWei(oThis.transactionTypeRecord.currency_value).toString(),
+        basicHelper.convertToWei(oThis.transactionTypeRecord.currency_value).toString(10),
         reserveUser.ethereum_address,
         commisionAmount,
         currencyType,
-        basicHelper.convertToWei(ostValue).toString(),
+        basicHelper.convertToWei(ostValue).toString(10),
         oThis.userRecords[oThis.fromUuid].ethereum_address,
         oThis.gasPrice,
         {tag:oThis.transactionTypeRecord.name, returnType: 'txReceipt'});

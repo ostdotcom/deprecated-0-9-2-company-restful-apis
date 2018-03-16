@@ -33,7 +33,7 @@ const StPrimeKlassPrototype = {
       return Promise.resolve(responseHelper.error('sam_bt_1', 'Invalid Params'));
     }
 
-    oThis.toStakeAmount = basicHelper.convertToWei(oThis.toStakeAmount.toString());
+    oThis.toStakeAmount = basicHelper.convertToWei(oThis.toStakeAmount.toString(10));
 
     return Promise.resolve(responseHelper.successWithData({}));
   },
