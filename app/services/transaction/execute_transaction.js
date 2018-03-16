@@ -26,6 +26,7 @@ const rootPrefix = '../../..'
   , approveAmount = basicHelper.convertToWei('1000000000000000')
   , ApproveContractKlass = require(rootPrefix + '/lib/transactions/approve_contract')
   , TransferStPrimeKlass = require(rootPrefix + '/lib/transactions/stPrime_transfer')
+  , ClientTrxRateCacheKlass = require(rootPrefix + '/lib/cache_management/client_transactions_rate_limit')
   ;
 
 /**
@@ -408,9 +409,14 @@ ExecuteTransactionKlass.prototype = {
         //set in RMQ
         var t1 = new Date();
         console.log("---setToRMQ---------------------------------------------------", t1);
+        var topicName = 'transaction.execute';
+        var rateLimitCrossed = await new ClientTrxRateCacheKlass({client_id: oThis.clientId}).transactionRateLimitCrossed();
+        if(rateLimitCrossed.isSuccess() && rateLimitCrossed.data.limitCrossed){
+          topicName = 'slow.transaction.execute'
+        }
         const setToRMQ = await openSTNotification.publishEvent.perform(
           {
-            topics: ['transaction.execute'],
+            topics: [topicName],
             publisher: 'OST',
             message: {
               kind: 'execute_transaction',
