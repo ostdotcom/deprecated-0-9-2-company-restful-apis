@@ -222,6 +222,8 @@ node executables/fund_addresses/by_utility_chain_owner/eth.js >> log/fund_addres
 node executables/fund_addresses/by_utility_chain_owner/st_prime.js >> log/fund_addresses_by_utility_chain_owner_st_prime.log
 # Every five minutes
 node executables/fund_addresses/observe_balance_of_donors.js >> log/observe_balance_of_donors.log
+# Every minutes
+node executables/rmq_subscribers/log_all_events.js >> log/log_all_events.log
 ```
 
 # Helper Scripts
