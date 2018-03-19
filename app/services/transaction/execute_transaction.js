@@ -113,7 +113,7 @@ ExecuteTransactionKlass.prototype = {
     const oThis = this;
     if(!oThis.transactionLogId) return Promise.resolve(responseHelper.successWithData({}));
 
-    const transactionLogs = await new transactionLogModel().select('*').where(['id=?', oThis.transactionLogId]).fire()
+    const transactionLogs = await new transactionLogModel().select('id, client_id, transaction_uuid, status, input_params').where(['id=?', oThis.transactionLogId]).fire()
       , transactionLog = transactionLogs[0];
 
     if(transactionLog.transaction_uuid !== oThis.transactionUuid){
