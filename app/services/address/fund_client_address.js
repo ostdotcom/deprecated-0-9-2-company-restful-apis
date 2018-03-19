@@ -20,6 +20,7 @@ const rootPrefix = '../../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
+  , userSTPrimeAvailability = require(rootPrefix + '/lib/cache_management/user_stPrime_availability')
 ;
 
 /**
@@ -139,8 +140,12 @@ FundClientAddressKlass.prototype = {
 
     if(await oThis._isTransferRequired(workerAddrObj.ethereum_address)) {
       //transfer to worker
-      await oThis._transferBalance(reserveAddrObj.ethereum_address, reservePassphraseD,
-        workerAddrObj.ethereum_address, oThis._TO_TRANSFER)
+      const transferBalanceResponse = await oThis._transferBalance(reserveAddrObj.ethereum_address, reservePassphraseD,
+        workerAddrObj.ethereum_address, oThis._TO_TRANSFER);
+
+      if(transferBalanceResponse.isSuccess()) {
+        userSTPrimeAvailability.markSTPrimeAvailable(workerAddrObj.ethereum_address);
+      }
     }
 
     if(await oThis._isTransferRequired(airdropHolderAddrObj.ethereum_address)){
