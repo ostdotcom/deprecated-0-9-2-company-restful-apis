@@ -27,6 +27,7 @@ const rootPrefix = '../../..'
   , ApproveContractKlass = require(rootPrefix + '/lib/transactions/approve_contract')
   , TransferStPrimeKlass = require(rootPrefix + '/lib/transactions/stPrime_transfer')
   , ClientTrxRateCacheKlass = require(rootPrefix + '/lib/cache_management/client_transactions_rate_limit')
+  , StPrimeBalanceAvailability = require(rootPrefix + '/lib/cache_management/user_stPrime_availability')
   ;
 
 /**
@@ -233,6 +234,14 @@ ExecuteTransactionKlass.prototype = {
       }
     }
 
+    // Check for worker ST Prime Balance
+    var workerUser = cacheFetchResponse.data[oThis.clientBrandedToken.worker_address_uuid];
+    var balanceAvailable = await new StPrimeBalanceAvailability().isSTPrimeBalanceAvailable(workerUser.ethereum_address);
+    console.log("-------------------------------------------------------", balanceAvailable);
+    if(balanceAvailable.isSuccess() && parseInt(balanceAvailable.data.isBalanceAvailable) === 0){
+      return Promise.resolve(responseHelper.error("s_t_et_16", "Reserve is running low on ST Prime balance", null, {}, {sendErrorEmail: false}));
+    }
+
     oThis.userRecords = cacheFetchResponse.data;
     return Promise.resolve(responseHelper.successWithData({}));
   },
@@ -372,6 +381,10 @@ ExecuteTransactionKlass.prototype = {
     }
 
     if(response.isFailure()){
+      // Mark ST Prime balance is low for worker for future transactions.
+      if(response.err.code.includes("l_ci_h_pse_gas_low")){
+        new StPrimeBalanceAvailability().markSTPrimeUnavailable(workerUser.ethereum_address);
+      }
       await oThis.updateParentTransactionLog(transactionLogConst.failedStatus, response.err);
       return Promise.resolve(response);
     }
