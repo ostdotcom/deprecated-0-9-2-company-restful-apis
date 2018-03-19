@@ -6,7 +6,6 @@
  * @module app/services/transaction/execute_transaction
  */
 const rootPrefix = '../../..'
-  , a = require(rootPrefix + '/module_overrides/index')
   , uuid = require("uuid")
   , OpenSTPayment = require('@openstfoundation/openst-payments')
   , openSTNotification = require('@openstfoundation/openst-notification')
