@@ -1,7 +1,6 @@
 "use strict";
 
 const Web3 = require('web3')
-  , BigNumber = require('bignumber.js')
 ;
 
 const rootPrefix = '../..'
@@ -72,7 +71,7 @@ Util.prototype = {
           {}, {sendErrorEmail: false}));
       }
 
-      const cacheResponse = await oThis.cacheImplementer.get(oThis.stPrimeBalanceKey(address));
+      const cacheResponse = await cacheImplementer.get(oThis.stPrimeBalanceKey(address));
 
       if (cacheResponse.isSuccess()) {
         return Promise.resolve(responseHelper.successWithData({isBalanceAvailable: cacheResponse.data.response}));
@@ -109,21 +108,7 @@ Util.prototype = {
    */
   markSTPrimeUnavailable: async function (address) {
     const oThis = this;
-
-    try {
-      if (!basicHelper.isAddressValid(address)) {
-        return Promise.resolve(responseHelper.error('a_s_u_markSTPrimeUnavailalbe_1', "Invalid address", null,
-          {}, {sendErrorEmail: false}));
-      }
-
-      const cacheResponse = await oThis.cacheImplementer.set(oThis.stPrimeBalanceKey(address), 0);
-      return Promise.resolve(cacheResponse.isSuccess());
-
-    } catch (err) {
-      //Format the error
-      logger.error("app/services/util.js:markSTPrimeUnavailalbe inside catch ", err);
-      return Promise.onResolve(responseHelper.error('a_s_u_markSTPrimeUnavailalbe_2', 'Something went wrong'));
-    }
+    return oThis._updateSTPrimeCache(address, 0);
   },
 
   /**
@@ -135,20 +120,33 @@ Util.prototype = {
    */
   markSTPrimeAvailable: async function (address) {
     const oThis = this;
+    return oThis._updateSTPrimeCache(address, 1);
+  },
+
+  /**
+   * Update StPrime cache
+   *
+   * @param {string} address - address
+   * @param {number} value - value that needs to be set
+   *
+   * @return {promise<result>}
+   */
+  _updateSTPrimeCache: async function (address, value) {
+    const oThis = this;
 
     try {
       if (!basicHelper.isAddressValid(address)) {
-        return Promise.resolve(responseHelper.error('a_s_u_markSTPrimeAvailable_1', "Invalid address", null,
+        return Promise.resolve(responseHelper.error('a_s_u_updateSTPrimeCache_1', "Invalid address", null,
           {}, {sendErrorEmail: false}));
       }
 
-      const cacheResponse = await oThis.cacheImplementer.set(oThis.stPrimeBalanceKey(address), 1);
+      const cacheResponse = await cacheImplementer.set(oThis.stPrimeBalanceKey(address), value);
       return Promise.resolve(cacheResponse.isSuccess());
 
     } catch (err) {
       //Format the error
-      logger.error("app/services/util.js:markSTPrimeUnavailalbe inside catch ", err);
-      return Promise.onResolve(responseHelper.error('a_s_u_markSTPrimeAvailable_2', 'Something went wrong'));
+      logger.error("app/services/util.js:updateSTPrimeCache inside catch ", err);
+      return Promise.onResolve(responseHelper.error('a_s_u_updateSTPrimeCache_2', 'Something went wrong'));
     }
   }
 
