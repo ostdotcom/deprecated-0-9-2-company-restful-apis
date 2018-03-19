@@ -144,7 +144,7 @@ FundClientAddressKlass.prototype = {
         workerAddrObj.ethereum_address, oThis._TO_TRANSFER);
 
       if(transferBalanceResponse.isSuccess()) {
-        userSTPrimeAvailability.markSTPrimeAvailable(workerAddrObj.ethereum_address);
+        new userSTPrimeAvailability().markSTPrimeAvailable(workerAddrObj.ethereum_address);
       }
     }
 

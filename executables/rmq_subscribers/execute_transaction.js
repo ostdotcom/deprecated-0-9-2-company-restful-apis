@@ -40,7 +40,6 @@ const promiseExecutor = function (onResolve, onReject, params ) {
   unAckCount++;
   // Process request
   const parsedParams = JSON.parse(params);
-  logger.step('Consumed execute transaction start params -> ', parsedParams);
 
   const payload = parsedParams.message.payload
     , transactionLogId = payload.transactionLogId
