@@ -133,7 +133,7 @@ const checkSystemServiceStatuses = async function(req, res, next) {
 
   const statusRsp = await systemServiceStatusesCache.fetch();
   if (statusRsp.isSuccess && statusRsp.data && statusRsp.data['saas_api_available'] != 1) {
-    return responseHelper.error('a_4', 'API Under Maintainence').renderResponse(res);
+    return responseHelper.error('a_4', 'API Under Maintenance').renderResponse(res, 503);
   }
 
   next();
