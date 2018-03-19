@@ -161,33 +161,35 @@ simulateRandomTransactionKlass.prototype = {
       userEthAddresses.push(users[i].ethereum_address);
     }
 
-    const economyUserBalance = new EconomyUserBalanceKlass({client_id: oThis.clientId, ethereum_addresses: userEthAddresses})
-        , userBalancesResponse = await economyUserBalance.perform()
-    ;
-
-    var balanceHashData = null
-        , userBalance = null
-        , user = null;
-
-    if (userBalancesResponse.isFailure()) {
-      return Promise.resolve(responseHelper.error('s_tr_srt_3', 'could not fetch balances'));
-    } else {
-      balanceHashData = userBalancesResponse.data;
-    }
-
-    for(var i=0; i<usersCount; i++) {
-      user = users[i];
-      userBalance = balanceHashData[user.ethereum_address];
-      if (userBalance) {
-        userBalance = basicHelper.convertToNormal(userBalance.tokenBalance)
-      } else {
-        userBalance = 0
-      }
-      if (userBalance.gt(oThis.maxUserBtBalance)) {
-        oThis.maxUserBtBalance = userBalance;
-      }
-      user['bt_balance'] = userBalance;
-    }
+    /*********************** TODO: OPEN THIS RANDOM LOGIC ***************************
+    // const economyUserBalance = new EconomyUserBalanceKlass({client_id: oThis.clientId, ethereum_addresses: userEthAddresses})
+    //     , userBalancesResponse = await economyUserBalance.perform()
+    // ;
+    //
+    // var balanceHashData = null
+    //     , userBalance = null
+    //     , user = null;
+    //
+    // if (userBalancesResponse.isFailure()) {
+    //   return Promise.resolve(responseHelper.error('s_tr_srt_3', 'could not fetch balances'));
+    // } else {
+    //   balanceHashData = userBalancesResponse.data;
+    // }
+    //
+    // for(var i=0; i<usersCount; i++) {
+    //   user = users[i];
+    //   userBalance = balanceHashData[user.ethereum_address];
+    //   if (userBalance) {
+    //     userBalance = basicHelper.convertToNormal(userBalance.tokenBalance)
+    //   } else {
+    //     userBalance = 0
+    //   }
+    //   if (userBalance.gt(oThis.maxUserBtBalance)) {
+    //     oThis.maxUserBtBalance = userBalance;
+    //   }
+    //   user['bt_balance'] = userBalance;
+    // }
+     ************************ TODO: OPEN THIS RANDOM LOGIC ***************************************************/
 
     oThis.randomUsers = basicHelper.shuffleArray(users); // shuffle is important
 
@@ -298,7 +300,9 @@ simulateRandomTransactionKlass.prototype = {
     for(var i=0; i<oThis.randomTrxTypes.length; i++) {
 
       randomTrxType = oThis.randomTrxTypes[i];
-      txBtValue = oThis.getTxBtValue(randomTrxType);
+      /*********************** TODO: OPEN THIS RANDOM LOGIC ***************************
+      // txBtValue = oThis.getTxBtValue(randomTrxType);
+     *********************** TODO: OPEN THIS RANDOM LOGIC ***************************/
 
       if (randomTrxType.kind === clientTxTypesConst.companyToUserKind) {
 
@@ -329,10 +333,14 @@ simulateRandomTransactionKlass.prototype = {
             txParams['to_uuid'] = randomToUser['uuid'];
           }
 
-          if (randomFromUser['bt_balance'].gt(txBtValue)) {
-            breakOuterLoop = true;
-            break;
-          }
+          breakOuterLoop = true;
+
+          /*********************** TODO: OPEN THIS RANDOM LOGIC ***************************
+          // if (randomFromUser['bt_balance'] && randomFromUser['bt_balance'].gt(txBtValue)) {
+          //   breakOuterLoop = true;
+          //   break;
+          // }
+           *********************** TODO: OPEN THIS RANDOM LOGIC ***************************/
 
         }
 
@@ -355,9 +363,14 @@ simulateRandomTransactionKlass.prototype = {
    */
   canExecuteTxKind: function(tx) {
 
-    const oThis = this;
+    return true;
 
-    return basicHelper.convertToBigNumber(oThis.getTxBtValue(tx)).lte(oThis.maxUserBtBalance);
+    /*********************** TODO: OPEN THIS RANDOM LOGIC ***************************
+    // const oThis = this;
+    //
+    // return basicHelper.convertToBigNumber(oThis.getTxBtValue(tx)).lte(oThis.maxUserBtBalance);
+
+     /*********************** TODO: OPEN THIS RANDOM LOGIC ***************************/
 
   },
 
