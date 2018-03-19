@@ -32,16 +32,32 @@ const mysqlConfig = {
         "user": coreConstants.CA_SHARED_MYSQL_USER,
         "password": coreConstants.CA_SHARED_MYSQL_PASSWORD
       }
+    },
+    "cluster3": {
+      "master": {
+        "host": coreConstants.CR_ECONOMY_DB_MYSQL_HOST,
+        "user": coreConstants.CR_ECONOMY_DB_MYSQL_USER,
+        "password": coreConstants.CR_ECONOMY_DB_MYSQL_PASSWORD
+      }
+    },
+    "cluster4": {
+      "master": {
+        "host": coreConstants.CR_TRANSACTION_DB_MYSQL_HOST,
+        "user": coreConstants.CR_TRANSACTION_DB_MYSQL_USER,
+        "password": coreConstants.CR_TRANSACTION_DB_MYSQL_PASSWORD
+      }
     }
   },
   "databases":{
 
   }
 };
-mysqlConfig["databases"]["saas_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT] = ["cluster1"];
-mysqlConfig["databases"]["saas_transaction_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT] = ["cluster1"];
+
 mysqlConfig["databases"]["saas_airdrop_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT] = ["cluster1"];
 mysqlConfig["databases"]["saas_big_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT] = ["cluster1"];
+
+mysqlConfig["databases"]["saas_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT] = ["cluster3"];
+mysqlConfig["databases"]["saas_transaction_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT] = ["cluster4"];
 
 mysqlConfig["databases"]["company_saas_shared_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT] = ["cluster2"];
 
