@@ -16,6 +16,7 @@ const rootPrefix = '../../..'
   , kmsWrapperKlass = require(rootPrefix + '/lib/authentication/kms_wrapper')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , ClientAddressSaltMapping = require(rootPrefix + '/lib/cache_management/client_address_salt_mapping')
   , openStPlatform = require('@openstfoundation/openst-platform')
 ;
 
@@ -198,6 +199,15 @@ GenerateAddressKlass.prototype = {
 
     try {
 
+      // Check if address salt is already generated for a client
+      if(clientId) {
+        var resp = await new ClientAddressSaltMapping({client_id: clientId}).fetch();
+        if(resp.isSuccess() && parseInt(resp.data.clientAddrSalt) > 0){
+          return Promise.resolve(responseHelper.successWithData({managed_address_salt_id: resp.data.clientAddrSalt}));
+        }
+      }
+
+
       var KMSObject = new kmsWrapperKlass('managedAddresses');
       const newKey = await KMSObject.generateDataKey();
 
@@ -207,6 +217,7 @@ GenerateAddressKlass.prototype = {
         client_id: clientId,
         managed_address_salt: addressSalt
       });
+      new ClientAddressSaltMapping({client_id: clientId}).clear();
 
       if (insertedRec.affectedRows == 0) {
         logger.notify('s_ad_g_1', 'Something Went Wrong', err);
