@@ -159,6 +159,8 @@ EditBrandedTokenKlass.prototype = {
     publish_data.ost_to_bt_conversion_factor = oThis.brandedTokenAr.conversion_factor;
     publish_data.symbol_icon = oThis.brandedTokenAr.symbol_icon;
     publish_data.symbol = oThis.brandedTokenAr.symbol;
+    publish_data.uuid = oThis.brandedTokenAr.token_uuid;
+    publish_data.created_at = new Date(oThis.brandedTokenAr.created_at).getTime() / 1000;
 
     if(Object.keys(publish_data).length == 0 || !oThis.brandedTokenAr.token_erc20_address){
       return Promise.resolve(responseHelper.successWithData({}));
