@@ -382,9 +382,9 @@ ExecuteTransactionKlass.prototype = {
 
     if(response.isFailure()){
       // Mark ST Prime balance is low for worker for future transactions.
-      if(response.err.code.includes("l_ci_h_pse_gas_low")){
-        new StPrimeBalanceAvailability().markSTPrimeUnavailable(workerUser.ethereum_address);
-      }
+      // if(response.err.code.includes("l_ci_h_pse_gas_low")){
+      //   new StPrimeBalanceAvailability().markSTPrimeUnavailable(workerUser.ethereum_address);
+      // }
       await oThis.updateParentTransactionLog(transactionLogConst.failedStatus, response.err);
       return Promise.resolve(response);
     }
