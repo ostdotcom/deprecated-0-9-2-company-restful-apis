@@ -235,12 +235,12 @@ ExecuteTransactionKlass.prototype = {
     }
 
     // Check for worker ST Prime Balance
-    var workerUser = cacheFetchResponse.data[oThis.clientBrandedToken.worker_address_uuid];
-    var balanceAvailable = await new StPrimeBalanceAvailability().isSTPrimeBalanceAvailable(workerUser.ethereum_address);
-    console.log("-------------------------------------------------------", balanceAvailable);
-    if(balanceAvailable.isSuccess() && parseInt(balanceAvailable.data.isBalanceAvailable) === 0){
-      return Promise.resolve(responseHelper.error("s_t_et_16", "Reserve is running low on ST Prime balance", null, {}, {sendErrorEmail: false}));
-    }
+    // var workerUser = cacheFetchResponse.data[oThis.clientBrandedToken.worker_address_uuid];
+    // var balanceAvailable = await new StPrimeBalanceAvailability().isSTPrimeBalanceAvailable(workerUser.ethereum_address);
+    // console.log("-------------------------------------------------------", balanceAvailable);
+    // if(balanceAvailable.isSuccess() && parseInt(balanceAvailable.data.isBalanceAvailable) === 0){
+    //   return Promise.resolve(responseHelper.error("s_t_et_16", "Reserve is running low on ST Prime balance", null, {}, {sendErrorEmail: false}));
+    // }
 
     oThis.userRecords = cacheFetchResponse.data;
     return Promise.resolve(responseHelper.successWithData({}));
