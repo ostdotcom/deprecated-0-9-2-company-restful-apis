@@ -23,7 +23,7 @@ const publishToSlowQueue = async function (parsedParams) {
   ).then(console.log, console.log);
 };
 
-openSTNotification.subscribeEvent.rabbit([topicPrefix+"transaction.execute"],
+openSTNotification.subscribeEvent.rabbit(["transaction.execute"],
   {
     queue: 'transaction_execute_from_restful_apis',
     ackRequired: 1,
