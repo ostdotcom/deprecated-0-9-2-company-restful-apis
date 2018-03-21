@@ -33,3 +33,11 @@ stakeAndMintProcessorInterCommObj.registerInterruptSignalHandlers();
 stakeAndMintProcessorInterCommObj.init();
 
 logger.win("InterComm Script for Stake and Mint Processor initiated.");
+
+
+process.on('uncaughtException', function() {
+  console.log("Received uncaughtException");
+  setTimeout(function () {
+    process.exit(1);
+  }, 60000)
+});
