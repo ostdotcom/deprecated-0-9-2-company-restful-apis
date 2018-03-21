@@ -159,16 +159,30 @@ const Derived = function () {
 
         const nonceManager = fetchNonceResult.data.nonceManager;
 
-        //Get the private key.
-        await getPrivateKey().catch( async function ( reason ) {
-          logger.error('executeTx :: getPrivateKey :: Failed to get private key. reason', reason);
-          // clear the nonce
-          await nonceManager.completionWithFailure(true);
+        //Fetch Private Key if not present.
+        if ( !privateKeyObj ) {
+          logger.log('executeTx :: getPrivateKey initiated');
+          //Get the private key.
+          await getPrivateKey().catch( function ( reason ) {
 
-          //Reject with same reason.
-          return Promise.reject( reason );
-        });
+            logger.error('executeTx :: getPrivateKey :: Failed to get private key. reason', reason);
 
+            // clear the nonce
+            return nonceManager.completionWithFailure()
+              .catch( function ( reason ) {
+                logger.error('executeTx :: nonceManager.completionWithFailure rejected the Promise.'
+                  , " nonceManager likely to keep ", fromAddress, " locked"
+                );
+              })
+              .then( function ( i_d_k ) {
+                return Promise.reject( reason );
+              })
+            ;
+          });
+        }
+
+
+        logger.log('executeTx :: sendSignedTx initiated');
         await sendSignedTx(nonceManager);
       };
 
