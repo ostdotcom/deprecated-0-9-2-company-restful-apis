@@ -159,8 +159,15 @@ const Derived = function () {
 
         const nonceManager = fetchNonceResult.data.nonceManager;
 
-        //Get the pricate key.
-        await getPrivateKey();
+        //Get the private key.
+        await getPrivateKey().catch( function ( reason ) {
+          logger.error('executeTx :: getPrivateKey :: Failed to get private key. reason', reason);
+          // clear the nonce
+          await nonceManager.completionWithFailure(true);
+
+          //Reject with same reason.
+          return Promise.reject( reason );
+        });
 
         await sendSignedTx(nonceManager);
       };
