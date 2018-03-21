@@ -5,6 +5,7 @@ const rootPrefix = '../..'
     , QueryDBKlass = require(rootPrefix + '/app/models/queryDb')
     , ModelBaseKlass = require(rootPrefix + '/app/models/base')
     , clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id')
+    , util = require(rootPrefix + '/lib/util')
 ;
 
 const dbName = "saas_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
