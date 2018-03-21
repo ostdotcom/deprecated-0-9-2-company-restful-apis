@@ -158,6 +158,10 @@ const Derived = function () {
         }
 
         const nonceManager = fetchNonceResult.data.nonceManager;
+
+        //Get the pricate key.
+        await getPrivateKey();
+
         await sendSignedTx(nonceManager);
       };
 
@@ -221,8 +225,6 @@ const Derived = function () {
       const asyncPerformer = async function () {
 
         sanitize();
-
-        await getPrivateKey();
 
         executeTx();
 
