@@ -53,7 +53,7 @@ const promiseExecutor = function (onResolve, onReject, params ) {
   ;
 
   try{
-    executeTransactionObj.perform(slowProcessor).then(function (response) {
+    executeTransactionObj.perform().then(function (response) {
       if (!response.isSuccess()) {
         if(response.err.msg=='lifo fire'){
           publishToSlowQueue(parsedParams)

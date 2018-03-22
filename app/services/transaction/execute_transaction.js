@@ -5,10 +5,13 @@
  *
  * @module app/services/transaction/execute_transaction
  */
-const rootPrefix = '../../..'
-  , uuid = require("uuid")
-  , OpenSTPayment = require('@openstfoundation/openst-payments')
+
+const OpenSTPayment = require('@openstfoundation/openst-payments')
   , openSTNotification = require('@openstfoundation/openst-notification')
+  , uuid = require("uuid")
+;
+
+const rootPrefix = '../../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , clientTransactionTypeCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type')
@@ -23,12 +26,14 @@ const rootPrefix = '../../..'
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , conversionRatesConst = require(rootPrefix + '/lib/global_constant/conversion_rates')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
-  , approveAmount = basicHelper.convertToWei('1000000000000000')
   , ApproveContractKlass = require(rootPrefix + '/lib/transactions/approve_contract')
   , TransferStPrimeKlass = require(rootPrefix + '/lib/transactions/stPrime_transfer')
   , ClientTrxRateCacheKlass = require(rootPrefix + '/lib/cache_management/client_transactions_rate_limit')
   , StPrimeBalanceAvailability = require(rootPrefix + '/lib/cache_management/user_stPrime_availability')
-  ;
+;
+
+const approveAmount = basicHelper.convertToWei('1000000000000000')
+;
 
 /**
  *
@@ -53,9 +58,9 @@ const ExecuteTransactionKlass = function (params){
   oThis.fromUuid = params.from_uuid;
   oThis.toUuid = params.to_uuid;
   oThis.transactionKind = params.transaction_kind;
-  oThis.gasPrice = chainInteractionConstants.UTILITY_GAS_PRICE;
-
   oThis.inSync = params.runInSync || 0;
+
+  oThis.gasPrice = chainInteractionConstants.UTILITY_GAS_PRICE;
   oThis.tokenSymbol = null;
   oThis.transactionTypeRecord = null;
   oThis.userRecords = null;
@@ -65,22 +70,45 @@ const ExecuteTransactionKlass = function (params){
 
 ExecuteTransactionKlass.prototype = {
 
-  perform: async function(slowProcessor){
-    const oThis = this;
+  /**
+   * Perform
+   *
+   * @return {promise<result>}
+   */
+  perform: function(){
+    const oThis = this
+    ;
 
-    var r;
+    return oThis.asyncPerform()
+      .catch(function(error) {
+        logger.error('app/services/transaction/execute_transaction.js::perform::catch');
+        logger.error(error);
 
-    r = await oThis.fetchTransactionLog(slowProcessor);
-    if(r.isFailure()) return Promise.resolve(r);
+        return Promise.resolve(responseHelper.error("s_t_et_20", "Inside catch block", null, {}, {sendErrorEmail: false})
+      );
+    });
+  },
 
-    r = await oThis.validateClientToken();
-    if(r.isFailure()) return Promise.resolve(r);
+  /**
+   * Async perform
+   *
+   * @return {promise<result>}
+   */
+  asyncPerform: async function() {
+    const oThis = this
+    ;
 
-    r = await oThis.validateTransactionKind();
-    if(r.isFailure()) return Promise.resolve(r);
+    const fetchTransactionLogResponse = await oThis.fetchTransactionLog();
+    if(fetchTransactionLogResponse.isFailure()) return Promise.resolve(fetchTransactionLogResponse);
 
-    r = await oThis.validateUsers();
-    if(r.isFailure()) return Promise.resolve(r);
+    const validateClientTokenResponse = await oThis.validateClientToken();
+    if(validateClientTokenResponse.isFailure()) return Promise.resolve(validateClientTokenResponse);
+
+    const validateTransactionKindResponse = await oThis.validateTransactionKind();
+    if(validateTransactionKindResponse.isFailure()) return Promise.resolve(validateTransactionKindResponse);
+
+    const validateUsersResponse = await oThis.validateUsers();
+    if(validateUsersResponse.isFailure()) return Promise.resolve(validateUsersResponse);
 
     // Create main transaction record in transaction logs
     // This transaction uuid would be used throughout as process id too for all the further transactions.
@@ -105,24 +133,31 @@ ExecuteTransactionKlass.prototype = {
   },
 
   /**
-   * Get params of transaction from transaction log.
+   * Fetch transaction log from db
    *
-   * @Sets clientId, fromUuid, toUuid, transactionKind, gasPrice
-   * @return {Promise<ResultBase>}
+   * @return {promise<result>}
    */
-  fetchTransactionLog: async function (slowProcessor) {
-    const oThis = this;
+  fetchTransactionLog: async function () {
+    const oThis = this
+    ;
+
     if(!oThis.transactionLogId) return Promise.resolve(responseHelper.successWithData({}));
 
-    const transactionLogs = await new transactionLogModel().select('id, client_id, transaction_uuid, status, input_params').where(['id=?', oThis.transactionLogId]).fire()
-      , transactionLog = transactionLogs[0];
+    const transactionLogs = await new transactionLogModel()
+      .select('id, client_id, transaction_uuid, status, input_params')
+      .where(['id=?', oThis.transactionLogId])
+      .fire();
 
+    const transactionLog = transactionLogs[0];
+
+    // check if the transaction log uuid is same as that passed in the params, otherwise error out
     if(transactionLog.transaction_uuid !== oThis.transactionUuid){
-      return Promise.resolve(responseHelper.successWithData({}));
+      return Promise.resolve(
+        responseHelper.error("s_t_et_18", "Invalid params.", null, {}, {sendErrorEmail: false})
+      );
     }
-    console.log("transactionLog.status---", transactionLog.status);
-    console.log("(new transactionLogModel().statuses[transactionLogConst.processingStatus])",  (new transactionLogModel().statuses[transactionLogConst.processingStatus]));
 
+    // check if the transaction log status is processing, otherwise error out
     if((new transactionLogModel().statuses[transactionLog.status]) != transactionLogConst.processingStatus){
       return Promise.resolve(
         responseHelper.error("s_t_et_1", "Only processing statuses are allowed here.", null, {}, {sendErrorEmail: false})
@@ -136,10 +171,6 @@ ExecuteTransactionKlass.prototype = {
     oThis.transactionKind = ransaction_params.transaction_kind;
     oThis.gasPrice = ransaction_params.gas_price;
 
-    // if((!slowProcessor) && (oThis.clientId == 1054 || oThis.clientId == 1518 || oThis.clientId == 1456 || oThis.clientId == 1992 || oThis.clientId == 1082 || oThis.clientId == 1092)){
-    //   return Promise.resolve(responseHelper.error('move_to_new_queue', 'lifo fire'));
-    // }
-
     return Promise.resolve(responseHelper.successWithData({}))
   },
 
@@ -150,7 +181,8 @@ ExecuteTransactionKlass.prototype = {
    * @return {Promise<ResultBase>}
    */
   validateClientToken: async function(){
-    const oThis = this;
+    const oThis = this
+    ;
 
     const btCache = new BTCacheKlass({clientId: oThis.clientId})
       , btCacheRsp = await btCache.fetch();
