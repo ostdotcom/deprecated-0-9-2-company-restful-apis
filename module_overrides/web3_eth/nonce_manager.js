@@ -43,12 +43,12 @@ function getInstanceKey( fromAddress, chainKind ) {
   return args.join("_");
 }
 function getInstance( instanceKey ) {
-  console.log("getInstance :: instanceKey", instanceKey );
+  logger.log("NM :: getInstance :: instanceKey", instanceKey );
   return instanceMap[ instanceKey ];
 }
 function setInstance(instance, instanceKey ) {
   if ( instanceMap[ instanceKey ] ) {
-    console.log("Dude! I already have an instance with this key.");
+    logger.error("NM :: setInstance :: called when an instance already exists");
     return false;
   }
 
@@ -88,13 +88,13 @@ const NonceManagerKlass = function(params) {
     , existingInstance = getInstance( instanceKey )
   ;
   if ( existingInstance ) {
-    console.log("existingInstance FOUND!");
+    logger.log("NM :: NonceManagerKlass :: existingInstance FOUND!");
     return existingInstance;
   } else {
     setInstance(oThis, instanceKey);
   }
 
-  console.log("creating new instance");
+  logger.log("NM :: NonceManagerKlass :: creating new instance");
 
 
 
@@ -108,7 +108,7 @@ const NonceManagerKlass = function(params) {
 
   // Set cache key for nonce
   oThis.cacheKey = `nonce_${oThis.chainKind}_${oThis.address}`;
-  console.log("oThis.cacheKey: ",oThis.cacheKey);
+  logger.log("NM :: NonceManagerKlass :: oThis.cacheKey: ",oThis.cacheKey);
   // Set cache key for nonce lock
   oThis.cacheLockKey = `nonce_${oThis.chainKind}_${oThis.address}_lock`;
 };
@@ -156,7 +156,7 @@ const NonceCacheKlassPrototype = {
 
     ;
 
-    console.log("getNonce called");
+    logger.log("NM :: getNonce called.");
 
     promiseContext.promiseObj = promiseObj;
 
@@ -189,9 +189,9 @@ const NonceCacheKlassPrototype = {
       oThis.processedQueue.push( unshiftedContext );
 
       if ( promiseContext == unshiftedContext ) {
-        console.log("Correct context removed");
+        logger.log("NM :: onResolve :: Correct context removed.");
       } else {
-        console.log("We PLEASE FIND ME....... IMPORTANT");
+        logger.error("NM :: onResolve :: Could not find promise context.");
       }
 
       setTimeout(function () {
@@ -202,7 +202,12 @@ const NonceCacheKlassPrototype = {
       promiseContext.nonce = result.success ? result.data.nonce : "---FAILED---";
       promiseContext.promiseAction = "RESOLVED";
       var resolve = promiseContext.resolve;
-      resolve( result );
+      try {
+        resolve( result );  
+      } catch( e ) {
+        logger.error("NM :: processNext :: onResolve :: promise resolve threw an exception. Error: ", e);
+        logger.trace("NM :: processNext :: onResolve :: promise resolve threw an exception.");
+      }
     };
 
     const onReject = function ( reason ) {
@@ -210,9 +215,9 @@ const NonceCacheKlassPrototype = {
       oThis.processedQueue.push( unshiftedContext );
 
       if ( promiseContext == unshiftedContext ) {
-        console.log("Correct context removed");
+        logger.log("NM :: onReject :: Correct context removed");
       } else {
-        console.log("We PLEASE FIND ME....... IMPORTANT");
+        logger.error("NM :: onReject :: IMPORTANT :: promiseQueue is out of sync.");
       }
 
       setTimeout(function () {
@@ -230,7 +235,7 @@ const NonceCacheKlassPrototype = {
       if (acquireLockResponse.isSuccess()) {
         const nonceResponse = await oThis.cacheImplementer.get(oThis.cacheKey);
         if (nonceResponse.isSuccess() && nonceResponse.data.response != null) {
-          console.log("nonceResponse: ", nonceResponse);
+          logger.log("NM :: acquireLockAndReturn :: nonceResponse: ", nonceResponse);
           return responseHelper.successWithData({nonce: parseInt(nonceResponse.data.response)});
         } else {
           return await oThis._syncNonce();
@@ -242,55 +247,51 @@ const NonceCacheKlassPrototype = {
 
 
     const startTime =  promiseContext.startTimestamp;
-    const wait = async function() {
+
+    const wait = function() {
       try {
-        if (_getTimeStamp()-startTime > waitTimeout) {
+        //Check for timeout.
+        if (_getTimeStamp()-startTime > waitTimeout) {  
           //Format the error
-          logger.error("module_overrides/web3_eth/nonce_manager.js:getNonce:wait");
-          return onResolve(responseHelper.error('l_nm_getNonce_1', 'getNonce timeout'));
+          logger.error("NM :: wait :: promise has timed out");
+          var errorResult = responseHelper.error('l_nm_getNonce_1', 'getNonce timeout', "nounce_manager", {
+            timedOut: true
+          });
+          return onResolve( errorResult );
         }
-        const isLocked = await oThis.isLocked();
-        if (isLocked) {
-          setTimeout(wait, waitTimeInterval);
-        } else {
-          //return onResolve(acquireLockAndReturn());
-          const acquireLockResponse = await acquireLockAndReturn();
-          if (acquireLockResponse.isSuccess()) {
-            return onResolve(acquireLockResponse);
-          }else{
-            wait();
-          }
-        }
+
+        //Try to acquire lock directly.
+        acquireLockAndReturn()
+          .catch( function ( reason ) {
+            logger.error("NM :: acquireLockAndReturn rejected the Promise. reason :: ", reason);
+            return responseHelper.error('l_nm_aqLockCatch_1', 'Something went wrong');
+          })
+          .then( function ( acquireLockResponse ) {
+            if ( response.isSuccess() ) {
+              //We got the lock.
+              return onResolve( acquireLockResponse );
+            } else if ( response.err && response.err.code && String(response.err.code).indexOf( "l_nm_aqLockCatch_1" ) >= 0 ) {
+              //Safety-Net. acquireLockAndReturn reject the Promise.
+              return onResolve( acquireLockResponse );
+            } else {
+              //Lets try again to aquire lock.
+              setTimeout(wait, waitTimeInterval);
+            }
+          });
       } catch (err) {
         //Format the error
-        logger.error("module_overrides/web3_eth/nonce_manager.js:getNonce:wait inside catch ", err);
+        logger.error("NM :: IMPORTANT :: wait inside catch ", err);
         return onResolve(responseHelper.error('l_nm_getNonce_2', 'Something went wrong'));
       }
     };
 
     try {
-      // if the lock is aquired then wait for unlock
-      // if the lock is not aquired then lock the nonce key for usage and return the nonce count
-      const isLocked = await oThis.isLocked();
-      if (!isLocked) {
-        const acquireLockResponse = await acquireLockAndReturn();
-        if (acquireLockResponse.isSuccess()) {
-          return onResolve(acquireLockResponse);
-        }else{
-          wait();
-        }
-
-      } else {
-        // the key is already locked. Now wait for it to get unlocked.
-        return wait();
-      }
+      return wait();
     } catch (err) {
       //Format the error
-      logger.error("module_overrides/web3_eth/nonce_manager.js:getNonce inside catch ", err);
+      logger.error("NM :: IMPORTANT :: processNext inside catch ", err);
       return onResolve(responseHelper.error('l_nm_getNonce_3', 'Something went wrong'));
     }
-
-
   },
 
   /**
@@ -304,7 +305,7 @@ const NonceCacheKlassPrototype = {
     ;
 
     oThis.completionSuccessCnt ++;
-    console.log("completionWithSuccess");
+    logger.log("NM :: completionWithSuccess");
     await oThis._increment();
     return await oThis._releaseLock();
 
@@ -323,7 +324,7 @@ const NonceCacheKlassPrototype = {
     ;
 
     oThis.completionFailureCnt ++;
-    console.log("completionWithFailure");
+    logger.log("NM :: completionWithFailure");
     if (shouldSyncNonce) {
       await oThis._syncNonce();
     }
@@ -355,7 +356,7 @@ const NonceCacheKlassPrototype = {
     const oThis = this
       , lockResponse = await oThis.cacheImplementer.increment(oThis.cacheLockKey)
     ;
-    console.log("oThis.cacheLockKey: ",oThis.cacheLockKey);
+    logger.log("NM :: oThis.cacheLockKey: ",oThis.cacheLockKey);
     if (lockResponse.isSuccess()) {
       // Response should be 1 to call it acquired.
       if (lockResponse.data.response == 1) {
@@ -506,7 +507,7 @@ const NonceCacheKlassPrototype = {
         }
       }
       const setNonceResponse = await oThis.cacheImplementer.set(oThis.cacheKey, maxNonceCount.toNumber());
-      console.log("maxNonceCount: ", maxNonceCount.toNumber());
+      logger.log("NM :: maxNonceCount: ", maxNonceCount.toNumber());
       if (setNonceResponse.isSuccess()) {
         return responseHelper.successWithData({nonce: maxNonceCount.toNumber()});
       }
@@ -540,7 +541,7 @@ const NonceCacheKlassPrototype = {
         });
       } catch (err) {
         //Format the error
-        logger.error("module_overrides/web3_eth/nonce_manager.js:getNonceFromGethNode inside catch ", err);
+        logger.error("NM :: module_overrides/web3_eth/nonce_manager.js:getNonceFromGethNode inside catch ", err);
         return onResolve(responseHelper.error('l_nm_getNonceFromGethNode_2', 'Something went wrong'));
       }
     });
