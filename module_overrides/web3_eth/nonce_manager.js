@@ -251,10 +251,13 @@ const NonceCacheKlassPrototype = {
     const wait = function() {
       try {
         //Check for timeout.
-        if (_getTimeStamp()-startTime > waitTimeout) {
+        if (_getTimeStamp()-startTime > waitTimeout) {  
           //Format the error
           logger.error("NM :: wait :: promise has timed out");
-          return onResolve(responseHelper.error('l_nm_getNonce_1', 'getNonce timeout'));
+          var errorResult = responseHelper.error('l_nm_getNonce_1', 'getNonce timeout', "nounce_manager", {
+            timedOut: true
+          });
+          return onResolve( errorResult );
         }
 
         //Try to acquire lock directly.
