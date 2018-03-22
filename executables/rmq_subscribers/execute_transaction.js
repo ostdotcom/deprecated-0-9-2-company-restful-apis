@@ -89,7 +89,7 @@ const publishToSlowQueue = async function (parsedParams) {
 
 const PromiseQueueManager = new PromiseQueueManagerKlass(promiseExecutor, {
   name: "execute_tx_promise_queue_manager"
-  , timeoutInMilliSecs: 3 * 60 * 1000
+  , timeoutInMilliSecs: -1
 });
 
 var topicPrefix = slowProcessor ? 'slow.' : '';
