@@ -472,25 +472,24 @@ ExecuteTransactionKlass.prototype = {
 
     if (payResponse.isFailure()) {
 
-      // TODO: Fix bug
-      // Mark ST Prime balance is low for worker for future transactions.
-      // if(response.err.code.includes("l_ci_h_pse_gas_low")){
-      //   new StPrimeBalanceAvailability().markSTPrimeUnavailable(workerUser.ethereum_address);
-      // }
+      //Mark ST Prime balance is low for worker for future transactions.
+      if(response.err.code.includes("l_ci_h_pse_gas_low")){
 
-      // Mark ST Prime balance is low for worker for future transactions.
-      const modelObj = new ClientWorkerManagedAddressIdsKlass();
+        // Mark ST Prime balance is low for worker for future transactions.
+        const modelObj = new ClientWorkerManagedAddressIdsKlass();
 
-      const dbObject = await modelObj.select('id, properties')
-          .where(['client_id=? AND managed_address_id=?', oThis.clientId, workerUser.id]).fire()[0];
+        const dbObject = await modelObj.select('id, properties')
+            .where(['client_id=? AND managed_address_id=?', oThis.clientId, workerUser.id]).fire()[0];
 
-      await modelObj.edit({
-        qParams: {properties: modelObj.unsetBit(clientWorkerManagedAddressConst.hasStPrimeBalanceProperty, dbObject.properties)},
-        whereCondition: {id: dbObject.id}
-      });
+        await modelObj.edit({
+          qParams: {properties: modelObj.unsetBit(clientWorkerManagedAddressConst.hasStPrimeBalanceProperty, dbObject.properties)},
+          whereCondition: {id: dbObject.id}
+        });
 
-      // Flush worker uuids cache
-      new ClientActiveWorkerUuidCacheKlass({client_id: oThis.clientId}).clear();
+        // Flush worker uuids cache
+        new ClientActiveWorkerUuidCacheKlass({client_id: oThis.clientId}).clear();
+
+      }
 
       oThis.updateParentTransactionLog(transactionLogConst.failedStatus, payResponse.err);
       return Promise.resolve(payResponse);
