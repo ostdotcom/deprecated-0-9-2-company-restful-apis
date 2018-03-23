@@ -7,6 +7,7 @@ const logMe = true
 
 const rootPrefix  = "../../executables/rmq_subscribers/"
     , PromiseContext = require(rootPrefix + "PromiseContext")
+    , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
 const Manager = module.exports = function ( promiseExecutor, options ) {
@@ -23,6 +24,7 @@ const Manager = module.exports = function ( promiseExecutor, options ) {
   if ( !oThis.name ) {
     oThis.name = "PromiseQueueManager_" + Date.now();
   }
+  oThis.logMe();
 };
 
 
@@ -36,10 +38,13 @@ Manager.prototype = {
   , promiseExecutor: null
 
   // resolvePromiseOnTimeout :: set this flag to false if you need custom handling.
-  // By Default, the manager will resolve the Promise on time out.
-  , resolvePromiseOnTimeout: true
+  // By Default, the manager will neither resolve nor reject the Promise on time out.
+  , resolvePromiseOnTimeout: false
   // The value to be passed to resolve when the Promise has timedout.
   , resolvedValueOnTimeout: null
+
+  // rejectPromiseOnTimeout :: set this flag to true if you need custom handling.
+  , rejectPromiseOnTimeout : false
 
   //  Pass timeoutInMilliSecs in options to set the timeout.
   //  If less than or equal to zero, timeout will not be observed.
@@ -52,7 +57,7 @@ Manager.prototype = {
     //It can be set using options parameter in constructor.
     const oThis = this;
 
-    verboseLog && console.log(oThis.name, " :: a promise has been resolved. resolvedValue:", resolvedValue);
+    verboseLog && logger.log(oThis.name, " :: a promise has been resolved. resolvedValue:", resolvedValue);
   }
 
   , onPromiseRejected: function ( rejectReason, promiseContext ) {
@@ -61,7 +66,7 @@ Manager.prototype = {
     //It can be set using options parameter in constructor.
     const oThis = this;
 
-    verboseLog && console.log(oThis.name, " :: a promise has been rejected. rejectReason: ", rejectReason);
+    verboseLog && logger.log(oThis.name, " :: a promise has been rejected. rejectReason: ", rejectReason);
   }
 
   , onPromiseTimedout: function ( promiseContext ) {
@@ -70,7 +75,7 @@ Manager.prototype = {
     //It can be set using options parameter in constructor.
     const oThis = this;
 
-    verboseLog && console.log(oThis.name, ":: a promise has timed out.");
+    verboseLog && logger.log(oThis.name, ":: a promise has timed out.");
   }
 
   , onPromiseCompleted: function ( promiseContext ) {
@@ -79,7 +84,7 @@ Manager.prototype = {
     //It can be set using options parameter in constructor.
     const oThis = this;
 
-    verboseLog && console.log(oThis.name, ":: a promise has been completed.");
+    verboseLog && logger.log(oThis.name, ":: a promise has been completed.");
   }  
 
   //onAllPromisesCompleted will be executed when the last promise in pendingPromise is resolved/rejected.
@@ -128,8 +133,12 @@ Manager.prototype = {
   , createdCount    : 0
   , resolvedCount   : 0
   , rejectedCount   : 0
+  , zombieCount     : 0
   , timedOutCount   : 0
   , completedCount  : 0
+
+  //log print interval in millisecond
+  , logMeTimeInterval : 3 * 1000
 
   , pcOptions       : null
   , getPromiseContextOptions: function () {
@@ -137,6 +146,7 @@ Manager.prototype = {
 
     oThis.pcOptions = oThis.pcOptions || {
       resolvePromiseOnTimeout   : oThis.resolvePromiseOnTimeout
+      , rejectPromiseOnTimeout  : oThis.rejectPromiseOnTimeout
       , resolvedValueOnTimeout  : oThis.resolvedValueOnTimeout
       , timeoutInMilliSecs      : oThis.timeoutInMilliSecs
       , onResolved  : function () {
@@ -189,15 +199,22 @@ Manager.prototype = {
     //Update the stats.
     oThis.timedOutCount ++;
 
-    logMe && console.log(oThis.name, ":: _onTimedout :: promise has timedout");
+    logMe && logger.log(oThis.name, ":: _onTimedout :: promise has timedout");
 
     //Give a callback.
     //Dev-Note: This callback should not be triggered inside setTimeout.
     //Give the instance creator a chance to do something with promiseContext.
     if ( oThis.onPromiseTimedout ) {
       oThis.onPromiseTimedout.apply(oThis, arguments);
-    }    
+    }
 
+    //Update the zombie count only if resolve and reject on timeout are false.
+    if( !oThis.resolvePromiseOnTimeout && !oThis.rejectPromiseOnTimeout ){
+      oThis.zombieCount++;
+    }
+
+    //Mark is Completed.
+    oThis.markAsCompleted( promiseContext );
   }
   , markAsCompleted: function ( promiseContext ) {
     const oThis = this;
@@ -207,8 +224,8 @@ Manager.prototype = {
         , pcIndx = pendingPromises.indexOf( promiseContext )
     ;
     if ( pcIndx < 0 ) {
-      console.trace(oThis.name + " :: markAsCompleted :: Could not find a promiseContext");
-      console.dir( promiseContext );
+      logger.trace(oThis.name + " :: markAsCompleted :: Could not find a promiseContext");
+      logger.dir( promiseContext );
       return;
     }
 
@@ -232,15 +249,16 @@ Manager.prototype = {
         , completedCount  = oThis.completedCount
         , resolvedCount   = oThis.resolvedCount
         , rejectedCount   = oThis.rejectedCount
+        , zombieCount     = oThis.zombieCount
     ;
 
-    var isValid = ( completedCount === ( resolvedCount + rejectedCount ) );
+    var isValid = ( completedCount === ( resolvedCount + rejectedCount + zombieCount) );
     isValid = isValid && ( createdCount === ( pendingCount + completedCount ) );
     
     if ( isValid ) {
-      logMe && console.log(oThis.name, ":: isValid :: Queue is valid.");
+      logMe && logger.log(oThis.name, ":: isValid :: Queue is valid.");
     } else {
-      console.error("IMPORTANT ::", oThis.name , ":: validation failed!");
+      logger.error("IMPORTANT ::", oThis.name , ":: validation failed!");
     }
 
     return isValid;
@@ -253,17 +271,37 @@ Manager.prototype = {
         , completedCount  = oThis.completedCount
         , resolvedCount   = oThis.resolvedCount
         , rejectedCount   = oThis.rejectedCount
+        , timedOutCount   = oThis.timedOutCount
+        , zombieCount     = oThis.zombieCount
         , isValid         = oThis.isValid()
     ;
 
-    console.log(oThis.name, ":: logInfo ::"
+    logger.log(oThis.name, ":: logInfo ::"
       , "createdCount:", createdCount
       , "pendingCount:", pendingCount
       , "completedCount:", completedCount
       , "resolvedCount:", resolvedCount
       , "rejectedCount:", rejectedCount
+      , "zombieCount:", zombieCount
+      , "timedOutCount:", timedOutCount
       , "isValid:", isValid
     );
+  }
+
+  ,logMe : function () {
+    var oThis =  this
+      , timeOut = oThis.logMeTimeInterval
+    ;
+    if( timeOut < 1) {
+      return
+    }
+    setTimeout( function () {
+      oThis.logInfo();
+      oThis.logMe();
+    } , timeOut ) ;
+  }
+
+  , someMethod : function () {
 
   }
 
@@ -281,7 +319,7 @@ Manager.Examples = {
     }
     , {
       onAllPromisesCompleted: function () {
-        console.log("Examples.allResolve :: onAllPromisesCompleted triggered");
+        logger.log("Examples.allResolve :: onAllPromisesCompleted triggered");
         manager.logInfo();
       }
       , timeoutInMilliSecs : 5000
@@ -303,7 +341,7 @@ Manager.Examples = {
     }
     , {
       onAllPromisesCompleted: function () {
-        console.log("Examples.allReject :: onAllPromisesCompleted triggered");
+        logger.log("Examples.allReject :: onAllPromisesCompleted triggered");
         manager.logInfo();
       }
       , timeoutInMilliSecs : 5000
@@ -311,7 +349,7 @@ Manager.Examples = {
 
     for( var cnt = 0; cnt < len; cnt++ ) {
       manager.createPromise().catch( function ( reason ) {
-        console.log("Examples.allReject :: promise catch triggered.");
+        logger.log("Examples.allReject :: promise catch triggered.");
       });
     }
   },
@@ -327,7 +365,7 @@ Manager.Examples = {
     }
     , {
       onAllPromisesCompleted: function () {
-        console.log("Examples.allResolve :: onAllPromisesCompleted triggered");
+        logger.log("Examples.allResolve :: onAllPromisesCompleted triggered");
         manager.logInfo();
       }
       , timeoutInMilliSecs : 5000
@@ -349,7 +387,7 @@ Manager.Examples = {
     }
     , {
       onAllPromisesCompleted: function () {
-        console.log("Examples.executorWithParams :: onAllPromisesCompleted triggered");
+        logger.log("Examples.executorWithParams :: onAllPromisesCompleted triggered");
         manager.logInfo();
       }
       , timeoutInMilliSecs : 5000
