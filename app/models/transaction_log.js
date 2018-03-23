@@ -14,7 +14,8 @@ const dbName = "saas_transaction_" + coreConstants.SUB_ENVIRONMENT + "_" + coreC
   , statuses = {
     '1': transactionLogConst.processingStatus,
     '2': transactionLogConst.completeStatus,
-    '3': transactionLogConst.failedStatus
+    '3': transactionLogConst.failedStatus,
+    '4': transactionLogConst.waitingForMiningStatus
   }
   , chainTypes = {
     '1': transactionLogConst.valueChainType,

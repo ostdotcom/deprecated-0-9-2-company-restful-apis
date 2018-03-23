@@ -461,7 +461,7 @@ ExecuteTransactionKlass.prototype = {
       basicHelper.convertToWei(ostValue).toString(),
       oThis.userRecords[oThis.fromUuid].ethereum_address,
       oThis.gasPrice,
-      {tag: oThis.transactionTypeRecord.name, returnType: 'txReceipt'}
+      {tag: oThis.transactionTypeRecord.name, returnType: 'txHash'}
     ).catch(function (error) {
       logger.error('app/services/transaction/execute_transaction.js::airdropPayment.pay::catch');
       logger.error(error);
@@ -499,7 +499,7 @@ ExecuteTransactionKlass.prototype = {
 
     oThis.transactionHash = payResponse.data.transaction_hash;
 
-    oThis.updateParentTransactionLog(transactionLogConst.completeStatus);
+    oThis.updateParentTransactionLog(transactionLogConst.waitingForMiningStatus);
 
     return Promise.resolve(responseHelper.successWithData({}));
 
