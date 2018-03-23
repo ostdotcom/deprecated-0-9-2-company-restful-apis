@@ -1,7 +1,12 @@
 "use strict";
 
-const rootPrefix = ".."
-    , clientWorkerAddressModel = require(rootPrefix + '/app/models/client_worker_managed_address_id')
+const rootPrefix = '..'
+;
+
+//Always Include Module overrides First
+require(rootPrefix + '/module_overrides/index');
+
+const clientWorkerAddressModel = require(rootPrefix + '/app/models/client_worker_managed_address_id')
     , clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id')
     , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
     , clientBrandedTokenObj = new ClientBrandedTokenKlass()
@@ -196,5 +201,5 @@ addMoreWorkersKlass.prototype = {
 
 };
 
-const obj = new addMoreWorkersKlass({startClientId: 1002, endClientId: 1002, newWorkersCnt: 4, clientIds: []});
+const obj = new addMoreWorkersKlass({startClientId: 1153, endClientId: 1153, newWorkersCnt: 4, clientIds: []});
 obj.perform().then(console.log);
