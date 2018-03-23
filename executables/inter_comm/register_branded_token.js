@@ -33,3 +33,10 @@ const registerBrandedTokenInterCommObj = new RegisterBrandedTokenInterComm({file
 registerBrandedTokenInterCommObj.registerInterruptSignalHandlers();
 registerBrandedTokenInterCommObj.init();
 logger.win("InterComm Script for Register Branded Token initiated.");
+
+process.on('uncaughtException', function() {
+  console.log("Received uncaughtException");
+  setTimeout(function () {
+    process.exit(1);
+  }, 60000)
+});

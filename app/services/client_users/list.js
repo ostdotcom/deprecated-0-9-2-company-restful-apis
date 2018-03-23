@@ -85,8 +85,6 @@ listKlass.prototype = {
       balanceHashData = userBalancesResponse.data;
     }
 
-    logger.info("balanceHashData ", balanceHashData);
-
     for (var i = 0; i < length; i++) {
 
       const object = queryResponse[i];

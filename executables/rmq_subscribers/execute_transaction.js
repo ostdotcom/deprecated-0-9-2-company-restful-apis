@@ -53,7 +53,7 @@ const promiseExecutor = function (onResolve, onReject, params ) {
   ;
 
   try{
-    executeTransactionObj.perform(slowProcessor).then(function (response) {
+    executeTransactionObj.perform().then(function (response) {
       if (!response.isSuccess()) {
         if(response.err.msg=='lifo fire'){
           publishToSlowQueue(parsedParams)
@@ -89,7 +89,7 @@ const publishToSlowQueue = async function (parsedParams) {
 
 const PromiseQueueManager = new PromiseQueueManagerKlass(promiseExecutor, {
   name: "execute_tx_promise_queue_manager"
-  , timeoutInMilliSecs: 3 * 60 * 1000
+  , timeoutInMilliSecs: -1
 });
 
 var topicPrefix = slowProcessor ? 'slow.' : '';
