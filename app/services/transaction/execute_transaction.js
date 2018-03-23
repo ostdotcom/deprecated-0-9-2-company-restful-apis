@@ -72,6 +72,7 @@ const ExecuteTransactionKlass = function (params) {
   oThis.transactionHash = null;
   oThis.clientBrandedToken = null;
   oThis.availableWorkerUuids = null;
+  oThis.workerUser = null;
 
 };
 
@@ -237,7 +238,7 @@ ExecuteTransactionKlass.prototype = {
     if (clientUuidCacheRsp.isFailure() || clientUuidCacheRsp.data.length == 0) {
       return Promise.resolve(responseHelper.error("s_t_et_5", "no workers to process", null, {}, {sendErrorEmail: false}));
     }
-    oThis.availableWorkerUuids = clientUuidCacheRsp.data;
+    oThis.availableWorkerUuids = clientUuidCacheRsp.data.workerUuids;
 
     return Promise.resolve(responseHelper.successWithData({}));
 
@@ -291,14 +292,6 @@ ExecuteTransactionKlass.prototype = {
         return Promise.resolve(responseHelper.error("s_t_et_11", "Unexpected uuid in To field", null, {}, {sendErrorEmail: false}));
       }
     }
-
-    // Check for worker ST Prime Balance
-    // var workerUser = cacheFetchResponse.data[oThis.clientBrandedToken.worker_address_uuid];
-    // var balanceAvailable = await new StPrimeBalanceAvailability().isSTPrimeBalanceAvailable(workerUser.ethereum_address);
-    // console.log("-------------------------------------------------------", balanceAvailable);
-    // if(balanceAvailable.isSuccess() && parseInt(balanceAvailable.data.isBalanceAvailable) === 0){
-    //   return Promise.resolve(responseHelper.error("s_t_et_16", "Reserve is running low on ST Prime balance", null, {}, {sendErrorEmail: false}));
-    // }
 
     oThis.userRecords = cacheFetchResponse.data;
     return Promise.resolve(responseHelper.successWithData({}));
@@ -423,21 +416,15 @@ ExecuteTransactionKlass.prototype = {
    *
    */
   sendAirdropPay: async function () {
+
     const oThis = this
     ;
-    const airdropPayment = new OpenSTPayment.airdrop(oThis.clientBrandedToken.airdrop_contract_address,
-      chainInteractionConstants.UTILITY_CHAIN_ID);
 
-    var index = oThis.rateLimitCount % oThis.availableWorkerUuids.length
-        , workerUuid = oThis.availableWorkerUuids[index];
+    const airdropPayment = new OpenSTPayment.airdrop(oThis.clientBrandedToken.airdrop_contract_address
+        , chainInteractionConstants.UTILITY_CHAIN_ID)
+        , reserveUser = oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid];
 
-    var workerUser = oThis.userRecords[workerUuid];
-    var reserveUser = oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid];
-
-    console.log('workerUser', workerUser);
-    console.log('workerUuid', workerUuid);
-
-    if(!workerUser || !reserveUser){
+    if(!oThis.workerUser || !reserveUser){
       await oThis.updateParentTransactionLog(transactionLogConst.failedStatus, {error: "Worker or reserve user not found. "});
       return Promise.resolve(responseHelper.error('s_t_et_14', "Worker or reserve user not found", null, {}, {sendErrorEmail: false}));
     }
@@ -451,8 +438,8 @@ ExecuteTransactionKlass.prototype = {
     var commisionAmount = basicHelper.convertToWei(oThis.transactionTypeRecord.commission_percent).mul(
       basicHelper.convertToWei(oThis.transactionTypeRecord.currency_value)).div(basicHelper.convertToWei('100')).toString();
 
-    const payResponse = await airdropPayment.pay(workerUser.ethereum_address,
-      workerUser.passphrase_d,
+    const payResponse = await airdropPayment.pay(oThis.workerUser.ethereum_address,
+      oThis.workerUser.passphrase_d,
       oThis.userRecords[oThis.toUuid].ethereum_address,
       basicHelper.convertToWei(oThis.transactionTypeRecord.currency_value).toString(),
       reserveUser.ethereum_address,
@@ -473,13 +460,13 @@ ExecuteTransactionKlass.prototype = {
     if (payResponse.isFailure()) {
 
       //Mark ST Prime balance is low for worker for future transactions.
-      if(response.err.code.includes("l_ci_h_pse_gas_low")){
+      if(payResponse.err.code.includes("l_ci_h_pse_gas_low")){
 
         // Mark ST Prime balance is low for worker for future transactions.
         const modelObj = new ClientWorkerManagedAddressIdsKlass();
 
         const dbObject = await modelObj.select('id, properties')
-            .where(['client_id=? AND managed_address_id=?', oThis.clientId, workerUser.id]).fire()[0];
+            .where(['client_id=? AND managed_address_id=?', oThis.clientId, oThis.workerUser.id]).fire()[0];
 
         await modelObj.edit({
           qParams: {properties: modelObj.unsetBit(clientWorkerManagedAddressConst.hasStPrimeBalanceProperty, dbObject.properties)},
@@ -598,8 +585,35 @@ ExecuteTransactionKlass.prototype = {
       if (approveForBrandedTokenResponse.isFailure()) return Promise.resolve(approveForBrandedTokenResponse);
     }
 
+    const setWorkerUserResponse = await oThis.setWorkerUser();
+    if (setWorkerUserResponse.isFailure()) {
+      return Promise.resolve(setWorkerUserResponse);
+    }
+
     const sendAirdropPayResponse = await oThis.sendAirdropPay();
     return Promise.resolve(sendAirdropPayResponse);
+
+  },
+
+  setWorkerUser: async function() {
+
+    const oThis = this
+    ;
+
+    var index = oThis.rateLimitCount % oThis.availableWorkerUuids.length
+        , workerUuid = oThis.availableWorkerUuids[index];
+
+    const managedAddressCache = new ManagedAddressCacheKlass({'uuids': [workerUuid]})
+        , cacheFetchResponse = await managedAddressCache.fetch();
+
+    if (cacheFetchResponse.isFailure()) {
+      return Promise.resolve(responseHelper.error("s_t_et_16", "Couldn't fetch data for worker uuid", null, {}, {sendErrorEmail: false}));
+    }
+
+    oThis.workerUser = cacheFetchResponse.data[workerUuid];
+
+    return Promise.resolve(responseHelper.successWithData({}));
+
   }
 
 };

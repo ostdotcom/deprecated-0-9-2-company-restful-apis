@@ -44,10 +44,12 @@ const promiseExecutor = function (onResolve, onReject, params ) {
   const payload = parsedParams.message.payload
     , transactionLogId = payload.transactionLogId
     , transactionUuid = payload.transactionUuid
+    , rateLimitCount = payload.rateLimitCount
     , executeTransactionObj = new executeTransactionKlass(
       {
         transactionLogId: transactionLogId,
         transactionUuid: transactionUuid,
+        rateLimitCount: rateLimitCount,
         runInSync: 1
       })
   ;
