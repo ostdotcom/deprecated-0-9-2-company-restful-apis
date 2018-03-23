@@ -44,7 +44,7 @@ addMoreWorkersKlass.prototype = {
     }
     
     var r = await oThis.generateWorkerAddresses();
-    console.log(r);
+
     if (r.isFailure()) {
       return Promise.resolve(r);
     }
@@ -196,5 +196,5 @@ addMoreWorkersKlass.prototype = {
 
 };
 
-const obj = new addMoreWorkersKlass({startClientId: 1001, endClientId: 1003, newWorkersCnt: 4, clientIds: []});
+const obj = new addMoreWorkersKlass({startClientId: 1002, endClientId: 1002, newWorkersCnt: 4, clientIds: []});
 obj.perform().then(console.log);
