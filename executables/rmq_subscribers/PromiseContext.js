@@ -5,8 +5,8 @@ const logMe = true
     , defaultTimeout = 30000
 ;
 
-const rootPrefix  = "../../executables/rmq_subscribers/"
-    , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+const rootPrefix  = "../../"
+    , logger = require(rootPrefix + "lib/logger/custom_console_logger.js")
 ;
 
 const PromiseContext = module.exports = function ( executor, options, executorParams ) {
@@ -99,14 +99,25 @@ PromiseContext.prototype = {
         return;
       }
 
+      // Invoke resolve method. Don't bother about arguments, pass it on as is.
+      if( resolve instanceof Promise ) {
+        resolve.apply(null, arguments)
+          .catch( function ( reason ) {
+            logger.trace( "PromiseContext :: resolve threw an error :: " ,  reason );
+          });
+      }else {
+        try {
+          resolve.apply(null, arguments);
+        }catch (e){
+          logger.trace( "PromiseContext :: resolve threw an error :: " ,  e );
+        }
+      }
+
       // Update the flags.
       oThis.isResolved  = true;
 
       // Trigger Callback if available.
       oThis.onResolved && oThis.onResolved( resolvedValue, oThis );
-
-      // Invoke resolve method. Don't bother about arguments, pass it on as is.
-      resolve.apply(null, arguments);
 
       // Clean Up
       oThis.cleanup();
@@ -129,14 +140,28 @@ PromiseContext.prototype = {
         return;
       }
 
+      // Invoke reject method. Don't bother about arguments, pass it on as is.
+      if( reject instanceof Promise ){
+        reject.apply(null, arguments)
+          .catch( function ( reason ) {
+            logger.trace( "PromiseContext :: reject threw an error :: " ,  reason );
+            setTimeout( function ( ) {
+               return Promise.reject( reason );
+            } , 100 ) ;
+          });
+      }else {
+        try {
+          reject.apply( null, arguments );
+        }catch (e){
+          logger.trace( "PromiseContext :: reject threw an error :: " ,  e );
+        }
+      }
+
       // Update the flags.
       oThis.isRejected  = true;
 
       // Trigger Callback if available.
       oThis.onRejected && oThis.onRejected( reason, oThis );
-
-      // Invoke reject method. Don't bother about arguments, pass it on as is.
-      reject.apply(null, arguments);
 
       // Clean Up
       oThis.cleanup();
@@ -167,17 +192,24 @@ PromiseContext.prototype = {
         oThis.onTimedout( oThis );
       }
 
+      logger.error("PromiseContext :: timeout :: a promise has timedout. executorParams: " , oThis.executorParams ) ;
+
       if ( oThis.resolvePromiseOnTimeout ) {
-        logMe && logger.warn("PromiseContext :: a promise has timedout. Forcefully Resolving it.");
-        logger.error( oThis.executorParams + " :: Zombie process has been detected.");
+
+        logMe && logger.warn("PromiseContext :: timeout ::  Forcefully Resolving it.");
         oThis.resolve( oThis.resolvedValueOnTimeout );
+
       } else if( oThis.rejectPromiseOnTimeout ){
-        logMe && logger.warn("PromiseContext :: a promise has timedout. Forcefully Rejecting it.");
-        logger.error( oThis.executorParams + " :: Zombie process has been detected.");
+
+        logMe && logger.warn("PromiseContext :: timeout ::  Forcefully Rejecting it.");
         oThis.reject(oThis.rejectedReasonOnTimeout);
+
       } else {
-        logger.error("PromiseContext :: Zombie process has been detected.") ;
+
+        logger.error("PromiseContext :: timeout :: Zombie process has been detected." ) ;
         oThis.logInfo();
+        oThis.cleanup();
+
       }
 
       // IMPORTANT: DO NOT CLEAN UP HERE.

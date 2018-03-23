@@ -5,9 +5,9 @@ const logMe = true
     , defaultTimeout = 30000
 ;
 
-const rootPrefix  = "../../executables/rmq_subscribers/"
-    , PromiseContext = require(rootPrefix + "PromiseContext")
-    , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+const rootPrefix  = "../../"
+    , PromiseContext = require(rootPrefix + "executables/rmq_subscribers/PromiseContext.js")
+    , logger = require(rootPrefix + "lib/logger/custom_console_logger.js")
 ;
 
 const Manager = module.exports = function ( promiseExecutor, options ) {
