@@ -31,10 +31,12 @@ PromiseContext.prototype = {
   //  To Auto-Resolve a promise on timeout, set resolvePromiseOnTimeout to true.
   //  It can be set using options parameter in constructor.
   , resolvePromiseOnTimeout: false
+  , rejectPromiseOnTimeout: false
 
   // The value to be passed to resolve when the Promise has timedout.
   //  It can be set using options parameter in constructor.
   , resolvedValueOnTimeout: null
+  , rejectedReasonOnTimeout : "Promise has timed out"
 
   , onResolved  : function ( resolvedValue, promiseContext ) {
     //  Triggered when callback is resolved.
@@ -162,9 +164,9 @@ PromiseContext.prototype = {
       if ( oThis.resolvePromiseOnTimeout ) {
         logMe && console.log("PromiseContext :: a promise has timedout. Forcefully Resolving it.");
         oThis.resolve( oThis.resolvedValueOnTimeout );
-      } else {
+      } else if( oThis.rejectPromiseOnTimeout ){
         logMe && console.log("PromiseContext :: a promise has timedout. Forcefully Rejecting it.");
-        oThis.reject("Promise TimedOut");
+        oThis.reject(oThis.rejectedReasonOnTimeout);
       }
 
       // IMPORTANT: DO NOT CLEAN UP HERE.
@@ -256,6 +258,42 @@ PromiseContext.Examples = {
         console.log("Examples.simpleTimeout :: p4 timedout.");
       }
     });
+  }
+  ,rejectPromiseOnTimeout : function () {
+    var p5 = new PromiseContext( function (resolve, reject) {
+      // Lets call resolve in 6 secs
+      setTimeout(function () {
+        reject("p5 resolved");
+      }, 6000);
+    }, {
+      timeoutInMilliSecs : 3000
+      , rejectPromiseOnTimeout: true
+      , onTimedout: function ( promiseContext ) {
+        console.log("Examples.simpleTimeout :: p5 timedout.");
+      }
+    });
+  }
+  ,zomibePromiseTimedOut : function () {
+    var p6 = new PromiseContext( function (resolve, reject) {
+      // Do nothing
+
+    }, {
+      timeoutInMilliSecs : 3000
+      , resolvePromiseOnTimeout : false
+      , rejectPromiseOnTimeout: false
+      , onTimedout: function ( promiseContext ) {
+        console.log("Examples.simpleTimeout :: p6 timedout.");
+      }
+    });
+  }
+  , testAll : function () {
+    var oThis =  this;
+    oThis.simpleResolve();
+    oThis.simpleReject();
+    oThis.simpleTimeout();
+    oThis.resolvePromiseOnTimeout();
+    oThis.rejectPromiseOnTimeout();
+    oThis.zomibePromiseTimedOut();
   }
 };
 
