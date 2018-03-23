@@ -20,6 +20,7 @@ const SetWorkerKlass = function (params) {
   var oThis = this;
   oThis.tokenSymbol = params['token_symbol'];
   oThis.clientId = params['client_id'];
+  oThis.waitForReceipt = params['wait_for_recipt'] || false;
 
   oThis.workerContractAddress = chainIntConstants.UTILITY_WORKERS_CONTRACT_ADDRESS;
   oThis.senderAddress = chainIntConstants.UTILITY_OPS_ADDR;
@@ -51,6 +52,7 @@ SetWorkerKlass.prototype = {
         , formattedPromiseResponses = {}
         , promise = null;
 
+    var returnType = (oThis.waitForReceipt ? 'txReceipt' : 'txHash');
     for(var i=0; i<workerAddrs.length; i++) {
       promise = workers.setWorker(
           oThis.senderAddress,
@@ -58,7 +60,7 @@ SetWorkerKlass.prototype = {
           workerAddrs[i],
           oThis.deactivationHeight,
           oThis.gasPrice,
-          {returnType: "txHash", tag: ""}
+          {returnType: returnType, tag: ""}
       );
       promiseResolvers.push(promise);
     }

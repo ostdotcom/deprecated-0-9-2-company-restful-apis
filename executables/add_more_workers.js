@@ -10,6 +10,7 @@ const rootPrefix = ".."
     , GenerateEthAddressKlass = require(rootPrefix + '/app/services/address/generate')
     , responseHelper = require(rootPrefix + '/lib/formatter/response')
     , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+    , fetchWorkerStatusesKlass = require(rootPrefix + '/app/services/airdrop_management/fetch_workers_statuses')
 ;
 
 const addMoreWorkersKlass = function(params){
@@ -49,11 +50,7 @@ addMoreWorkersKlass.prototype = {
     }
     
     var r = await oThis.associateWorkerAddresses();
-    if (r.isFailure()) {
-      return Promise.resolve(r);
-    }
-
-    return oThis.checkTransactionStatuses();
+    return Promise.resolve(r);
 
   },
 
@@ -164,9 +161,11 @@ addMoreWorkersKlass.prototype = {
         if (!clientId) {
           break;
         }
+        logger.info('sending txs for clientId', clientId);
         var setWorkerObj = new SetWorkerKlass({
           client_id: clientId,
-          token_symbol: oThis.clientIdSymbolMap[clientId]
+          token_symbol: oThis.clientIdSymbolMap[clientId],
+          wait_for_recipt: true
         });
 
         promiseResolvers.push(setWorkerObj.perform());
@@ -177,35 +176,25 @@ addMoreWorkersKlass.prototype = {
 
       for(var i=0; i<promiseResponses.length; i++) {
 
-        var r = promiseResponses[i];
-
-        if (r.isFailure()) {
-          return Promise.resolve(r);
+        var trxHashesResponse = promiseResponses[i];
+        if(trxHashesResponse.isSuccess()){
+          const workerStatusesResponse = await new fetchWorkerStatusesKlass({transaction_records: trxHashesResponse.data}).perform();
+          if(workerStatusesResponse.isSuccess()){
+            logger.info('Workers are marked active for clientId', clientId);
+            oThis.clientIdSetWorkerRsp[clientId] = workerStatusesResponse.data;
+          }
         }
-
-        oThis.clientIdSetWorkerRsp[clientId] = r.data;
-
       }
 
       processedCnt = processedCnt + batchCnt;
 
     }
 
-    return responseHelper.successWithData({});
+    return responseHelper.successWithData(oThis.clientIdSetWorkerRsp);
     
-  },
-
-  checkTransactionStatuses: async function() {
-
-    const oThis = this;
-
-    console.log(oThis.clientIdSetWorkerRsp);
-
-    return responseHelper.successWithData({});
-
   }
 
 };
 
-const obj = new addMoreWorkersKlass({startClientId: 1001, endClientId: 1002, newWorkersCnt: 4, clientIds: []});
-obj.perform().then();
+const obj = new addMoreWorkersKlass({startClientId: 1001, endClientId: 1003, newWorkersCnt: 4, clientIds: []});
+obj.perform().then(console.log);
