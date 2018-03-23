@@ -16,6 +16,9 @@ const rootPrefix = '../../..'
   , kmsWrapperKlass = require(rootPrefix + '/lib/authentication/kms_wrapper')
   , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
   , clientBrandedToken = new ClientBrandedTokenKlass()
+  , ClientWorkerManagedAddressIdsKlass = require(rootPrefix + '/app/models/client_worker_managed_address_id')
+  , clientWorkerAddrObj = new ClientWorkerManagedAddressIdsKlass()
+  , clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id')
   , ManagedAddressSaltKlass = require(rootPrefix + '/app/models/managed_address_salt')
   , managedAddressSaltObj = new ManagedAddressSaltKlass()
   , ManagedAddressModelKlass = require(rootPrefix + '/app/models/managed_address')
@@ -47,10 +50,14 @@ const SetupToken = function (params) {
   oThis.symbol_icon = params.symbol_icon;
 
   oThis.existingToken = null;
+  oThis.existingWorkerManagedAddressIds = [];
 
   oThis.reserveAddrUuid = null;
-  oThis.workerAddrUuid = null;
   oThis.airdropHolderAddrUuid = null;
+  oThis.workerAddrUuids = [];
+  oThis.newWorkerManagedAddressIds = [];
+
+  oThis.allowedWorkersCnt = 5; // check max supported in contract and populate this
 
 };
 
@@ -75,7 +82,10 @@ SetupToken.prototype = {
     r = await oThis.setClientAddressSalt();
     if (r.isFailure()) return Promise.resolve(r);
 
-    r = await oThis.getSetClientAddresses();
+    r = await oThis.getExistingManagedAddress();
+    if (r.isFailure()) return Promise.resolve(r);
+
+    r = await oThis.setClientAddresses();
     if (r.isFailure()) return Promise.resolve(r);
 
     r = await oThis.createClientToken();
@@ -133,10 +143,17 @@ SetupToken.prototype = {
   },
 
   getExistingManagedAddress: async function () {
+
     var oThis = this
-      , clientTokenByClientId = await clientBrandedToken.getByClientId(oThis.clientId);
+      , clientTokenByClientId = await clientBrandedToken.getByClientId(oThis.clientId)
+      , existingWorkerManagedAddresses = await clientWorkerAddrObj.getByClientId(oThis.clientId);
+
     if (clientTokenByClientId.length > 0) {
       oThis.existingToken = clientTokenByClientId[clientTokenByClientId.length - 1];
+    }
+
+    for(var i=0; i<existingWorkerManagedAddresses.length; i++) {
+      oThis.existingWorkerManagedAddressIds.push(existingWorkerManagedAddresses[i].managed_address_id)
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -150,12 +167,12 @@ SetupToken.prototype = {
    * @return {promise<result>}
    *
    */
-  getSetClientAddresses: async function () {
+  setClientAddresses: async function () {
     var oThis = this
       , promisesArray = [];
 
     promisesArray.push(oThis.setClientReserveAddress());
-    promisesArray.push(oThis.setClientWorkerAddress());
+    promisesArray.push(oThis.setClientWorkerAddresses());
     promisesArray.push(oThis.setClientAirdropHolderAddress());
 
     await Promise.all(promisesArray);
@@ -172,6 +189,7 @@ SetupToken.prototype = {
    *
    */
   setClientReserveAddress: function () {
+
     var oThis = this
       , managedAddressModelObj = new ManagedAddressModelKlass();
 
@@ -206,32 +224,42 @@ SetupToken.prototype = {
   /**
    * Get and set client reserve address. Generate new address if already not found.
    *
-   * @set worker_managed_address_id, workerAddrUuid
+   * @set workerAddrUuids
    * @return {promise<result>}
    *
    */
-  setClientWorkerAddress: function () {
+  setClientWorkerAddresses: function () {
+
     var oThis = this
       , managedAddressModelObj = new ManagedAddressModelKlass();
 
     return new Promise(async function (onResolve, onReject) {
-      if (oThis.existingToken && oThis.existingToken.worker_managed_address_id) {
-        oThis.worker_managed_address_id = oThis.existingToken.worker_managed_address_id;
-        const manageAddrObj = await managedAddressModelObj.getByIds([oThis.worker_managed_address_id]);
-        oThis.workerAddrUuid = manageAddrObj[0].uuid;
-        return onResolve(responseHelper.successWithData({}));
-      } else {
-        const generateEthAddress = new GenerateEthAddressKlass({
-            addressType: managedAddressesConst.workerAddressType,
-            clientId: oThis.clientId
-        });
-        var r = await generateEthAddress.perform();
-        if (r.isFailure()) return onResolve(r);
-        const resultData = r.data[r.data.result_type][0];
-        oThis.worker_managed_address_id = resultData.id;
-        oThis.workerAddrUuid = resultData.uuid;
+
+      if (oThis.existingWorkerManagedAddressIds.length > 0) {
+
+        const manageAddrObj = await managedAddressModelObj.getByIds(oThis.existingWorkerManagedAddressIds);
+        for(var i=0; i<manageAddrObj.length; i++) {
+          oThis.workerAddrUuids.push(manageAddrObj[i].uuid);
+        }
 
         return onResolve(responseHelper.successWithData({}));
+
+      } else {
+
+        for(var i=0; i<oThis.allowedWorkersCnt; i++) {
+          var generateEthAddress = new GenerateEthAddressKlass({
+            addressType: managedAddressesConst.workerAddressType,
+            clientId: oThis.clientId
+          });
+          var r = await generateEthAddress.perform();
+          if (r.isFailure()) return onResolve(r);
+          const resultData = r.data[r.data.result_type][0];
+          oThis.workerAddrUuids.push(resultData.uuid);
+          oThis.newWorkerManagedAddressIds.push(resultData.id);
+        }
+
+        return onResolve(responseHelper.successWithData({}));
+
       }
 
     });
@@ -290,7 +318,6 @@ SetupToken.prototype = {
       symbol: oThis.symbol,
       symbol_icon: oThis.symbol_icon,
       reserve_managed_address_id: oThis.reserve_managed_address_id,
-      worker_managed_address_id: oThis.worker_managed_address_id,
       airdrop_holder_managed_address_id: oThis.airdrop_holder_managed_address_id,
       name: oThis.name
     };
@@ -298,7 +325,20 @@ SetupToken.prototype = {
     // create entry in client token
     var result = await clientBrandedToken.create(oThis.clientTokenObj);
 
+    var managedAddressInsertData = []
+        , newWorkerManagedAddressIdsLength = oThis.newWorkerManagedAddressIds.length;
+
+    if (newWorkerManagedAddressIdsLength > 0) {
+      for (var i = 0; i < newWorkerManagedAddressIdsLength; i++) {
+        managedAddressInsertData.push([oThis.clientId, oThis.newWorkerManagedAddressIds[i],
+          clientWorkerAddrObj.invertedStatuses[clientWorkerManagedAddressConst.inactiveStatus]]);
+      }
+      var fields = ['client_id', 'managed_address_id', 'status'];
+      const queryResponse = await clientWorkerAddrObj.bulkInsert(fields, managedAddressInsertData);
+    }
+
     return Promise.resolve(responseHelper.successWithData({}));
+
   },
 
   /**
@@ -329,7 +369,7 @@ SetupToken.prototype = {
       {
         id: oThis.reserve_managed_address_id,
         reserveUuid: oThis.reserveAddrUuid,
-        workerAddrUuid: oThis.workerAddrUuid,
+        workerAddrUuids: oThis.workerAddrUuids,
         airdropHolderAddrUuid: oThis.airdropHolderAddrUuid,
         name: oThis.name,
         client_id: oThis.clientId

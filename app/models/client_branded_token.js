@@ -58,6 +58,16 @@ const ClientBrandedTokenKlassPrototype = {
         order: 'id DESC'
       }
     );
+  },
+
+  getByClientIds: function(client_ids){
+    const oThis = this;
+    return oThis.QueryDB.readByInQuery(
+        oThis.tableName,
+        ['client_id','symbol'],
+        client_ids,
+        'client_id'
+    );
   }
 
 };

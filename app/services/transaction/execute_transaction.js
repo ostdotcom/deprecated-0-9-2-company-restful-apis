@@ -29,8 +29,10 @@ const rootPrefix = '../../..'
   , ApproveContractKlass = require(rootPrefix + '/lib/transactions/approve_contract')
   , TransferStPrimeKlass = require(rootPrefix + '/lib/transactions/stPrime_transfer')
   , ClientTrxRateCacheKlass = require(rootPrefix + '/lib/cache_management/client_transactions_rate_limit')
-  , StPrimeBalanceAvailability = require(rootPrefix + '/lib/cache_management/user_stPrime_availability')
-;
+  , ClientWorkerManagedAddressIdsKlass = require(rootPrefix + '/app/models/client_worker_managed_address_id')
+  , clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id')
+  , ClientActiveWorkerUuidCacheKlass = require(rootPrefix + '/lib/cache_management/client_active_worker_uuid')
+  ;
 
 const approveAmount = basicHelper.convertToWei('1000000000000000')
 ;
@@ -43,6 +45,7 @@ const approveAmount = basicHelper.convertToWei('1000000000000000')
  * @param {number} params.transactionLogId - transaction log id
  * @param {string} params.transactionUuid - transaction uuid.
  * @param {number} params.client_id - client id who is performing a transaction.
+ * @param {number} params.rateLimitCount - count which was used to check if tx should go into slow / fast queue.
  * @param {string} params.token_symbol - Token symbol whose transaction would be executed.
  * @param {String} params.from_uuid - UUID of from user's address.
  * @param {String} params.to_uuid - UUID of to user's address.
@@ -54,6 +57,8 @@ const ExecuteTransactionKlass = function (params) {
 
   oThis.transactionLogId = params.transactionLogId;
   oThis.transactionUuid = params.transactionUuid;
+  oThis.rateLimitCount = params.rateLimitCount;
+
   oThis.clientId = params.client_id;
   oThis.fromUuid = params.from_uuid;
   oThis.toUuid = params.to_uuid;
@@ -66,6 +71,8 @@ const ExecuteTransactionKlass = function (params) {
   oThis.userRecords = null;
   oThis.transactionHash = null;
   oThis.clientBrandedToken = null;
+  oThis.availableWorkerUuids = null;
+
 };
 
 ExecuteTransactionKlass.prototype = {
@@ -193,9 +200,9 @@ ExecuteTransactionKlass.prototype = {
    * @Sets clientBrandedToken
    * @return {Promise<ResultBase>}
    */
-  validateClientToken: async function () {
-    const oThis = this
-    ;
+  validateClientToken: async function() {
+
+    const oThis = this;
 
     const btCache = new BTCacheKlass({clientId: oThis.clientId})
       , btCacheRsp = await btCache.fetch();
@@ -220,13 +227,20 @@ ExecuteTransactionKlass.prototype = {
     }
 
     // Client Token has not been set if worker uuid or token address or airdrop address not present.
-    if (!cacheRsp.data.worker_address_uuid || !cacheRsp.data.token_erc20_address || !cacheRsp.data.airdrop_contract_address) {
+    if(!cacheRsp.data.token_erc20_address || !cacheRsp.data.airdrop_contract_address){
       return Promise.resolve(responseHelper.error("s_t_et_4", "Token not set", null, {}, {sendErrorEmail: false}));
     }
 
     oThis.clientBrandedToken = cacheRsp.data;
 
-    return Promise.resolve(responseHelper.successWithData({}))
+    const clientUuidCacheRsp = await new ClientActiveWorkerUuidCacheKlass({client_id: oThis.clientId}).fetch();
+    if (clientUuidCacheRsp.isFailure() || clientUuidCacheRsp.data.length == 0) {
+      return Promise.resolve(responseHelper.error("s_t_et_5", "no workers to process", null, {}, {sendErrorEmail: false}));
+    }
+    oThis.availableWorkerUuids = clientUuidCacheRsp.data;
+
+    return Promise.resolve(responseHelper.successWithData({}));
+
   },
 
   /**
@@ -242,13 +256,10 @@ ExecuteTransactionKlass.prototype = {
       return Promise.resolve(responseHelper.error("s_t_et_5", "Invalid users.", null, {}, {sendErrorEmail: false}));
     }
 
-    const managedAddressCache = new ManagedAddressCacheKlass({
-      'uuids':
-        [oThis.fromUuid, oThis.toUuid, oThis.clientBrandedToken.reserve_address_uuid,
-          oThis.clientBrandedToken.worker_address_uuid]
-    });
+    const uuidsToFetch = [oThis.fromUuid, oThis.toUuid, oThis.clientBrandedToken.reserve_address_uuid];
+    const managedAddressCache = new ManagedAddressCacheKlass({'uuids': uuidsToFetch});
 
-    const cacheFetchResponse = await managedAddressCache.fetchDecryptedData(['passphrase']);
+    const cacheFetchResponse = await managedAddressCache.fetch();
 
     if (cacheFetchResponse.isFailure()) {
       return Promise.resolve(responseHelper.error("s_t_et_6", "Invalid user Ids", null, {}, {sendErrorEmail: false}));
@@ -281,8 +292,17 @@ ExecuteTransactionKlass.prototype = {
       }
     }
 
+    // Check for worker ST Prime Balance
+    // var workerUser = cacheFetchResponse.data[oThis.clientBrandedToken.worker_address_uuid];
+    // var balanceAvailable = await new StPrimeBalanceAvailability().isSTPrimeBalanceAvailable(workerUser.ethereum_address);
+    // console.log("-------------------------------------------------------", balanceAvailable);
+    // if(balanceAvailable.isSuccess() && parseInt(balanceAvailable.data.isBalanceAvailable) === 0){
+    //   return Promise.resolve(responseHelper.error("s_t_et_16", "Reserve is running low on ST Prime balance", null, {}, {sendErrorEmail: false}));
+    // }
+
     oThis.userRecords = cacheFetchResponse.data;
     return Promise.resolve(responseHelper.successWithData({}));
+
   },
 
   /**
@@ -408,9 +428,16 @@ ExecuteTransactionKlass.prototype = {
     const airdropPayment = new OpenSTPayment.airdrop(oThis.clientBrandedToken.airdrop_contract_address,
       chainInteractionConstants.UTILITY_CHAIN_ID);
 
-    var workerUser = oThis.userRecords[oThis.clientBrandedToken.worker_address_uuid];
+    var index = oThis.rateLimitCount % oThis.availableWorkerUuids.length
+        , workerUuid = oThis.availableWorkerUuids[index];
+
+    var workerUser = oThis.userRecords[workerUuid];
     var reserveUser = oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid];
-    if (!workerUser || !reserveUser) {
+
+    console.log('workerUser', workerUser);
+    console.log('workerUuid', workerUuid);
+
+    if(!workerUser || !reserveUser){
       await oThis.updateParentTransactionLog(transactionLogConst.failedStatus, {error: "Worker or reserve user not found. "});
       return Promise.resolve(responseHelper.error('s_t_et_14', "Worker or reserve user not found", null, {}, {sendErrorEmail: false}));
     }
@@ -444,12 +471,30 @@ ExecuteTransactionKlass.prototype = {
     });
 
     if (payResponse.isFailure()) {
+
+      // TODO: Fix bug
       // Mark ST Prime balance is low for worker for future transactions.
       // if(response.err.code.includes("l_ci_h_pse_gas_low")){
       //   new StPrimeBalanceAvailability().markSTPrimeUnavailable(workerUser.ethereum_address);
       // }
+
+      // Mark ST Prime balance is low for worker for future transactions.
+      const modelObj = new ClientWorkerManagedAddressIdsKlass();
+
+      const dbObject = await modelObj.select('id, properties')
+          .where(['client_id=? AND managed_address_id=?', oThis.clientId, workerUser.id]).fire()[0];
+
+      await modelObj.edit({
+        qParams: {properties: modelObj.unsetBit(clientWorkerManagedAddressConst.hasStPrimeBalanceProperty, dbObject.properties)},
+        whereCondition: {id: dbObject.id}
+      });
+
+      // Flush worker uuids cache
+      new ClientActiveWorkerUuidCacheKlass({client_id: oThis.clientId}).clear();
+
       oThis.updateParentTransactionLog(transactionLogConst.failedStatus, payResponse.err);
       return Promise.resolve(payResponse);
+
     }
 
     oThis.transactionHash = payResponse.data.transaction_hash;
@@ -457,6 +502,7 @@ ExecuteTransactionKlass.prototype = {
     oThis.updateParentTransactionLog(transactionLogConst.completeStatus);
 
     return Promise.resolve(responseHelper.successWithData({}));
+
   },
 
   /**
@@ -481,6 +527,7 @@ ExecuteTransactionKlass.prototype = {
   },
 
   executeTransaction: async function () {
+
     const oThis = this;
 
     try {
@@ -494,6 +541,9 @@ ExecuteTransactionKlass.prototype = {
         if (rateLimitCrossed.isSuccess() && rateLimitCrossed.data.limitCrossed) {
           topicName = 'slow.transaction.execute'
         }
+        if (!oThis.rateLimitCount) {
+          oThis.rateLimitCount = rateLimitCrossed.data.rateLimitCount;
+        }
         const setToRMQ = await openSTNotification.publishEvent.perform(
           {
             topics: [topicName],
@@ -502,7 +552,8 @@ ExecuteTransactionKlass.prototype = {
               kind: 'execute_transaction',
               payload: {
                 transactionLogId: oThis.transactionLogId,
-                transactionUuid: oThis.transactionUuid
+                transactionUuid: oThis.transactionUuid,
+                rateLimitCount: oThis.rateLimitCount
               }
             }
           }
@@ -519,6 +570,7 @@ ExecuteTransactionKlass.prototype = {
     }
 
     return Promise.resolve(responseHelper.successWithData({}))
+
   },
 
   /**
@@ -550,7 +602,6 @@ ExecuteTransactionKlass.prototype = {
     const sendAirdropPayResponse = await oThis.sendAirdropPay();
     return Promise.resolve(sendAirdropPayResponse);
   }
-
 
 };
 

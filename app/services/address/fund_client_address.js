@@ -20,7 +20,9 @@ const rootPrefix = '../../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
-  , userSTPrimeAvailability = require(rootPrefix + '/lib/cache_management/user_stPrime_availability')
+  , ClientWorkerManagedAddressIdsKlass = require(rootPrefix + '/app/models/client_worker_managed_address_id')
+  , clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id')
+  , ClientActiveWorkerUuidCacheKlass = require(rootPrefix + '/lib/cache_management/client_active_worker_uuid')
 ;
 
 /**
@@ -34,7 +36,10 @@ const FundClientAddressKlass = function (params) {
 
   const oThis = this;
   oThis.clientId = params.client_id;
-  oThis.addrTypeToAddrMap = {};
+
+  oThis.reserveAddrObj = null;
+  oThis.airdropHolderAddrObj = null;
+  oThis.workerAddrObjs = [];
 
 };
 
@@ -99,26 +104,47 @@ FundClientAddressKlass.prototype = {
    * @private
    */
   _setAddresses: async function() {
+
     const oThis = this;
 
     const clientBrandedTokenObj = new ClientBrandedTokenKlass();
     const clientBrandedTokens = await clientBrandedTokenObj.getByClientId(oThis.clientId);
 
     // assuming that the last token is the only token.
-    const brandedToken = clientBrandedTokens[clientBrandedTokens.length - 1];
+    const brandedToken = clientBrandedTokens[clientBrandedTokens.length - 1]
+        , clientWorkerAddrObj = new ClientWorkerManagedAddressIdsKlass()
+        , existingWorkerManagedAddresses = await clientWorkerAddrObj.getActiveByClientId(oThis.clientId)
+        , workerManagedAddressIds = []
+    ;
 
-    const managedAddressObj = new ManagedAddressKlass();
+    for(var i=0; i<existingWorkerManagedAddresses.length; i++) {
+      workerManagedAddressIds.push(existingWorkerManagedAddresses[i].managed_address_id);
+    }
+
+    const managedAddressObj = new ManagedAddressKlass()
+        , reserveAddressType = managedAddressObj.invertedAddressTypes[managedAddressesConst.reserveAddressType]
+        , airdropHolderAddressType = managedAddressObj.invertedAddressTypes[managedAddressesConst.airdropHolderAddressType]
+        , workerAddressType = managedAddressObj.invertedAddressTypes[managedAddressesConst.workerAddressType]
+    ;
+
     const managedAddresses = await managedAddressObj.getByIds([
       brandedToken.reserve_managed_address_id,
-      brandedToken.worker_managed_address_id,
       brandedToken.airdrop_holder_managed_address_id
-    ]);
+    ].concat(workerManagedAddressIds));
 
     for(var i=0; i<managedAddresses.length; i++){
       var addressObj = managedAddresses[i];
-      oThis.addrTypeToAddrMap[addressObj.address_type] = addressObj;
+      if (addressObj.address_type == reserveAddressType) {
+        oThis.reserveAddrObj = addressObj;
+      } else if (addressObj.address_type == airdropHolderAddressType) {
+        oThis.airdropHolderAddrObj = addressObj;
+      } else if (addressObj.address_type == workerAddressType) {
+        oThis.workerAddrObjs.push(addressObj);
+      }
     }
-    return Promise.resolve(responseHelper.successWithData({}))
+
+    return Promise.resolve(responseHelper.successWithData({}));
+
   },
 
   /**
@@ -129,29 +155,47 @@ FundClientAddressKlass.prototype = {
    */
   _transferStPrimeIfNeeded: async function(){
 
-    const oThis = this
-      , managedAddressObj = new ManagedAddressKlass()
-      , reserveAddrObj = oThis.addrTypeToAddrMap[managedAddressObj.invertedAddressTypes[managedAddressesConst.reserveAddressType]]
-      , workerAddrObj = oThis.addrTypeToAddrMap[managedAddressObj.invertedAddressTypes[managedAddressesConst.workerAddressType]]
-      , airdropHolderAddrObj = oThis.addrTypeToAddrMap[managedAddressObj.invertedAddressTypes[managedAddressesConst.airdropHolderAddressType]]
-    ;
+    const oThis = this;
 
     const reservePassphraseD = 'no_password';
 
-    if(await oThis._isTransferRequired(workerAddrObj.ethereum_address)) {
-      //transfer to worker
-      const transferBalanceResponse = await oThis._transferBalance(reserveAddrObj.ethereum_address, reservePassphraseD,
-        workerAddrObj.ethereum_address, oThis._TO_TRANSFER);
+    for(var i=0; i<oThis.workerAddrObjs.length; i++) {
 
-      if(transferBalanceResponse.isSuccess()) {
-        new userSTPrimeAvailability().markSTPrimeAvailable(workerAddrObj.ethereum_address);
+      var workerAddrObj = oThis.workerAddrObjs[i];
+
+      if(await oThis._isTransferRequired(workerAddrObj.ethereum_address)) {
+
+        //transfer to worker
+        const transferBalanceResponse = await oThis._transferBalance(oThis.reserveAddrObj.ethereum_address, reservePassphraseD,
+            workerAddrObj.ethereum_address, oThis._TO_TRANSFER);
+
+        if(transferBalanceResponse.isSuccess()) {
+
+          const modelObj = new ClientWorkerManagedAddressIdsKlass();
+
+          const dbObjects = await modelObj.select('id, properties')
+              .where(['client_id=? AND managed_address_id=?', oThis.clientId, workerAddrObj.id]).fire()
+          , dbObject = dbObjects[0];
+
+          await modelObj.edit(
+              {
+                qParams: {properties: modelObj.setBit(clientWorkerManagedAddressConst.hasStPrimeBalanceProperty, dbObject.properties)},
+                whereCondition: {id: dbObject.id}
+              }
+          );
+
+          new ClientActiveWorkerUuidCacheKlass({client_id: oThis.clientId}).clear();
+
+        }
+
       }
+
     }
 
-    if(await oThis._isTransferRequired(airdropHolderAddrObj.ethereum_address)){
+    if(await oThis._isTransferRequired(oThis.airdropHolderAddrObj.ethereum_address)){
       //transfer to airdrop holder
-      await oThis._transferBalance(reserveAddrObj.ethereum_address, reservePassphraseD,
-        airdropHolderAddrObj.ethereum_address, oThis._TO_TRANSFER)
+      await oThis._transferBalance(oThis.reserveAddrObj.ethereum_address, reservePassphraseD,
+          oThis.airdropHolderAddrObj.ethereum_address, oThis._TO_TRANSFER);
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -169,8 +213,7 @@ FundClientAddressKlass.prototype = {
   _checkBalanceOfReserveAddress: async function () {
     const oThis = this
       , managedAddressObj = new ManagedAddressKlass()
-      , reserveAddrObj = oThis.addrTypeToAddrMap[managedAddressObj.invertedAddressTypes[managedAddressesConst.reserveAddressType]]
-      , ethereumAddress = reserveAddrObj.ethereum_address
+      , ethereumAddress = oThis.reserveAddrObj.ethereum_address
       , minReserveAddrBalanceInWei = oThis._MIN_ALERT_BALANCE_RESERVE
       , minReserveAddrBalanceToProceedInWei = oThis._MIN_AVAILABLE_BALANCE_RESERVE
       , fetchBalanceObj = new openStPlatform.services.balance.simpleTokenPrime({address: ethereumAddress})
@@ -195,6 +238,7 @@ FundClientAddressKlass.prototype = {
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
+
   },
 
   /**
@@ -206,6 +250,7 @@ FundClientAddressKlass.prototype = {
    * @private
    */
   _isTransferRequired: async function (ethereumAddress) {
+
     const oThis = this
       , fetchBalanceObj = new openStPlatform.services.balance.simpleTokenPrime({address: ethereumAddress})
       , balanceResponse = await fetchBalanceObj.perform()
@@ -223,6 +268,7 @@ FundClientAddressKlass.prototype = {
     } else {
       return Promise.resolve(false);
     }
+
   },
 
   /**
@@ -239,15 +285,18 @@ FundClientAddressKlass.prototype = {
   _transferBalance: async function (reserveAddress, reservePassphrase, recipientAddress, transferAmountInWei) {
 
     const oThis = this
+        , transferParams = {
+          sender_address: reserveAddress,
+          sender_passphrase: reservePassphrase,
+          recipient_address: recipientAddress,
+          amount_in_wei: transferAmountInWei,
+          options: {returnType: 'txReceipt', tag: ''}
+        }
     ;
 
-    const transferSTPrimeBalanceObj = new openStPlatform.services.transaction.transfer.simpleTokenPrime({
-      sender_address: reserveAddress,
-      sender_passphrase: reservePassphrase,
-      recipient_address: recipientAddress,
-      amount_in_wei: transferAmountInWei,
-      options: {returnType: 'txReceipt', tag: ''}
-    });
+    console.log('transferParams', transferParams);
+
+    const transferSTPrimeBalanceObj = new openStPlatform.services.transaction.transfer.simpleTokenPrime(transferParams);
 
     const transferResponse = await transferSTPrimeBalanceObj.perform();
 

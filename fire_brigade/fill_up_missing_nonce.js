@@ -4,7 +4,7 @@ const Buffer = require('safe-buffer').Buffer
 
 const rootPrefix = '..'
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
-  , fetchPrivateKeyKlass = require(rootPrefix + '/lib/key_management/fetch_private_key')
+  , fetchPrivateKeyKlass = require(rootPrefix + '/lib/cache_management/address_private_key')
 ;
 
 const FillUpMissingNonce = function(params) {
@@ -54,7 +54,7 @@ FillUpMissingNonce.prototype = {
   setPrivateKey: async function () {
     const oThis = this
       , fetchPrivateKeyObj = new fetchPrivateKeyKlass({'address': oThis.fromAddress})
-      , fetchPrivateKeyRsp = await fetchPrivateKeyObj.perform()
+      , fetchPrivateKeyRsp = await fetchPrivateKeyObj.fetchDecryptedData()
     ;
 
     if(fetchPrivateKeyRsp.isFailure()) {

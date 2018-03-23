@@ -79,11 +79,19 @@ const ManagedAddressKlassPrototype = {
       ethAddresses, 'ethereum_address');
   },
 
+  getByEthAddressesSecure: function (ethAddresses) {
+    var oThis = this;
+    return oThis.QueryDB.readByInQuery(
+        oThis.tableName,
+        ['ethereum_address', 'managed_address_salt_id', 'private_key'],
+        ethAddresses, 'ethereum_address');
+  },
+
   getByIds: function (ids) {
     var oThis = this;
     return oThis.QueryDB.readByInQuery(
       oThis.tableName,
-      ['id', 'uuid', 'address_type', 'ethereum_address', 'properties', 'private_key'],
+      ['id', 'uuid', 'address_type', 'ethereum_address', 'properties'],
       ids, 'id');
   },
 
@@ -194,8 +202,8 @@ const ManagedAddressKlassPrototype = {
     var oThis = this;
     return oThis.QueryDB.readByInQuery(
       oThis.tableName,
-      ['id', 'client_id', 'uuid', 'name', 'ethereum_address', 'private_key',
-        'status', 'properties', 'address_type', 'managed_address_salt_id'],
+      ['id', 'client_id', 'uuid', 'name', 'ethereum_address',
+        'status', 'properties', 'address_type'],
       uuids, 'uuid');
   },
 

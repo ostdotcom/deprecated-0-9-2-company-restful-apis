@@ -9,7 +9,7 @@ const rootPrefix = '../../..'
   , managedAddressObj = new ManagedAddressKlass()
   , AddressesEncryptorKlass = require(rootPrefix + '/lib/encryptors/addresses_encryptor')
   , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
-  , internalEthAddrUuidMapCacheKlass = require(rootPrefix + '/lib/cache_management/internal_eth_address_uuid_map')
+  , EthAddrPrivateKeyCacheKlass = require(rootPrefix + '/lib/cache_management/address_private_key')
   , managedAddressConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , ManagedAddressSaltKlass = require(rootPrefix + '/app/models/managed_address_salt')
   , managedAddressSaltObj = new ManagedAddressSaltKlass()
@@ -177,8 +177,8 @@ GenerateAddressKlass.prototype = {
     managedAddressCache.clear();
 
     if (addressType == managedAddressConst.internalChainIndenpendentAddressType) {
-      const internalEthAddrUuidMapCache = new internalEthAddrUuidMapCacheKlass({'address': eth_address});
-      internalEthAddrUuidMapCache.clear();
+      const ethAddrPrivateKeyCache = new EthAddrPrivateKeyCacheKlass({'address': eth_address});
+      ethAddrPrivateKeyCache.clear();
     }
 
     return responseHelper.successWithData({ethereum_address: eth_address});
@@ -206,7 +206,6 @@ GenerateAddressKlass.prototype = {
           return Promise.resolve(responseHelper.successWithData({managed_address_salt_id: resp.data.clientAddrSalt}));
         }
       }
-
 
       var KMSObject = new kmsWrapperKlass('managedAddresses');
       const newKey = await KMSObject.generateDataKey();

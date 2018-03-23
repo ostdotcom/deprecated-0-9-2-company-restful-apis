@@ -8,6 +8,10 @@ const rootPrefix = '../../..'
   , chainIntConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , clientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
   , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
+  , ClientWorkerManagedAddressIdsKlass = require(rootPrefix + '/app/models/client_worker_managed_address_id')
+  , clientWorkerManagedAddressIds = new ClientWorkerManagedAddressIdsKlass()
+  , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
 
@@ -25,7 +29,7 @@ const SetWorkerKlass = function (params) {
 
   oThis.deactivationHeight = basicHelper.convertToBigNumber(10).toPower(18).toString(10);
 
-  oThis.workerAddress = '';
+  oThis.workerAddressesIdMap = {};
 
 };
 
@@ -41,16 +45,39 @@ SetWorkerKlass.prototype = {
 
     const workers = new openStPayments.workers(oThis.workerContractAddress, oThis.chainId);
 
-    r = await workers.setWorker(
-      oThis.senderAddress,
-      oThis.senderPassphrase,
-      oThis.workerAddress,
-      oThis.deactivationHeight,
-      oThis.gasPrice,
-      {returnType: "txHash", tag: ""}
-    );
+    var workerAddrs = Object.keys(oThis.workerAddressesIdMap)
+        , promiseResolvers = []
+        , promiseResponses = []
+        , formattedPromiseResponses = {}
+        , promise = null;
 
-    return Promise.resolve(r);
+    for(var i=0; i<workerAddrs.length; i++) {
+      promise = workers.setWorker(
+          oThis.senderAddress,
+          oThis.senderPassphrase,
+          workerAddrs[i],
+          oThis.deactivationHeight,
+          oThis.gasPrice,
+          {returnType: "txHash", tag: ""}
+      );
+      promiseResolvers.push(promise);
+    }
+
+    promiseResponses = await Promise.all(promiseResolvers);
+
+    for(var i=0; i<promiseResolvers.length; i++) {
+      var r = promiseResponses[i];
+      if (r.isFailure()) {
+        logger.notify('s_ob_sw_1', 'Set Worker Failed', r.toHash);
+        return Promise.resolve(r);
+      } else {
+        r.data['status'] = transactionLogConst.processingStatus;
+        formattedPromiseResponses[oThis.workerAddressesIdMap[workerAddrs[i]]] = r.data;
+      }
+    }
+
+    return Promise.resolve(responseHelper.successWithData(formattedPromiseResponses));
+
   },
 
   validateAndSanitize: async function () {
@@ -73,13 +100,19 @@ SetWorkerKlass.prototype = {
       return Promise.resolve(responseHelper.error('ob_sw_1', 'Unauthorised request'));
     }
 
-    const workerManagedAddressId = brandedToken.worker_managed_address_id
-      , managedAddressInstance = new ManagedAddressKlass()
-      , managedAddresses = await managedAddressInstance.getByIds([workerManagedAddressId]);
+    const existingWorkerManagedAddresses = await clientWorkerManagedAddressIds.getInActiveByClientId(oThis.clientId);
+    var managedAddressIdClientWorkerAddrIdMap = {};
+    for(var i=0; i<existingWorkerManagedAddresses.length; i++) {
+      managedAddressIdClientWorkerAddrIdMap[parseInt(existingWorkerManagedAddresses[i].managed_address_id)] = existingWorkerManagedAddresses[i].id;
+    }
+    const managedAddressInstance = new ManagedAddressKlass()
+      , managedAddresses = await managedAddressInstance.getByIds(Object.keys(managedAddressIdClientWorkerAddrIdMap));
 
-    oThis.workerAddress = managedAddresses[0].ethereum_address;
+    for(var i=0; i<managedAddresses.length; i++) {
+      oThis.workerAddressesIdMap[managedAddresses[i].ethereum_address] = managedAddressIdClientWorkerAddrIdMap[managedAddresses[i].id];
+    }
 
-    if (!oThis.workerAddress) {
+    if (Object.keys(oThis.workerAddressesIdMap).length == 0) {
       return Promise.resolve(responseHelper.error('ob_sw_3', 'Worker address is mandatory.'));
     }
 

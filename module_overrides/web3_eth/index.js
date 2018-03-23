@@ -84,7 +84,7 @@ const Derived = function () {
 
       const Web3PromiEvent = require('web3-core-promievent')
         , hackedReturnedPromiEvent = Web3PromiEvent()
-        , fetchPrivateKeyKlass = require(rootPrefix + '/lib/key_management/fetch_private_key.js')
+        , fetchPrivateKeyKlass = require(rootPrefix + '/lib/cache_management/address_private_key')
       ;
 
       var privateKeyObj;
@@ -103,7 +103,7 @@ const Derived = function () {
 
       const getPrivateKey = async function () {
         const fetchPrivateKeyObj = new fetchPrivateKeyKlass({'address': fromAddress})
-          , fetchPrivateKeyRsp = await fetchPrivateKeyObj.perform()
+          , fetchPrivateKeyRsp = await fetchPrivateKeyObj.fetchDecryptedData()
         ;
 
         if (fetchPrivateKeyRsp.isFailure()) {
