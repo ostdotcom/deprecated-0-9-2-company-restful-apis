@@ -46,21 +46,9 @@
 > echo "export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform" >> ~/.bash_profile
 ```
 
-* Change the gas price for deployment steps for utility chain to 0
-```bash
-vim $OPENST_PLATFORM_PATH/tools/setup/config.js
-Change the utility chain gas price (OST_UTILITY_GAS_PRICE) to '0x0'. 
-```
-
 * Setup Platform
 ```
 > node tools/setup/platform/deploy.js
-```
-
-* Change the gas price for utility chain to 3B9ACA00, i.e. 1 GWie
-```bash
-> vim $HOME/openst-setup/openst_env_vars.sh
-export OST_UTILITY_GAS_PRICE='3B9ACA00'
 ```
 
 * Enable Redis for platform
