@@ -1,5 +1,5 @@
 const rootPrefix = '..'
-  , nonceManagerKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_manager')
+  , nonceHelperKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_helper')
   , logger = require(rootPrefix + "/lib/logger/custom_console_logger")
   , FillUpMissingNonceKlass = require(rootPrefix + '/fire_brigade/fill_up_missing_nonce');
 ;
@@ -8,6 +8,7 @@ const rootPrefix = '..'
 const FillUpMissingNonceRange = function(toAddress, chainKind) {
   const oThis = this
   ;
+  oThis.nonceHelper = new nonceHelperKlass();
   oThis.toAddress = toAddress.toLowerCase();
   oThis.chainKind = chainKind;
   oThis.allPendingTasks = new Array();
@@ -21,7 +22,7 @@ FillUpMissingNonceRange.prototype = {
     const oThis = this
     ;
 
-    const clearQueuedResponse = await nonceManagerKlass.prototype.clearAllMissingNonce(oThis.chainKind, oThis ,oThis.fillNonce);
+    const clearQueuedResponse = await oThis.nonceHelper.clearAllMissingNonce(oThis.chainKind, oThis ,oThis.fillNonce);
     if (clearQueuedResponse.isFailure()) {
       logger.error("Unable to clear queued transactions: ", clearQueuedResponse);
     } else {
@@ -39,10 +40,7 @@ FillUpMissingNonceRange.prototype = {
     params["missing_nonce"] = parseInt(nonce);
 
     oThis.addToBatchProcess(params);
-    //const fullUpNonceObject = new FillUpMissingNonceKlass(params);
-    //fullUpNonceObject.perform();
 
-    //console.log("fillNonce called: params: ",params);
   },
 
   addToBatchProcess: function (object) {
@@ -52,7 +50,7 @@ FillUpMissingNonceRange.prototype = {
       oThis.isProccessing = true;
       oThis.batchProcess();
     }
-    console.log("------oThis.allPendingTasks.length: ",oThis.allPendingTasks.length);
+    logger.info("------oThis.allPendingTasks.length: ",oThis.allPendingTasks.length);
   },
 
   batchProcess: async function () {
@@ -72,7 +70,7 @@ FillUpMissingNonceRange.prototype = {
       }
 
       await Promise.all(allPromises);
-      console.log("=======================Batch complete======================");
+      logger.log("=======================Batch complete======================");
     }
     oThis.isProccessing = false;
   }
@@ -85,37 +83,32 @@ module.exports = FillUpMissingNonceRange;
 /*
 
 
-Here is the code to run on console. Update toAddress and chainKind below.
-
-var toAddress = '';
+Below is the code to run on console. Update toAddress and chainKind below.
+====================================================================
+var toAddress = '0x3a9C9B3a01Ac218BF858BF9fDA8BD1411554049F';
 var chainKind = 'utility';
 
 var rootPrefix = '.';
 var FillUpMissingNonceRangeKlass = require(rootPrefix + '/fire_brigade/fill_up_missing_nonce_range');
-
 var fillUpObject = new FillUpMissingNonceRangeKlass(toAddress, chainKind);
 fillUpObject.perform().then(console.log);
 
 
+Below is the code to run on console. To get current nonce of the address
+====================================================================
+var fromAddress = '0x3a9C9B3a01Ac218BF858BF9fDA8BD1411554049F';
+nonceManagerKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_manager');
+ nonceManager = new nonceManagerKlass({address: fromAddress, chain_kind: chainKind});
+ nonceManager.getNonce().then(function(response) {
+  console.log("response: ", response);
+  nonceManager.abort().then(console.log)
+ });
 
 
-// currupt on local
-export OST_UTILITY_GETH_RPC_PROVIDERS='["http://127.0.0.1:9546"]'
-
-  var fromAddress = '0x73bDD49Fd11729359453Ed9c4E45728418536a9C'
-  var toAddress = '0xE36438f8410045F32bBAa0e2BecDCDbcfB214213';
-  var chainKind = 'utility';
-
-  var rootPrefix = '.';
-  var FillUpMissingNonceRangeKlass = require(rootPrefix + '/fire_brigade/fill_up_missing_nonce_range');
-
-  var fillUpObject = new FillUpMissingNonceRangeKlass(toAddress, chainKind);
-  fillUpObject.perform().then(console.log);
-
-
-
-var fromAddress = '0x73bDD49Fd11729359453Ed9c4E45728418536a9C';
-var startNonce = 25000
+Below is the test code. To mess up nonce for the given address. (Use only for pure testing purpose)
+===========================================================================================
+var fromAddress = '0x3a9C9B3a01Ac218BF858BF9fDA8BD1411554049F';
+var startNonce = 90
 for (var diff1 = 0; diff1 < 10; diff1++ ) {
   startNonce = startNonce+diff1;
   var diff = 5;
@@ -123,7 +116,6 @@ for (var diff1 = 0; diff1 < 10; diff1++ ) {
     fillUpObject.fillNonce(fromAddress, i);
   }
 }
-
 
 
 
