@@ -346,6 +346,237 @@ const NonceCacheKlassPrototype = {
   },
 
   /**
+   * Get mined transaction count for given address
+   *
+   * @param {string} chainKind - chain kind e.g value, utility
+   * @param {string} address - address whose nonce to be cleared
+   *
+   * @return {promise<result>}
+   */
+  getMinedTransactionCount: function (chainKind, address) {
+    const oThis = this;
+
+    try {
+      const allNoncePromise = []
+        , allGethNodes = (chainKind == 'value') ? chainInteractionConstants.OST_VALUE_GETH_RPC_PROVIDERS :
+        chainInteractionConstants.OST_UTILITY_GETH_RPC_PROVIDERS
+      ;
+
+      for (var i = allGethNodes.length - 1; i >= 0; i--) {
+        const gethURL = allGethNodes[i];
+
+        const web3UtilityRpcProvider = getWeb3Instance(gethURL, chainKind);
+        allNoncePromise.push(oThis._getNonceFromGethNode(address, web3UtilityRpcProvider));
+      }
+
+      const allNoncePromiseResult = Promise.all(allNoncePromise);
+
+      var isNonceAvailable = false;
+      var nonceCount = 0;
+      for (var i = allNoncePromiseResult.length - 1; i >= 0; i--) {
+        const currentNonceResponse =  allNoncePromiseResult[i];
+        if (currentNonceResponse.isFailure()) {
+          continue;
+        }
+        const currentNonce = new BigNumber(currentNonceResponse.data.mined_transaction_count);
+        nonceCount = BigNumber.max(currentNonce, nonceCount);
+        isNonceAvailable = true;
+      }
+      if (isNonceAvailable==false) {
+        return Promise.resolve(responseHelper.error("mo_w_nm_getTransactionCount_1", "Unable to get transaction count"));
+      }
+
+      return Promise.resolve(responseHelper.successWithData({nonce: nonceCount}));
+
+    } catch (err) {
+      //Format the error
+      logger.error("module_overrides/web3_eth/nonce_manager.js:getTransactionCount inside catch ", err);
+      return Promise.resolve(responseHelper.error('mo_w_nm_getTransactionCount_2', 'Unable to get transaction count'));
+    }
+
+  },
+
+  /**
+   * Get all queued transactions
+   *
+   * @param {string} chainKind - chain kind e.g value, utility
+   *
+   * @return {promise<result>}
+   */
+  getAllQueuedTransaction: async function(chainKind) {
+
+    const oThis = this;
+
+    try {
+
+      const allTxPoolPromise = []
+        , allGethNodes = (chainKind == 'value') ? chainInteractionConstants.OST_VALUE_GETH_RPC_PROVIDERS :
+        chainInteractionConstants.OST_UTILITY_GETH_RPC_PROVIDERS
+      ;
+
+      for (var i = allGethNodes.length - 1; i >= 0; i--) {
+        const gethURL = allGethNodes[i];
+        const web3UtilityRpcProvider = getWeb3Instance(gethURL, chainKind);
+        allTxPoolPromise.push(oThis._getPendingTransactionsFromGethNode(web3UtilityRpcProvider));
+      }
+
+      const allTxPoolPromiseResult = await Promise.all(allTxPoolPromise);
+      const queuedData = {};
+
+      var isTransactionAvailable = false;
+
+      for (var i = allTxPoolPromiseResult.length - 1; i >= 0; i--){
+        const currentTxPoolResponse =  allTxPoolPromiseResult[i];
+        if (currentTxPoolResponse.isFailure()) {
+          continue;
+        }
+
+        const pendingTransaction = currentTxPoolResponse.data.pending_transaction.pending;
+        const queuedTransaction = currentTxPoolResponse.data.pending_transaction.queued;
+
+        for (var address in pendingTransaction) {
+          queuedData[address] = queuedData[address] || {};
+          Object.assign(queuedData[address],pendingTransaction[address]);
+        }
+
+        for (var address in queuedTransaction) {
+          queuedData[address] = queuedData[address] || {};
+          Object.assign(queuedData[address],queuedTransaction[address]);
+        }
+        isTransactionAvailable = true;
+      }
+
+      if (isTransactionAvailable == false) {
+        return Promise.resolve(responseHelper.error("mo_w_nm_getAllQueuedTransaction_1", 'Unable to get queued transactions'));
+      }
+      return Promise.resolve(responseHelper.successWithData({queuedData: queuedData}));
+
+    } catch (err) {
+      //Format the error
+      logger.error("module_overrides/web3_eth/nonce_manager.js:getAllQueuedTransaction inside catch ", err);
+      return Promise.resolve(responseHelper.error('mo_w_nm_getAllQueuedTransaction_2', 'Unable to get queued transactions'));
+    }
+
+
+  },
+
+
+  /**
+   * Clear all missing nonce
+   *
+   * @param {string} chainKind - chain kind e.g value, utility
+   * @param {object} scope - caller scope
+   * @param {function} clearCallback - call back function that needs to be called when missing nonce is found
+   *
+   * @return {promise<result>}
+   */
+  clearAllMissingNonce: async function (chainKind, scope, clearCallback) {
+    const oThis = this;
+
+    try {
+      const allQueuedTransaction = await oThis.getAllQueuedTransaction(chainKind);
+      if (allQueuedTransaction.isFailure()) {
+        return Promise.resolve(responseHelper.error('mo_w_nm_clearAllMissingNonce_1',
+          'unable to get all queued transaction'));
+      }
+      var successAddresses = new Array()
+        , failAddresses = new Array()
+      ;
+
+      const queuedData = allQueuedTransaction.data.queuedData;
+      for (var address in queuedData) {
+
+        const clearResponce =  await oThis.clearMissingNonce(address, chainKind, queuedData[address], scope, clearCallback);
+        if (clearResponce.isSuccess()) {
+          successAddresses.push(address);
+        } else {
+          failAddresses.push(address);
+        }
+      }
+
+      return Promise.resolve(responseHelper.successWithData({successAddresses:successAddresses, failAddresses:failAddresses}));
+    } catch (err) {
+      //Format the error
+      logger.error("module_overrides/web3_eth/nonce_manager.js:clearAllMissingNonce inside catch ", err);
+      return Promise.resolve(responseHelper.error('mo_w_nm_clearAllMissingNonce_2',
+        'Something went wrong while clearing missing nonce'));
+    }
+
+
+  },
+
+  /**
+   * Clear all missing nonce for a given address
+   *
+   * @param {string} address - address whose nonce to be cleared
+   * @param {string} chainKind - chain kind e.g value, utility
+   * @param {array} pendingTransactions - array of pending transaction
+   * @param {object} scope - caller scope
+   * @param {function} clearCallback - call back function that needs to be called when missing nonce is found
+   *
+   * @return {promise<result>}
+   */
+  clearMissingNonce: async function (address, chainKind, pendingTransactions, scope, clearCallback) {
+    const oThis = this;
+
+    if (!clearCallback) {
+      return Promise.resolve(responseHelper.error('mo_w_nm_clearMissingNonce_1',
+        'call back function is mandatory'));
+    }
+
+    try {
+
+
+      const allNoncePromise = []
+        , allGethNodes = (chainKind == 'value') ? chainInteractionConstants.OST_VALUE_GETH_RPC_PROVIDERS :
+        chainInteractionConstants.OST_UTILITY_GETH_RPC_PROVIDERS
+      ;
+
+      for (var i = allGethNodes.length - 1; i >= 0; i--) {
+        const gethURL = allGethNodes[i];
+
+        const web3UtilityRpcProvider = getWeb3Instance(gethURL, chainKind);
+        allNoncePromise.push(oThis._getNonceFromGethNode(address, web3UtilityRpcProvider));
+      }
+
+      const allNoncePromiseResult = await Promise.all(allNoncePromise);
+
+      var nonceCount = 0;
+      for (var i = allNoncePromiseResult.length - 1; i >= 0; i--) {
+        const currentNonceResponse =  allNoncePromiseResult[i];
+        if (currentNonceResponse.isFailure()) {
+          continue;
+        }
+        const currentNonce = new BigNumber(currentNonceResponse.data.mined_transaction_count);
+        nonceCount = BigNumber.max(currentNonce, nonceCount);
+      }
+
+      const maxNonceCount = Math.max(...Object.keys(pendingTransactions));
+
+      for (var nonce = nonceCount; nonce <= maxNonceCount; nonce++ ) {
+        // fix  nonce code here
+        const bgNonce = new BigNumber(nonce);
+        const nonceString = `${bgNonce.toString(10)}`;
+        if (!pendingTransactions[nonceString]) {
+
+          clearCallback.apply(scope, [address, nonceString]);
+
+          //clearCallback(address, nonceString);
+        }
+      }
+
+      return Promise.resolve(responseHelper.successWithData({address: address}));
+
+    } catch (err) {
+      //Format the error
+      logger.error("module_overrides/web3_eth/nonce_manager.js:clearMissingNonce inside catch ", err);
+      return Promise.resolve(responseHelper.error('mo_w_nm_clearMissingNonce_2',
+        'Something went wrong while clearing missing nonce'));
+    }
+
+  },
+
+  /**
    * Acquire the lock the nonce usage for the address
    *
    * @return {promise<result>}
@@ -434,7 +665,7 @@ const NonceCacheKlassPrototype = {
       const gethURL = allGethNodes[i];
 
       const web3UtilityRpcProvider = getWeb3Instance(gethURL, oThis.chain_kind);
-      allNoncePromise.push(oThis._getNonceFromGethNode(web3UtilityRpcProvider));
+      allNoncePromise.push(oThis._getNonceFromGethNode(oThis.address, web3UtilityRpcProvider));
       allPendingTransactionPromise.push(oThis._getPendingTransactionsFromGethNode(web3UtilityRpcProvider));
     }
 
@@ -526,13 +757,13 @@ const NonceCacheKlassPrototype = {
    * @private
    * @ignore
    */
-  _getNonceFromGethNode: async function(web3Provider){
+  _getNonceFromGethNode: async function(address, web3Provider){
     const oThis = this
     ;
 
     return new Promise(function(onResolve, onReject) {
       try {
-        web3Provider.eth.getTransactionCount(oThis.address, function(error, result) {
+        web3Provider.eth.getTransactionCount(address, function(error, result) {
           if (error) {
             return onResolve(responseHelper.error('l_nm_getNonceFromGethNode_1', error));
           } else {
