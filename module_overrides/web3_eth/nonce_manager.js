@@ -267,10 +267,10 @@ const NonceCacheKlassPrototype = {
             return responseHelper.error('l_nm_aqLockCatch_1', 'Something went wrong');
           })
           .then( function ( acquireLockResponse ) {
-            if ( response.isSuccess() ) {
+            if ( acquireLockResponse.isSuccess() ) {
               //We got the lock.
               return onResolve( acquireLockResponse );
-            } else if ( response.err && response.err.code && String(response.err.code).indexOf( "l_nm_aqLockCatch_1" ) >= 0 ) {
+            } else if ( acquireLockResponse.err && acquireLockResponse.err.code && String(acquireLockResponse.err.code).indexOf( "l_nm_aqLockCatch_1" ) >= 0 ) {
               //Safety-Net. acquireLockAndReturn reject the Promise.
               return onResolve( acquireLockResponse );
             } else {
