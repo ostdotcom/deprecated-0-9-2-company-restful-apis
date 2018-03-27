@@ -20,12 +20,28 @@ const listKlass = function () {
 
 listKlass.prototype = {
 
+  perform: function(){
+    const oThis = this;
+
+    return oThis.asyncPerform()
+      .catch((error) => {
+        if (responseHelper.isCustomResult(error)){
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+
+          return responseHelper.error("s_cu_l_2", "Unhandled result", null, {}, {});
+        }
+      });
+  },
+
   /**
    * fetch data
    *
    * @return {Promise<result>}
    */
-  perform: async function (params) {
+  asyncPerform: async function (params) {
 
     const oThis = this
       , pageSize = 26;

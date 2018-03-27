@@ -77,12 +77,35 @@ FundClientAddressKlass.prototype = {
    */
   _TO_TRANSFER: basicHelper.convertToWei(1),
 
+
   /**
-   * Perform
+   * perform
    *
    * @return {Result}
    */
-  perform: async function () {
+
+  perform: function(){
+    const oThis = this;
+
+    return oThis.asyncPerform()
+      .catch((error) => {
+        if (responseHelper.isCustomResult(error)){
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+
+          return responseHelper.error("s_a_fca_2", "Unhandled result", null, {}, {});
+        }
+      });
+  },
+
+  /**
+   * asyncPerform
+   *
+   * @return {Result}
+   */
+  asyncPerform: async function () {
     const oThis = this;
 
     await oThis._setAddresses();

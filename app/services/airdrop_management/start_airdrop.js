@@ -41,12 +41,28 @@ const startAirdropKlass = function (params) {
 
 startAirdropKlass.prototype = {
 
+  perform: function(){
+    const oThis = this;
+
+    return oThis.asyncPerform()
+      .catch((error) => {
+        if (responseHelper.isCustomResult(error)){
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+
+          return responseHelper.error("s_am_sa_7", "Unhandled result", null, {}, {});
+        }
+      });
+  },
+
   /**
    * Perform
    *
    * @return {Promise<result>}
    */
-  perform: async function () {
+  asyncPerform: async function () {
     const oThis = this;
 
     var r1 = await oThis.validateInput();

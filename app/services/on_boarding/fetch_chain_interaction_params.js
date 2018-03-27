@@ -30,13 +30,29 @@ const FetchChainInteractionParams = function (params) {
 
 FetchChainInteractionParams.prototype = {
 
+  perform: function(){
+    const oThis = this;
+
+    return oThis.asyncPerform()
+      .catch((error) => {
+        if (responseHelper.isCustomResult(error)){
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+
+          return responseHelper.error("ob_fcip_2", "Unhandled result", null, {}, {});
+        }
+      })
+  },
+
   /**
    * Perform<br><br>
    *
    * @return {result} - returns an object of Result
    *
    */
-  perform: function () {
+  asyncPerform: function () {
 
     const oThis = this;
 

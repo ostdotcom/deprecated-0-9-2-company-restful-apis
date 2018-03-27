@@ -12,7 +12,23 @@ const BaseKlass = function () {};
 
 BaseKlass.prototype = {
 
-  perform: async function () {
+  perform: function(){
+    const oThis = this;
+
+    return oThis.asyncPerform()
+      .catch((error) => {
+        if (responseHelper.isCustomResult(error)){
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+
+          return responseHelper.error("s_sam_b_1", "Unhandled result", null, {}, {});
+        }
+      });
+  },
+
+  asyncPerform: async function () {
 
     var r = null
       , oThis = this;

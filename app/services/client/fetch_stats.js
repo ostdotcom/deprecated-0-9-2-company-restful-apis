@@ -21,12 +21,28 @@ const clientStatsKlass = function (params) {
 
 clientStatsKlass.prototype = {
 
+  perform: function(params){
+    const oThis = this;
+
+    return oThis.asyncPerform(params)
+      .catch((error) => {
+        if (responseHelper.isCustomResult(error)){
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+
+          return responseHelper.error("s_c_fs_1", "Unhandled result", null, {}, {});
+        }
+      });
+  },
+
   /**
    * fetch data
    *
    * @return {Promise<result>}
    */
-  perform: async function (params) {
+  asyncPerform: async function (params) {
 
     const oThis = this
         , cacheObj = new ClientTxKindCntCacheKlass({clientId: oThis.clientId});

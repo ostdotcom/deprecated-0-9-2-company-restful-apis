@@ -43,13 +43,29 @@ const AddNew = function(params){
 
 AddNew.prototype = {
 
+  perform: function(){
+    const oThis = this;
+
+    return oThis.asyncPerform()
+      .catch((error) => {
+        if (responseHelper.isCustomResult(error)){
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+
+          return responseHelper.error("s_tk_an_1", "Unhandled result", null, {}, {});
+        }
+      })
+  },
+
   /**
    * Perform<br><br>
    *
    * @return {promise<result>} - returns a promise which resolves to an object of Result
    *
    */
-  perform: async function () {
+  asyncPerform: async function () {
     var oThis = this
       , r = null;
 

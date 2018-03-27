@@ -34,22 +34,38 @@ const FetchBalances = function (params) {
 
 FetchBalances.prototype = {
 
+  perform: function(){
+    const oThis = this;
+
+    return oThis.aysncPerform()
+      .catch((error) => {
+        if (responseHelper.isCustomResult(error)){
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+
+          return responseHelper.error("ob_fb_3", "Unhandled result", null, {}, {});
+        }
+      })
+  },
+
   /**
    * Perform<br><br>
    *
    * @return {result} - returns an object of Result
    *
    */
-  perform: async function () {
+  aysncPerform: async function () {
 
     const oThis = this;
 
     if (!oThis.clientId) {
-      return Promise.resolve(responseHelper.error('ob_fcip_1', 'missing clientId'));
+      return Promise.resolve(responseHelper.error('ob_fb_1', 'missing clientId'));
     }
 
     if (!oThis.balancesToFetch) {
-      return Promise.resolve(responseHelper.error('ob_fcip_2', 'missing balancesToFetch'));
+      return Promise.resolve(responseHelper.error('ob_fb_2', 'missing balancesToFetch'));
     }
 
     var ostPrices = await new ostPriceCacheKlass().fetch();

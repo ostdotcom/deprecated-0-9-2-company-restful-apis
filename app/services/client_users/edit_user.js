@@ -15,6 +15,22 @@ const rootPrefix = '../../..'
 
 const editUser = {
 
+  perform: function(clientId, userUuid, name){
+    const oThis = this;
+
+    return oThis.asycnPerform(clientId, userUuid, name)
+      .catch((error) => {
+        if (responseHelper.isCustomResult(error)){
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+
+          return responseHelper.error("s_cu_eu_4", "Unhandled result", null, {}, {});
+        }
+      });
+  },
+
   /**
    * Perform Edit user operation
    *
@@ -23,7 +39,7 @@ const editUser = {
    * @param name
    * @return {Promise<result>}
    */
-  perform: async function (clientId, userUuid, name) {
+  asycnPerform: async function (clientId, userUuid, name) {
 
     const oThis = this
       , errors_object = {};

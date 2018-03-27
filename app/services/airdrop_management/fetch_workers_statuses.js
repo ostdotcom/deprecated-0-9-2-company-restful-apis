@@ -21,7 +21,23 @@ const FetchWorkerStatusesKlass = function(params){
 
 FetchWorkerStatusesKlass.prototype = {
 
-  perform: async function(){
+  perform: function(){
+    const oThis = this;
+
+    return oThis.asyncPerform()
+      .catch((error) => {
+        if (responseHelper.isCustomResult(error)){
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+
+          return responseHelper.error("s_am_fws_3", "Unhandled result", null, {}, {});
+        }
+      });
+  },
+
+  asyncPerform: async function(){
     const oThis = this;
 
     if(!oThis.workerTrxHash || Object.keys(oThis.workerTrxHash).length == 0){

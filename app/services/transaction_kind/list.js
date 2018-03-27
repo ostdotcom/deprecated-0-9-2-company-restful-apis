@@ -35,7 +35,23 @@ List.prototype = {
 
   constructor: List,
 
-  perform: async function() {
+  perform: function(){
+    const oThis = this;
+
+    return oThis.asyncPerform()
+      .catch((error) => {
+        if (responseHelper.isCustomResult(error)){
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+
+          return responseHelper.error("s_tk_l_1", "Unhandled result", null, {}, {});
+        }
+      })
+  },
+
+  asyncPerform: async function() {
     var oThis = this;
 
     oThis.validateAssignParams();

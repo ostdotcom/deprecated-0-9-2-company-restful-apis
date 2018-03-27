@@ -35,7 +35,28 @@ UtilityChainBalancesFetcherKlass.prototype = {
    *
    * @return {Result}
    */
-  perform: async function () {
+  perform: function(){
+    const oThis = this;
+
+    return oThis.asyncPerform()
+      .catch((error) => {
+        if (responseHelper.isCustomResult(error)){
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+
+          return responseHelper.error("s_a_bf_1", "Unhandled result", null, {}, {});
+        }
+      });
+  },
+
+  /**
+   * fetch data from from UC in Wei
+   *
+   * @return {Result}
+   */
+  asyncPerform: async function () {
 
     const oThis = this
       , balanceTypes = oThis.balanceTypes;

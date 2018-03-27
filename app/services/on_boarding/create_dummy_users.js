@@ -37,13 +37,29 @@ const CreateDummyUsers = function (params) {
 
 CreateDummyUsers.prototype = {
 
+  perform: function(){
+    const oThis = this;
+
+    return oThis.asyncPerform()
+      .catch((error) => {
+        if (responseHelper.isCustomResult(error)){
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+
+          return responseHelper.error("ob_cdu_4", "Unhandled result", null, {}, {});
+        }
+      })
+  },
+
   /**
    * Perform<br><br>
    *
    * @return {promise<result>} - returns a promise which resolves to an object of Result
    *
    */
-  perform: async function () {
+  asyncPerform: async function () {
 
     const oThis = this;
 

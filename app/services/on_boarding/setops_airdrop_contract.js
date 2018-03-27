@@ -35,7 +35,23 @@ const SetopsAirdropContractClass = function (params) {
 
 SetopsAirdropContractClass.prototype = {
 
-  perform: async function () {
+  perform: function(){
+    const oThis = this;
+
+    return oThis.asyncPerform()
+      .catch((error) => {
+        if (responseHelper.isCustomResult(error)){
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+
+          return responseHelper.error("ob_sac_6", "Unhandled result", null, {}, {});
+        }
+      })
+  },
+
+  asyncPerform: async function () {
     var oThis = this
       , r;
 
@@ -54,19 +70,19 @@ SetopsAirdropContractClass.prototype = {
     var oThis = this;
 
     if (!oThis.tokenSymbol || !oThis.clientId) {
-      return Promise.resolve(responseHelper.error('ob_spo_2', 'Mandatory params missing.'));
+      return Promise.resolve(responseHelper.error('ob_sac_2', 'Mandatory params missing.'));
     }
 
     const clientBrandedTokenObj = new clientBrandedTokenCacheKlass({tokenSymbol: oThis.tokenSymbol});
     const clientBrandedToken = await clientBrandedTokenObj.fetch();
     if(clientBrandedToken.isFailure()){
-      return Promise.resolve(responseHelper.error('ob_spo_3', 'Token not found.'));
+      return Promise.resolve(responseHelper.error('ob_sac_3', 'Token not found.'));
     }
 
     const brandedToken = clientBrandedToken.data;
 
     if (brandedToken.client_id != oThis.clientId) {
-      return Promise.resolve(responseHelper.error('ob_spo_1', 'Unauthorised request'));
+      return Promise.resolve(responseHelper.error('ob_sac_1', 'Unauthorised request'));
     }
 
     oThis.airDropContractAddress = brandedToken.airdrop_contract_address;
@@ -74,7 +90,7 @@ SetopsAirdropContractClass.prototype = {
     oThis.reserveUuid = brandedToken.reserve_address_uuid;
 
     if (!oThis.airDropContractAddress) {
-      return Promise.resolve(responseHelper.error('ob_spo_3', 'Airdrop contract address is mandatory.'));
+      return Promise.resolve(responseHelper.error('ob_sac_4', 'Airdrop contract address is mandatory.'));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -95,7 +111,7 @@ SetopsAirdropContractClass.prototype = {
     );
 
     if(r.isFailure()){
-      return Promise.resolve(responseHelper.error('ob_dac_2', 'Setops airdrop contract failed.'));
+      return Promise.resolve(responseHelper.error('ob_sac_5', 'Setops airdrop contract failed.'));
     }
 
     return Promise.resolve(r);

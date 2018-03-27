@@ -28,12 +28,28 @@ const valueChainBalancesFetcherKlass = function (params) {
 
 valueChainBalancesFetcherKlass.prototype = {
 
+  perform: function(){
+    const oThis = this;
+
+    return oThis.asyncPerform()
+      .catch((error) => {
+        if (responseHelper.isCustomResult(error)){
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+
+          return responseHelper.error("s_a_vbf_1", "Unhandled result", null, {}, {});
+        }
+      });
+  },
+
   /**
    * fetch data from source and return eth balance from VC in Wei
    *
    * @return {Result}
    */
-  perform: async function () {
+  asyncPerform: async function () {
 
     const oThis = this
       , balanceTypes = oThis.balanceTypes;

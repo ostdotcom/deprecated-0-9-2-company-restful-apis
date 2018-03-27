@@ -32,7 +32,23 @@ const GetReceiptKlass = function(params){
  */
 GetReceiptKlass.prototype = {
 
-  perform: async function(){
+  perform: function(){
+    const oThis = this;
+
+    return oThis.asyncPerform()
+      .catch((error) => {
+        if (responseHelper.isCustomResult(error)){
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+
+          return responseHelper.error("s_t_gr_1", "Unhandled result", null, {}, {});
+        }
+      })
+  },
+
+  asyncPerform: async function(){
     const oThis = this;
 
     const obj = new openStPlatform.services.transaction.getReceipt(

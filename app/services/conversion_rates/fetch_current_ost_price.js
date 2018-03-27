@@ -44,12 +44,28 @@ const FetchCurrentOSTPriceKlass = function (params) {
 
 FetchCurrentOSTPriceKlass.prototype = {
 
+  perform: function(){
+    const oThis = this;
+
+    return oThis.asyncPerform()
+      .catch((error) => {
+        if (responseHelper.isCustomResult(error)){
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+
+          return responseHelper.error("f_c_o_p_7", "Unhandled result", null, {}, {});
+        }
+      });
+  },
+
   /**
    * Perform<br><br>
    *
    * @return {promise<result>} - returns a promise which resolves to an object of kind Result
    */
-  perform: async function () {
+  asyncPerform: async function () {
     const oThis = this;
     var url = exchangeUrl + "?convert=" + oThis.quoteCurrency;
 

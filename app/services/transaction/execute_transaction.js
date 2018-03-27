@@ -78,12 +78,28 @@ const ExecuteTransactionKlass = function (params) {
 
 ExecuteTransactionKlass.prototype = {
 
+  perform: function(){
+    const oThis = this;
+
+    return oThis.asyncPerform()
+      .catch((error) => {
+        if (responseHelper.isCustomResult(error)){
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+
+          return responseHelper.error("s_t_et_22", "Unhandled result", null, {}, {});
+        }
+      });
+  },
+
   /**
    * Perform
    *
    * @return {promise<result>}
    */
-  perform: function () {
+  asyncPerform: function () {
     const oThis = this
     ;
 

@@ -31,7 +31,23 @@ const GetAirdropStatusKlass = function(params){
  */
 GetAirdropStatusKlass.prototype = {
 
-  perform: async function(){
+  perform: function(){
+    const oThis = this;
+
+    return oThis.asyncPerform()
+      .catch((error) => {
+        if (responseHelper.isCustomResult(error)){
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+
+          return responseHelper.error("s_am_gas_3", "Unhandled result", null, {}, {});
+        }
+      });
+  },
+
+  asyncPerform: async function(){
     const oThis = this;
 
     var obj = new clientAirdropModel();
