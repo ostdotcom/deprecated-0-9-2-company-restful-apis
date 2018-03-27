@@ -95,25 +95,6 @@ ExecuteTransactionKlass.prototype = {
   },
 
   /**
-   * Perform
-   *
-   * @return {promise<result>}
-   */
-  asyncPerform: function () {
-    const oThis = this
-    ;
-
-    return oThis.asyncPerform()
-      .catch(function (error) {
-        logger.error('app/services/transaction/execute_transaction.js::perform::catch');
-        logger.error(error);
-
-        return Promise.resolve(responseHelper.error("s_t_et_20", "Inside catch block", null, {}, {sendErrorEmail: false})
-        );
-      });
-  },
-
-  /**
    * Async perform
    *
    * @return {promise<result>}
