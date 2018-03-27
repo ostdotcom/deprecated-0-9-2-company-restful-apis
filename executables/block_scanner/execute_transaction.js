@@ -3,7 +3,7 @@
 /**
  * This is the base class for block scanners
  *
- * @module executables/block_scanner/base
+ * @module executables/block_scanner/execute_transaction
  *
  */
 
@@ -14,7 +14,7 @@ const fs = require('fs')
 const rootPrefix = '../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
-  , TransactionLogModelKlass = require(rootPrefix + '/app/models/transaction_log')
+  , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
 ;
 
@@ -30,7 +30,7 @@ const BlockScannerBaseKlass = function (params) {
   oThis.interruptSignalObtained = false;
 
   oThis.highestBlock = null;
-  oThis.shortlistedTxHashes = null;
+  oThis.shortlistedTxObjs = null;
   oThis.transactionInfo = null;
 };
 
@@ -72,7 +72,7 @@ BlockScannerBaseKlass.prototype = {
 
     const processNewBlocksAsync = async function () {
       try {
-        oThis.shortlistedTxHashes = [];
+        oThis.shortlistedTxObjs = [];
         oThis.transactionInfo = {};
 
         await oThis.refreshHighestBlock();
@@ -82,6 +82,8 @@ BlockScannerBaseKlass.prototype = {
 
         oThis.currentBlock = oThis.scannerData.lastProcessedBlock + 1;
 
+        logger.log('currentBlock =', oThis.currentBlock);
+
         const currentBlock = await oThis.web3Provider.eth.getBlock(oThis.currentBlock);
 
         if (!currentBlock) return oThis.schedule();
@@ -90,9 +92,9 @@ BlockScannerBaseKlass.prototype = {
 
         await oThis.fetchTransactionReceipts();
 
-        await oThis.fetchTransaction();
-
         await oThis.updateTransactionLogs();
+
+        oThis.updateScannerDataFile();
 
         oThis.schedule();
       } catch (err) {
@@ -119,7 +121,7 @@ BlockScannerBaseKlass.prototype = {
   shortlistTransactions: async function (allTxHashes) {
     const oThis = this
       , batchSize = 100
-      , waitingForMiningStatus = new TransactionLogModelKlass().invertedStatuses[transactionLogConst.waitingForMiningStatus]
+      , waitingForMiningStatus = new TransactionLogModel().invertedStatuses[transactionLogConst.waitingForMiningStatus]
     ;
 
     var batchNo = 1;
@@ -129,10 +131,12 @@ BlockScannerBaseKlass.prototype = {
         , batchedTxHashes = allTxHashes.slice(offset, batchSize)
       ;
 
+      batchNo = batchNo + 1;
+
       if(batchedTxHashes.length === 0) break;
 
-      const batchedTxLogRecords = await new TransactionLogModelKlass()
-        .select('transaction_hash, transaction_uuid, process_uuid, status')
+      const batchedTxLogRecords = await new TransactionLogModel()
+        .select('id, transaction_hash, transaction_uuid, process_uuid, status')
         .where(['transaction_hash in (?)', batchedTxHashes])
         .fire();
 
@@ -144,10 +148,14 @@ BlockScannerBaseKlass.prototype = {
 
         if(currRecord.status !== waitingForMiningStatus) continue;
 
-        oThis.shortlistedTxHashes.push(currRecord.transaction_hash);
+        oThis.shortlistedTxObjs.push(
+          {
+            transaction_hash: currRecord.transaction_hash,
+            id: currRecord.id
+          });
       }
 
-      batchNo = batchNo + 1;
+      console.log('----------');
     }
 
     return Promise.resolve();
@@ -162,34 +170,63 @@ BlockScannerBaseKlass.prototype = {
 
     while(true) {
       const offset = (batchNo - 1) * batchSize
-        , batchedTxHashes = oThis.shortlistedTxHashes.slice(offset, batchSize)
+        , batchedTxObjs = oThis.shortlistedTxObjs.slice(offset, batchSize)
         , promiseArray = []
       ;
 
-      if(batchedTxHashes.length === 0) break;
+      batchNo = batchNo + 1;
 
-      for(var i = 0; i < batchedTxHashes.length - 1; i ++) {
-        const currTxHash = batchedTxHashes[i];
+      if(batchedTxObjs.length === 0) break;
+
+      for(var i = 0; i < batchedTxObjs.length - 1; i ++) {
+        const currTxHash = batchedTxObjs[i].transaction_hash;
         promiseArray.push(oThis.web3Provider.eth.getTransactionReceipt(currTxHash))
       }
 
-      const txReceiptResults = Promise.all(promiseArray);
+      const txReceiptResults = await Promise.all(promiseArray);
 
-
-
-
-
-      batchNo = batchNo + 1;
+      for(var i = 0; i < batchedTxObjs.length - 1; i ++) {
+        const txReceipt = txReceiptResults[i];
+        batchedTxObjs[i].gas_used = txReceipt.gasUsed;
+      }
+      
+      // TODO: decode receipts and put the commission amount.
     }
 
     return Promise.resolve();
   },
 
-  fetchTransaction: function (shortlistedTxHashes) {
-  },
+  updateTransactionLogs: async function () {
+    const oThis = this
+      , batchSize = 100
+      , promiseArray = []
+      , completeStatus = new TransactionLogModel().invertedStatuses[transactionLogConst.completeStatus]
+    ;
 
-  updateTransactionLogs: function () {
+    var batchNo = 1;
 
+    while(true) {
+      const offset = (batchNo - 1) * batchSize
+        , batchedTxObjs = oThis.shortlistedTxObjs.slice(offset, batchSize)
+        , batchedTxLogId = []
+      ;
+
+      batchNo = batchNo + 1;
+
+      if(batchedTxObjs.length === 0) break;
+
+      // TODO - put the transaction gas used in the new table.
+
+      for(var i = 0; i < batchedTxObjs.length - 1; i ++) {
+        batchedTxLogId.push(batchedTxObjs[i].id);
+      }
+
+      promiseArray.push(new TransactionLogModel().where(['id in (?)', batchedTxLogId]).update({status: completeStatus}).fire());
+    }
+
+    await Promise.all(promiseArray);
+
+    return Promise.resolve();
   },
 
   /**
@@ -217,9 +254,13 @@ BlockScannerBaseKlass.prototype = {
     const oThis = this
     ;
 
-    setTimeout(function () {
-      oThis.checkForNewBlocks();
-    }, 5000);
+    // if the current block is far behind the highest block, schedule for 10 ms otherwise schedule for 2 s
+    const waitInterval = (oThis.highestBlock - oThis.INTENTIONAL_BLOCK_DELAY <= oThis.lastProcessedBlock) ? 2000 : 10;
+
+    setTimeout(
+      function () {oThis.checkForNewBlocks();},
+      waitInterval
+    );
   },
 
   /**
@@ -229,19 +270,20 @@ BlockScannerBaseKlass.prototype = {
     const oThis = this
     ;
 
-    setTimeout(function () {
-      oThis.init();
-    }, 5000);
+    setTimeout(
+      function () {oThis.init();},
+      1000
+    );
   },
 
   /**
-   * Update intercom data file
+   * Update scanner data file
    */
-  updateIntercomDataFile: function () {
+  updateScannerDataFile: function () {
     const oThis = this
     ;
 
-    oThis.scannerData.lastProcessedBlock = oThis.toBlock;
+    oThis.scannerData.lastProcessedBlock = oThis.currentBlock;
 
     fs.writeFileSync(
       oThis.filePath,
