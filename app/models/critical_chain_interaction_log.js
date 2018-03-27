@@ -2,14 +2,13 @@
 
 const rootPrefix = '../..'
     , coreConstants = require(rootPrefix + '/config/core_constants')
-    , QueryDBKlass = require(rootPrefix + '/app/models/queryDb')
     , ModelBaseKlass = require(rootPrefix + '/app/models/base')
     , criticalChainInteractionLogConst = require(rootPrefix + '/lib/global_constant/critical_chain_interaction_log')
+    , allMemcacheInstanceKlass = require(rootPrefix + '/lib/cache_management/all_memcache_instance')
     , util = require(rootPrefix + '/lib/util')
 ;
 
 const dbName = "company_saas_shared_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
-    , QueryDBObj = new QueryDBKlass(dbName)
     , statuses = {
         '1': criticalChainInteractionLogConst.queuedStatus,
         '2': criticalChainInteractionLogConst.pendingStatus,
@@ -57,8 +56,6 @@ CriticalChainInteractionLogKlass.prototype = Object.create(ModelBaseKlass.protot
  */
 const CriticalChainInteractionLogPrototype = {
 
-  QueryDB: QueryDBObj,
-
   tableName: 'critical_chain_interaction_logs',
 
   statuses: statuses,
@@ -88,15 +85,17 @@ const CriticalChainInteractionLogPrototype = {
     }
   },
 
+  /**
+   * Get Data by Ids
+   *
+   * @param {Array} ids - ids which are to fetched from DB
+   *
+   * @return {promise<object>}
+   */
   getByIds: async function(ids){
 
     const oThis = this
-        , dbRecords = await oThis.QueryDB.readByInQuery(
-        oThis.tableName,
-        [],
-        ids,
-        'id'
-    );
+        , dbRecords = await oThis.select().where(['id IN (?)', ids]).fire();
 
     var dbRecord = null;
 
@@ -107,6 +106,54 @@ const CriticalChainInteractionLogPrototype = {
     }
 
     return dbRecords;
+
+  },
+
+  /**
+   * Insert One record in DB
+   *
+   * @param {Object} data - hash containing data for a row which is to be inserted
+   *
+   * @return {promise<object>}
+   */
+  insertRecord: async function(data){
+
+    const oThis = this
+        , dbRecord = await oThis.insert(data).fire();
+
+    oThis.flushTxStatusDetailsCache(dbRecord.insertId);
+
+    oThis.flushPendingTxsCache(data.client_token_id);
+
+    return Promise.resolve(dbRecord);
+
+  },
+
+  /**
+   * flush cache which has details about current status of tx
+   *
+   * @param {integer} critical_chain_interaction_log_id - id of parent row
+   *
+   * @return {promise<result>}
+   */
+  flushTxStatusDetailsCache: function(critical_chain_interaction_log_id){
+
+    const allMemcacheInstance = new allMemcacheInstanceKlass();
+    allMemcacheInstance.clearCache(coreConstants.SHARED_MEMCACHE_KEY_PREFIX + coreConstants.ENVIRONMENT_SHORT + '_c_tx_s_' + critical_chain_interaction_log_id);
+
+  },
+
+  /**
+   * flush cache which contain ids of all pending critical interactions
+   *
+   * @param {integer} client_token_id - client token id
+   *
+   * @return {promise<result>}
+   */
+  flushPendingTxsCache: function(client_token_id){
+
+    const allMemcacheInstance = new allMemcacheInstanceKlass();
+    allMemcacheInstance.clearCache(coreConstants.SHARED_MEMCACHE_KEY_PREFIX + coreConstants.ENVIRONMENT_SHORT + '_c_pci_ids_' + client_token_id);
 
   }
 

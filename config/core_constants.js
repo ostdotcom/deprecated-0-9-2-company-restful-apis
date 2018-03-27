@@ -87,3 +87,5 @@ try {
 } catch(err) {
 }
 define('ACCEPTED_PRICE_FLUCTUATION_FOR_PAYMENT', accepted_margine);
+
+define("SHARED_MEMCACHE_KEY_PREFIX", 'ca_sa_shared_');
