@@ -119,6 +119,18 @@ const ClientWorkerManagedAddressIdsKlassPrototype = {
 
   },
 
+// Mark Status active for records
+  markStatusActive: function(ids) {
+    const oThis = this;
+    return oThis.QueryDB.edit(
+      oThis.tableName,
+      ['status = ?'],
+      [invertedStatuses[clientWorkerManagedAddressConst.activeStatus]],
+      ['id IN (?)'],
+      [ids]
+    );
+  },
+
   /**
    * Set all BitWise columns as hash
    * key would be column name and value would be hash of all bitwise values

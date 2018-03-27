@@ -294,8 +294,6 @@ FundClientAddressKlass.prototype = {
         }
     ;
 
-    console.log('transferParams', transferParams);
-
     const transferSTPrimeBalanceObj = new openStPlatform.services.transaction.transfer.simpleTokenPrime(transferParams);
 
     const transferResponse = await transferSTPrimeBalanceObj.perform();
