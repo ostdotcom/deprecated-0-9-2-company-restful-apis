@@ -20,6 +20,7 @@ const rootPrefix = '../../..'
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , coreConstants = require(rootPrefix + '/config/core_constants')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
 /**

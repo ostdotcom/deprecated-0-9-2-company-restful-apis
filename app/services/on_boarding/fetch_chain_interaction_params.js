@@ -11,6 +11,7 @@ const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , openStPlatform = require('@openstfoundation/openst-platform')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
 /**

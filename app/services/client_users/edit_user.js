@@ -11,6 +11,7 @@ const rootPrefix = '../../..'
   , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
   , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
   , basicHelper = require(rootPrefix + '/helpers/basic')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
 const editUser = {

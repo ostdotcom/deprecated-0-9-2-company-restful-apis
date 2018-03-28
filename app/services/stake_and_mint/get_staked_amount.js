@@ -5,6 +5,7 @@ const rootPrefix = '../../..'
     , ClientSecuredBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
     , openStPlatform = require('@openstfoundation/openst-platform')
     , basicHelper = require(rootPrefix + '/helpers/basic')
+    , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
 /**

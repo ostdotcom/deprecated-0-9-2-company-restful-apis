@@ -4,6 +4,7 @@ var rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , clientAirdropModel = require(rootPrefix + '/app/models/client_airdrop')
   , clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   ;
 
 

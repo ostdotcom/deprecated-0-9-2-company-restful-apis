@@ -5,6 +5,7 @@ const openStPlatform = require('@openstfoundation/openst-platform');
 const rootPrefix = '../../..'
   , managedAddressKlass = require(rootPrefix + '/app/models/managed_address')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
 

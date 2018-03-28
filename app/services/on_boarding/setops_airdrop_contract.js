@@ -13,6 +13,7 @@ const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , chainIntConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , clientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
 const SetopsAirdropContractClass = function (params) {

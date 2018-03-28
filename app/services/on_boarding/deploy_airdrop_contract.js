@@ -10,6 +10,7 @@ const rootPrefix = '../../..'
   , clientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
   , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
   , utils = require(rootPrefix + '/lib/util')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
 const DeployAirdropContractClass = function (params) {

@@ -15,6 +15,7 @@ var rootPrefix = '../../..'
   , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
   , ClientTransactionTypeKlass = require(rootPrefix + '/app/models/client_transaction_type')
   , clientTransactionTypeObj = new ClientTransactionTypeKlass()
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
 /**

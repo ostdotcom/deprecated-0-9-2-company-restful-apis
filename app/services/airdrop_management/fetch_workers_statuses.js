@@ -5,6 +5,7 @@ const rootPrefix = '../../..'
   , getReceiptKlass = require(rootPrefix + '/app/services/transaction/get_receipt')
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
   , clientWorkerManagedAddress = require(rootPrefix + '/app/models/client_worker_managed_address_id')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   ;
 
 /**

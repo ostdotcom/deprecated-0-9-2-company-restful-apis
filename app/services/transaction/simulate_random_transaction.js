@@ -19,6 +19,7 @@ const rootPrefix = "../../.."
   , EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   ;
 
 /**
