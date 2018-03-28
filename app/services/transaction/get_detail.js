@@ -10,8 +10,7 @@
  */
 
 const rootPrefix = '../../..'
-  , GetReceiptKlass = require(rootPrefix + '/app/services/transaction/get_receipt')
-  , transactionLogKlass = require(rootPrefix + '/app/models/transaction_log')
+  , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , ClientTransactionTypeKlass = require(rootPrefix + '/app/models/client_transaction_type')
   , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
@@ -28,24 +27,26 @@ const GetTransactionDetailKlass = function (params) {
   oThis.transactionUuids = params.transaction_uuids || [];
 
   oThis.response = {};
-  oThis.transactionUuidToHashMap = {};
-  oThis.transactionHashToUuidMap = {};
-  oThis.transactionHashToReceiptMap = {};
   oThis.transactionTypeMap = {};
   oThis.clientTokenMap = {};
   oThis.economyUserMap = {};
-  oThis.transactionMap = {};
+  oThis.transactionUuidToDataMap = {};
   oThis.chainMaps = {};
 };
 
 GetTransactionDetailKlass.prototype = {
 
-  perform: function(){
+  /**
+   * Perform
+   *
+   * @return {promise<result>}
+   */
+  perform: function () {
     const oThis = this;
 
     return oThis.asyncPerform()
       .catch((error) => {
-        if (responseHelper.isCustomResult(error)){
+        if (responseHelper.isCustomResult(error)) {
           return error;
         } else {
           logger.error(`${__filename}::perform::catch`);
@@ -56,25 +57,29 @@ GetTransactionDetailKlass.prototype = {
       })
   },
 
+  /**
+   * Async Perform
+   *
+   * @return {promise<result>}
+   */
   asyncPerform: async function () {
-    const oThis = this;
+    const oThis = this
+    ;
 
-    await oThis._getTransactionHashes();
+    await oThis._getTransactionData();
 
     await oThis._getClientTokens();
 
-    await oThis._getTransactionReceipts();
-
     await oThis._getTransactionTypes();
-    
+
     await oThis._getEconomyUsers();
 
     oThis.response.result_type = "transactions";
     oThis.response.transactions = [];
-    for(var i=0;i<oThis.transactionUuids.length;i++){
+    for (var i = 0; i < oThis.transactionUuids.length; i++) {
       var key = oThis.transactionUuids[i];
-      var transactionData = oThis.transactionMap[key];
-      if(transactionData){
+      var transactionData = oThis.transactionUuidToDataMap[key];
+      if (transactionData) {
         oThis.response.transactions.push(transactionData);
       }
     }
@@ -82,47 +87,74 @@ GetTransactionDetailKlass.prototype = {
     return Promise.resolve(responseHelper.successWithData(oThis.response))
   },
 
-  _getTransactionHashes: async function () {
-    const oThis = this;
-
-    const transactionLogObj = new transactionLogKlass()
+  /**
+   * Fetch transaction data
+   *
+   * Sets chainMaps, transactionTypeMap, economyUserMap, transactionUuidToDataMap
+   *
+   * @return {promise}
+   */
+  _getTransactionData: async function () {
+    const oThis = this
     ;
 
-    const transactionLogRecords = await transactionLogObj.select(
-      'transaction_hash, transaction_uuid, input_params, client_token_id, status, chain_type, created_at').where(
-      ['transaction_uuid in (?)', oThis.transactionUuids]).fire();
+    const transactionLogRecords = await new TransactionLogModel()
+      .select('*').where(['transaction_uuid in (?)', oThis.transactionUuids]).fire();
 
     for (var i = 0; i < transactionLogRecords.length; i++) {
-      const currRecord = transactionLogRecords[i];
-      oThis.transactionUuidToHashMap[currRecord.transaction_uuid] = currRecord.transaction_hash;
-      oThis.transactionHashToUuidMap[currRecord.transaction_hash] = currRecord.transaction_uuid;
-      oThis.chainMaps[currRecord.transaction_uuid] = transactionLogObj.chainTypes[currRecord.chain_type];
+      const transactionLogRecord = transactionLogRecords[i]
+        , formattedReceipt = JSON.parse(transactionlogRecord.formatted_receipt || '{}')
+        , inputParams = JSON.parse(transactionLogRecord.input_params)
+        , gasPriceBig = basicHelper.convertToBigNumber(inputParams.gas_price)
+      ;
 
-      const inputParams = JSON.parse(currRecord.input_params);
+      oThis.chainMaps[transactionLogRecord.transaction_uuid] = new TransactionLogModel().chainTypes[transactionLogRecord.chain_type];
+
       oThis.transactionTypeMap[inputParams.transaction_kind_id] = {};
-      oThis.clientTokenMap[currRecord.client_token_id] = {};
+      oThis.clientTokenMap[transactionLogRecord.client_token_id] = {};
 
       oThis.economyUserMap[inputParams.from_uuid] = {};
       oThis.economyUserMap[inputParams.to_uuid] = {};
 
-      oThis.transactionMap[currRecord.transaction_uuid] = {
-        id: currRecord.transaction_uuid,
-        transaction_uuid: currRecord.transaction_uuid,
+      const transactionMapObj = {
+        id: transactionLogRecord.transaction_uuid,
+        transaction_uuid: transactionLogRecord.transaction_uuid,
         from_user_id: inputParams.from_uuid,
         to_user_id: inputParams.to_uuid,
         transaction_type_id: inputParams.transaction_kind_id,
-        client_token_id: currRecord.client_token_id,
-        transaction_hash: currRecord.transaction_hash,
-        status: transactionLogObj.statuses[currRecord.status],
+        client_token_id: transactionLogRecord.client_token_id,
+        transaction_hash: transactionLogRecord.transaction_hash,
+        status: new TransactionLogModel().statuses[transactionLogRecord.status],
         gas_price: inputParams.gas_price,
-        transaction_timestamp: Math.floor(new Date(currRecord.created_at).getTime()/1000),
+        transaction_timestamp: Math.floor(new Date(transactionLogRecord.created_at).getTime() / 1000),
         uts: Date.now()
       };
+
+      if (formattedReceipt.gas_used) {
+        const gasUsedBig = basicHelper.convertToBigNumber(formattedReceipt.gas_used)
+          , gasValue = gasUsedBig.mul(gasPriceBig)
+        ;
+
+        transactionMapObj.gas_used = gasUsedBig.toString(10);
+        transactionMapObj.transaction_fee = basicHelper.convertToNormal(gasValue).toString(10);
+        transactionMapObj.block_number = formattedReceipt.block_number;
+        transactionMapObj.bt_transfer_value = basicHelper.convertToNormal(formattedReceipt.bt_transfer_in_wei);
+        transactionMapObj.bt_commission_amount = basicHelper.convertToNormal(formattedReceipt.commission_amount_in_wei);
+      }
+
+      oThis.transactionUuidToDataMap[transactionLogRecord.transaction_uuid] = transactionMapObj;
     }
 
     return Promise.resolve();
   },
 
+  /**
+   * Get client tokens
+   *
+   * Sets clientTokenMap, response
+   *
+   * @return {promise}
+   */
   _getClientTokens: async function () {
     const oThis = this
       , clientTokensObj = new ClientBrandedTokenKlass()
@@ -149,73 +181,16 @@ GetTransactionDetailKlass.prototype = {
 
     oThis.response.client_tokens = oThis.clientTokenMap;
 
-    return Promise.resolve(responseHelper.successWithData({}))
+    return Promise.resolve()
   },
 
-  _getTransactionReceipts: async function () {
-    const oThis = this
-      , promiseArray = [];
-
-    for (var uuid in oThis.transactionUuidToHashMap) {
-      if(!oThis.transactionUuidToHashMap[uuid]){
-        continue;
-      }
-      const transactionHash = oThis.transactionUuidToHashMap[uuid]
-        , clientTokenId = oThis.transactionMap[uuid].client_token_id
-        , clientToken = oThis.clientTokenMap[clientTokenId]
-        , addressToNameMap = {}
-      ;
-
-      addressToNameMap[clientToken.airdrop_contract_addr.toLowerCase()] = 'airdrop';
-      const getReceiptObj = new GetReceiptKlass(
-          {
-            transaction_hash: transactionHash,
-            chain: oThis.chainMaps[uuid],
-            address_to_name_map: addressToNameMap
-          });
-
-      promiseArray.push(getReceiptObj.perform());
-    }
-
-    const promiseResults = await Promise.all(promiseArray);
-
-    for (var i = 0; i < promiseResults.length; i++) {
-      const transactionReceiptResponse = promiseResults[i]
-        , data = transactionReceiptResponse.data;
-      if (transactionReceiptResponse.isFailure()) continue;
-
-      const uuid = oThis.transactionHashToUuidMap[data.rawTransactionReceipt.transactionHash]
-        , gasPriceBig = basicHelper.convertToBigNumber(oThis.transactionMap[uuid].gas_price)
-        , gasUsedBig = basicHelper.convertToBigNumber(data.rawTransactionReceipt.gasUsed)
-        , gasValue = gasUsedBig.mul(gasPriceBig)
-      ;
-
-      oThis.transactionMap[uuid].gas_used = gasUsedBig.toString(10);
-      oThis.transactionMap[uuid].transaction_fee = basicHelper.convertToNormal(gasValue).toString(10);
-      oThis.transactionMap[uuid].block_number = data.rawTransactionReceipt.blockNumber;
-
-      if(data.formattedTransactionReceipt.eventsData.length > 0){
-        var ed = data.formattedTransactionReceipt.eventsData[0].events;
-        for(var j=0;j<ed.length;j++){
-          var ev = ed[j];
-          if(ev.name === "_tokenAmount" && ev.type === "uint256"){
-            oThis.transactionMap[uuid].bt_transfer_value = basicHelper.convertToNormal(ev.value).toString(10);
-          }
-          if(ev.name === "_commissionTokenAmount" && ev.type === "uint256"){
-            oThis.transactionMap[uuid].bt_commission_amount = basicHelper.convertToNormal(ev.value).toString(10);
-          }
-        }
-      }
-
-      oThis.transactionHashToReceiptMap[data.rawTransactionReceipt.transactionHash] = data;
-
-    }
-
-    // oThis.response.transactionMap = oThis.transactionMap;
-
-    return Promise.resolve();
-  },
-
+  /**
+   * Get transaction types
+   *
+   * Sets transactionTypeMap, response
+   *
+   * @return {promise}
+   */
   _getTransactionTypes: async function () {
     const oThis = this
       , transactionTypesObj = new ClientTransactionTypeKlass()
@@ -241,9 +216,16 @@ GetTransactionDetailKlass.prototype = {
 
     oThis.response.transaction_types = oThis.transactionTypeMap;
 
-    return Promise.resolve(responseHelper.successWithData({}))
+    return Promise.resolve();
   },
 
+  /**
+   * Get economy users
+   *
+   * Sets economyUserMap, response
+   *
+   * @return {promise}
+   */
   _getEconomyUsers: async function () {
     const oThis = this
       , managedAddressObj = new ManagedAddressKlass()
@@ -265,6 +247,8 @@ GetTransactionDetailKlass.prototype = {
     }
 
     oThis.response.economy_users = oThis.economyUserMap;
+
+    return Promise.resolve();
   }
 };
 

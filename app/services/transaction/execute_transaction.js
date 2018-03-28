@@ -78,6 +78,11 @@ const ExecuteTransactionKlass = function (params) {
 
 ExecuteTransactionKlass.prototype = {
 
+  /**
+   * Perform
+   *
+   * @return {promise<result>}
+   */
   perform: function(){
     const oThis = this;
 

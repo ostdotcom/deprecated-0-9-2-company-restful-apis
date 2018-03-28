@@ -202,9 +202,11 @@ BlockScannerBaseKlass.prototype = {
       for(var i = 0; i < batchedTxObjs.length; i ++) {
         const txReceipt = txReceiptResults[i];
         const decodedEvents = abiDecoder.decodeLogs(txReceipt.logs);
-        console.log('decodedEvents', JSON.stringify(decodedEvents));
 
-        batchedTxObjs[i].commission_amount = oThis._getCommissionAmount(decodedEvents);
+        const eventData = oThis._getEventData(decodedEvents);
+
+        batchedTxObjs[i].commission_amount_in_wei = eventData._commissionTokenAmount;
+        batchedTxObjs[i].bt_transfer_in_wei = eventData._tokenAmount;
         batchedTxObjs[i].gas_used = txReceipt.gasUsed;
       }
 
@@ -235,7 +237,11 @@ BlockScannerBaseKlass.prototype = {
 
       for(var i = 0; i < batchedTxObjs.length; i++) {
         const formattedReceipt = JSON.stringify({
-          gas_used: batchedTxObjs[i].gas_used, commission_amount: batchedTxObjs[i].commission_amount});
+          gas_used: batchedTxObjs[i].gas_used,
+          commission_amount_in_wei: batchedTxObjs[i].commission_amount_in_wei,
+          bt_transfer_in_wei: batchedTxObjs[i].bt_transfer_in_wei,
+          block_number: oThis.currentBlock
+        });
 
         promiseArray.push(new TransactionLogModel().update({status: completeStatus, formatted_receipt: formattedReceipt})
           .where(['id = ?', batchedTxObjs[i].id]).fire());
@@ -340,9 +346,11 @@ BlockScannerBaseKlass.prototype = {
     return Promise.resolve();
   },
 
-  _getCommissionAmount: function (decodedEvents) {
+  _getEventData: function (decodedEvents) {
+    const eventData = {_tokenAmount: '0', _commissionTokenAmount: '0'};
+
     if(!decodedEvents || decodedEvents.length === 0) {
-      return '0';
+      return eventData;
     }
 
     var airdropPaymentEventVars = null;
@@ -355,16 +363,20 @@ BlockScannerBaseKlass.prototype = {
     }
 
     if(!airdropPaymentEventVars || airdropPaymentEventVars.length === 0) {
-      return '0';
+      return eventData;
     }
 
     for(var i = 0; i < airdropPaymentEventVars.length; i++) {
       if (airdropPaymentEventVars[i].name == '_commissionTokenAmount') {
-        return airdropPaymentEventVars[i].value;
+        eventData._commissionTokenAmount = airdropPaymentEventVars[i].value;
+      }
+
+      if (airdropPaymentEventVars[i].name == '_tokenAmount') {
+        eventData._tokenAmount = airdropPaymentEventVars[i].value;
       }
     }
 
-    return '0';
+    return eventData;
   }
 };
 
