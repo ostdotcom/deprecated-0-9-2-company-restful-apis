@@ -5,6 +5,10 @@ const logMe = true
     , defaultTimeout = 30000
 ;
 
+const rootPrefix  = "../../"
+    , logger = require(rootPrefix + "lib/logger/custom_console_logger.js")
+;
+
 const PromiseContext = module.exports = function ( executor, options, executorParams ) {
   const oThis = this;
 
@@ -16,6 +20,7 @@ const PromiseContext = module.exports = function ( executor, options, executorPa
   oThis.createTimeout();
   oThis.promise = new Promise( wrappedExecutor );
   oThis.creationTs = Date.now();
+  oThis.executorParams =  executorParams || oThis.executorParams ;
 
 };
 
@@ -23,6 +28,7 @@ PromiseContext.prototype = {
   constructor       : PromiseContext
   //  Use promise property to get promise instance.
   , promise             : null
+  , executorParams      : null
 
   //  Pass timeoutInMilliSecs in options to set the timeout.
   //  If less than or equal to zero, timeout will not be observed.
@@ -31,23 +37,25 @@ PromiseContext.prototype = {
   //  To Auto-Resolve a promise on timeout, set resolvePromiseOnTimeout to true.
   //  It can be set using options parameter in constructor.
   , resolvePromiseOnTimeout: false
+  , rejectPromiseOnTimeout: false
 
   // The value to be passed to resolve when the Promise has timedout.
   //  It can be set using options parameter in constructor.
   , resolvedValueOnTimeout: null
+  , rejectedReasonOnTimeout : "Promise has timed out"
 
   , onResolved  : function ( resolvedValue, promiseContext ) {
     //  Triggered when callback is resolved.
     //  This callback method should be set by instance creator.
     //  It can be set using options parameter in constructor.
-    verboseLog && console.log("Promise has been resolved with value", resolvedValue );
+    verboseLog && logger.log("Promise has been resolved with value", resolvedValue );
     verboseLog && promiseContext.logInfo();
   }
   , onRejected  : function ( rejectReason, promiseContext ) {
     //  Triggered when callback is rejected.
     //  This callback method should be set by instance creator.
     //  It can be set using options parameter in constructor.
-    verboseLog && console.log("Promise has been rejected with reason", rejectReason );
+    verboseLog && logger.log("Promise has been rejected with reason", rejectReason );
     verboseLog && promiseContext.logInfo();
   }
   , onTimedout  : function ( promiseContext ) {
@@ -55,7 +63,7 @@ PromiseContext.prototype = {
     //  Time-Limit can be set using 
     //  This callback method should be set by instance creator.
     //  It can be set using options parameter in constructor.
-    verboseLog && console.log("Promise has timedout.");
+    verboseLog && logger.log("Promise has timedout.");
     verboseLog && promiseContext.logInfo();
   }
 
@@ -84,11 +92,25 @@ PromiseContext.prototype = {
     //  The actual resolve function that is passed on to the subscribers.
     oThis.resolve = function ( resolvedValue ) {
       if ( oThis.isResolved || oThis.isRejected ) { 
-        console.trace("PromiseContext :: resolve invoked when promise has already been resolved/rejected."
+        logger.trace("PromiseContext :: resolve invoked when promise has already been resolved/rejected."
           + "\n\t Ignoring resolve."
         );
         oThis.logInfo();
         return;
+      }
+
+      // Invoke resolve method. Don't bother about arguments, pass it on as is.
+      if( resolve instanceof Promise ) {
+        resolve.apply(null, arguments)
+          .catch( function ( reason ) {
+            logger.trace( "PromiseContext :: resolve threw an error :: " ,  reason );
+          });
+      }else {
+        try {
+          resolve.apply(null, arguments);
+        }catch (e){
+          logger.trace( "PromiseContext :: resolve threw an error :: " ,  e );
+        }
       }
 
       // Update the flags.
@@ -96,9 +118,6 @@ PromiseContext.prototype = {
 
       // Trigger Callback if available.
       oThis.onResolved && oThis.onResolved( resolvedValue, oThis );
-
-      // Invoke resolve method. Don't bother about arguments, pass it on as is.
-      resolve.apply(null, arguments);
 
       // Clean Up
       oThis.cleanup();
@@ -114,11 +133,28 @@ PromiseContext.prototype = {
     // The actual reject function that is passed on to the subscribers.
     oThis.reject = function ( reason ) {
       if ( oThis.isResolved || oThis.isRejected ) { 
-        console.trace("IMPORTANT :: PromiseContext :: reject invoked when promise has already been resolved/rejected."
+        logger.trace("IMPORTANT :: PromiseContext :: reject invoked when promise has already been resolved/rejected."
           + "\n\t Ignoring reject"
         );
         oThis.logInfo();
         return;
+      }
+
+      // Invoke reject method. Don't bother about arguments, pass it on as is.
+      if( reject instanceof Promise ){
+        reject.apply(null, arguments)
+          .catch( function ( reason ) {
+            logger.trace( "PromiseContext :: reject threw an error :: " ,  reason );
+            setTimeout( function ( ) {
+               return Promise.reject( reason );
+            } , 100 ) ;
+          });
+      }else {
+        try {
+          reject.apply( null, arguments );
+        }catch (e){
+          logger.trace( "PromiseContext :: reject threw an error :: " ,  e );
+        }
       }
 
       // Update the flags.
@@ -126,9 +162,6 @@ PromiseContext.prototype = {
 
       // Trigger Callback if available.
       oThis.onRejected && oThis.onRejected( reason, oThis );
-
-      // Invoke reject method. Don't bother about arguments, pass it on as is.
-      reject.apply(null, arguments);
 
       // Clean Up
       oThis.cleanup();
@@ -139,7 +172,7 @@ PromiseContext.prototype = {
 
   , timeout: function () {
     const oThis = this;
-    console.log("PromiseContext :: default timeout invoked. (No timeout set).");
+    logger.log("PromiseContext :: default timeout invoked. (No timeout set).");
   }
   , createTimeout  : function () {
     const oThis = this;
@@ -159,12 +192,24 @@ PromiseContext.prototype = {
         oThis.onTimedout( oThis );
       }
 
+      logger.error("PromiseContext :: timeout :: a promise has timedout. executorParams: " , oThis.executorParams ) ;
+
       if ( oThis.resolvePromiseOnTimeout ) {
-        logMe && console.log("PromiseContext :: a promise has timedout. Forcefully Resolving it.");
+
+        logMe && logger.warn("PromiseContext :: timeout ::  Forcefully Resolving it.");
         oThis.resolve( oThis.resolvedValueOnTimeout );
+
+      } else if( oThis.rejectPromiseOnTimeout ){
+
+        logMe && logger.warn("PromiseContext :: timeout ::  Forcefully Rejecting it.");
+        oThis.reject(oThis.rejectedReasonOnTimeout);
+
       } else {
-        logMe && console.log("PromiseContext :: a promise has timedout. Forcefully Rejecting it.");
-        oThis.reject("Promise TimedOut");
+
+        logger.error("PromiseContext :: timeout :: Zombie process has been detected." ) ;
+        oThis.logInfo();
+        oThis.cleanup();
+
       }
 
       // IMPORTANT: DO NOT CLEAN UP HERE.
@@ -191,6 +236,7 @@ PromiseContext.prototype = {
     const oThis = this;
 
     oThis.wrappedExecutor = null;
+    oThis.executorParams  =  null;
     oThis.promise  = null;
     oThis.resolve  = null;
     oThis.reject   = null;
@@ -203,7 +249,7 @@ PromiseContext.prototype = {
   , logInfo : function () {
     const oThis = this;
 
-    console.log(" PromiseContext Info :: "
+    logger.info(" PromiseContext Info :: "
       , "isResolved:"   , oThis.isResolved
       , "isRejected:"   , oThis.isRejected
       , "hasTimedout:"  , oThis.hasTimedout
@@ -239,7 +285,7 @@ PromiseContext.Examples = {
       }, 6000);
     }, { timeoutInMilliSecs : 3000 
       , onTimedout: function ( promiseContext ) {
-        console.log("Examples.simpleTimeout :: p3 timedout.");
+        logger.log("Examples.simpleTimeout :: p3 timedout.");
       }
     });
   }
@@ -253,9 +299,45 @@ PromiseContext.Examples = {
       timeoutInMilliSecs : 3000 
       , resolvePromiseOnTimeout: true
       , onTimedout: function ( promiseContext ) {
-        console.log("Examples.simpleTimeout :: p4 timedout.");
+        logger.log("Examples.simpleTimeout :: p4 timedout.");
       }
     });
+  }
+  ,rejectPromiseOnTimeout : function () {
+    var p5 = new PromiseContext( function (resolve, reject) {
+      // Lets call resolve in 6 secs
+      setTimeout(function () {
+        reject("p5 resolved");
+      }, 6000);
+    }, {
+      timeoutInMilliSecs : 3000
+      , rejectPromiseOnTimeout: true
+      , onTimedout: function ( promiseContext ) {
+        logger.log("Examples.simpleTimeout :: p5 timedout.");
+      }
+    });
+  }
+  ,zomibePromiseTimedOut : function () {
+    var p6 = new PromiseContext( function (resolve, reject) {
+      // Do nothing
+
+    }, {
+      timeoutInMilliSecs : 3000
+      , resolvePromiseOnTimeout : false
+      , rejectPromiseOnTimeout: false
+      , onTimedout: function ( promiseContext ) {
+        logger.log("Examples.simpleTimeout :: p6 timedout.");
+      }
+    });
+  }
+  , testAll : function () {
+    var oThis =  this;
+    oThis.simpleResolve();
+    oThis.simpleReject();
+    oThis.simpleTimeout();
+    oThis.resolvePromiseOnTimeout();
+    oThis.rejectPromiseOnTimeout();
+    oThis.zomibePromiseTimedOut();
   }
 };
 
