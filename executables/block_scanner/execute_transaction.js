@@ -9,6 +9,8 @@
 
 const fs = require('fs')
   , Web3 = require('web3')
+  , abiDecoder = require('abi-decoder')
+  , openStPlatform = require('@openstfoundation/openst-platform')
 ;
 
 const rootPrefix = '../..'
@@ -17,6 +19,12 @@ const rootPrefix = '../..'
   , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
 ;
+
+const coreAbis = openStPlatform.abis
+;
+
+abiDecoder.addABI(coreAbis.airdrop);
+abiDecoder.addABI(coreAbis.brandedToken);
 
 const BlockScannerBaseKlass = function (params) {
   const oThis = this
@@ -66,8 +74,8 @@ BlockScannerBaseKlass.prototype = {
     ;
 
     if (oThis.interruptSignalObtained) {
-      console.log('Exiting Process....');
-      process.exit(1);
+      logger.win('* Exiting Process after interrupt signal obtained.');
+      process.exit(0);
     }
 
     const processNewBlocksAsync = async function () {
@@ -78,17 +86,22 @@ BlockScannerBaseKlass.prototype = {
         await oThis.refreshHighestBlock();
 
         // return if nothing more to do.
-        if (oThis.highestBlock - oThis.INTENTIONAL_BLOCK_DELAY <= oThis.lastProcessedBlock) return oThis.schedule();
+        if (oThis.highestBlock - oThis.INTENTIONAL_BLOCK_DELAY <= oThis.scannerData.lastProcessedBlock) return oThis.schedule();
 
         oThis.currentBlock = oThis.scannerData.lastProcessedBlock + 1;
 
-        logger.log('currentBlock =', oThis.currentBlock);
+        logger.log('Current Block =', oThis.currentBlock);
 
         const currentBlock = await oThis.web3Provider.eth.getBlock(oThis.currentBlock);
 
         if (!currentBlock) return oThis.schedule();
 
         await oThis.shortlistTransactions(currentBlock.transactions);
+
+        if(oThis.shortlistedTxObjs.length === 0) {
+          oThis.updateScannerDataFile();
+          return oThis.schedule();
+        }
 
         await oThis.fetchTransactionReceipts();
 
@@ -101,8 +114,8 @@ BlockScannerBaseKlass.prototype = {
         logger.info('Exception got:', err);
 
         if (oThis.interruptSignalObtained) {
-          console.log('Exiting Process....');
-          process.exit(1);
+          logger.win('* Exiting Process after interrupt signal obtained.');
+          process.exit(0);
         } else {
           oThis.reInit();
         }
@@ -142,11 +155,12 @@ BlockScannerBaseKlass.prototype = {
 
       if(batchedTxLogRecords.length === 0) continue;
 
-      for(var i = 0; i < batchedTxLogRecords.length - 1; i ++) {
+      for(var i = 0; i < batchedTxLogRecords.length; i ++) {
         const currRecord = batchedTxLogRecords[i];
+
         if(currRecord.transaction_uuid !== currRecord.process_uuid) continue;
 
-        if(currRecord.status !== waitingForMiningStatus) continue;
+        if(currRecord.status != waitingForMiningStatus) continue;
 
         oThis.shortlistedTxObjs.push(
           {
@@ -154,9 +168,9 @@ BlockScannerBaseKlass.prototype = {
             id: currRecord.id
           });
       }
-
-      console.log('----------');
     }
+
+    logger.log('Number of relevant transactions =', oThis.shortlistedTxObjs.length);
 
     return Promise.resolve();
   },
@@ -178,20 +192,25 @@ BlockScannerBaseKlass.prototype = {
 
       if(batchedTxObjs.length === 0) break;
 
-      for(var i = 0; i < batchedTxObjs.length - 1; i ++) {
+      for(var i = 0; i < batchedTxObjs.length; i ++) {
         const currTxHash = batchedTxObjs[i].transaction_hash;
         promiseArray.push(oThis.web3Provider.eth.getTransactionReceipt(currTxHash))
       }
 
       const txReceiptResults = await Promise.all(promiseArray);
 
-      for(var i = 0; i < batchedTxObjs.length - 1; i ++) {
+      for(var i = 0; i < batchedTxObjs.length; i ++) {
         const txReceipt = txReceiptResults[i];
+        const decodedEvents = abiDecoder.decodeLogs(txReceipt.logs);
+        console.log('decodedEvents', JSON.stringify(decodedEvents));
+
+        batchedTxObjs[i].commission_amount = oThis._getCommissionAmount(decodedEvents);
         batchedTxObjs[i].gas_used = txReceipt.gasUsed;
       }
-      
-      // TODO: decode receipts and put the commission amount.
+
     }
+
+    logger.win('* Fetching Tx Receipts DONE');
 
     return Promise.resolve();
   },
@@ -199,7 +218,6 @@ BlockScannerBaseKlass.prototype = {
   updateTransactionLogs: async function () {
     const oThis = this
       , batchSize = 100
-      , promiseArray = []
       , completeStatus = new TransactionLogModel().invertedStatuses[transactionLogConst.completeStatus]
     ;
 
@@ -208,23 +226,25 @@ BlockScannerBaseKlass.prototype = {
     while(true) {
       const offset = (batchNo - 1) * batchSize
         , batchedTxObjs = oThis.shortlistedTxObjs.slice(offset, batchSize)
-        , batchedTxLogId = []
+        , promiseArray = []
       ;
 
       batchNo = batchNo + 1;
 
       if(batchedTxObjs.length === 0) break;
 
-      // TODO - put the transaction gas used in the new table.
+      for(var i = 0; i < batchedTxObjs.length; i++) {
+        const formattedReceipt = JSON.stringify({
+          gas_used: batchedTxObjs[i].gas_used, commission_amount: batchedTxObjs[i].commission_amount});
 
-      for(var i = 0; i < batchedTxObjs.length - 1; i ++) {
-        batchedTxLogId.push(batchedTxObjs[i].id);
+        promiseArray.push(new TransactionLogModel().update({status: completeStatus, formatted_receipt: formattedReceipt})
+          .where(['id = ?', batchedTxObjs[i].id]).fire());
       }
 
-      promiseArray.push(new TransactionLogModel().where(['id in (?)', batchedTxLogId]).update({status: completeStatus}).fire());
+      await Promise.all(promiseArray);
     }
 
-    await Promise.all(promiseArray);
+    logger.win('* Updating transaction_logs table DONE');
 
     return Promise.resolve();
   },
@@ -237,12 +257,12 @@ BlockScannerBaseKlass.prototype = {
     const oThis = this;
 
     process.on('SIGINT', function () {
-      console.log("Received SIGINT, cancelling block scaning");
+      logger.win("* Received SIGINT. Signal registerred.");
       oThis.interruptSignalObtained = true;
     });
 
     process.on('SIGTERM', function () {
-      console.log("Received SIGTERM, cancelling block scaning");
+      logger.win("* Received SIGTERM. Signal registerred.");
       oThis.interruptSignalObtained = true;
     });
   },
@@ -255,7 +275,11 @@ BlockScannerBaseKlass.prototype = {
     ;
 
     // if the current block is far behind the highest block, schedule for 10 ms otherwise schedule for 2 s
-    const waitInterval = (oThis.highestBlock - oThis.INTENTIONAL_BLOCK_DELAY <= oThis.lastProcessedBlock) ? 2000 : 10;
+    const waitInterval = (oThis.highestBlock - oThis.INTENTIONAL_BLOCK_DELAY <= oThis.scannerData.lastProcessedBlock) ? 2000 : 10;
+
+    logger.win('* Scheduled checkForNewBlocks after', waitInterval/1000.0, 'seconds.');
+
+    logger.log('------------------------------------------------');
 
     setTimeout(
       function () {oThis.checkForNewBlocks();},
@@ -294,9 +318,11 @@ BlockScannerBaseKlass.prototype = {
       }
     );
 
+    logger.win('* Updated last processed block = ', oThis.scannerData.lastProcessedBlock);
+
     if (oThis.interruptSignalObtained) {
-      console.log('Exiting Process....');
-      process.exit(1);
+      logger.win('* Exiting Process after interrupt signal obtained.');
+      process.exit(0);
     }
   },
 
@@ -309,7 +335,36 @@ BlockScannerBaseKlass.prototype = {
 
     oThis.highestBlock = await oThis.web3Provider.eth.getBlockNumber();
 
+    logger.win('* Obtained highest block:', oThis.highestBlock);
+
     return Promise.resolve();
+  },
+
+  _getCommissionAmount: function (decodedEvents) {
+    if(!decodedEvents || decodedEvents.length === 0) {
+      return '0';
+    }
+
+    var airdropPaymentEventVars = null;
+
+    for(var i = 0; i < decodedEvents.length; i++) {
+      if (decodedEvents[i].name == 'AirdropPayment') {
+        airdropPaymentEventVars = decodedEvents[i].events;
+        break;
+      }
+    }
+
+    if(!airdropPaymentEventVars || airdropPaymentEventVars.length === 0) {
+      return '0';
+    }
+
+    for(var i = 0; i < airdropPaymentEventVars.length; i++) {
+      if (airdropPaymentEventVars[i].name == '_commissionTokenAmount') {
+        return airdropPaymentEventVars[i].value;
+      }
+    }
+
+    return '0';
   }
 };
 
