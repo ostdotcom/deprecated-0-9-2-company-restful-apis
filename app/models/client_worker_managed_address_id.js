@@ -2,7 +2,6 @@
 
 const rootPrefix = '../..'
     , coreConstants = require(rootPrefix + '/config/core_constants')
-    , QueryDBKlass = require(rootPrefix + '/app/models/queryDb')
     , ModelBaseKlass = require(rootPrefix + '/app/models/base')
     , clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id')
     , bitWiseHelperKlass = require(rootPrefix + '/helpers/bitwise_operations')
@@ -10,7 +9,6 @@ const rootPrefix = '../..'
 ;
 
 const dbName = "saas_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
-    , QueryDBObj = new QueryDBKlass(dbName)
     , statuses = {'1': clientWorkerManagedAddressConst.activeStatus, '2': clientWorkerManagedAddressConst.inactiveStatus}
     , invertedStatuses = util.invert(statuses)
     , properties = {
@@ -36,8 +34,6 @@ Object.assign(ClientWorkerManagedAddressIdsKlass.prototype, bitWiseHelperKlass.p
  */
 const ClientWorkerManagedAddressIdsKlassPrototype = {
 
-  QueryDB: QueryDBObj,
-
   tableName: 'client_worker_managed_address_ids',
 
   statuses: statuses,
@@ -57,12 +53,7 @@ const ClientWorkerManagedAddressIdsKlassPrototype = {
 
   getByClientId: function(client_id){
     const oThis = this;
-    return oThis.QueryDB.read(
-        oThis.tableName,
-        ['id', 'client_id', 'managed_address_id', 'status', 'properties'],
-        "client_id=?",
-        [client_id]
-    );
+    return oThis.select('id,client_id,managed_address_id,status,properties').where(['client_id=?', oThis.clientId]);
   },
 
   getActiveByClientId: async function(client_id){
@@ -109,7 +100,7 @@ const ClientWorkerManagedAddressIdsKlassPrototype = {
     var dbRecord = null;
 
     for(var i=0; i<dbRecords.length; i++) {
-      dbRecord = dbRecords[i]
+      dbRecord = dbRecords[i];
       if (dbRecord.status == activeStatus && oThis.isBitSet(clientWorkerManagedAddressConst.hasStPrimeBalanceProperty, dbRecord.properties)) {
         recordsToReturn.push(dbRecord);
       }
@@ -122,13 +113,8 @@ const ClientWorkerManagedAddressIdsKlassPrototype = {
 // Mark Status active for records
   markStatusActive: function(ids) {
     const oThis = this;
-    return oThis.QueryDB.edit(
-      oThis.tableName,
-      ['status = ?'],
-      [invertedStatuses[clientWorkerManagedAddressConst.activeStatus]],
-      ['id IN (?)'],
-      [ids]
-    );
+    return oThis.update(['status = ?', oThis.invertedStatuses[clientWorkerManagedAddressConst.activeStatus]])
+      .where(['id IN (?)', ids]);
   },
 
   /**
