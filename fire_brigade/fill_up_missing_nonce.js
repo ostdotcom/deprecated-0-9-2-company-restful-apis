@@ -5,6 +5,8 @@ const Buffer = require('safe-buffer').Buffer
 const rootPrefix = '..'
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , fetchPrivateKeyKlass = require(rootPrefix + '/lib/key_management/fetch_private_key')
+  , nonceHelperKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_helper')
+  , nonceHelper = new nonceHelperKlass()
 ;
 
 const FillUpMissingNonce = function(params) {
@@ -82,11 +84,11 @@ FillUpMissingNonce.prototype = {
 
     const serializedTx =  tx.serialize();
 
-    const provider = (oThis.chainKind == 'value') ? chainInteractionConstants.VALUE_GETH_RPC_PROVIDER :
-      chainInteractionConstants.UTILITY_GETH_RPC_PROVIDER;
+    const provider = (oThis.chainKind == 'value') ? chainInteractionConstants.VALUE_GETH_WS_PROVIDER :
+      chainInteractionConstants.UTILITY_GETH_WS_PROVIDER;
 
     const Web3 = require('web3')
-      , providerObj = new Web3(provider)
+      , providerObj = nonceHelper.getWeb3Instance(provider, oThis.chainKind);//new Web3(provider)
     ;
 
     return providerObj.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'))

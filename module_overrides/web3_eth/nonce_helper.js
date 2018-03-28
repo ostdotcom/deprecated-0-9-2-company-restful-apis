@@ -19,6 +19,7 @@ const getWeb3Instance = function (gethURL, chainKind) {
 
   const newInstance = new Web3(gethURL);
 
+  console.log("getWeb3Instance: ",gethURL);
   newInstance.chainKind = chainKind;
   newInstance.extend({
     methods: [{
@@ -97,15 +98,14 @@ const NonceHelperKlassPrototype = {
 
     try {
       const allNoncePromise = []
-        , allGethNodes = (chainKind == 'value') ? chainInteractionConstants.OST_VALUE_GETH_RPC_PROVIDERS :
-        chainInteractionConstants.OST_UTILITY_GETH_RPC_PROVIDERS
+        , allGethNodes = oThis._getAllGethNodes(chainKind);
       ;
 
       for (var i = allGethNodes.length - 1; i >= 0; i--) {
         const gethURL = allGethNodes[i];
 
-        const web3UtilityRpcProvider = oThis.getWeb3Instance(gethURL, chainKind);
-        allNoncePromise.push(oThis.getNonceFromGethNode(address, web3UtilityRpcProvider));
+        const web3Provider = oThis.getWeb3Instance(gethURL, chainKind);
+        allNoncePromise.push(oThis.getNonceFromGethNode(address, web3Provider));
       }
 
       const allNoncePromiseResult = Promise.all(allNoncePromise);
@@ -149,14 +149,13 @@ const NonceHelperKlassPrototype = {
     try {
 
       const allTxPoolPromise = []
-        , allGethNodes = (chainKind == 'value') ? chainInteractionConstants.OST_VALUE_GETH_RPC_PROVIDERS :
-        chainInteractionConstants.OST_UTILITY_GETH_RPC_PROVIDERS
+        , allGethNodes = oThis._getAllGethNodes(chainKind)
       ;
 
       for (var i = allGethNodes.length - 1; i >= 0; i--) {
         const gethURL = allGethNodes[i];
-        const web3UtilityRpcProvider = oThis.getWeb3Instance(gethURL, chainKind);
-        allTxPoolPromise.push(oThis.getPendingTransactionsFromGethNode(web3UtilityRpcProvider));
+        const web3Provider = oThis.getWeb3Instance(gethURL, chainKind);
+        allTxPoolPromise.push(oThis.getPendingTransactionsFromGethNode(web3Provider));
       }
 
       const allTxPoolPromiseResult = await Promise.all(allTxPoolPromise);
@@ -268,15 +267,14 @@ const NonceHelperKlassPrototype = {
 
 
       const allNoncePromise = []
-        , allGethNodes = (chainKind == 'value') ? chainInteractionConstants.OST_VALUE_GETH_RPC_PROVIDERS :
-        chainInteractionConstants.OST_UTILITY_GETH_RPC_PROVIDERS
+        , allGethNodes = oThis._getAllGethNodes(chainKind)
       ;
 
       for (var i = allGethNodes.length - 1; i >= 0; i--) {
         const gethURL = allGethNodes[i];
 
-        const web3UtilityRpcProvider = oThis.getWeb3Instance(gethURL, chainKind);
-        allNoncePromise.push(oThis.getNonceFromGethNode(address, web3UtilityRpcProvider));
+        const web3Provider = oThis.getWeb3Instance(gethURL, chainKind);
+        allNoncePromise.push(oThis.getNonceFromGethNode(address, web3Provider));
       }
 
       const allNoncePromiseResult = await Promise.all(allNoncePromise);
@@ -375,6 +373,18 @@ const NonceHelperKlassPrototype = {
     });
 
   },
+
+  /**
+   * Get all geth nodes for the given chain kind
+   *
+   * @param {string} chainKind - chain kind e.g value, utility
+   *
+   * @return {string}
+   */
+  _getAllGethNodes: function (chainKind) {
+    return (chainKind == 'value') ? chainInteractionConstants.OST_VALUE_GETH_WS_PROVIDERS :
+      chainInteractionConstants.OST_UTILITY_GETH_WS_PROVIDERS
+  }
 };
 
 Object.assign(NonceHelperKlass.prototype, NonceHelperKlassPrototype);

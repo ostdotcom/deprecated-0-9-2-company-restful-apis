@@ -381,16 +381,15 @@ const NonceCacheKlassPrototype = {
     const oThis = this
       , allNoncePromise = []
       , allPendingTransactionPromise = []
-      , allGethNodes = (oThis.chainKind == 'value') ? chainInteractionConstants.OST_VALUE_GETH_RPC_PROVIDERS :
-        chainInteractionConstants.OST_UTILITY_GETH_RPC_PROVIDERS
+      , allGethNodes = oThis._getAllGethNodes(oThis.chainKind)
     ;
 
     for (var i = allGethNodes.length - 1; i >= 0; i--) {
       const gethURL = allGethNodes[i];
 
-      const web3UtilityRpcProvider = oThis.nonceHelper.getWeb3Instance(gethURL, oThis.chain_kind);
-      allNoncePromise.push(oThis.nonceHelper.getNonceFromGethNode(oThis.address, web3UtilityRpcProvider));
-      allPendingTransactionPromise.push(oThis.nonceHelper.getPendingTransactionsFromGethNode(web3UtilityRpcProvider));
+      const web3Provider = oThis.nonceHelper.getWeb3Instance(gethURL, oThis.chain_kind);
+      allNoncePromise.push(oThis.nonceHelper.getNonceFromGethNode(oThis.address, web3Provider));
+      allPendingTransactionPromise.push(oThis.nonceHelper.getPendingTransactionsFromGethNode(web3Provider));
     }
 
     var x = await Promise.all([Promise.all(allNoncePromise), Promise.all(allPendingTransactionPromise)]);
@@ -471,7 +470,18 @@ const NonceCacheKlassPrototype = {
       return Promise.resolve(responseHelper.error('l_nm_syncNonce_2', "unable to fetch nonce from geth nodes"));
     }
   },
-  
+
+  /**
+   * Get all geth nodes for the given chain kind
+   *
+   * @param {string} chainKind - chain kind e.g value, utility
+   *
+   * @return {string}
+   */
+  _getAllGethNodes: function (chainKind) {
+    return (chainKind == 'value') ? chainInteractionConstants.OST_VALUE_GETH_WS_PROVIDERS :
+      chainInteractionConstants.OST_UTILITY_GETH_WS_PROVIDERS
+  }
 };
 
 Object.assign(NonceManagerKlass.prototype, NonceCacheKlassPrototype);

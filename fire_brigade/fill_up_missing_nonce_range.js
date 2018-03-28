@@ -85,7 +85,7 @@ module.exports = FillUpMissingNonceRange;
 
 Below is the code to run on console. Update toAddress and chainKind below.
 ====================================================================
-var toAddress = '0x3a9C9B3a01Ac218BF858BF9fDA8BD1411554049F';
+var toAddress = '0x053234F228c1C197b6Fd29830F0F35b4e49Afa9C';
 var chainKind = 'utility';
 
 var rootPrefix = '.';
@@ -96,7 +96,7 @@ fillUpObject.perform().then(console.log);
 
 Below is the code to run on console. To get current nonce of the address
 ====================================================================
-var fromAddress = '0x3a9C9B3a01Ac218BF858BF9fDA8BD1411554049F';
+var fromAddress = '0x7118cDDc59beeA8D9b31594118A5C6bC8dc8f455';
 nonceManagerKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_manager');
  nonceManager = new nonceManagerKlass({address: fromAddress, chain_kind: chainKind});
  nonceManager.getNonce().then(function(response) {
@@ -107,13 +107,14 @@ nonceManagerKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_manag
 
 Below is the test code. To mess up nonce for the given address. (Use only for pure testing purpose)
 ===========================================================================================
-var fromAddress = '0x3a9C9B3a01Ac218BF858BF9fDA8BD1411554049F';
-var startNonce = 90
+var fromAddress = '0x5FF02fd90Baec50A62D4eE19fD22fF96D42046a8';
+var startNonce = 10
 for (var diff1 = 0; diff1 < 10; diff1++ ) {
   startNonce = startNonce+diff1;
   var diff = 5;
   for (var i = startNonce; i < startNonce+diff; i++ ) {
     fillUpObject.fillNonce(fromAddress, i);
+    fillUpObject.batchProcess()
   }
 }
 
