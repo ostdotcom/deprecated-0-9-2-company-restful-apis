@@ -121,11 +121,15 @@ const CriticalChainInteractionLogPrototype = {
   insertRecord: async function(data){
 
     if (!data.request_params) {
-      data.request_params = {};
+      data.request_params = '{}';
+    } else {
+      data.request_params = JSON.stringify(data.request_params);
     }
 
     if (!data.response_data) {
-      data.response_data = {};
+      data.response_data = '{}';
+    } else {
+      data.response_data = JSON.stringify(data.response_data);
     }
 
     const oThis = this
