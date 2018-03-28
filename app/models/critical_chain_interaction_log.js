@@ -97,15 +97,17 @@ const CriticalChainInteractionLogPrototype = {
     const oThis = this
         , dbRecords = await oThis.select().where(['id IN (?)', ids]).fire();
 
-    var dbRecord = null;
+    var dbRecord = null
+        , formattedDbRecords = {};
 
     for(var i=0; i<dbRecords.length; i++) {
       dbRecord = dbRecords[i];
       dbRecord.request_params = JSON.parse(dbRecord.request_params);
       dbRecord.response_data = JSON.parse(dbRecord.response_data);
+      formattedDbRecords[dbRecord.id] = dbRecord;
     }
 
-    return dbRecords;
+    return formattedDbRecords;
 
   },
 
@@ -117,6 +119,14 @@ const CriticalChainInteractionLogPrototype = {
    * @return {promise<object>}
    */
   insertRecord: async function(data){
+
+    if (!data.request_params) {
+      data.request_params = {};
+    }
+
+    if (!data.response_data) {
+      data.response_data = {};
+    }
 
     const oThis = this
         , dbRecord = await oThis.insert(data).fire();
