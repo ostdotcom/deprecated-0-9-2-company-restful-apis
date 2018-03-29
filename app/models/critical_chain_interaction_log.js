@@ -102,8 +102,8 @@ const CriticalChainInteractionLogPrototype = {
 
     for(var i=0; i<dbRecords.length; i++) {
       dbRecord = dbRecords[i];
-      dbRecord.request_params = JSON.parse(dbRecord.request_params);
-      dbRecord.response_data = JSON.parse(dbRecord.response_data);
+      dbRecord.request_params = JSON.parse(dbRecord.request_params || '{}');
+      dbRecord.response_data = JSON.parse(dbRecord.response_data || '{}');
       formattedDbRecords[parseInt(dbRecord.id)] = dbRecord;
     }
 
