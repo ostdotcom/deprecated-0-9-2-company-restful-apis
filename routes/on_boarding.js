@@ -13,7 +13,7 @@ const rootPrefix = '..'
 /* On board a branded token */
 router.post('/start', function (req, res, next) {
 
-  const StartOnBoardingKlass = require(rootPrefix + 'app/services/on_boarding/start');
+  const StartOnBoardingKlass = require(rootPrefix + '/app/services/on_boarding/start');
 
   Promise.resolve(routeHelper.performer(req, res, next, StartOnBoardingKlass, 'r_su_3'));
 
