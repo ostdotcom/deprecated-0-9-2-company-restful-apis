@@ -112,6 +112,7 @@ const promiseExecutor = function (onResolve, onReject, params ) {
   return new PerformerKlass(parsedParams.message.payload).perform()
       .then(onResolve)
       .catch(function(error) {
+        logger.error('error in processor', error);
         return onResolve();
       });
 
