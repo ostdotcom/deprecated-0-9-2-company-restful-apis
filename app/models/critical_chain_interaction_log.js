@@ -41,7 +41,7 @@ const dbName = "company_saas_shared_"+coreConstants.SUB_ENVIRONMENT+"_"+coreCons
     , invertedActivityTypes = util.invert(activityTypes)
 ;
 
-const CriticalChainInteractionLogKlass = function () {
+const CriticalChainInteractionLogModel = function () {
 
   const oThis = this;
 
@@ -49,7 +49,7 @@ const CriticalChainInteractionLogKlass = function () {
 
 };
 
-CriticalChainInteractionLogKlass.prototype = Object.create(ModelBaseKlass.prototype);
+CriticalChainInteractionLogModel.prototype = Object.create(ModelBaseKlass.prototype);
 
 /*
  * Public methods
@@ -178,6 +178,6 @@ const CriticalChainInteractionLogPrototype = {
 
 };
 
-Object.assign(CriticalChainInteractionLogKlass.prototype, CriticalChainInteractionLogPrototype);
+Object.assign(CriticalChainInteractionLogModel.prototype, CriticalChainInteractionLogPrototype);
 
-module.exports = CriticalChainInteractionLogKlass;
+module.exports = CriticalChainInteractionLogModel;
