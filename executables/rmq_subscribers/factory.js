@@ -82,7 +82,7 @@ ProcessLocker.canStartProcess({process_title: 'executables_rmq_subscribers_facto
 const topicPerformers = {};
 topicPerformers[notificationTopics.onBoardingPropose] = '/lib/on_boarding/propose.js';
 topicPerformers[notificationTopics.onBoardingDeployAirdrop] = '/lib/on_boarding/deploy_airdrop.js';
-topicPerformers[notificationTopics.onBoardingSetWorkers] = '/lib/on_boarding/set_worker.js';
+topicPerformers[notificationTopics.onBoardingSetWorkers] = '/lib/on_boarding/set_workers.js';
 topicPerformers[notificationTopics.onBoardingSetPriceOracle] = '/lib/on_boarding/set_price_oracle.js';
 topicPerformers[notificationTopics.onBoardingSetAcceptedMargin] = '/lib/on_boarding/set_accepted_margin.js';
 topicPerformers[notificationTopics.airdropAllocateTokens] = '/lib/allocate_airdrop/start_airdrop.js';
