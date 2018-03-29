@@ -87,9 +87,7 @@ FillUpMissingNonce.prototype = {
     const provider = (oThis.chainKind == 'value') ? chainInteractionConstants.VALUE_GETH_WS_PROVIDER :
       chainInteractionConstants.UTILITY_GETH_WS_PROVIDER;
 
-    const Web3 = require('web3')
-      , providerObj = nonceHelper.getWeb3Instance(provider, oThis.chainKind);//new Web3(provider)
-    ;
+    const  providerObj = nonceHelper.getWeb3Instance(provider, oThis.chainKind);
 
     return providerObj.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'))
       .once('transactionHash', function(txHash){console.log('transaction_hash:', txHash);})

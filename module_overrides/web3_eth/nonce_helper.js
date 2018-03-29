@@ -1,6 +1,7 @@
 "use strict";
 
-const Web3 = require('web3')
+const OstCore       = require("@openstfoundation/openst-core")
+  , OstWeb3       = OstCore.OstWeb3
   , BigNumber = require('bignumber.js')
   , web3InstanceMap = {}
 ;
@@ -17,7 +18,12 @@ const getWeb3Instance = function (gethURL, chainKind) {
     return existingInstance;
   }
 
-  const newInstance = new Web3(gethURL);
+  const newInstance =  new OstWeb3(gethURL, null, {
+    providerOptions: {
+      maxReconnectTries: 20,
+      killOnReconnectFailuer: false
+    }
+  });
 
   newInstance.chainKind = chainKind;
   newInstance.extend({
