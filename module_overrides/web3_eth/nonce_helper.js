@@ -21,7 +21,7 @@ const getWeb3Instance = function (gethURL, chainKind) {
   const newInstance =  new OstWeb3(gethURL, null, {
     providerOptions: {
       maxReconnectTries: 20,
-      killOnReconnectFailuer: false
+      killOnReconnectFailure: false
     }
   });
 

@@ -128,7 +128,6 @@ const Derived = function () {
       };
 
       const fetchNonceAndAddToRawTransaction = async function () {
-        const chainKind = chainInteractionConstants.GETH_PROVIDER_TO_CHAIN_KIND_MAP[host];
         const nonceManager = new nonceManagerKlass({address: fromAddress, chain_kind: chainKind});
 
         const getNonceResponse = await nonceManager.getNonce();
