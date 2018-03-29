@@ -121,28 +121,22 @@ const ManagedAddressKlassPrototype = {
     );
   },
 
-  getFilteredActiveUsersCount: function (params) {
+  getFilteredActiveUsersCount: async function (params) {
     const oThis = this
       , clientId = params.client_id
       , propertyUnsetBitVal =  params.property_unset_bit_value
     ;
 
-    var valueFields = [clientId, invertedStatuses[managedAddressesConst.activeStatus], invertedAddressTypes[managedAddressesConst.userAddressType]]
-      , propertiesWhereClause = ''
-    ;
+    oThis.select('count(1) as total_count')
+      .where('client_id = ?', clientId)
+      .where('status=?', invertedStatuses[managedAddressesConst.activeStatus])
+      .where('address_type=?', invertedAddressTypes[managedAddressesConst.userAddressType]);
 
     if (propertyUnsetBitVal) {
-      propertiesWhereClause = ' AND (properties & ?) = 0'
-        , valueFields = valueFields.concat([propertyUnsetBitVal])
-      ;
+      oThis.where('(properties & ?) = 0', propertyUnsetBitVal);
     }
 
-    return oThis.QueryDB.read(
-      oThis.tableName,
-      ['count(1) as total_count'],
-      'client_id = ? AND status=? AND address_type=?' + propertiesWhereClause,
-      valueFields
-    );
+    return await oThis.fire();
   },
 
   getByFilterAndPaginationParams: function (params) {
