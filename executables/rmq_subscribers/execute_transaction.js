@@ -2,11 +2,12 @@
 
 /**
  *
- * Start Airdrop for a client token by subscribing to RMQ events.<br><br>
+ * Execute transactions by subscribing to RMQ events.<br><br>
  *
- * @module executables/rmq_subscribers/start_airdrop
+ * @module executables/rmq_subscribers/execute_transaction
  *
  */
+
 const rootPrefix = '../..';
 
 //Always Include Module overrides First
