@@ -175,7 +175,35 @@ const CriticalChainInteractionLogPrototype = {
     const allMemcacheInstance = new allMemcacheInstanceKlass();
     allMemcacheInstance.clearCache(coreConstants.SHARED_MEMCACHE_KEY_PREFIX + coreConstants.ENVIRONMENT_SHORT + '_c_pci_ids_' + client_token_id);
 
-  }
+  },
+
+
+  /**
+   * update critical chain interaction log <br><br>
+   *
+   * @return {promise<result>}
+   *
+   */
+  updateCriticalChainInteractionLog: async function (idToUpdate, dataToUpdate, txStatusDetailsCacheId, clientTokenId) {
+
+    const oThis = this;
+
+    if (!dataToUpdate.response_data) {
+      dataToUpdate.response_data = '{}';
+    } else {
+      dataToUpdate.response_data = JSON.stringify(dataToUpdate.response_data);
+    }
+
+    await oThis.update(dataToUpdate).where({id: idToUpdate}).fire();
+
+    oThis.flushTxStatusDetailsCache(txStatusDetailsCacheId);
+
+    oThis.flushPendingTxsCache(clientTokenId);
+
+    return Promise.resolve(responseHelper.successWithData({}));
+
+  },
+
 
 };
 
