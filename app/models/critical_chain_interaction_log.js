@@ -133,9 +133,14 @@ const CriticalChainInteractionLogPrototype = {
     }
 
     const oThis = this
-        , dbRecord = await oThis.insert(data).fire();
+        , dbRecord = await oThis.insert(data).fire()
+        , idToFlush = data.parent_id ;
 
-    oThis.flushTxStatusDetailsCache(dbRecord.insertId);
+    if (!idToFlush) {
+      idToFlush = dbRecord.insertId;
+    }
+
+    oThis.flushTxStatusDetailsCache(idToFlush);
 
     oThis.flushPendingTxsCache(data.client_token_id);
 
