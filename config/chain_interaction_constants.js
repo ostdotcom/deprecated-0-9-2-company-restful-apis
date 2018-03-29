@@ -20,21 +20,11 @@ define("UTILITY_OPS_ADDR", process.env.OST_UTILITY_OPS_ADDR);
 
 define("FOUNDATION_ADDR", process.env.OST_FOUNDATION_ADDR);
 
-define("UTILITY_CHAIN_ID", process.env.OST_UTILITY_CHAIN_ID);
-define("UTILITY_GAS_PRICE", process.env.OST_UTILITY_GAS_PRICE);
-define("UTILITY_GETH_RPC_PROVIDER", process.env.OST_UTILITY_GETH_RPC_PROVIDER);
-define("UTILITY_GETH_WS_PROVIDER", process.env.OST_UTILITY_GETH_WS_PROVIDER);
 define("UTILITY_OPS_ADDR", process.env.OST_UTILITY_OPS_ADDR);
 define("UTILITY_OPS_PASSPHRASE", process.env.OST_UTILITY_OPS_PASSPHRASE);
 
 define("UTILITY_DEPLOYER_ADDR", process.env.OST_UTILITY_DEPLOYER_ADDR);
 define("UTILITY_DEPLOYER_PASSPHRASE", process.env.OST_UTILITY_DEPLOYER_PASSPHRASE);
-
-// Constants which are needed to interact with Value Chain
-define("VALUE_CHAIN_ID", process.env.OST_VALUE_CHAIN_ID);
-define("VALUE_GAS_PRICE", process.env.OST_VALUE_GAS_PRICE);
-define("VALUE_GETH_RPC_PROVIDER", process.env.OST_VALUE_GETH_RPC_PROVIDER);
-define("VALUE_GETH_WS_PROVIDER", process.env.OST_VALUE_GETH_WS_PROVIDER);
 
 define("ST_PRIME_UUID", process.env.OST_OPENSTUTILITY_ST_PRIME_UUID);
 
@@ -42,40 +32,59 @@ define("ST_PRIME_UUID", process.env.OST_OPENSTUTILITY_ST_PRIME_UUID);
 define("SIMPLE_TOKEN_CONTRACT_ADDR", process.env.OST_SIMPLE_TOKEN_CONTRACT_ADDR);
 define("STAKER_ADDR", process.env.OST_STAKER_ADDR);
 
-const OST_VALUE_GETH_RPC_PROVIDERS = JSON.parse(process.env.OST_VALUE_GETH_RPC_PROVIDERS);
-define('OST_VALUE_GETH_RPC_PROVIDERS', OST_VALUE_GETH_RPC_PROVIDERS);
+const providerHostToChainKindMap = {};
+
+// Constants which are needed to interact with Utility Chain
+define("UTILITY_CHAIN_ID", process.env.OST_UTILITY_CHAIN_ID);
+define("UTILITY_GAS_PRICE", process.env.OST_UTILITY_GAS_PRICE);
+define("UTILITY_GETH_RPC_PROVIDER", process.env.OST_UTILITY_GETH_RPC_PROVIDER);
+define("UTILITY_GETH_WS_PROVIDER", process.env.OST_UTILITY_GETH_WS_PROVIDER);
 
 const OST_UTILITY_GETH_RPC_PROVIDERS = JSON.parse(process.env.OST_UTILITY_GETH_RPC_PROVIDERS);
 define('OST_UTILITY_GETH_RPC_PROVIDERS', OST_UTILITY_GETH_RPC_PROVIDERS);
 
-const providerHostToChainKindMap = {};
-
-for(var i = 0; i < OST_VALUE_GETH_RPC_PROVIDERS.length; i ++) {
-  providerHostToChainKindMap[OST_VALUE_GETH_RPC_PROVIDERS[i]] = 'value';
-}
-providerHostToChainKindMap[process.env.OST_VALUE_GETH_RPC_PROVIDER] = 'value';
+const OST_UTILITY_GETH_WS_PROVIDERS = JSON.parse(process.env.OST_UTILITY_GETH_WS_PROVIDERS);
+define('OST_UTILITY_GETH_WS_PROVIDERS', OST_UTILITY_GETH_WS_PROVIDERS);
 
 for(var i = 0; i < OST_UTILITY_GETH_RPC_PROVIDERS.length; i ++) {
   providerHostToChainKindMap[OST_UTILITY_GETH_RPC_PROVIDERS[i]] = 'utility';
 }
+if(process.env.OST_UTILITY_GETH_RPC_PROVIDER) {
+  providerHostToChainKindMap[process.env.OST_UTILITY_GETH_RPC_PROVIDER] = 'utility';
+}
+for(var i = 0; i < OST_UTILITY_GETH_WS_PROVIDERS.length; i ++) {
+  providerHostToChainKindMap[OST_UTILITY_GETH_WS_PROVIDERS[i]] = 'utility';
+}
+if(process.env.OST_UTILITY_GETH_WS_PROVIDER) {
+  providerHostToChainKindMap[process.env.OST_UTILITY_GETH_WS_PROVIDER] = 'utility';
+}
 
-providerHostToChainKindMap[process.env.OST_UTILITY_GETH_RPC_PROVIDER] = 'utility';
+
+// Constants which are needed to interact with Value Chain
+define("VALUE_CHAIN_ID", process.env.OST_VALUE_CHAIN_ID);
+define("VALUE_GAS_PRICE", process.env.OST_VALUE_GAS_PRICE);
+define("VALUE_GETH_RPC_PROVIDER", process.env.OST_VALUE_GETH_RPC_PROVIDER);
+define("VALUE_GETH_WS_PROVIDER", process.env.OST_VALUE_GETH_WS_PROVIDER);
+
+const OST_VALUE_GETH_RPC_PROVIDERS = JSON.parse(process.env.OST_VALUE_GETH_RPC_PROVIDERS);
+define('OST_VALUE_GETH_RPC_PROVIDERS', OST_VALUE_GETH_RPC_PROVIDERS);
 
 const OST_VALUE_GETH_WS_PROVIDERS = JSON.parse(process.env.OST_VALUE_GETH_WS_PROVIDERS);
 define('OST_VALUE_GETH_WS_PROVIDERS', OST_VALUE_GETH_WS_PROVIDERS);
 
-const OST_UTILITY_GETH_WS_PROVIDERS = JSON.parse(process.env.OST_UTILITY_GETH_WS_PROVIDERS);
-define('OST_UTILITY_GETH_WS_PROVIDERS', OST_UTILITY_GETH_WS_PROVIDERS);
+for(var i = 0; i < OST_VALUE_GETH_RPC_PROVIDERS.length; i ++) {
+  providerHostToChainKindMap[OST_VALUE_GETH_RPC_PROVIDERS[i]] = 'value';
+}
+if(process.env.OST_VALUE_GETH_RPC_PROVIDER) {
+  providerHostToChainKindMap[process.env.OST_VALUE_GETH_RPC_PROVIDER] = 'value';
+}
 
 for(var i = 0; i < OST_VALUE_GETH_WS_PROVIDERS.length; i ++) {
   providerHostToChainKindMap[OST_VALUE_GETH_WS_PROVIDERS[i]] = 'value';
 }
-providerHostToChainKindMap[process.env.OST_VALUE_GETH_WS_PROVIDER] = 'value';
-
-for(var i = 0; i < OST_UTILITY_GETH_WS_PROVIDERS.length; i ++) {
-  providerHostToChainKindMap[OST_UTILITY_GETH_WS_PROVIDERS[i]] = 'utility';
+if (process.env.OST_VALUE_GETH_WS_PROVIDER){
+  providerHostToChainKindMap[process.env.OST_VALUE_GETH_WS_PROVIDER] = 'value';
 }
-providerHostToChainKindMap[process.env.OST_UTILITY_GETH_WS_PROVIDER] = 'utility';
 
 define('GETH_PROVIDER_TO_CHAIN_KIND_MAP', providerHostToChainKindMap);
 

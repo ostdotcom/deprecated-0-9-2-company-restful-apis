@@ -19,7 +19,6 @@ const getWeb3Instance = function (gethURL, chainKind) {
 
   const newInstance = new Web3(gethURL);
 
-  console.log("getWeb3Instance: ",gethURL);
   newInstance.chainKind = chainKind;
   newInstance.extend({
     methods: [{
