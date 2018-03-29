@@ -133,8 +133,9 @@ const CriticalChainInteractionLogPrototype = {
     }
 
     const oThis = this
-        , dbRecord = await oThis.insert(data).fire()
-        , idToFlush = data.parent_id ;
+        , dbRecord = await oThis.insert(data).fire();
+
+    var idToFlush = data.parent_id;
 
     if (!idToFlush) {
       idToFlush = dbRecord.insertId;
