@@ -2,7 +2,7 @@
 
 const rootPrefix = '../../..'
     , responseHelper = require(rootPrefix + '/lib/formatter/response')
-    , StakeAndMintRouterKlass = require(rootPrefix + 'lib/stake_and_mint/router')
+    , StakeAndMintRouterKlass = require(rootPrefix + '/lib/stake_and_mint/router')
     , basicHelper = require(rootPrefix + '/helpers/basic')
     , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;

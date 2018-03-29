@@ -2,7 +2,7 @@
 
 const rootPrefix = '../../..'
     , responseHelper = require(rootPrefix + '/lib/formatter/response')
-    , OnBoardingRouterKlass = require(rootPrefix + 'lib/on_boarding/router.js')
+    , OnBoardingRouterKlass = require(rootPrefix + '/lib/on_boarding/router.js')
     , basicHelper = require(rootPrefix + '/helpers/basic')
     , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
