@@ -6,6 +6,7 @@ const rootPrefix = '../..'
     , criticalChainInteractionLogConst = require(rootPrefix + '/lib/global_constant/critical_chain_interaction_log')
     , allMemcacheInstanceKlass = require(rootPrefix + '/lib/cache_management/all_memcache_instance')
     , util = require(rootPrefix + '/lib/util')
+    , responseHelper = require(rootPrefix + '/lib/formatter/response')
 ;
 
 const dbName = "company_saas_shared_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
@@ -188,10 +189,12 @@ const CriticalChainInteractionLogPrototype = {
 
     const oThis = this;
 
-    if (!dataToUpdate.response_data) {
-      dataToUpdate.response_data = '{}';
-    } else {
+    if (dataToUpdate.response_data) {
       dataToUpdate.response_data = JSON.stringify(dataToUpdate.response_data);
+    }
+
+    if (dataToUpdate.request_params) {
+      dataToUpdate.request_params = JSON.stringify(dataToUpdate.request_params);
     }
 
     await oThis.update(dataToUpdate).where({id: idToUpdate}).fire();

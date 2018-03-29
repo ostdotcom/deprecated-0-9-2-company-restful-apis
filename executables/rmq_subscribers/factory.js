@@ -109,7 +109,11 @@ const promiseExecutor = function (onResolve, onReject, params ) {
   logger.log('topic', topic);
   logger.log('parsedParams.message.payload', parsedParams.message.payload);
 
-  return new PerformerKlass(parsedParams.message.payload).perform();
+  return new PerformerKlass(parsedParams.message.payload).perform()
+      .then(onResolve)
+      .catch(function(error) {
+        return onResolve();
+      });
 
 };
 
