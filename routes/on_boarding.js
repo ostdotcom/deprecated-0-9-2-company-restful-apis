@@ -10,73 +10,12 @@ const rootPrefix = '..'
   , routeHelper = require(rootPrefix + '/routes/helper')
 ;
 
-/* Propose a branded token */
-router.post('/propose-branded-token', function (req, res, next) {
+/* On board a branded token */
+router.post('/start', function (req, res, next) {
 
-  const performer = function() {
+  const StartOnBoardingKlass = require(rootPrefix + 'app/services/on_boarding/start');
 
-    const decodedParams = req.decodedParams
-      , tokenSymbol = decodedParams.token_symbol
-      , tokenName = decodedParams.token_name
-      , tokenConversionFactor = decodedParams.token_conversion_factor
-    ;
-
-    // handle final response
-    const handleResponse = function (proposeResponse) {
-      if(proposeResponse.isSuccess()){
-        return responseHelper.successWithData(proposeResponse.data).renderResponse(res);
-      } else {
-        return responseHelper.error(proposeResponse.err.code, proposeResponse.err.message).renderResponse(res);
-      }
-    };
-
-    const object = new openStPlatform.services.onBoarding.proposeBrandedToken({
-      'symbol': tokenSymbol,
-      'name': tokenName,
-      'conversion_factor': tokenConversionFactor
-    });
-
-    return object.perform().then(handleResponse);
-
-  };
-
-  Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_ob_1', 'Something went wrong', err);
-    responseHelper.error('r_ob_1', 'Something went wrong').renderResponse(res)
-  });
-
-});
-
-/* Propose a branded token */
-router.get('/registration-status', function (req, res, next) {
-
-  const performer = function() {
-
-    const decodedParams = req.decodedParams
-      , proposeTransactionHash = decodedParams.transaction_hash
-    ;
-
-    // handle final response
-    const handleResponse = function (registrationResponse) {
-      if(registrationResponse.isSuccess()){
-        return responseHelper.successWithData(registrationResponse.data).renderResponse(res);
-      } else {
-        return responseHelper.error(registrationResponse.err.code, registrationResponse.err.message).renderResponse(res);
-      }
-    };
-
-    const object = new openStPlatform.services.onBoarding.getRegistrationStatus({
-      'transaction_hash': proposeTransactionHash
-    });
-
-    return object.perform().then(handleResponse);
-
-  };
-
-  Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_ob_2', 'Something went wrong', err);
-    responseHelper.error('r_ob_2', 'Something went wrong').renderResponse(res)
-  });
+  Promise.resolve(routeHelper.performer(req, res, next, StartOnBoardingKlass, 'r_su_3'));
 
 });
 

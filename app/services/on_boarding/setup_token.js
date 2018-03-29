@@ -17,10 +17,8 @@ const rootPrefix = '../../..'
   , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
   , clientBrandedToken = new ClientBrandedTokenKlass()
   , ClientWorkerManagedAddressIdsKlass = require(rootPrefix + '/app/models/client_worker_managed_address_id')
-  , clientWorkerAddrObj = new ClientWorkerManagedAddressIdsKlass()
   , clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id')
   , ManagedAddressSaltKlass = require(rootPrefix + '/app/models/managed_address_salt')
-  , managedAddressSaltObj = new ManagedAddressSaltKlass()
   , ManagedAddressModelKlass = require(rootPrefix + '/app/models/managed_address')
   , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
   , ClientSecuredBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
@@ -147,7 +145,7 @@ SetupToken.prototype = {
     const addressSalt = newKey["CiphertextBlob"];
 
     try {
-      await managedAddressSaltObj.create({
+      await new ManagedAddressSaltKlass().create({
         client_id: oThis.clientId,
         managed_address_salt: addressSalt
       });
@@ -162,7 +160,7 @@ SetupToken.prototype = {
 
     var oThis = this
       , clientTokenByClientId = await clientBrandedToken.getByClientId(oThis.clientId)
-      , existingWorkerManagedAddresses = await clientWorkerAddrObj.getByClientId(oThis.clientId);
+      , existingWorkerManagedAddresses = await new ClientWorkerManagedAddressIdsKlass().getByClientId(oThis.clientId);
 
     if (clientTokenByClientId.length > 0) {
       oThis.existingToken = clientTokenByClientId[clientTokenByClientId.length - 1];
@@ -347,10 +345,10 @@ SetupToken.prototype = {
     if (newWorkerManagedAddressIdsLength > 0) {
       for (var i = 0; i < newWorkerManagedAddressIdsLength; i++) {
         managedAddressInsertData.push([oThis.clientId, oThis.newWorkerManagedAddressIds[i],
-          clientWorkerAddrObj.invertedStatuses[clientWorkerManagedAddressConst.inactiveStatus]]);
+          new ClientWorkerManagedAddressIdsKlass().invertedStatuses[clientWorkerManagedAddressConst.inactiveStatus]]);
       }
       var fields = ['client_id', 'managed_address_id', 'status'];
-      const queryResponse = await clientWorkerAddrObj.bulkInsert(fields, managedAddressInsertData);
+      const queryResponse = await new ClientWorkerManagedAddressIdsKlass().insertMultiple(fields, managedAddressInsertData);
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
