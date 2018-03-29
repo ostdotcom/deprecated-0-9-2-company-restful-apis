@@ -80,16 +80,16 @@ const queueName = 'executables_rmq_subscribers_factory_' + queueSuffix;
 ProcessLocker.canStartProcess({process_title: 'executables_rmq_subscribers_factory' + processLockId});
 
 const topicPerformers = {};
-topicPerformers[notificationTopics.onBoardingPropose] = '/lib/on_boarding/propose.js';
-topicPerformers[notificationTopics.onBoardingDeployAirdrop] = '/lib/on_boarding/deploy_airdrop.js';
-topicPerformers[notificationTopics.onBoardingSetWorkers] = '/lib/on_boarding/set_workers.js';
-topicPerformers[notificationTopics.onBoardingSetPriceOracle] = '/lib/on_boarding/set_price_oracle.js';
-topicPerformers[notificationTopics.onBoardingSetAcceptedMargin] = '/lib/on_boarding/set_accepted_margin.js';
-topicPerformers[notificationTopics.airdropAllocateTokens] = '/lib/allocate_airdrop/start_airdrop.js';
-topicPerformers[notificationTopics.stakeAndMintInitTransfer] = '/lib/stake_and_mint/verify_transfer_to_staker.js';
-topicPerformers[notificationTopics.stakeAndMintApprove] = '/lib/stake_and_mint/approve.js';
-topicPerformers[notificationTopics.stakeAndMintForSTPrime] = '/lib/stake_and_mint/start/st_prime.js';
-topicPerformers[notificationTopics.stakeAndMintForBT] = '/lib/stake_and_mint/start/branded_token.js';
+topicPerformers[notificationTopics.onBoardingPropose] = require(rootPrefix + '/lib/on_boarding/propose.js');
+topicPerformers[notificationTopics.onBoardingDeployAirdrop] = require(rootPrefix + '/lib/on_boarding/deploy_airdrop.js');
+topicPerformers[notificationTopics.onBoardingSetWorkers] = require(rootPrefix + '/lib/on_boarding/set_workers.js');
+topicPerformers[notificationTopics.onBoardingSetPriceOracle] = require(rootPrefix + '/lib/on_boarding/set_price_oracle.js');
+topicPerformers[notificationTopics.onBoardingSetAcceptedMargin] = require(rootPrefix + '/lib/on_boarding/set_accepted_margin.js');
+topicPerformers[notificationTopics.airdropAllocateTokens] = require(rootPrefix + '/lib/allocate_airdrop/start_airdrop.js');
+topicPerformers[notificationTopics.stakeAndMintInitTransfer] = require(rootPrefix + '/lib/stake_and_mint/verify_transfer_to_staker.js');
+topicPerformers[notificationTopics.stakeAndMintApprove] = require(rootPrefix + '/lib/stake_and_mint/approve.js');
+topicPerformers[notificationTopics.stakeAndMintForSTPrime] = require(rootPrefix + '/lib/stake_and_mint/start/st_prime.js');
+topicPerformers[notificationTopics.stakeAndMintForBT] = require(rootPrefix + '/lib/stake_and_mint/start/branded_token.js');
 
 const promiseExecutor = function (onResolve, onReject, params ) {
   // factory logic for deciding what action to perform here.
@@ -106,7 +106,11 @@ const promiseExecutor = function (onResolve, onReject, params ) {
 
   if(!PerformerKlass) return Promise.resolve;
 
+  logger.log('topic', topic);
+  logger.log('parsedParams.message.payload', parsedParams.message.payload);
+
   return new PerformerKlass(parsedParams.message.payload).perform();
+
 };
 
 const PromiseQueueManager = new PromiseQueueManagerKlass(
@@ -135,13 +139,13 @@ function handle() {
   logger.info('Received Signal');
 
   if (!PromiseQueueManager.getPendingCount()) {
-    console.log("SIGINT/SIGTERM handle :: No pending Promises.");
+    logger.log("SIGINT/SIGTERM handle :: No pending Promises.");
     process.exit( 0 );
   }
 
   const checkForUnAckTasks = function(){
     if ( PromiseQueueManager.getPendingCount() <= 0) {
-      console.log("SIGINT/SIGTERM handle :: No pending Promises.");
+      logger.log("SIGINT/SIGTERM handle :: No pending Promises.");
       process.exit( 0 );
     } else {
       logger.info('waiting for open tasks to be done.');
