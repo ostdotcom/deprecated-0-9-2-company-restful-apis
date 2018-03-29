@@ -25,7 +25,7 @@ clientStatsKlass.prototype = {
     const oThis = this;
 
     return oThis.asyncPerform(params)
-      .catch((error) => {
+      .catch(function(error) {
         if (responseHelper.isCustomResult(error)){
           return error;
         } else {

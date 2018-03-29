@@ -20,7 +20,7 @@ const editUser = {
     const oThis = this;
 
     return oThis.asycnPerform(clientId, userUuid, name)
-      .catch((error) => {
+      .catch(function(error) {
         if (responseHelper.isCustomResult(error)){
           return error;
         } else {

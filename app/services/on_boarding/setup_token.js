@@ -67,7 +67,7 @@ SetupToken.prototype = {
     const oThis = this;
 
     return oThis.asyncPerform()
-      .catch((error) => {
+      .catch(function(error) {
         if (responseHelper.isCustomResult(error)){
           return error;
         } else {
