@@ -6,16 +6,20 @@ const rootPrefix = '..'
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
 
-const clientWorkerAddressModel = require(rootPrefix + '/app/models/client_worker_managed_address_id')
+const openStPayments = require('@openstfoundation/openst-payments')
+;
+
+const ClientWorkerAddressModelKlass = require(rootPrefix + '/app/models/client_worker_managed_address_id')
     , clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id')
     , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
     , clientBrandedTokenObj = new ClientBrandedTokenKlass()
     , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
-    , SetWorkerKlass = require(rootPrefix + '/app/services/on_boarding/set_worker')
+    , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
     , GenerateEthAddressKlass = require(rootPrefix + '/app/services/address/generate')
+    , chainIntConstants = require(rootPrefix + '/config/chain_interaction_constants')
     , responseHelper = require(rootPrefix + '/lib/formatter/response')
+    , basicHelper = require(rootPrefix + '/helpers/basic')
     , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-    , fetchWorkerStatusesKlass = require(rootPrefix + '/app/services/airdrop_management/fetch_workers_statuses')
 ;
 
 const addMoreWorkersKlass = function(params){
@@ -27,13 +31,65 @@ const addMoreWorkersKlass = function(params){
   oThis.newWorkersCnt = params['newWorkersCnt'];
 
   oThis.clientIdSymbolMap = {};
-  oThis.clientIdSetWorkerRsp = {};
+  oThis.clientIdSetWorkerAddressesMap = {};
+
+  oThis.workerContractAddress = chainIntConstants.UTILITY_WORKERS_CONTRACT_ADDRESS;
+  oThis.senderAddress = chainIntConstants.UTILITY_OPS_ADDR;
+  oThis.senderPassphrase = chainIntConstants.UTILITY_OPS_PASSPHRASE;
+  oThis.chainId = chainIntConstants.UTILITY_CHAIN_ID;
+  oThis.gasPrice = chainIntConstants.UTILITY_GAS_PRICE;
+  oThis.deactivationHeight = basicHelper.convertToBigNumber(10).toPower(18).toString(10);
 
 };
 
 addMoreWorkersKlass.prototype = {
 
-  perform: async function() {
+  /**
+   * Perform
+   *
+   * @return {promise<result>}
+   */
+  perform: async function () {
+
+    const oThis = this
+        , r = null
+    ;
+
+    return oThis.asyncPerform()
+        .catch(function (error) {
+
+          var errorObj = null;
+
+          if(responseHelper.isCustomResult(error)) {
+
+            errorObj = error;
+
+          } else {
+
+            // something unhandled happened
+            logger.error('executables/add_more_workers.js::perform::catch');
+            logger.error(error);
+
+            errorObj = responseHelper.error("l_sw_1", "Inside catch block", null, {error: error}, {sendErrorEmail: true});
+
+          }
+
+          if (oThis.criticalChainInteractionLog) {
+            new CriticalChainInteractionLogModel().updateCriticalChainInteractionLog(
+                oThis.criticalChainInteractionLog.id,
+                {status: new CriticalChainInteractionLogModel().invertedStatuses[criticalChainInteractionLogConst.failedStatus], response_data: errorObj.toHash()},
+                oThis.parentCriticalChainInteractionLogId,
+                oThis.clientTokenId
+            );
+          }
+
+          return errorObj;
+
+        });
+
+  },
+
+  asyncPerform: async function() {
 
     const oThis = this;
 
@@ -92,7 +148,6 @@ addMoreWorkersKlass.prototype = {
 
       var clientId = oThis.clientIds[j]
           , managedAddressInsertData = []
-          , clientWorkerAddrObj = new clientWorkerAddressModel()
       ;
 
       var generateEthAddress = new GenerateEthAddressKlass({
@@ -101,16 +156,20 @@ addMoreWorkersKlass.prototype = {
       });
 
       for(var i=0; i<oThis.newWorkersCnt; i++) {
-        var r = await generateEthAddress.perform();
+
+        var r = await generateEthAddress.perform()
+            , clientWorkerAddrObj = new ClientWorkerAddressModelKlass();
+
         if (r.isFailure()) {
           return Promise.resolve(r);
         }
+
         const resultData = r.data[r.data.result_type][0];
         managedAddressInsertData.push([clientId, resultData.id,
           clientWorkerAddrObj.invertedStatuses[clientWorkerManagedAddressConst.inactiveStatus], currentTime, currentTime]);
       }
 
-      await clientWorkerAddrObj.bulkInsert(dbFields, managedAddressInsertData);
+      await new ClientWorkerAddressModelKlass().insertMultiple(dbFields, managedAddressInsertData).fire();
 
     }
 
@@ -150,48 +209,72 @@ addMoreWorkersKlass.prototype = {
   associateWorkerAddresses:  async function() {
 
     const oThis = this
-        , clientIdsLength = oThis.clientIds.length
-        , batchCnt = 1;
+        , workersService = new openStPayments.workers(oThis.workerContractAddress, oThis.chainId);
 
-    var processedCnt = 0;
+    var clientId = null;
 
-    while (processedCnt < clientIdsLength) {
+    for(var j=0; j<oThis.clientIds.length; j++) {
 
-      var promiseResolvers = []
-          , promiseResponses = [];
+      clientId = oThis.clientIds[j];
 
-      for(var i=processedCnt; i<processedCnt+batchCnt; i++) {
+      logger.info('sending txs for clientId', clientId);
 
-        var clientId = oThis.clientIds[i];
-        if (!clientId) {
-          break;
-        }
-        logger.info('sending txs for clientId', clientId);
-        var setWorkerObj = new SetWorkerKlass({
-          client_id: clientId,
-          token_symbol: oThis.clientIdSymbolMap[clientId],
-          wait_for_recipt: true
-        });
+      var existingWorkerManagedAddresses = await new ClientWorkerAddressModelKlass().getInActiveByClientId(clientId)
+          , managedAddressIdClientWorkerAddrIdMap = {}
+          , workerAddressesIdToUpdateMap = {}
+      ;
 
-        promiseResolvers.push(setWorkerObj.perform());
+      for(var i=0; i<existingWorkerManagedAddresses.length; i++) {
+        managedAddressIdClientWorkerAddrIdMap[parseInt(existingWorkerManagedAddresses[i].managed_address_id)] = existingWorkerManagedAddresses[i].id;
+      }
 
+      const managedAddresses = await new ManagedAddressModel().select('*')
+          .where(['id in (?)', Object.keys(managedAddressIdClientWorkerAddrIdMap)]).fire();
+
+      for(var i=0; i<managedAddresses.length; i++) {
+        workerAddressesIdToUpdateMap[managedAddresses[i].ethereum_address] = managedAddressIdClientWorkerAddrIdMap[managedAddresses[i].id];
+      }
+
+      var workerAddrs = Object.keys(workerAddressesIdToUpdateMap)
+          , promiseResolvers = []
+          , promiseResponses = []
+          , formattedPromiseResponses = {}
+          , successWorkerAddrIds = []
+          , promise = null;
+
+      for(var i=0; i<workerAddrs.length; i++) {
+        promise = workersService.setWorker(
+            oThis.senderAddress,
+            oThis.senderPassphrase,
+            workerAddrs[i],
+            oThis.deactivationHeight,
+            oThis.gasPrice,
+            {returnType: 'txReceipt', tag: ""}
+        );
+        promiseResolvers.push(promise);
       }
 
       promiseResponses = await Promise.all(promiseResolvers);
 
-      for(var i=0; i<promiseResponses.length; i++) {
-
-        var trxHashesResponse = promiseResponses[i];
-        if(trxHashesResponse.isSuccess()){
-          const workerStatusesResponse = await new fetchWorkerStatusesKlass({transaction_records: trxHashesResponse.data}).perform();
-          if(workerStatusesResponse.isSuccess()){
-            logger.info('Workers are marked active for clientId', clientId);
-            oThis.clientIdSetWorkerRsp[clientId] = workerStatusesResponse.data;
-          }
+      for(var i=0; i<promiseResolvers.length; i++) {
+        var r = promiseResponses[i];
+        if (r.isFailure()) {
+          logger.notify('l_sw_2', 'Set Worker Failed', r.toHash());
+        } else {
+          formattedPromiseResponses[workerAddressesIdToUpdateMap[workerAddrs[i]]] = r.data;
+          successWorkerAddrIds.push(workerAddressesIdToUpdateMap[workerAddrs[i]]);
         }
       }
 
-      processedCnt = processedCnt + batchCnt;
+      if (successWorkerAddrIds.length == 0) {
+        const errorRsp = responseHelper.error(
+            'l_sw_3', 'could not set any worker',
+            null, {data: formattedPromiseResponses}
+        );
+        return Promise.reject(errorRsp);
+      }
+
+      await new ClientWorkerAddressModelKlass().markStatusActive(successWorkerAddrIds);
 
     }
 
@@ -201,5 +284,5 @@ addMoreWorkersKlass.prototype = {
 
 };
 
-const obj = new addMoreWorkersKlass({startClientId: 1153, endClientId: 1153, newWorkersCnt: 4, clientIds: []});
+const obj = new addMoreWorkersKlass({startClientId: 1021, endClientId: 1021, newWorkersCnt: 4, clientIds: []});
 obj.perform().then(console.log);

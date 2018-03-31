@@ -53,7 +53,7 @@ const ClientWorkerManagedAddressIdsKlassPrototype = {
 
   getByClientId: function(client_id){
     const oThis = this;
-    return oThis.select('id,client_id,managed_address_id,status,properties').where(['client_id=?', oThis.clientId]);
+    return oThis.select('id,client_id,managed_address_id,status,properties').where(['client_id=?', client_id]).fire();
   },
 
   getActiveByClientId: async function(client_id){
@@ -114,7 +114,7 @@ const ClientWorkerManagedAddressIdsKlassPrototype = {
   markStatusActive: function(ids) {
     const oThis = this;
     return oThis.update(['status = ?', oThis.invertedStatuses[clientWorkerManagedAddressConst.activeStatus]])
-      .where(['id IN (?)', ids]);
+      .where(['id IN (?)', ids]).fire();
   },
 
   /**
