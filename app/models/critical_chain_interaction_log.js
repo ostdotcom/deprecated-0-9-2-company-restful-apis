@@ -159,8 +159,10 @@ const CriticalChainInteractionLogPrototype = {
    */
   flushTxStatusDetailsCache: function(critical_chain_interaction_log_id){
 
-    const allMemcacheInstance = new allMemcacheInstanceKlass();
-    allMemcacheInstance.clearCache(coreConstants.SHARED_MEMCACHE_KEY_PREFIX + coreConstants.ENVIRONMENT_SHORT + '_c_tx_s_' + critical_chain_interaction_log_id);
+    const oThis = this
+        , allMemcacheInstance = new allMemcacheInstanceKlass();
+
+    allMemcacheInstance.clearCache(oThis.sharedCacheKeyPrefix() +'_c_tx_s_' + critical_chain_interaction_log_id);
 
   },
 
@@ -173,11 +175,22 @@ const CriticalChainInteractionLogPrototype = {
    */
   flushPendingTxsCache: function(client_token_id){
 
-    const allMemcacheInstance = new allMemcacheInstanceKlass();
-    allMemcacheInstance.clearCache(coreConstants.SHARED_MEMCACHE_KEY_PREFIX + coreConstants.ENVIRONMENT_SHORT + '_c_pci_ids_' + client_token_id);
+    const oThis = this
+        , allMemcacheInstance = new allMemcacheInstanceKlass();
+
+    allMemcacheInstance.clearCache(oThis.sharedCacheKeyPrefix() + '_c_pci_ids_' + client_token_id);
 
   },
 
+  /**
+   * shared cache key prefix <br><br>
+   *
+   * @return {promise<result>}
+   *
+   */
+  sharedCacheKeyPrefix: function() {
+    return coreConstants.SHARED_MEMCACHE_KEY_PREFIX + coreConstants.ENVIRONMENT_SHORT + '_' + coreConstants.SUB_ENVIRONMENT_SHORT;
+  },
 
   /**
    * update critical chain interaction log <br><br>
