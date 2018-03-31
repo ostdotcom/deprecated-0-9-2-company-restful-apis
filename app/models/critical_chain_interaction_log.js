@@ -32,12 +32,12 @@ const dbName = "company_saas_shared_"+coreConstants.SUB_ENVIRONMENT+"_"+coreCons
       '6': criticalChainInteractionLogConst.stakeApprovalStartedActivityType,
       '7': criticalChainInteractionLogConst.stakeBtStartedActivityType,
       '8': criticalChainInteractionLogConst.stakeStPrimeStartedActivityType,
-      '9': criticalChainInteractionLogConst.deployAirdropActivityType,
-      '10': criticalChainInteractionLogConst.setWorkerActivityType,
-      '11': criticalChainInteractionLogConst.setPriceOracleActivityType,
-      '12': criticalChainInteractionLogConst.setAcceptedMarginActivityType,
-      '13': criticalChainInteractionLogConst.setopsAirdropActivityType,
-      '14': criticalChainInteractionLogConst.airdropUsersActivityType
+      '9': criticalChainInteractionLogConst.airdropUsersActivityType,
+      '10': criticalChainInteractionLogConst.deployAirdropActivityType,
+      '11': criticalChainInteractionLogConst.setopsAirdropActivityType,
+      '12': criticalChainInteractionLogConst.setWorkerActivityType,
+      '13': criticalChainInteractionLogConst.setPriceOracleActivityType,
+      '14': criticalChainInteractionLogConst.setAcceptedMarginActivityType
     }
     , invertedActivityTypes = util.invert(activityTypes)
 ;
