@@ -102,7 +102,7 @@ StartOnBoardingKlass.prototype = {
       return Promise.reject(responseHelper.error('sam_gsa_2', 'Invalid stakeAndMintParams', null, oThis.stakeAndMintParams));
     }
 
-    if (!oThis.airdropParams || !oThis.airdrop_amount || !oThis.airdrop_user_list_type) {
+    if (!oThis.airdropParams || !oThis.airdropParams.airdrop_amount || !oThis.airdropParams.airdrop_user_list_type) {
       return Promise.reject(responseHelper.error('sam_gsa_3', 'Invalid airdropParams', null, oThis.airdropParams));
     }
 

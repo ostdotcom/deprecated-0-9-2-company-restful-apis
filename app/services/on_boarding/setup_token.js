@@ -348,7 +348,7 @@ SetupToken.prototype = {
           new ClientWorkerManagedAddressIdsKlass().invertedStatuses[clientWorkerManagedAddressConst.inactiveStatus]]);
       }
       var fields = ['client_id', 'managed_address_id', 'status'];
-      const queryResponse = await new ClientWorkerManagedAddressIdsKlass().insertMultiple(fields, managedAddressInsertData);
+      const queryResponse = await new ClientWorkerManagedAddressIdsKlass().insertMultiple(fields, managedAddressInsertData).fire();
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
