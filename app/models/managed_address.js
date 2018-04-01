@@ -122,21 +122,24 @@ const ManagedAddressKlassPrototype = {
   },
 
   getFilteredActiveUsersCount: async function (params) {
+
     const oThis = this
       , clientId = params.client_id
       , propertyUnsetBitVal =  params.property_unset_bit_value
     ;
 
-    oThis.select('count(1) as total_count')
-      .where('client_id = ?', clientId)
-      .where('status=?', invertedStatuses[managedAddressesConst.activeStatus])
-      .where('address_type=?', invertedAddressTypes[managedAddressesConst.userAddressType]);
+    oThis.select('count(1) as total_count').where({
+      client_id: clientId,
+      status: invertedStatuses[managedAddressesConst.activeStatus],
+      address_type: invertedAddressTypes[managedAddressesConst.userAddressType]
+    })
 
     if (propertyUnsetBitVal) {
       oThis.where('(properties & ?) = 0', propertyUnsetBitVal);
     }
 
     return await oThis.fire();
+
   },
 
   getByFilterAndPaginationParams: function (params) {
