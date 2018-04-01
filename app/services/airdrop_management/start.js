@@ -12,11 +12,9 @@ const rootPrefix = '../../..'
  *
  * @param {object} params - external passed parameters
  * @param {number} params.client_id - client id
- * @param {number} params.client_token_id - client token id
  * @param {number} params.token_symbol - token symbol
- * @param {object} params.airdrop_params -
- * @param {object} params.airdrop_params.airdrop_amount -
- * @param {object} params.airdrop_params.airdrop_user_list_type -
+ * @param {object} params.list_type -
+ * @param {object} params.amount -
  *
  * @constructor
  *
@@ -26,9 +24,9 @@ const StartAirdropKlass = function (params) {
   var oThis = this;
 
   oThis.clientId = params.client_id;
-  oThis.clientTokenId = params.client_token_id;
   oThis.tokenSymbol = params.token_symbol;
-  oThis.airdropParams = params.airdrop_params;
+  oThis.airdropAmount = params.amount;
+  oThis.airdropUserListType = params.list_type;
 
 };
 
@@ -70,8 +68,10 @@ StartAirdropKlass.prototype = {
       current_step: 'init',
       token_symbol: oThis.tokenSymbol,
       client_id: oThis.clientId,
-      client_token_id: oThis.clientTokenId,
-      airdrop_params: oThis.airdropParams
+      airdrop_params: {
+        airdrop_amount: oThis.airdropAmount,
+        airdrop_user_list_type: oThis.airdropUserListType
+      }
     }).init();
 
   },
@@ -85,11 +85,11 @@ StartAirdropKlass.prototype = {
 
     var oThis = this;
 
-    if(!oThis.clientId || !oThis.clientTokenId || !oThis.tokenSymbol){
+    if(!oThis.clientId || !oThis.tokenSymbol){
       return Promise.reject(responseHelper.error('s_am_s_2', 'Invalid Params'));
     }
 
-    if (!oThis.airdropParams || !oThis.airdropParams.airdrop_amount || !oThis.airdropParams.airdrop_user_list_type) {
+    if (!oThis.airdropAmount || !oThis.airdropUserListType) {
       return Promise.reject(responseHelper.error('s_am_s_3', 'Invalid airdropParams', null, oThis.airdropParams));
     }
 

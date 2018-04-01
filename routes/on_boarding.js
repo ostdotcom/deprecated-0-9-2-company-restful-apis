@@ -171,12 +171,4 @@ router.post('/set-accepted-margin', function (req, res, next) {
 
 });
 
-router.post('/fetch-worker-status', function (req, res, next) {
-
-  const FetchWorkerStatusKlass = require(rootPrefix + '/app/services/airdrop_management/fetch_workers_statuses');
-
-  Promise.resolve(routeHelper.performer(req, res, next, FetchWorkerStatusKlass, 'r_ob_15'));
-
-});
-
 module.exports = router;

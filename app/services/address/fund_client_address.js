@@ -194,18 +194,13 @@ FundClientAddressKlass.prototype = {
 
         if(transferBalanceResponse.isSuccess()) {
 
-          const modelObj = new ClientWorkerManagedAddressIdsKlass();
-
-          const dbObjects = await modelObj.select('id, properties')
+          const dbObjects = await new ClientWorkerManagedAddressIdsKlass().select('id, properties')
               .where(['client_id=? AND managed_address_id=?', oThis.clientId, workerAddrObj.id]).fire()
           , dbObject = dbObjects[0];
 
-          await modelObj.edit(
-              {
-                qParams: {properties: modelObj.setBit(clientWorkerManagedAddressConst.hasStPrimeBalanceProperty, dbObject.properties)},
-                whereCondition: {id: dbObject.id}
-              }
-          );
+          await new ClientWorkerManagedAddressIdsKlass()
+            .update({properties: new ClientWorkerManagedAddressIdsKlass().setBit(clientWorkerManagedAddressConst.hasStPrimeBalanceProperty, dbObject.properties)})
+            .where({id: dbObject.id}).fire();
 
           new ClientActiveWorkerUuidCacheKlass({client_id: oThis.clientId}).clear();
 
