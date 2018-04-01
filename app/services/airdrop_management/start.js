@@ -12,6 +12,7 @@ const rootPrefix = '../../..'
  *
  * @param {object} params - external passed parameters
  * @param {number} params.client_id - client id
+ * @param {number} params.client_token_id - client token id (optional)
  * @param {number} params.token_symbol - token symbol
  * @param {object} params.list_type -
  * @param {object} params.amount -
@@ -27,6 +28,8 @@ const StartAirdropKlass = function (params) {
   oThis.tokenSymbol = params.token_symbol;
   oThis.airdropAmount = params.amount;
   oThis.airdropUserListType = params.list_type;
+
+  oThis.clientTokenId = params.client_token_id;
 
 };
 
@@ -68,6 +71,7 @@ StartAirdropKlass.prototype = {
       current_step: 'init',
       token_symbol: oThis.tokenSymbol,
       client_id: oThis.clientId,
+      client_token_id: oThis.clientTokenId,
       airdrop_params: {
         airdrop_amount: oThis.airdropAmount,
         airdrop_user_list_type: oThis.airdropUserListType
