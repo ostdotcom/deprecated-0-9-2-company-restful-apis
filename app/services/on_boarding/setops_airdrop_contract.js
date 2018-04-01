@@ -16,6 +16,7 @@ const rootPrefix = '../../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
+
 const SetopsAirdropContractClass = function (params) {
 
   var oThis = this;

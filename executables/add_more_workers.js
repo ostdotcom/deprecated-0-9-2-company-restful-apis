@@ -7,6 +7,7 @@ const rootPrefix = '..'
 require(rootPrefix + '/module_overrides/index');
 
 const openStPayments = require('@openstfoundation/openst-payments')
+    , SetWorkerKlass = openStPayments.services.workers.setWorker
 ;
 
 const ClientWorkerAddressModelKlass = require(rootPrefix + '/app/models/client_worker_managed_address_id')
@@ -208,8 +209,7 @@ addMoreWorkersKlass.prototype = {
 
   associateWorkerAddresses:  async function() {
 
-    const oThis = this
-        , workersService = new openStPayments.workers(oThis.workerContractAddress, oThis.chainId);
+    const oThis = this;
 
     var clientId = null;
 
@@ -240,18 +240,27 @@ addMoreWorkersKlass.prototype = {
           , promiseResponses = []
           , formattedPromiseResponses = {}
           , successWorkerAddrIds = []
-          , promise = null;
+          , setWorkerObj = null
+          , promise = null
+      ;
 
       for(var i=0; i<workerAddrs.length; i++) {
-        promise = workersService.setWorker(
-            oThis.senderAddress,
-            oThis.senderPassphrase,
-            workerAddrs[i],
-            oThis.deactivationHeight,
-            oThis.gasPrice,
-            {returnType: 'txReceipt', tag: ""}
-        );
+
+        setWorkerObj = new SetWorkerKlass({
+          workers_contract_address: oThis.workerContractAddress,
+          sender_address: oThis.senderAddress,
+          sender_passphrase: oThis.senderPassphrase,
+          worker_address: workerAddrs[i],
+          deactivation_height: oThis.deactivationHeight,
+          gas_price: oThis.gasPrice,
+          chain_id: oThis.chainId,
+          options: {returnType: 'txReceipt'}
+        });
+
+        promise = setWorkerObj.perform();
+
         promiseResolvers.push(promise);
+
       }
 
       promiseResponses = await Promise.all(promiseResolvers);

@@ -4,6 +4,7 @@ const openStPayments = require('@openstfoundation/openst-payments')
   , openStPaymentsDeployer = new openStPayments.deployer()
 ;
 
+
 const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , chainIntConstants = require(rootPrefix + '/config/chain_interaction_constants')

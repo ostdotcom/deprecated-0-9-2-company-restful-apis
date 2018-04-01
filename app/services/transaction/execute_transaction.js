@@ -6,7 +6,8 @@
  * @module app/services/transaction/execute_transaction
  */
 
-const OpenSTPayment = require('@openstfoundation/openst-payments')
+const openStPayments = require('@openstfoundation/openst-payments')
+  , AirdropManagerPayKlass = openStPayments.services.airdropManager.pay
   , openSTNotification = require('@openstfoundation/openst-notification')
   , uuid = require("uuid")
 ;
@@ -420,11 +421,8 @@ ExecuteTransactionKlass.prototype = {
   sendAirdropPay: async function () {
 
     const oThis = this
+      , reserveUser = oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid]
     ;
-
-    const airdropPayment = new OpenSTPayment.airdrop(oThis.clientBrandedToken.airdrop_contract_address
-        , chainInteractionConstants.UTILITY_CHAIN_ID)
-        , reserveUser = oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid];
 
     if(!oThis.workerUser || !reserveUser){
       await oThis.updateParentTransactionLog(transactionLogConst.failedStatus, {error: "Worker or reserve user not found. "});
@@ -440,22 +438,27 @@ ExecuteTransactionKlass.prototype = {
     var commisionAmount = basicHelper.convertToWei(oThis.transactionTypeRecord.commission_percent).mul(
       basicHelper.convertToWei(oThis.transactionTypeRecord.currency_value)).div(basicHelper.convertToWei('100')).toString();
 
-    const payResponse = await airdropPayment.pay(oThis.workerUser.ethereum_address,
-      oThis.workerUser.passphrase_d,
-      oThis.userRecords[oThis.toUuid].ethereum_address,
-      basicHelper.convertToWei(oThis.transactionTypeRecord.currency_value).toString(),
-      reserveUser.ethereum_address,
-      commisionAmount,
-      currencyType,
-      basicHelper.convertToWei(ostValue).toString(),
-      oThis.userRecords[oThis.fromUuid].ethereum_address,
-      oThis.gasPrice,
-      {tag: oThis.transactionTypeRecord.name, returnType: 'txHash'}
-    ).catch(function (error) {
-      logger.error('app/services/transaction/execute_transaction.js::airdropPayment.pay::catch');
-      logger.error(error);
+    const payObject = new AirdropManagerPayKlass({
+      airdrop_contract_address: oThis.clientBrandedToken.airdrop_contract_address,
+      chain_id: chainInteractionConstants.UTILITY_CHAIN_ID,
+      sender_worker_address: oThis.workerUser.ethereum_address,
+      sender_worker_passphrase: oThis.workerUser.passphrase_d,
+      beneficiary_address: oThis.userRecords[oThis.toUuid].ethereum_address,
+      transfer_amount: basicHelper.convertToWei(oThis.transactionTypeRecord.currency_value).toString(),
+      commission_beneficiary_address: reserveUser.ethereum_address,
+      commission_amount: commisionAmount,
+      currency: currencyType,
+      intended_price_point: basicHelper.convertToWei(ostValue).toString(),
+      spender: oThis.userRecords[oThis.fromUuid].ethereum_address,
+      gas_price: oThis.gasPrice,
+      options: {tag: oThis.transactionTypeRecord.name, returnType: 'txHash'}
+    });
 
-      return Promise.resolve(responseHelper.error("s_t_et_15", "Inside catch block", null, {}, {sendErrorEmail: false})
+    const payResponse = await payObject.perform()
+      .catch(function (error) {
+        logger.error('app/services/transaction/execute_transaction.js::airdropPayment.pay::catch');
+        logger.error(error);
+        return Promise.resolve(responseHelper.error("s_t_et_15", "Inside catch block", null, {}, {sendErrorEmail: true})
       );
     });
 
@@ -465,15 +468,13 @@ ExecuteTransactionKlass.prototype = {
       if(payResponse.err.code.includes("l_ci_h_pse_gas_low")){
 
         // Mark ST Prime balance is low for worker for future transactions.
-        const modelObj = new ClientWorkerManagedAddressIdsKlass();
 
-        const dbObject = await modelObj.select('id, properties')
+        const dbObject = await new ClientWorkerManagedAddressIdsKlass().select('id, properties')
             .where(['client_id=? AND managed_address_id=?', oThis.clientId, oThis.workerUser.id]).fire()[0];
 
-        await modelObj.edit({
-          qParams: {properties: modelObj.unsetBit(clientWorkerManagedAddressConst.hasStPrimeBalanceProperty, dbObject.properties)},
-          whereCondition: {id: dbObject.id}
-        });
+        await new ClientWorkerManagedAddressIdsKlass()
+            .update({properties: new ClientWorkerManagedAddressIdsKlass().unsetBit(clientWorkerManagedAddressConst.hasStPrimeBalanceProperty, dbObject.properties)})
+            .where({id: dbObject.id}).fire();
 
         // Flush worker uuids cache
         new ClientActiveWorkerUuidCacheKlass({client_id: oThis.clientId}).clear();
