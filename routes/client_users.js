@@ -4,7 +4,6 @@ const express = require('express')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , listAddressesKlass = require(rootPrefix + '/app/services/client_users/list')
-  , startAirdropKlass = require(rootPrefix + '/app/services/airdrop_management/start_airdrop')
   , getAirdropStatusKlass = require(rootPrefix + '/app/services/airdrop_management/get_airdrop_status')
   , ucBalanceFetcherKlass = require(rootPrefix + '/app/services/address/utilityChainBalancesFetcher')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
@@ -133,24 +132,9 @@ router.get('/list', function (req, res, next) {
  */
 router.post('/airdrop/drop', function (req, res, next) {
 
-  const performer = function() {
+  const StartAirdropKlass = require(rootPrefix + '/app/services/airdrop_management/start');
 
-    const decodedParams = req.decodedParams
-      , startAirdropObj = new startAirdropKlass(decodedParams);
-
-    // handle final response
-    const handleResponse = function (response) {
-      return response.renderResponse(res);
-    };
-
-    return startAirdropObj.perform().then(handleResponse);
-
-  };
-
-  Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_cu_6', 'Something went wrong', err);
-    responseHelper.error('r_cu_6', 'Something went wrong').renderResponse(res)
-  });
+  Promise.resolve(routeHelper.performer(req, res, next, StartAirdropKlass, 'r_su_3'));
 
 });
 

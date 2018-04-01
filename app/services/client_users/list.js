@@ -20,10 +20,11 @@ const listKlass = function () {
 
 listKlass.prototype = {
 
-  perform: function(){
+  perform: function(params){
+
     const oThis = this;
 
-    return oThis.asyncPerform()
+    return oThis.asyncPerform(params)
       .catch(function(error) {
         if (responseHelper.isCustomResult(error)){
           return error;
