@@ -135,7 +135,7 @@ const ManagedAddressKlassPrototype = {
     })
 
     if (propertyUnsetBitVal) {
-      oThis.where('(properties & ?) = 0', propertyUnsetBitVal);
+      oThis.where(['(properties & ?) = 0', propertyUnsetBitVal]);
     }
 
     return await oThis.fire();

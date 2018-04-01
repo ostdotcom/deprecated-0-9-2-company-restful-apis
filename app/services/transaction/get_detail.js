@@ -103,7 +103,7 @@ GetTransactionDetailKlass.prototype = {
 
     for (var i = 0; i < transactionLogRecords.length; i++) {
       const transactionLogRecord = transactionLogRecords[i]
-        , formattedReceipt = JSON.parse(transactionlogRecord.formatted_receipt || '{}')
+        , formattedReceipt = JSON.parse(transactionLogRecord.formatted_receipt || '{}')
         , inputParams = JSON.parse(transactionLogRecord.input_params)
         , gasPriceBig = basicHelper.convertToBigNumber(inputParams.gas_price)
       ;

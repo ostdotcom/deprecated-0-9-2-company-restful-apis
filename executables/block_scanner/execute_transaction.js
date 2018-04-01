@@ -63,6 +63,7 @@ BlockScannerBaseKlass.prototype = {
     oThis.scannerData = JSON.parse(fs.readFileSync(oThis.filePath).toString());
 
     oThis.checkForNewBlocks();
+
   },
 
   /**
