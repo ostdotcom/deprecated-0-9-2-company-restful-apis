@@ -196,7 +196,7 @@ Use the file path in the following command:
 > node executables/rmq_subscribers/user_airdrop_contract_approve 1
 ```
 
-* Start woker to process events
+* Start worker to process events
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
