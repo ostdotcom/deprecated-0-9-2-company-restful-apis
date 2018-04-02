@@ -180,6 +180,15 @@ NOTE: Manually create data MySQL mentioned in $OP_MYSQL_DATABASE
 > node executables/rmq_subscribers/execute_transaction.js 1
 ```
 
+* Start Block Scanner to mark mined transactions as done
+Create a file with initial content - {"lastProcessedBlock":0}
+Use the file path in the following command:
+```bash
+> source $HOME/openst-setup/openst_env_vars.sh
+> source set_env_vars.sh
+> node ./executables/block_scanner/execute_transaction.js datafilePath
+```
+
 * Start Processor to approve airdrop contract from user address
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
