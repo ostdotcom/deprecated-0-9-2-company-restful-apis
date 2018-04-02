@@ -382,15 +382,29 @@ BlockScannerBaseKlass.prototype = {
 };
 
 const usageDemo = function() {
-  logger.log('usage:', 'node ./executables/block_scanner/execute_transaction.js datafilePath');
+  logger.log('usage:', 'node ./executables/block_scanner/execute_transaction.js processLockId datafilePath');
+  logger.log('* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.');
   logger.log('* datafilePath is the path to the file which is storing the last block scanned info.');
 };
 
-const args = process.argv
-  , datafilePath = args[2]
+const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker')
 ;
 
+const ProcessLocker = new ProcessLockerKlass()
+  , args = process.argv
+  , processLockId = args[2]
+  , datafilePath = args[3]
+;
+
+ProcessLocker.canStartProcess({process_title: 'executables_block_scanner_execute_transaction' + processLockId});
+
 const validateAndSanitize = function () {
+  if(!processLockId) {
+    logger.error('Process Lock id NOT passed in the arguments.');
+    usageDemo();
+    process.exit(1);
+  }
+
   if(!datafilePath) {
     logger.error('Data file path is NOT passed in the arguments.');
     usageDemo();
