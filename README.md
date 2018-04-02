@@ -200,7 +200,7 @@ Use the file path in the following command:
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> node executables/rmq_subscribers/factory.js 1 'temp' '["on_boarding.#","airdrop_allocate_tokens","stake_and_mint.#"]'
+> node executables/rmq_subscribers/factory.js 1 'temp' '["on_boarding.#","airdrop_allocate_tokens","stake_and_mint.#","event.stake_and_mint_processor.#"]'
 ```
 
 * Start APIs in new terminal
