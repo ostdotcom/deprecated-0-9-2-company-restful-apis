@@ -1,61 +1,17 @@
 "use strict";
 
-const Web3 = require('web3')
-  , BigNumber = require('bignumber.js')
-  , web3InstanceMap = {}
+const BigNumber = require('bignumber.js')
 ;
 
 const rootPrefix = '../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , coreConstants = require(rootPrefix + '/config/core_constants')
   , cacheImplementer = require(rootPrefix + '/lib/cache_management/balance_and_nonce_cache_engine')
+  , nonceHelperKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_helper')
   , waitTimeout = 50000 //50 seconds
   , waitTimeInterval = 5 //5 milliseconds
 ;
-
-const getWeb3Instance = function (gethURL, chainKind) {
-  const existingInstance = web3InstanceMap[gethURL];
-  if (existingInstance){
-    return existingInstance;
-  }
-
-  const newInstance = new Web3(gethURL);
-
-  newInstance.chainKind = chainKind;
-  newInstance.extend({
-    methods: [{
-      name: 'pendingTransactions',
-      call: 'txpool_content',
-    }]
-  });
-
-  web3InstanceMap[gethURL] = newInstance;
-
-  return newInstance;
-};
-
-
-const instanceMap = {};
-function getInstanceKey( fromAddress, chainKind ) {
-  var args = Array.prototype.slice.call(arguments);
-  return args.join("_");
-}
-function getInstance( instanceKey ) {
-  logger.log("NM :: getInstance :: instanceKey", instanceKey );
-  return instanceMap[ instanceKey ];
-}
-function setInstance(instance, instanceKey ) {
-  if ( instanceMap[ instanceKey ] ) {
-    logger.error("NM :: setInstance :: called when an instance already exists");
-    return false;
-  }
-
-  instanceMap[ instanceKey ] = instance;
-  return true;
-}
-
 
 /**
  * Utility function to get timestamp
@@ -81,22 +37,21 @@ const NonceManagerKlass = function(params) {
       , chainKind     = params['chain_kind']
   ;
 
+  oThis.nonceHelper = new nonceHelperKlass();
   //Throw Here.
 
   //Check for existing instance
-  var instanceKey = getInstanceKey( fromAddress, chainKind )
-    , existingInstance = getInstance( instanceKey )
+  var instanceKey = oThis.nonceHelper.getInstanceKey( fromAddress, chainKind )
+    , existingInstance = oThis.nonceHelper.getInstance( instanceKey )
   ;
   if ( existingInstance ) {
     logger.log("NM :: NonceManagerKlass :: existingInstance FOUND!");
     return existingInstance;
   } else {
-    setInstance(oThis, instanceKey);
+    oThis.nonceHelper.setInstance(oThis, instanceKey);
   }
 
   logger.log("NM :: NonceManagerKlass :: creating new instance");
-
-
 
   oThis.address = fromAddress;
   oThis.chainKind = chainKind;
@@ -426,16 +381,15 @@ const NonceCacheKlassPrototype = {
     const oThis = this
       , allNoncePromise = []
       , allPendingTransactionPromise = []
-      , allGethNodes = (oThis.chainKind == 'value') ? chainInteractionConstants.OST_VALUE_GETH_RPC_PROVIDERS :
-        chainInteractionConstants.OST_UTILITY_GETH_RPC_PROVIDERS
+      , allGethNodes = oThis._getAllGethNodes(oThis.chainKind)
     ;
 
     for (var i = allGethNodes.length - 1; i >= 0; i--) {
       const gethURL = allGethNodes[i];
 
-      const web3UtilityRpcProvider = getWeb3Instance(gethURL, oThis.chain_kind);
-      allNoncePromise.push(oThis._getNonceFromGethNode(web3UtilityRpcProvider));
-      allPendingTransactionPromise.push(oThis._getPendingTransactionsFromGethNode(web3UtilityRpcProvider));
+      const web3Provider = oThis.nonceHelper.getWeb3Instance(gethURL, oThis.chain_kind);
+      allNoncePromise.push(oThis.nonceHelper.getNonceFromGethNode(oThis.address, web3Provider));
+      allPendingTransactionPromise.push(oThis.nonceHelper.getPendingTransactionsFromGethNode(web3Provider));
     }
 
     var x = await Promise.all([Promise.all(allNoncePromise), Promise.all(allPendingTransactionPromise)]);
@@ -509,85 +463,28 @@ const NonceCacheKlassPrototype = {
       const setNonceResponse = await oThis.cacheImplementer.set(oThis.cacheKey, maxNonceCount.toNumber());
       logger.log("NM :: maxNonceCount: ", maxNonceCount.toNumber());
       if (setNonceResponse.isSuccess()) {
-        return responseHelper.successWithData({nonce: maxNonceCount.toNumber()});
+        return Promise.resolve(responseHelper.successWithData({nonce: maxNonceCount.toNumber()}));
       }
-      return onResolve(responseHelper.error('l_nm_syncNonce_1', "unable to set nonce in cache"));
+      return Promise.resolve(responseHelper.error('l_nm_syncNonce_1', "unable to set nonce in cache"));
     } else {
-      return onResolve(responseHelper.error('l_nm_syncNonce_2', "unable to fetch nonce from geth nodes"));
+      return Promise.resolve(responseHelper.error('l_nm_syncNonce_2', "unable to fetch nonce from geth nodes"));
     }
   },
 
   /**
-   * Get transactionCount
+   * Get all geth nodes for the given chain kind
    *
-   * @param {object} web3Provider - web3 object
+   * @param {string} chainKind - chain kind e.g value, utility
    *
-   * @return {promise<result>}
-   * @private
-   * @ignore
+   * @return {string}
    */
-  _getNonceFromGethNode: async function(web3Provider){
-    const oThis = this
-    ;
-
-    return new Promise(function(onResolve, onReject) {
-      try {
-        web3Provider.eth.getTransactionCount(oThis.address, function(error, result) {
-          if (error) {
-            return onResolve(responseHelper.error('l_nm_getNonceFromGethNode_1', error));
-          } else {
-            return onResolve(responseHelper.successWithData({mined_transaction_count: result}));
-          }
-        });
-      } catch (err) {
-        //Format the error
-        logger.error("NM :: module_overrides/web3_eth/nonce_manager.js:getNonceFromGethNode inside catch ", err);
-        return onResolve(responseHelper.error('l_nm_getNonceFromGethNode_2', 'Something went wrong'));
-      }
-    });
-  },
-
-
-  /**
-   * Get pending transactions
-   *
-   * @param {object} web3Provider - web3 object
-   *
-   * @return {promise<result>}
-   * @private
-   * @ignore
-   */
-  _getPendingTransactionsFromGethNode: async function(web3Provider){
-    const oThis = this
-    ;
-
-    return new Promise(async function(onResolve, onReject) {
-      try {
-
-        const pendingTransaction = await web3Provider.pendingTransactions();
-
-        if (pendingTransaction) {
-          return onResolve(responseHelper.successWithData({pending_transaction: pendingTransaction}));
-        }
-        return onResolve(responseHelper.error('l_nm_getPendingTransactionsFromGethNode_1', 'Something went wrong'));
-
-      } catch (err) {
-        //Format the error
-        logger.error("module_overrides/web3_eth/nonce_manager.js:getPendingTransactionsFromGethNode inside catch ", err);
-        return onResolve(responseHelper.error('l_nm_getPendingTransactionsFromGethNode_2', 'Something went wrong'));
-      }
-    });
-  },
-
+  _getAllGethNodes: function (chainKind) {
+    return (chainKind == 'value') ? chainInteractionConstants.OST_VALUE_GETH_WS_PROVIDERS :
+      chainInteractionConstants.OST_UTILITY_GETH_WS_PROVIDERS
+  }
 };
 
 Object.assign(NonceManagerKlass.prototype, NonceCacheKlassPrototype);
 
 module.exports = NonceManagerKlass;
 
-
-
-//Code for debug.
-NonceManagerKlass.getInstanceKey = getInstanceKey;
-NonceManagerKlass.getInstance = getInstance;
-NonceManagerKlass.setInstance = getInstanceKey;

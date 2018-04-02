@@ -4,7 +4,10 @@ export CR_SUB_ENVIRONMENT='sandbox'
 
 # chain constants
 export OST_VALUE_GETH_RPC_PROVIDERS='["http://127.0.0.1:8545"]'
+export OST_VALUE_GETH_WS_PROVIDERS='["ws://127.0.0.1:18545"]'
+
 export OST_UTILITY_GETH_RPC_PROVIDERS='["http://127.0.0.1:9546"]'
+export OST_UTILITY_GETH_WS_PROVIDERS='["ws://127.0.0.1:19546"]'
 
 # Cache Engine
 export CR_ONLY_CACHE_ENGINE='memcached'
