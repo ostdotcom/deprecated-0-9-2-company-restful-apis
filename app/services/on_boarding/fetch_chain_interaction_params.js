@@ -65,8 +65,10 @@ FetchChainInteractionParams.prototype = {
 
       utility_chain_id: chainInteractionConstants.UTILITY_CHAIN_ID,
       utility_chain_geth_rpc_provider: chainInteractionConstants.UTILITY_GETH_RPC_PROVIDER,
+      utility_chain_geth_ws_provider: chainInteractionConstants.UTILITY_GETH_WS_PROVIDER,
       value_chain_id: chainInteractionConstants.VALUE_CHAIN_ID,
       value_chain_geth_rpc_provider: chainInteractionConstants.VALUE_GETH_RPC_PROVIDER,
+      value_chain_geth_ws_provider: chainInteractionConstants.VALUE_GETH_WS_PROVIDER,
       simple_token_contract_addr: chainInteractionConstants.SIMPLE_TOKEN_CONTRACT_ADDR,
       staker_addr: chainInteractionConstants.STAKER_ADDR
 

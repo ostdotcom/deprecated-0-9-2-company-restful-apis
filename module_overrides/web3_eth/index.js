@@ -51,7 +51,8 @@ const Derived = function () {
       , fromAddress = rawTx.from
       , gasPrice = String( rawTx.gasPrice || 0)
       , bnGasPrice = new BigNumber( gasPrice )
-      , chainKind = chainInteractionConstants.GETH_PROVIDER_TO_CHAIN_KIND_MAP[oThis.currentProvider.host]
+      , host = oThis.currentProvider.host ? oThis.currentProvider.host : oThis.currentProvider.connection._url
+      , chainKind = chainInteractionConstants.GETH_PROVIDER_TO_CHAIN_KIND_MAP[host]
       , UTILITY_GAS_PRICE = chainInteractionConstants.UTILITY_GAS_PRICE
       , VALUE_GAS_PRICE   = chainInteractionConstants.VALUE_GAS_PRICE
     ;
@@ -127,7 +128,6 @@ const Derived = function () {
       };
 
       const fetchNonceAndAddToRawTransaction = async function () {
-        const chainKind = chainInteractionConstants.GETH_PROVIDER_TO_CHAIN_KIND_MAP[oThis.currentProvider.host];
         const nonceManager = new nonceManagerKlass({address: fromAddress, chain_kind: chainKind});
 
         const getNonceResponse = await nonceManager.getNonce();
