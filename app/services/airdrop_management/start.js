@@ -65,7 +65,7 @@ StartAirdropKlass.prototype = {
 
     const oThis = this;
 
-    oThis.validateAndSanitize();
+    await oThis.validateAndSanitize();
 
     return new AirdropRouterKlass({
       current_step: 'init',
@@ -101,6 +101,6 @@ StartAirdropKlass.prototype = {
 
   }
 
-}
+};
 
 module.exports = StartAirdropKlass;

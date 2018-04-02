@@ -70,7 +70,7 @@ StartOnBoardingKlass.prototype = {
 
     const oThis = this;
 
-    oThis.validateAndSanitize();
+    await oThis.validateAndSanitize();
 
     return new OnBoardingRouterKlass({
       current_step: 'init',
