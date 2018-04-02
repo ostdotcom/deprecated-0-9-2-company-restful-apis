@@ -381,4 +381,26 @@ BlockScannerBaseKlass.prototype = {
   }
 };
 
-module.exports = BlockScannerBaseKlass;
+const usageDemo = function() {
+  logger.log('usage:', 'node ./executables/block_scanner/execute_transaction.js datafilePath');
+  logger.log('* datafilePath is the path to the file which is storing the last block scanned info.');
+};
+
+const args = process.argv
+  , datafilePath = args[2]
+;
+
+const validateAndSanitize = function () {
+  if(!datafilePath) {
+    logger.error('Data file path is NOT passed in the arguments.');
+    usageDemo();
+    process.exit(1);
+  }
+};
+
+// validate and sanitize the input params
+validateAndSanitize();
+
+const blockScannerObj = new BlockScannerBaseKlass({file_path: datafilePath});
+blockScannerObj.registerInterruptSignalHandlers();
+blockScannerObj.init();
