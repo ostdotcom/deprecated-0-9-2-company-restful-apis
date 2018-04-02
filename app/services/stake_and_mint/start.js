@@ -66,7 +66,7 @@ StartStakeAndMintKlass.prototype = {
 
     const oThis = this;
 
-    oThis.validateAndSanitize();
+    await oThis.validateAndSanitize();
 
     return new StakeAndMintRouterKlass({
       current_step: 'init',
@@ -101,6 +101,6 @@ StartStakeAndMintKlass.prototype = {
 
   }
 
-}
+};
 
 module.exports = StartStakeAndMintKlass;

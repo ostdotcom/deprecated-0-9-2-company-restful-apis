@@ -90,6 +90,12 @@ topicPerformers[notificationTopics.stakeAndMintInitTransfer] = require(rootPrefi
 topicPerformers[notificationTopics.stakeAndMintApprove] = require(rootPrefix + '/lib/stake_and_mint/approve.js');
 topicPerformers[notificationTopics.stakeAndMintForSTPrime] = require(rootPrefix + '/lib/stake_and_mint/start/st_prime.js');
 topicPerformers[notificationTopics.stakeAndMintForBT] = require(rootPrefix + '/lib/stake_and_mint/start/branded_token.js');
+topicPerformers[notificationTopics.processStakingOnVcStart] = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js');
+topicPerformers[notificationTopics.processStakingOnVcDone] = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js');
+topicPerformers[notificationTopics.processMintingOnUcStart] = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js');
+topicPerformers[notificationTopics.processMintingOnUcDone] = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js');
+topicPerformers[notificationTopics.claimTokenOnUcStart] = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js');
+topicPerformers[notificationTopics.claimTokenOnUcDone] = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js');
 
 const promiseExecutor = function (onResolve, onReject, params ) {
   // factory logic for deciding what action to perform here.
