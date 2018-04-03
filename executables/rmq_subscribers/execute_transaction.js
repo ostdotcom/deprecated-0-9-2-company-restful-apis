@@ -87,18 +87,26 @@ const publishToSlowQueue = async function (parsedParams) {
   ).then(console.log, console.log);
 };
 
+
+const prefetchCount = ((slowProcessor || '') == 'slow') ? 25 : 100;
 const PromiseQueueManager = new PromiseQueueManagerKlass(promiseExecutor, {
   name: "execute_tx_promise_queue_manager"
   , timeoutInMilliSecs: -1
+  , maxZombieCount: Math.round( prefetchCount * 0.25 )
+  , onMaxZombieCountReached : function () {
+    logger.warn("w_rmqs_et_1", "maxZombieCount reached. Triggring SIGTERM.");
+    // Trigger gracefull shutdown of process.
+    process.kill(process.pid, "SIGTERM");
+  }
 });
 
-var topicPrefix = slowProcessor ? 'slow.' : '';
 
-openSTNotification.subscribeEvent.rabbit([topicPrefix+"transaction.execute"],
+const topicPrefix = slowProcessor ? 'slow.' : '';
+openSTNotification.subscribeEvent.rabbit([topicPrefix + "transaction.execute"],
   {
-    queue: topicPrefix+'transaction_execute_from_restful_apis',
+    queue: topicPrefix + 'transaction_execute_from_restful_apis',
     ackRequired: 1,
-    prefetch: ((slowProcessor || '') == 'slow') ? 25 : 100
+    prefetch: prefetchCount
   },
   function (params) {
 
