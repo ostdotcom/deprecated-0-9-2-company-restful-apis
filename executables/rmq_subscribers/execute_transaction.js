@@ -91,7 +91,7 @@ const publishToSlowQueue = async function (parsedParams) {
 const prefetchCount = ((slowProcessor || '') == 'slow') ? 25 : 100;
 const PromiseQueueManager = new PromiseQueueManagerKlass(promiseExecutor, {
   name: "execute_tx_promise_queue_manager"
-  , timeoutInMilliSecs: -1
+  , timeoutInMilliSecs: 3 * 60 * 1000 //3 minutes
   , maxZombieCount: Math.round( prefetchCount * 0.25 )
   , onMaxZombieCountReached : function () {
     logger.warn("w_rmqs_et_1", "maxZombieCount reached. Triggring SIGTERM.");
