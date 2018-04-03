@@ -87,13 +87,13 @@ simulateRandomTransactionKlass.prototype = {
     // Fetch Random users
     var r = await oThis.fetchRandomUsers();
     if(r.isFailure()){
-      return Promise.resolve(r1);
+      return Promise.resolve(r);
     }
 
     // Fetch Txs and Filter out some transaction kinds (if needed)
     var r = await oThis.fetchRandomTransactionTypes();
     if(r.isFailure()){
-      return Promise.resolve(r1);
+      return Promise.resolve(r);
     }
 
     // Fetch tx params

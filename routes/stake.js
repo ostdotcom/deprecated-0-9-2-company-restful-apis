@@ -9,14 +9,6 @@ const rootPrefix = '..'
   , routeHelper = require(rootPrefix + '/routes/helper')
 ;
 
-router.get('/get-receipt', function (req, res, next) {
-
-  const getReceiptKlass = require(rootPrefix + '/app/services/transaction/get_receipt');
-
-  Promise.resolve(routeHelper.performer(req, res, next, getReceiptKlass, 'r_su_1'));
-
-});
-
 router.get('/get-staked-amount', function (req, res, next) {
 
   const GetStakedAmountKlass = require(rootPrefix + '/app/services/stake_and_mint/get_staked_amount');
