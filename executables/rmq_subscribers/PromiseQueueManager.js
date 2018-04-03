@@ -50,6 +50,11 @@ Manager.prototype = {
   //  If less than or equal to zero, timeout will not be observed.
   , timeoutInMilliSecs: defaultTimeout
 
+  //  Pass maxZombieCount in options to set the max acceptable zombie count.
+  //  When this zombie promise count reaches this limit, onMaxZombieCountReached will be triggered.
+  //  If less than or equal to zero, onMaxZombieCountReached callback will not triggered.
+  , maxZombieCount: 0
+
 
   , onPromiseResolved: function ( resolvedValue, promiseContext ) {
     //onPromiseResolved will be executed when the any promise is resolved.
@@ -75,7 +80,17 @@ Manager.prototype = {
     //It can be set using options parameter in constructor.
     const oThis = this;
 
-    verboseLog && logger.log(oThis.name, ":: a promise has timed out.");
+    verboseLog && logger.log(oThis.name, ":: a promise has timed out.", promiseContext.executorParams);
+  }
+
+  , onMaxZombieCountReached: function () {
+    //onMaxZombieCountReached will be executed when maxZombieCount >= 0 && current zombie count (oThis.zombieCount) >= maxZombieCount.
+    //This callback method should be set by instance creator.
+    //It can be set using options parameter in constructor.
+    const oThis = this;
+
+    verboseLog && logger.log(oThis.name, ":: maxZombieCount reached.");
+
   }
 
   , onPromiseCompleted: function ( promiseContext ) {
@@ -137,6 +152,9 @@ Manager.prototype = {
   , timedOutCount   : 0
   , completedCount  : 0
 
+  // Some flags
+  , hasTriggeredMaxZombieCallback: false
+
   //log print interval in millisecond
   , logMeTimeInterval : 3 * 1000
 
@@ -150,13 +168,16 @@ Manager.prototype = {
       , resolvedValueOnTimeout  : oThis.resolvedValueOnTimeout
       , timeoutInMilliSecs      : oThis.timeoutInMilliSecs
       , onResolved  : function () {
-        oThis._onResolved.apply(oThis, arguments);
+        oThis._onResolved.apply( oThis, arguments );
       }
       , onRejected  : function () {
-        oThis._onRejected.apply(oThis, arguments);
+        oThis._onRejected.apply( oThis, arguments );
       }
       , onTimedout  : function () {
-        oThis._onTimedout.apply(oThis, arguments);
+        oThis._onTimedout.apply( oThis, arguments );
+      }
+      , onCompletedAfterTimeout : function () {
+        oThis._onCompletedAfterTimeout.apply( oThis, arguments );
       }
     };
 
@@ -215,7 +236,31 @@ Manager.prototype = {
 
     //Mark is Completed.
     oThis.markAsCompleted( promiseContext );
+
+    // Check if we have reached max zombie count.
+    if (  oThis.maxZombieCount 
+      &&  oThis.onMaxZombieCountReached 
+      && !oThis.hasTriggeredMaxZombieCallback 
+      &&  oThis.zombieCount >= oThis.maxZombieCount 
+    ) {
+      oThis.hasTriggeredMaxZombieCallback = true;
+      oThis.onMaxZombieCountReached();
+    }
   }
+
+  , _onCompletedAfterTimeout: function ( promiseContext ) {
+    const oThis = this;
+    logMe && logger.log(oThis.name, ":: _onCompletedAfterTimeout :: promise has completed after the assumed timeout. Updating timedOutCount & zombieCount (if applicable) ");
+
+    // Update the stats.
+    oThis.timedOutCount --;
+
+    // Update the zombie count only if resolve and reject on timeout are false.
+    if( !oThis.resolvePromiseOnTimeout && !oThis.rejectPromiseOnTimeout ){
+      oThis.zombieCount--;
+    }
+  }
+
   , markAsCompleted: function ( promiseContext ) {
     const oThis = this;
 
@@ -224,7 +269,7 @@ Manager.prototype = {
         , pcIndx = pendingPromises.indexOf( promiseContext )
     ;
     if ( pcIndx < 0 ) {
-      logger.trace(oThis.name + " :: markAsCompleted :: Could not find a promiseContext");
+      logger.trace(oThis.name + " :: markAsCompleted :: Could not find a promiseContext. _onCompletedAfterTimeout should trigger soon. ");
       logger.dir( promiseContext );
       return;
     }
@@ -326,7 +371,7 @@ Manager.Examples = {
     });
 
     for( var cnt = 0; cnt < len; cnt++ ) {
-      manager.createPromise();
+      manager.createPromise( {"cnt": (cnt + 1) } );
     }
   },
 
@@ -348,7 +393,7 @@ Manager.Examples = {
     });
 
     for( var cnt = 0; cnt < len; cnt++ ) {
-      manager.createPromise().catch( function ( reason ) {
+      manager.createPromise( {"cnt": (cnt + 1) } ).catch( function ( reason ) {
         logger.log("Examples.allReject :: promise catch triggered.");
       });
     }
@@ -360,7 +405,7 @@ Manager.Examples = {
     const manager = new Manager(function ( resolve, reject ) {
       //promiseExecutor
       setTimeout(function () {
-        reject( len-- );
+        resolve( len-- );
       }, 10000);
     }
     , {
@@ -372,7 +417,7 @@ Manager.Examples = {
     });
 
     for( var cnt = 0; cnt < len; cnt++ ) {
-      manager.createPromise().catch();
+      manager.createPromise( {"cnt": (cnt + 1) } ).catch();
     }
   },
 
@@ -394,7 +439,35 @@ Manager.Examples = {
     });
 
     for( var cnt = 0; cnt < len; cnt++ ) {
-      manager.createPromise( cnt );
+      manager.createPromise( {"cnt": (cnt + 1) } );
     }
-  }
+  },
+
+  maxZombieCount: function ( len ) {
+    len = len || 50;
+
+    const maxZombieCount = Math.round(len * 0.1 )
+        , _timeout  = 3000
+    ;
+
+    const manager = new Manager(function ( resolve, reject, params ) {
+      //Do Nothing.
+
+    }
+    , {
+      onAllPromisesCompleted: function () {
+        logger.log("Examples.executorWithParams :: onAllPromisesCompleted triggered");
+        manager.logInfo();
+      }
+      , timeoutInMilliSecs : 5000
+      , maxZombieCount: maxZombieCount
+      , onMaxZombieCountReached: function () {
+        logger.win("Examples.maxZombieCount :: onMaxZombieCountReached triggered. current zombieCount", manager.zombieCount, "maxZombieCount", manager.maxZombieCount );
+      }
+    });
+
+    for( var cnt = 0; cnt < len; cnt++ ) {
+      manager.createPromise( {"cnt": (cnt + 1) } );
+    }
+  }  
 }
