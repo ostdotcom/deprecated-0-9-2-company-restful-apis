@@ -241,5 +241,12 @@ o.perform();
 
 * Start All services
 ```bash
+create file if not present.
+vim $HOME/openst-setup/logs/block_scanner_execute_transaction.data
+  {"lastProcessedBlock":0}
+  
+source $HOME/openst-setup/openst_env_vars.sh
+source set_env_vars.sh
 node start_services.js
+
 ```
