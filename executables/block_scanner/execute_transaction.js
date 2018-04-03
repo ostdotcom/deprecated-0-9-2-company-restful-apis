@@ -209,6 +209,7 @@ BlockScannerBaseKlass.prototype = {
         batchedTxObjs[i].commission_amount_in_wei = eventData._commissionTokenAmount;
         batchedTxObjs[i].bt_transfer_in_wei = eventData._tokenAmount;
         batchedTxObjs[i].gas_used = txReceipt.gasUsed;
+        batchedTxObjs[i].status = parseInt(txReceipt.status, 16);
       }
 
     }
@@ -222,6 +223,7 @@ BlockScannerBaseKlass.prototype = {
     const oThis = this
       , batchSize = 100
       , completeStatus = new TransactionLogModel().invertedStatuses[transactionLogConst.completeStatus]
+      , failedStatus = new TransactionLogModel().invertedStatuses[transactionLogConst.failedStatus]
     ;
 
     var batchNo = 1;
@@ -244,7 +246,9 @@ BlockScannerBaseKlass.prototype = {
           block_number: oThis.currentBlock
         });
 
-        promiseArray.push(new TransactionLogModel().update({status: completeStatus, formatted_receipt: formattedReceipt})
+        const status = (batchedTxObjs[i].status == 1) ? completeStatus : failedStatus;
+
+        promiseArray.push(new TransactionLogModel().update({status: status, formatted_receipt: formattedReceipt})
           .where(['id = ?', batchedTxObjs[i].id]).fire());
       }
 
