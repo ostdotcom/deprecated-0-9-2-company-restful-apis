@@ -186,7 +186,7 @@ Use the file path in the following command:
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> node ./executables/block_scanner/execute_transaction.js datafilePath
+> node ./executables/block_scanner/execute_transaction.js 1 datafilePath
 ```
 
 * Start Processor to approve airdrop contract from user address
@@ -200,7 +200,7 @@ Use the file path in the following command:
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> node executables/rmq_subscribers/factory.js 1 'temp' '["on_boarding.#","airdrop_allocate_tokens","stake_and_mint.#","event.stake_and_mint_processor.#"]'
+> node executables/rmq_subscribers/factory.js 1 'rmq_subscribers_factory_1' '["on_boarding.#","airdrop_allocate_tokens","stake_and_mint.#","event.stake_and_mint_processor.#"]'
 ```
 
 * Start APIs in new terminal
@@ -237,4 +237,9 @@ node executables/rmq_subscribers/log_all_events.js >> log/log_all_events.log
 c = require('./fire_brigade/fill_up_missing_nonce');
 o = new c({from_address: '0x6bEeE57355885BAd8018814A0B0E93F368148c37', to_address: '0x180bA8f73897C0CB26d76265fC7868cfd936E617', chain_kind: 'value', missing_nonce: 25})
 o.perform();
+```
+
+* Start All services
+```bash
+node start_services.js
 ```
