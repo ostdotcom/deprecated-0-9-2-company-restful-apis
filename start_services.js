@@ -118,6 +118,12 @@ StartServicesKlass.prototype = {
     servicesList.push(cmd);
     oThis._asyncCommand(cmd);
 
+    logger.step("** Starting Slow Processor to execute transactions");
+    var cmd = "node executables/rmq_subscribers/execute_transaction.js 2 slow"
+      + " >> " + homeAbsolutePath + "/openst-setup/logs/slow_execute_transaction.log";
+    servicesList.push(cmd);
+    oThis._asyncCommand(cmd);
+
     logger.step("** Starting Block Scanner to mark mined transactions as done");
     var cmd = "node executables/block_scanner/execute_transaction.js 1 "
       + homeAbsolutePath
