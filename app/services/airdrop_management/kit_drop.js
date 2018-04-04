@@ -2,7 +2,6 @@
 
 const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , AllocateAirdropKlass = require(rootPrefix + '/lib/allocate_airdrop/start_airdrop')
   , AirdropRouterKlass = require(rootPrefix + '/lib/allocate_airdrop/router')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;

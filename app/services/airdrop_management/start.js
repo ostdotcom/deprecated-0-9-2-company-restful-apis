@@ -3,7 +3,6 @@
 const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , AllocateAirdropKlass = require(rootPrefix + '/lib/allocate_airdrop/start_airdrop')
-  , AirdropRouterKlass = require(rootPrefix + '/lib/allocate_airdrop/router')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
@@ -66,17 +65,6 @@ StartAirdropKlass.prototype = {
     const oThis = this;
 
     await oThis.validateAndSanitize();
-
-    // return new AirdropRouterKlass({
-    //   current_step: 'init',
-    //   token_symbol: oThis.tokenSymbol,
-    //   client_id: oThis.clientId,
-    //   client_token_id: oThis.clientTokenId,
-    //   airdrop_params: {
-    //     airdrop_amount: oThis.airdropAmount,
-    //     airdrop_user_list_type: oThis.airdropUserListType
-    //   }
-    // }).perform();
 
     return new AllocateAirdropKlass({
         client_id: oThis.clientId,
