@@ -24,11 +24,8 @@ const StartAirdropKlass = function (params) {
   var oThis = this;
 
   oThis.clientId = params.client_id;
-  oThis.tokenSymbol = params.token_symbol;
   oThis.airdropAmount = params.amount;
   oThis.airdropUserListType = params.list_type;
-
-  oThis.clientTokenId = params.client_token_id;
 
 };
 
@@ -85,7 +82,7 @@ StartAirdropKlass.prototype = {
 
     var oThis = this;
 
-    if(!oThis.clientId || !oThis.tokenSymbol){
+    if(!oThis.clientId){
       return Promise.reject(responseHelper.error('s_am_s_2', 'Invalid Params'));
     }
 
