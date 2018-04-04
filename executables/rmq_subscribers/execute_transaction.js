@@ -15,7 +15,7 @@ require(rootPrefix + '/module_overrides/index');
 
 // Include Process Locker File
 const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker')
-  , PromiseQueueManagerKlass = require( rootPrefix + "/executables/rmq_subscribers/PromiseQueueManager")
+  , PromiseQueueManagerKlass = require( rootPrefix + "/executables/rmq_subscribers/promise_queue_manager")
   , ProcessLocker = new ProcessLockerKlass()
 ;
 const args = process.argv

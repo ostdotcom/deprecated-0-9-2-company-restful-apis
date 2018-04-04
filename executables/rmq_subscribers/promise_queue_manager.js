@@ -6,8 +6,8 @@ const logMe = true
 ;
 
 const rootPrefix  = "../../"
-    , PromiseContext = require(rootPrefix + "executables/rmq_subscribers/PromiseContext.js")
-    , logger = require(rootPrefix + "lib/logger/custom_console_logger.js")
+    , PromiseContext = require(rootPrefix + "executables/rmq_subscribers/promise_context")
+    , logger = require(rootPrefix + "lib/logger/custom_console_logger")
 ;
 
 const Manager = module.exports = function ( promiseExecutor, options ) {

@@ -15,7 +15,7 @@ require(rootPrefix + '/module_overrides/index');
 const openSTNotification = require('@openstfoundation/openst-notification');
 
 const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker')
-  , PromiseQueueManagerKlass = require( rootPrefix + "/executables/rmq_subscribers/PromiseQueueManager")
+  , PromiseQueueManagerKlass = require( rootPrefix + "/executables/rmq_subscribers/promise_queue_manager")
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , notificationTopics = require(rootPrefix + '/lib/global_constant/notification_topics')
 ;
