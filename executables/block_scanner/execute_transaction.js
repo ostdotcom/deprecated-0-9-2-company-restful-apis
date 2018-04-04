@@ -142,7 +142,7 @@ BlockScannerBaseKlass.prototype = {
 
     while(true) {
       const offset = (batchNo - 1) * batchSize
-        , batchedTxHashes = allTxHashes.slice(offset, batchSize)
+        , batchedTxHashes = allTxHashes.slice(offset, batchSize + offset)
       ;
 
       batchNo = batchNo + 1;
@@ -185,7 +185,7 @@ BlockScannerBaseKlass.prototype = {
 
     while(true) {
       const offset = (batchNo - 1) * batchSize
-        , batchedTxObjs = oThis.shortlistedTxObjs.slice(offset, batchSize)
+        , batchedTxObjs = oThis.shortlistedTxObjs.slice(offset, batchSize + offset)
         , promiseArray = []
       ;
 
@@ -230,7 +230,7 @@ BlockScannerBaseKlass.prototype = {
 
     while(true) {
       const offset = (batchNo - 1) * batchSize
-        , batchedTxObjs = oThis.shortlistedTxObjs.slice(offset, batchSize)
+        , batchedTxObjs = oThis.shortlistedTxObjs.slice(offset, batchSize + offset)
         , promiseArray = []
       ;
 
