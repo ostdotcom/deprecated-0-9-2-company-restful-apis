@@ -45,7 +45,7 @@ PromiseContext.prototype = {
   , rejectedReasonOnTimeout : "Promise has timed out"
 
   , onResolved  : function ( resolvedValue, promiseContext ) {
-    //  Triggered when callback is resolved.
+    //  Triggered when promise is fulfilled.
     //  This callback method should be set by instance creator.
     //  It can be set using options parameter in constructor.
     verboseLog && logger.log("Promise has been resolved with value", resolvedValue );
@@ -67,6 +67,15 @@ PromiseContext.prototype = {
     verboseLog && promiseContext.logInfo();
   }
 
+  , onCompletedAfterTimeout: function ( promiseContext ) {
+    //  Triggered when the Promise is fulfilled/rejected after time limit.
+    //  This callback can only trigger when both resolvePromiseOnTimeout & rejectPromiseOnTimeout are set to false.
+    //  This callback method should be set by instance creator.
+    //  It can be set using options parameter in constructor.
+
+    verboseLog && logger.log("Promise has completed after timeout.");
+    verboseLog && promiseContext.logInfo();
+  } 
 
 
   , wrappedExecutor : null
@@ -77,7 +86,7 @@ PromiseContext.prototype = {
       oThis.wrappedExecutor = function (resolve, reject) {
         const wrappedResolve = oThis.createWrappedResolve( resolve );
         const wrappedReject  = oThis.createWrappedReject( reject );
-        executor && executor( wrappedResolve, wrappedReject, executorParams );
+        executor && executor( wrappedResolve, wrappedReject, executorParams, oThis );
         oThis.executionTs = Date.now();
       };
 
@@ -118,6 +127,10 @@ PromiseContext.prototype = {
 
       // Trigger Callback if available.
       oThis.onResolved && oThis.onResolved( resolvedValue, oThis );
+
+      if ( oThis.hasTimedout ) {
+        oThis.completedAfterTimeout();
+      }
 
       // Clean Up
       oThis.cleanup();
@@ -163,6 +176,11 @@ PromiseContext.prototype = {
       // Trigger Callback if available.
       oThis.onRejected && oThis.onRejected( reason, oThis );
 
+      if ( oThis.hasTimedout ) {
+        oThis.completedAfterTimeout();
+      }
+
+
       // Clean Up
       oThis.cleanup();
     };
@@ -170,13 +188,12 @@ PromiseContext.prototype = {
     return oThis.reject;
   }
 
-  , timeout: function () {
-    const oThis = this;
-    logger.log("PromiseContext :: default timeout invoked. (No timeout set).");
-  }
+  , startTimestamp: -1
+  , timeout: null
   , createTimeout  : function () {
     const oThis = this;
 
+    oThis.startTimestamp = new Date();
     const timeoutInMilliSecs = oThis.timeoutInMilliSecs = Number( oThis.timeoutInMilliSecs );
     oThis.timeout = function () {
       if ( oThis.isResolved || oThis.isRejected || oThis.hasTimedout ) {
@@ -223,6 +240,31 @@ PromiseContext.prototype = {
     }
   }
 
+  , completedAfterTimeout : function () {
+    const oThis = this;
+
+    const currTimestamp = Date.now()
+        , executionTime = currTimestamp - oThis.startTimestamp
+    ;
+
+    logMe && logger.warn("PromiseContext :: completedAfterTimeout ::"
+      ,"A promise completed (resolved/rejected) after timeout!"
+      ,"\n\tExecutionTime (miliseconds) :: ", executionTime
+      ,"Configured Timeout :: ", oThis.timeoutInMilliSecs
+    );
+
+    if ( !oThis.hasTimedout ) {
+      return;
+    }
+
+    if ( !(oThis.isResolved || oThis.isRejected) ) {
+      return;
+    }
+
+    oThis.onCompletedAfterTimeout && oThis.onCompletedAfterTimeout( oThis );
+    
+  }
+
 
   
   , isResolved    : false
@@ -262,41 +304,44 @@ PromiseContext.prototype = {
 
 PromiseContext.Examples = {
   simpleResolve   : function () {
+    const _timeout = 3000;
     var p1 = new PromiseContext( function (resolve, reject) {
       // Lets call resolve in 2 secs
       setTimeout(function () {
         resolve("Examples.simpleResolve :: resolving p1");
-      }, 2000);
-    }, { timeoutInMilliSecs : 3000 });
+      }, (_timeout * 0.9) );
+    }, { timeoutInMilliSecs : _timeout });
   }
   , simpleReject  : function () {
+    const _timeout = 3000;
     var p2 = new PromiseContext( function (resolve, reject) {
       // Lets call reject in 2 secs
       setTimeout(function () {
         reject("Examples.simpleReject :: rejecting p2");
-      }, 2000);
-    }, { timeoutInMilliSecs : 3000 });
+      }, (_timeout * 0.9) );
+    }, { timeoutInMilliSecs : _timeout });
   }
   , simpleTimeout: function () {
+    const _timeout = 3000;
     var p3 = new PromiseContext( function (resolve, reject) {
-      // Lets call resolve in 6 secs
-      setTimeout(function () {
-        resolve("p3 resolved");
-      }, 6000);
-    }, { timeoutInMilliSecs : 3000 
+      //Do Nothing.
+
+    }, { 
+      timeoutInMilliSecs : _timeout 
       , onTimedout: function ( promiseContext ) {
         logger.log("Examples.simpleTimeout :: p3 timedout.");
       }
     });
   }
   , resolvePromiseOnTimeout: function () {
+    const _timeout = 3000;
     var p4 = new PromiseContext( function (resolve, reject) {
       // Lets call resolve in 6 secs
       setTimeout(function () {
         resolve("p4 resolved");
-      }, 6000);
+      }, (_timeout * 2));
     }, { 
-      timeoutInMilliSecs : 3000 
+      timeoutInMilliSecs : _timeout 
       , resolvePromiseOnTimeout: true
       , onTimedout: function ( promiseContext ) {
         logger.log("Examples.simpleTimeout :: p4 timedout.");
@@ -304,11 +349,12 @@ PromiseContext.Examples = {
     });
   }
   ,rejectPromiseOnTimeout : function () {
+    const _timeout = 3000;
     var p5 = new PromiseContext( function (resolve, reject) {
       // Lets call resolve in 6 secs
       setTimeout(function () {
         reject("p5 resolved");
-      }, 6000);
+      }, (_timeout * 2));
     }, {
       timeoutInMilliSecs : 3000
       , rejectPromiseOnTimeout: true
@@ -317,12 +363,13 @@ PromiseContext.Examples = {
       }
     });
   }
-  ,zomibePromiseTimedOut : function () {
+  , zomibePromiseTimedOut : function () {
+    const _timeout = 3000;
     var p6 = new PromiseContext( function (resolve, reject) {
       // Do nothing
 
     }, {
-      timeoutInMilliSecs : 3000
+      timeoutInMilliSecs : _timeout
       , resolvePromiseOnTimeout : false
       , rejectPromiseOnTimeout: false
       , onTimedout: function ( promiseContext ) {
@@ -330,6 +377,39 @@ PromiseContext.Examples = {
       }
     });
   }
+
+  , resolvePromiseAfterTimeout: function () {
+    const _timeout = 3000;
+    var undead = new PromiseContext( function (resolve, reject) {
+      // Lets call resolve in 6 secs
+      setTimeout(function () {
+        resolve("undead resolved");
+      }, (_timeout * 2) );
+    }, { 
+      timeoutInMilliSecs : _timeout 
+      , resolvePromiseOnTimeout: false
+      , onTimedout: function ( promiseContext ) {
+        logger.log("Examples.simpleTimeout :: undead timedout.");
+      }
+    });
+  }
+
+  , rejectPromiseAfterTimeout: function () {
+    const _timeout = 3000;
+    var undead = new PromiseContext( function (resolve, reject) {
+      // Lets call resolve in 6 secs
+      setTimeout(function () {
+        reject("undead rejected");
+      }, (_timeout * 2) );
+    }, { 
+      timeoutInMilliSecs : _timeout 
+      , resolvePromiseOnTimeout: false
+      , onTimedout: function ( promiseContext ) {
+        logger.log("Examples.simpleTimeout :: undead timedout.");
+      }
+    });
+  }
+
   , testAll : function () {
     var oThis =  this;
     oThis.simpleResolve();
@@ -338,6 +418,8 @@ PromiseContext.Examples = {
     oThis.resolvePromiseOnTimeout();
     oThis.rejectPromiseOnTimeout();
     oThis.zomibePromiseTimedOut();
+    oThis.resolvePromiseAfterTimeout();
+    oThis.rejectPromiseAfterTimeout();
   }
 };
 
