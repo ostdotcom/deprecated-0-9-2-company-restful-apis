@@ -132,7 +132,7 @@ const ManagedAddressKlassPrototype = {
       client_id: clientId,
       status: invertedStatuses[managedAddressesConst.activeStatus],
       address_type: invertedAddressTypes[managedAddressesConst.userAddressType]
-    })
+    });
 
     if (propertyUnsetBitVal) {
       oThis.where(['(properties & ?) = 0', propertyUnsetBitVal]);
