@@ -55,7 +55,7 @@ StartServicesKlass.prototype = {
     logger.step("** Starting RabbitMQ Server");
     var cmd = "rabbitmq-server"
       + " >> " + homeAbsolutePath + "/openst-setup/logs/rabbitmq.log";
-    servicesList.push(cmd);
+    // servicesList.push(cmd);
     oThis._asyncCommand(cmd);
 
     // Start Value Chain
