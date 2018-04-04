@@ -138,6 +138,25 @@ router.post('/airdrop/drop', function (req, res, next) {
 
 });
 
+/**
+ * Airdrop tokens to users
+ *
+ * @name Airdrop Tokens
+ *
+ * @route {GET} {base_url}/users/airdrop-tokens
+ *
+ * @routeparam {Decimal} :amount - Branded token amount to airdrop
+ * @routeparam {String} :list_type - List to which tokens need to be airdropped. Possible values: 'all' or 'never_airdropped'. Default is: 'all'
+ *
+ */
+router.post('/airdrop/kit-drop', function (req, res, next) {
+
+  const StartAirdropKlass = require(rootPrefix + '/app/services/airdrop_management/kit_drop');
+
+  Promise.resolve(routeHelper.performer(req, res, next, StartAirdropKlass, 'r_su_3'));
+
+});
+
 /* Get status of Airdrop request */
 /**
  * Get status of airdrop token request

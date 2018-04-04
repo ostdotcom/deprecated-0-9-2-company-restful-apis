@@ -20,7 +20,7 @@ const rootPrefix = '../../..'
  * @constructor
  *
  */
-const StartAirdropKlass = function (params) {
+const StartAirdropForKitKlass = function (params) {
 
   var oThis = this;
 
@@ -33,7 +33,7 @@ const StartAirdropKlass = function (params) {
 
 };
 
-StartAirdropKlass.prototype = {
+StartAirdropForKitKlass.prototype = {
 
   /**
    * Async Perform
@@ -67,24 +67,16 @@ StartAirdropKlass.prototype = {
 
     await oThis.validateAndSanitize();
 
-    // return new AirdropRouterKlass({
-    //   current_step: 'init',
-    //   token_symbol: oThis.tokenSymbol,
-    //   client_id: oThis.clientId,
-    //   client_token_id: oThis.clientTokenId,
-    //   airdrop_params: {
-    //     airdrop_amount: oThis.airdropAmount,
-    //     airdrop_user_list_type: oThis.airdropUserListType
-    //   }
-    // }).perform();
-
-    return new AllocateAirdropKlass({
-        client_id: oThis.clientId,
-        airdrop_params: {
-          airdrop_amount: oThis.airdropAmount,
-          airdrop_user_list_type: oThis.airdropUserListType
-        }
-    }).perform()
+    return new AirdropRouterKlass({
+      current_step: 'init',
+      token_symbol: oThis.tokenSymbol,
+      client_id: oThis.clientId,
+      client_token_id: oThis.clientTokenId,
+      airdrop_params: {
+        airdrop_amount: oThis.airdropAmount,
+        airdrop_user_list_type: oThis.airdropUserListType
+      }
+    }).perform();
 
   },
 
@@ -111,4 +103,4 @@ StartAirdropKlass.prototype = {
 
 };
 
-module.exports = StartAirdropKlass;
+module.exports = StartAirdropForKitKlass;
