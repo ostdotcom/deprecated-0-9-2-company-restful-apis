@@ -1,12 +1,11 @@
 "use strict";
 
-var rootPrefix = '../../..'
+const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , clientAirdropModel = require(rootPrefix + '/app/models/client_airdrop')
+  , ClientAirdropModel = require(rootPrefix + '/app/models/client_airdrop')
   , clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  ;
-
+;
 
 /**
  * Fetch status of Airdrop initiated
@@ -49,23 +48,23 @@ GetAirdropStatusKlass.prototype = {
   },
 
   asyncPerform: async function(){
-    const oThis = this;
+    const oThis = this
+    ;
 
-    var obj = new clientAirdropModel();
-    var response = await obj.getByUuid(oThis.airdropUuid);
+    var response = await new ClientAirdropModel().getByUuid(oThis.airdropUuid);
     if(response[0]){
       var record = response[0];
       if(record.client_id != oThis.clientId){
         return Promise.resolve(responseHelper.error("s_am_gas_2", "Invalid Airdrop Request Id."));
       }
       var current_status = 'pending';
-      if(record.status == obj.invertedStatuses[clientAirdropConst.completeStatus]){
+      if(record.status == new ClientAirdropModel().invertedStatuses[clientAirdropConst.completeStatus]){
         current_status = 'complete';
-      } else if(record.status == obj.invertedStatuses[clientAirdropConst.failedStatus]){
+      } else if(record.status == new ClientAirdropModel().invertedStatuses[clientAirdropConst.failedStatus]){
         current_status = 'failed';
       }
       return Promise.resolve(responseHelper.successWithData({airdrop_uuid: oThis.airdropUuid,
-        current_status: current_status, steps_complete: obj.getAllBits('steps_complete', record.steps_complete)}));
+        current_status: current_status, steps_complete: new ClientAirdropModel().getAllBits('steps_complete', record.steps_complete)}));
     } else {
       return Promise.resolve(responseHelper.error("s_am_gas_1", "Invalid Airdrop Request Id."));
     }
