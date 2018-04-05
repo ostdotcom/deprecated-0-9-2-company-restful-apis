@@ -162,7 +162,7 @@ GetTransactionDetailKlass.prototype = {
     ;
 
     if(!clientTokenIds || clientTokenIds.length == 0){
-      return Promise.reject(responseHelper.error('s_t_gd_1', 'tokens not found for given input', null, [],
+      return Promise.reject(responseHelper.error('s_t_gd_2', 'tokens not found for given input', null, [],
         {sendErrorEmail: false}));
     }
     const clientTokenRecords = await clientTokensObj.select('*').where(["id in (?)", clientTokenIds]).fire();
