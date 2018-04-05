@@ -159,8 +159,13 @@ GetTransactionDetailKlass.prototype = {
     const oThis = this
       , clientTokensObj = new ClientBrandedTokenKlass()
       , clientTokenIds = Object.keys(oThis.clientTokenMap)
-      , clientTokenRecords = await clientTokensObj.select('*').where(["id in (?)", clientTokenIds]).fire()
     ;
+
+    if(!clientTokenIds || clientTokenIds.length == 0){
+      return Promise.reject(responseHelper.error('s_t_gd_1', 'tokens not found for given input', null, [],
+        {sendErrorEmail: false}));
+    }
+    const clientTokenRecords = await clientTokensObj.select('*').where(["id in (?)", clientTokenIds]).fire();
 
     for (var i = 0; i < clientTokenRecords.length; i++) {
       const currRecord = clientTokenRecords[i]
