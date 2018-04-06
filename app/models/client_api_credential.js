@@ -18,7 +18,7 @@ const clientApiCredential = {
   getClientApi: function(apiKey){
     return QueryDB.read(
       tableName,
-      ['client_id','api_key', 'api_secret', 'api_salt'],
+      ['client_id','api_key', 'api_secret', 'api_salt', 'expiry_timestamp'],
       'api_key=?',
       [apiKey]);
   }
