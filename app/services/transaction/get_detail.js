@@ -101,6 +101,11 @@ GetTransactionDetailKlass.prototype = {
     const transactionLogRecords = await new TransactionLogModel()
       .select('*').where(['transaction_uuid in (?)', oThis.transactionUuids]).fire();
 
+    if(!transactionLogRecords || transactionLogRecords.length == 0){
+      return Promise.reject(responseHelper.error('s_t_gd_3', 'Invalid UUIDs passed', null, [],
+        {sendErrorEmail: false}));
+    }
+
     for (var i = 0; i < transactionLogRecords.length; i++) {
       const transactionLogRecord = transactionLogRecords[i]
         , formattedReceipt = JSON.parse(transactionLogRecord.formatted_receipt || '{}')
@@ -159,8 +164,13 @@ GetTransactionDetailKlass.prototype = {
     const oThis = this
       , clientTokensObj = new ClientBrandedTokenKlass()
       , clientTokenIds = Object.keys(oThis.clientTokenMap)
-      , clientTokenRecords = await clientTokensObj.select('*').where(["id in (?)", clientTokenIds]).fire()
     ;
+
+    if(!clientTokenIds || clientTokenIds.length == 0){
+      return Promise.reject(responseHelper.error('s_t_gd_2', 'tokens not found for given input', null, [],
+        {sendErrorEmail: false}));
+    }
+    const clientTokenRecords = await clientTokensObj.select('*').where(["id in (?)", clientTokenIds]).fire();
 
     for (var i = 0; i < clientTokenRecords.length; i++) {
       const currRecord = clientTokenRecords[i]
