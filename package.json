@@ -9,7 +9,7 @@
     "@openstfoundation/openst-cache": "1.0.2",
     "@openstfoundation/openst-core": "0.9.0-beta.2",
     "@openstfoundation/openst-notification": "1.0.0",
-    "@openstfoundation/openst-payments": "1.0.5-beta.9",
+    "@openstfoundation/openst-payments": "1.0.5-beta.10",
     "@openstfoundation/openst-platform": "0.9.3-beta.8",
     "@ostdotcom/ost-price-oracle": "1.0.1-beta.2",
     "abi-decoder": "^1.1.0",
