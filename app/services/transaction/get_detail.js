@@ -101,6 +101,11 @@ GetTransactionDetailKlass.prototype = {
     const transactionLogRecords = await new TransactionLogModel()
       .select('*').where(['transaction_uuid in (?)', oThis.transactionUuids]).fire();
 
+    if(!transactionLogRecords || transactionLogRecords.length == 0){
+      return Promise.reject(responseHelper.error('s_t_gd_3', 'Invalid UUIDs passed', null, [],
+        {sendErrorEmail: false}));
+    }
+
     for (var i = 0; i < transactionLogRecords.length; i++) {
       const transactionLogRecord = transactionLogRecords[i]
         , formattedReceipt = JSON.parse(transactionLogRecord.formatted_receipt || '{}')
