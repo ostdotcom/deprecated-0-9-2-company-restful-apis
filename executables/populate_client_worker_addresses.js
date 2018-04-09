@@ -23,7 +23,6 @@ PopulateClientAddresses.prototype = {
 
     var managedAddressInsertData = []
         , workerManagedAddressIds = []
-        , clientWorkerAddrObj = new clientWorkerAddressModel()
         , workerManagedAddrIdHasBalanceMap = {}
         , buffer = null
         , balanceAvailabilityRsp = null
@@ -49,16 +48,16 @@ PopulateClientAddresses.prototype = {
     for (var i = 0; i < response.length; i++) {
       var row = response[i];
       const sql_rows = [
-          row.client_id, row.worker_managed_address_id,
-          clientWorkerAddrObj.invertedStatuses[clientWorkerManagedAddressConst.activeStatus],
-          workerManagedAddrIdHasBalanceMap[row.worker_managed_address_id] ? 1 : 0
+        row.client_id, row.worker_managed_address_id,
+        new clientWorkerAddressModel().invertedStatuses[clientWorkerManagedAddressConst.activeStatus],
+        workerManagedAddrIdHasBalanceMap[row.worker_managed_address_id] ? 1 : 0
       ];
       managedAddressInsertData.push(sql_rows);
     }
 
     if(managedAddressInsertData.length === response.length){
       var fields = ['client_id', 'managed_address_id', 'status', 'properties'];
-      const queryResponse = await clientWorkerAddrObj.bulkInsert(fields, managedAddressInsertData);
+      const queryResponse = await (new clientWorkerAddressModel().bulkInsert(fields, managedAddressInsertData));
       return Promise.resolve("Done");
     }
 
