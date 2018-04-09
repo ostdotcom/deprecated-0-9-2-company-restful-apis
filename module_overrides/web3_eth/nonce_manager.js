@@ -321,7 +321,8 @@ const NonceCacheKlassPrototype = {
       // Means someone else has acquired the lock already.
       await oThis.cacheImplementer.decrement(oThis.cacheLockKey);
     }
-    return Promise.resolve(responseHelper.error("l_nm_acquireLock_1", "unable to acquire lock"));
+    return Promise.resolve(responseHelper.error("l_nm_acquireLock_1", "unable to acquire lock",
+      null, [], {sendErrorEmail: false}));
 
   },
 
