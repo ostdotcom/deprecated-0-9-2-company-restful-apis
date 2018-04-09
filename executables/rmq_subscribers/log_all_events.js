@@ -75,16 +75,14 @@ var bulkInsertInLog = function () {
       sql_rows_array.push([kind, JSON.stringify(event)]);
 
       if (sql_rows_array.length >= 2000) {
-        const eventLogObj = new EventLoggerKlass();
-        await eventLogObj.bulkInsert(fields, sql_rows_array);
+        await new EventLoggerKlass().insertMultiple(fields, sql_rows_array);
         sql_rows_array = [];
       }
 
     }
 
     if (sql_rows_array.length > 0) {
-      const eventLogObj = new EventLoggerKlass();
-      await eventLogObj.bulkInsert(fields, sql_rows_array);
+      await new EventLoggerKlass().insertMultiple(fields, sql_rows_array);
       sql_rows_array = [];
     }
 
