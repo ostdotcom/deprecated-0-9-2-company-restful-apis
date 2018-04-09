@@ -95,36 +95,6 @@ const ModelBaseKlassPrototype = {
 
   },
 
-  bulkInsert: function (createFields, setFieldsValues) {
-
-    var oThis = this
-      , addingCreatedAt = false
-      , addingUpdatedAt = false
-      , currentDateTime = util.formatDbDate(new Date())
-    ;
-
-    if(createFields.indexOf('created_at') < 0){
-      createFields.push('created_at');
-      addingCreatedAt = true;
-    }
-    if(createFields.indexOf('updated_at') < 0){
-      createFields.push('updated_at');
-      addingUpdatedAt = true;
-    }
-
-    for (var i in setFieldsValues) {
-      if(addingCreatedAt) setFieldsValues[i].push(currentDateTime);
-      if(addingUpdatedAt) setFieldsValues[i].push(currentDateTime)
-    }
-
-    return oThis.QueryDB.bulkInsert(
-      oThis.tableName,
-      createFields,
-      setFieldsValues
-    );
-
-  },
-
   edit: function (params) {
     var oThis = this
       , editFields = []
