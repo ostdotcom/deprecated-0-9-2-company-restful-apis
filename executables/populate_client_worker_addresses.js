@@ -54,7 +54,7 @@ PopulateClientAddresses.prototype = {
 
     if(managedAddressInsertData.length === response.length){
       var fields = ['client_id', 'managed_address_id', 'status', 'properties'];
-      const queryResponse = await (new clientWorkerAddressModel().insertMultiple(fields, managedAddressInsertData));
+      const queryResponse = await (new clientWorkerAddressModel().insertMultiple(fields, managedAddressInsertData)).fire();
       return Promise.resolve("Done");
     }
 
