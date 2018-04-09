@@ -45,8 +45,7 @@ FundUsersWithSTPrimeFromReserveKlass.prototype = {
     const oThis = this
       , batchSize = 1
       , clientIds = []
-      , clientBrandedTokenObj = new ClientBrandedTokenKlass()
-      , clientObjects = await clientBrandedTokenObj.select("*").fire();
+      , clientObjects = await new ClientBrandedTokenKlass().select("*").fire();
 
     for(var i=0; i<clientObjects.length; i++){
       const c_o = clientObjects[i];
