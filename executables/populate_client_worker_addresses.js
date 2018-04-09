@@ -24,9 +24,6 @@ PopulateClientAddresses.prototype = {
     var managedAddressInsertData = []
         , workerManagedAddressIds = []
         , workerManagedAddrIdHasBalanceMap = {}
-        , buffer = null
-        , balanceAvailabilityRsp = null
-        , isBalanceAvailable = null
     ;
 
     for (var i = 0; i < response.length; i++) {
@@ -35,10 +32,10 @@ PopulateClientAddresses.prototype = {
 
     const managedAddressRows = await managedAddressObj.getByIds(workerManagedAddressIds);
     for (var i = 0; i < managedAddressRows.length; i++) {
-      buffer = managedAddressRows[i];
-      isBalanceAvailable = false;
+      var buffer = managedAddressRows[i];
+      var isBalanceAvailable = false;
       var obj = new openStPlatform.services.balance.simpleTokenPrime({'address': buffer.ethereum_address});
-      balanceAvailabilityRsp = await obj.perform();
+      var balanceAvailabilityRsp = await obj.perform();
       if(balanceAvailabilityRsp.isSuccess() && balanceAvailabilityRsp.data.balance > 0){
         isBalanceAvailable = true;
       }
@@ -47,17 +44,17 @@ PopulateClientAddresses.prototype = {
 
     for (var i = 0; i < response.length; i++) {
       var row = response[i];
-      const sql_rows = [
+      const sql_row = [
         row.client_id, row.worker_managed_address_id,
         new clientWorkerAddressModel().invertedStatuses[clientWorkerManagedAddressConst.activeStatus],
         workerManagedAddrIdHasBalanceMap[row.worker_managed_address_id] ? 1 : 0
       ];
-      managedAddressInsertData.push(sql_rows);
+      managedAddressInsertData.push(sql_row);
     }
 
     if(managedAddressInsertData.length === response.length){
       var fields = ['client_id', 'managed_address_id', 'status', 'properties'];
-      const queryResponse = await (new clientWorkerAddressModel().bulkInsert(fields, managedAddressInsertData));
+      const queryResponse = await (new clientWorkerAddressModel().insertMultiple(fields, managedAddressInsertData));
       return Promise.resolve("Done");
     }
 
