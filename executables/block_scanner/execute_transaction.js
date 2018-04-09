@@ -47,7 +47,7 @@ BlockScannerBaseKlass.prototype = {
   /**
    * Intentional block delay
    */
-  INTENTIONAL_BLOCK_DELAY: 1,
+  INTENTIONAL_BLOCK_DELAY: 0,
 
   /**
    * Starts the process of the script with initializing processor
