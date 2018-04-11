@@ -11,6 +11,7 @@ const fs = require('fs')
   , Web3 = require('web3')
   , abiDecoder = require('abi-decoder')
   , openStPlatform = require('@openstfoundation/openst-platform')
+  , openStPayments = require('@openstfoundation/openst-payments')
 ;
 
 const rootPrefix = '../..'
@@ -18,6 +19,7 @@ const rootPrefix = '../..'
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
+  , PostAirdropPayKlass = openStPayments.services.airdropManager.postAirdropPay
 ;
 
 const coreAbis = openStPlatform.abis
@@ -150,7 +152,7 @@ BlockScannerBaseKlass.prototype = {
       if(batchedTxHashes.length === 0) break;
 
       const batchedTxLogRecords = await new TransactionLogModel()
-        .select('id, transaction_hash, transaction_uuid, process_uuid, status')
+        .select('id, transaction_hash, transaction_uuid, process_uuid, input_params, status')
         .where(['transaction_hash in (?)', batchedTxHashes])
         .fire();
 
@@ -166,7 +168,8 @@ BlockScannerBaseKlass.prototype = {
         oThis.shortlistedTxObjs.push(
           {
             transaction_hash: currRecord.transaction_hash,
-            id: currRecord.id
+            id: currRecord.id,
+            input_params: JSON.parse(currRecord.input_params)
           });
       }
     }
@@ -203,6 +206,16 @@ BlockScannerBaseKlass.prototype = {
       for(var i = 0; i < batchedTxObjs.length; i ++) {
         const txReceipt = txReceiptResults[i];
         const decodedEvents = abiDecoder.decodeLogs(txReceipt.logs);
+
+        if (batchedTxObjs[i].input_params && batchedTxObjs[i].input_params.postAirdropParams) {
+          const postAirdropParams = batchedTxObjs[i].input_params.postAirdropParams;
+          const postAirdropPay = new PostAirdropPayKlass(postAirdropParams, decodedEvents,txReceipt.status);
+          const postAirdropPayResponse = await postAirdropPay.perform();
+
+          if (postAirdropPayResponse.isSuccess()) {
+            delete batchedTxObjs[i].input_params.postAirdropParams;
+          }
+        }
 
         const eventData = oThis._getEventData(decodedEvents);
 
@@ -248,7 +261,8 @@ BlockScannerBaseKlass.prototype = {
 
         const status = (batchedTxObjs[i].status == 1) ? completeStatus : failedStatus;
 
-        promiseArray.push(new TransactionLogModel().update({status: status, formatted_receipt: formattedReceipt})
+        promiseArray.push(new TransactionLogModel().update({status: status,
+          formatted_receipt: formattedReceipt, input_params: JSON.stringify(batchedTxObjs[i].input_params)})
           .where(['id = ?', batchedTxObjs[i].id]).fire());
       }
 

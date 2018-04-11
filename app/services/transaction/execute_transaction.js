@@ -187,13 +187,14 @@ ExecuteTransactionKlass.prototype = {
         responseHelper.error("s_t_et_1", "Only processing statuses are allowed here.", null, {}, {sendErrorEmail: false})
       )
     }
-    const ransaction_params = JSON.parse(transactionLog.input_params);
+    const transaction_params = JSON.parse(transactionLog.input_params);
 
     oThis.clientId = transactionLog.client_id;
-    oThis.fromUuid = ransaction_params.from_uuid;
-    oThis.toUuid = ransaction_params.to_uuid;
-    oThis.transactionKind = ransaction_params.transaction_kind;
-    oThis.gasPrice = ransaction_params.gas_price;
+    oThis.fromUuid = transaction_params.from_uuid;
+    oThis.toUuid = transaction_params.to_uuid;
+    oThis.transactionKind = transaction_params.transaction_kind;
+    oThis.gasPrice = transaction_params.gas_price;
+    oThis.inputParams = transaction_params;
 
     return Promise.resolve(responseHelper.successWithData({}))
   },
@@ -451,7 +452,7 @@ ExecuteTransactionKlass.prototype = {
       intended_price_point: basicHelper.convertToWei(ostValue).toString(),
       spender: oThis.userRecords[oThis.fromUuid].ethereum_address,
       gas_price: oThis.gasPrice,
-      options: {tag: oThis.transactionTypeRecord.name, returnType: 'txHash'}
+      options: {tag: oThis.transactionTypeRecord.name, returnType: 'txHash', shouldHandlePostPay:0 }
     });
 
     const payResponse = await payObject.perform()
@@ -488,6 +489,7 @@ ExecuteTransactionKlass.prototype = {
 
     oThis.transactionHash = payResponse.data.transaction_hash;
 
+    oThis.inputParams.postAirdropParams = payResponse.data.post_pay_params;
     oThis.updateParentTransactionLog(transactionLogConst.waitingForMiningStatus);
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -503,7 +505,7 @@ ExecuteTransactionKlass.prototype = {
    */
   updateParentTransactionLog: function (status, failedResponse) {
     const oThis = this;
-    var qParams = {status: status, transaction_hash: oThis.transactionHash};
+    var qParams = {status: status, transaction_hash: oThis.transactionHash, input_params: JSON.stringify(oThis.inputParams)};
     if (failedResponse) {
       qParams['formatted_receipt'] = JSON.stringify(failedResponse);
     }
