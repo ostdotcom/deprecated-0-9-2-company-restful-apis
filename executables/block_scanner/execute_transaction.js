@@ -166,7 +166,7 @@ BlockScannerBaseKlass.prototype = {
           {
             transaction_hash: currRecord.transaction_hash,
             id: currRecord.id,
-            input_params: JSON.parse(currRecord.input_params)
+            input_params: currRecord.input_params
           });
       }
     }
