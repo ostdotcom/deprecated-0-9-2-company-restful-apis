@@ -219,7 +219,7 @@ BlockScannerBaseKlass.prototype = {
         batchedTxObjs[i].commission_amount_in_wei = eventData._commissionTokenAmount;
         batchedTxObjs[i].bt_transfer_in_wei = eventData._tokenAmount;
         batchedTxObjs[i].gas_used = txReceipt.gasUsed;
-        console.log('txReceipt.status', txReceipt.status);
+
         batchedTxObjs[i].status = parseInt(txReceipt.status, 16);
       }
 
