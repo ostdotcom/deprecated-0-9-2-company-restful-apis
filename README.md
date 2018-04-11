@@ -189,18 +189,11 @@ Use the file path in the following command:
 > node ./executables/block_scanner/execute_transaction.js 1 datafilePath
 ```
 
-* Start Processor to approve airdrop contract from user address
-```bash
-> source $HOME/openst-setup/openst_env_vars.sh
-> source set_env_vars.sh
-> node executables/rmq_subscribers/user_airdrop_contract_approve 1
-```
-
 * Start worker to process events
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> node executables/rmq_subscribers/factory.js 1 'rmq_subscribers_factory_1' '["on_boarding.#","airdrop_allocate_tokens","stake_and_mint.#","event.stake_and_mint_processor.#"]'
+> node executables/rmq_subscribers/factory.js 1 'rmq_subscribers_factory_1' '["on_boarding.#","airdrop_allocate_tokens","stake_and_mint.#","event.stake_and_mint_processor.#","airdrop.approve.contract"]'
 ```
 
 * Start APIs in new terminal

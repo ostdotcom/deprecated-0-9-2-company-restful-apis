@@ -132,14 +132,8 @@ StartServicesKlass.prototype = {
     servicesList.push(cmd);
     oThis._asyncCommand(cmd);
 
-    // logger.step("** Starting Processor to approve airdrop contract");
-    // var cmd = "node executables/rmq_subscribers/user_airdrop_contract_approve 1"
-    //   + " >> " + homeAbsolutePath + "/openst-setup/logs/user_airdrop_contract_approve.log";
-    // servicesList.push(cmd);
-    // oThis._asyncCommand(cmd);
-
     logger.step("** Starting worker to process events");
-    var cmd = "node executables/rmq_subscribers/factory.js 1 'temp' '[\"on_boarding.#\",\"airdrop_allocate_tokens\",\"stake_and_mint.#\",\"event.stake_and_mint_processor.#\"]'"
+    var cmd = "node executables/rmq_subscribers/factory.js 1 'temp' '[\"on_boarding.#\",\"airdrop_allocate_tokens\",\"stake_and_mint.#\",\"event.stake_and_mint_processor.#\",\"airdrop.approve.contract\"]'"
       + " >> " + homeAbsolutePath + "/openst-setup/logs/executables_rmq_subscribers_factory.log";
     // servicesList.push(cmd);
     oThis._asyncCommand(cmd);
