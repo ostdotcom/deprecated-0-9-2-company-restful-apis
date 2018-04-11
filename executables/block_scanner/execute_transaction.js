@@ -150,16 +150,13 @@ BlockScannerBaseKlass.prototype = {
       if(batchedTxHashes.length === 0) break;
 
       const batchedTxLogRecords = await new TransactionLogModel()
-        .select('id, transaction_hash, transaction_uuid, process_uuid, status')
-        .where(['transaction_hash in (?)', batchedTxHashes])
-        .fire();
+        .getByTransactionHash(batchedTxHashes);
 
       if(batchedTxLogRecords.length === 0) continue;
 
       for(var i = 0; i < batchedTxLogRecords.length; i ++) {
-        const currRecord = batchedTxLogRecords[i];
 
-        if(currRecord.transaction_uuid !== currRecord.process_uuid) continue;
+        const currRecord = batchedTxLogRecords[i];
 
         if(currRecord.status != waitingForMiningStatus) continue;
 
@@ -209,6 +206,7 @@ BlockScannerBaseKlass.prototype = {
         batchedTxObjs[i].commission_amount_in_wei = eventData._commissionTokenAmount;
         batchedTxObjs[i].bt_transfer_in_wei = eventData._tokenAmount;
         batchedTxObjs[i].gas_used = txReceipt.gasUsed;
+        console.log('txReceipt.status', txReceipt.status);
         batchedTxObjs[i].status = parseInt(txReceipt.status, 16);
       }
 
@@ -229,6 +227,7 @@ BlockScannerBaseKlass.prototype = {
     var batchNo = 1;
 
     while(true) {
+
       const offset = (batchNo - 1) * batchSize
         , batchedTxObjs = oThis.shortlistedTxObjs.slice(offset, batchSize + offset)
         , promiseArray = []
@@ -239,20 +238,26 @@ BlockScannerBaseKlass.prototype = {
       if(batchedTxObjs.length === 0) break;
 
       for(var i = 0; i < batchedTxObjs.length; i++) {
-        const formattedReceipt = JSON.stringify({
-          gas_used: batchedTxObjs[i].gas_used,
+
+        const formattedReceipt = {
           commission_amount_in_wei: batchedTxObjs[i].commission_amount_in_wei,
           bt_transfer_in_wei: batchedTxObjs[i].bt_transfer_in_wei,
-          block_number: oThis.currentBlock
-        });
+        };
 
         const status = (batchedTxObjs[i].status == 1) ? completeStatus : failedStatus;
 
-        promiseArray.push(new TransactionLogModel().update({status: status, formatted_receipt: formattedReceipt})
-          .where(['id = ?', batchedTxObjs[i].id]).fire());
+        const promise = new TransactionLogModel().updateRecord(
+          batchedTxObjs[i].id,
+          {status: status, formatted_receipt: formattedReceipt,
+            block_number: oThis.currentBlock, gas_used: batchedTxObjs[i].gas_used}
+        );
+
+        promiseArray.push(promise);
+
       }
 
       await Promise.all(promiseArray);
+
     }
 
     logger.win('* Updating transaction_logs table DONE');

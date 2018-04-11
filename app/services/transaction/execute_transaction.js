@@ -125,16 +125,19 @@ ExecuteTransactionKlass.prototype = {
     // This transaction uuid would be used throughout as process id too for all the further transactions.
     // Don't Create new transaction log if already passed.
     if (!oThis.transactionLogId) {
+
       oThis.transactionUuid = uuid.v4();
+
       var inputParams = {
         from_uuid: oThis.fromUuid, to_uuid: oThis.toUuid,
         transaction_kind: oThis.transactionKind, token_symbol: oThis.tokenSymbol,
-        gas_price: oThis.gasPrice, transaction_kind_id: oThis.transactionTypeRecord.id
+        transaction_kind_id: oThis.transactionTypeRecord.id
       };
 
-      var insertedRec = await oThis.createTransactionLog(oThis.transactionUuid, inputParams,
-        transactionLogConst.processingStatus, {}, null);
+      var insertedRec = await oThis.createTransactionLog(oThis.transactionUuid, inputParams, oThis.gasPrice);
+
       oThis.transactionLogId = insertedRec.insertId;
+
     }
 
     // Transaction would be set in background & response would be returned with uuid.
@@ -168,12 +171,10 @@ ExecuteTransactionKlass.prototype = {
     if (!oThis.transactionLogId) return Promise.resolve(responseHelper.successWithData({}));
 
     const transactionLogs = await new transactionLogModel()
-      .select('id, client_id, transaction_uuid, status, input_params')
-      .where(['id=?', oThis.transactionLogId])
-      .fire();
+      .getById([oThis.transactionLogId]);
 
     const transactionLog = transactionLogs[0];
-
+console.log('transactionLog', transactionLog);
     // check if the transaction log uuid is same as that passed in the params, otherwise error out
     if (transactionLog.transaction_uuid !== oThis.transactionUuid) {
       return Promise.resolve(
@@ -187,15 +188,16 @@ ExecuteTransactionKlass.prototype = {
         responseHelper.error("s_t_et_1", "Only processing statuses are allowed here.", null, {}, {sendErrorEmail: false})
       )
     }
-    const ransaction_params = JSON.parse(transactionLog.input_params);
-
+    const ransaction_params = transactionLog.input_params;
+    console.log('ransaction_params', ransaction_params);
     oThis.clientId = transactionLog.client_id;
     oThis.fromUuid = ransaction_params.from_uuid;
     oThis.toUuid = ransaction_params.to_uuid;
     oThis.transactionKind = ransaction_params.transaction_kind;
-    oThis.gasPrice = ransaction_params.gas_price;
+    oThis.gasPrice = basicHelper.convertToHex(transactionLog.gas_price);
 
-    return Promise.resolve(responseHelper.successWithData({}))
+    return Promise.resolve(responseHelper.successWithData({}));
+
   },
 
   /**
@@ -337,20 +339,21 @@ ExecuteTransactionKlass.prototype = {
    * @param uuid
    * @param inputParams
    * @param status
-   * @param responseData
    */
-  createTransactionLog: function (uuid, inputParams, status, responseData, transactionHash) {
+  createTransactionLog: function (uuid, inputParams, hexGasPrice) {
+
     const oThis = this;
 
-    var ipp = JSON.stringify(inputParams)
-      , fpp = JSON.stringify(responseData);
-
-    return new transactionLogModel().create({
-      client_id: oThis.clientId, client_token_id: oThis.clientBrandedToken.id, input_params: ipp,
-      chain_type: transactionLogConst.utilityChainType, status: status,
-      transaction_uuid: uuid, process_uuid: oThis.transactionUuid,
-      formatted_receipt: fpp, transaction_hash: transactionHash
+    return new transactionLogModel().insertRecord({
+      client_id: oThis.clientId,
+      client_token_id: oThis.clientBrandedToken.id,
+      input_params: inputParams,
+      chain_type: new transactionLogModel().invertedChainTypes[transactionLogConst.utilityChainType],
+      status: new transactionLogModel().invertedStatuses[transactionLogConst.processingStatus],
+      transaction_uuid: uuid,
+      gas_price: basicHelper.convertToBigNumber(hexGasPrice).toString(10) // converting hex to base 10
     });
+
   },
 
   /**
@@ -373,8 +376,6 @@ ExecuteTransactionKlass.prototype = {
     var error = approveResponse.data['error']
       , approveTransactionHash = approveResponse.data['transaction_hash'];
     var approveStatus = (approveResponse.isFailure() ? transactionLogConst.failedStatus : transactionLogConst.completeStatus);
-
-    oThis.createTransactionLog(uuid.v4(), inputParams, approveStatus, error, approveTransactionHash);
 
     if(approveResponse.isFailure()) {
       oThis.updateParentTransactionLog(transactionLogConst.failedStatus, approveResponse.data['error']);
@@ -405,8 +406,6 @@ ExecuteTransactionKlass.prototype = {
       , TransactionHash = refillGasResponse.data['transaction_hash'];
     var refillStatus = (refillGasResponse.isFailure() ? transactionLogConst.failedStatus : transactionLogConst.completeStatus);
 
-    oThis.createTransactionLog(uuid.v4(), inputParams, refillStatus, error, TransactionHash);
-
     if (refillGasResponse.isFailure()) {
       oThis.updateParentTransactionLog(transactionLogConst.failedStatus, refillGasResponse.data['error']);
     }
@@ -423,7 +422,8 @@ ExecuteTransactionKlass.prototype = {
     const oThis = this
       , reserveUser = oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid]
     ;
-
+console.log('reserveUser', reserveUser);
+    console.log('oThis.workerUser', oThis.workerUser);
     if(!oThis.workerUser || !reserveUser){
       await oThis.updateParentTransactionLog(transactionLogConst.failedStatus, {error: "Worker or reserve user not found. "});
       return Promise.resolve(responseHelper.error('s_t_et_14', "Worker or reserve user not found", null, {}, {sendErrorEmail: false}));
@@ -438,7 +438,7 @@ ExecuteTransactionKlass.prototype = {
     var commisionAmount = basicHelper.convertToWei(oThis.transactionTypeRecord.commission_percent).mul(
       basicHelper.convertToWei(oThis.transactionTypeRecord.currency_value)).div(basicHelper.convertToWei('100')).toString();
 
-    const payObject = new AirdropManagerPayKlass({
+    const payMethodParams = {
       airdrop_contract_address: oThis.clientBrandedToken.airdrop_contract_address,
       chain_id: chainInteractionConstants.UTILITY_CHAIN_ID,
       sender_worker_address: oThis.workerUser.ethereum_address,
@@ -452,7 +452,11 @@ ExecuteTransactionKlass.prototype = {
       spender: oThis.userRecords[oThis.fromUuid].ethereum_address,
       gas_price: oThis.gasPrice,
       options: {tag: oThis.transactionTypeRecord.name, returnType: 'txHash'}
-    });
+    };
+
+    console.log('payMethodParams', payMethodParams);
+
+    const payObject = new AirdropManagerPayKlass(payMethodParams);
 
     const payResponse = await payObject.perform()
       .catch(function (error) {
@@ -501,18 +505,14 @@ ExecuteTransactionKlass.prototype = {
    * @param status
    * @param id
    */
-  updateParentTransactionLog: function (status, failedResponse) {
-    const oThis = this;
-    var qParams = {status: status, transaction_hash: oThis.transactionHash};
+  updateParentTransactionLog: function (statusString, failedResponse) {
+    const oThis = this
+        , statusInt = new transactionLogModel().invertedStatuses[statusString];
+    var dataToUpdate = {status: statusInt, transaction_hash: oThis.transactionHash};
     if (failedResponse) {
-      qParams['formatted_receipt'] = JSON.stringify(failedResponse);
+      dataToUpdate['formatted_receipt'] = failedResponse;
     }
-    new transactionLogModel().edit(
-      {
-        qParams: qParams,
-        whereCondition: {id: oThis.transactionLogId}
-      }
-    )
+    return new transactionLogModel().updateRecord(oThis.transactionLogId, dataToUpdate);
   },
 
   executeTransaction: async function () {

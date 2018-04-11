@@ -99,7 +99,7 @@ GetTransactionDetailKlass.prototype = {
     ;
 
     const transactionLogRecords = await new TransactionLogModel()
-      .select('*').where(['transaction_uuid in (?)', oThis.transactionUuids]).fire();
+      .getByTransactionUuid(oThis.transactionUuids);
 
     if(!transactionLogRecords || transactionLogRecords.length == 0){
       return Promise.reject(responseHelper.error('s_t_gd_3', 'Invalid UUIDs passed', null, [],
@@ -108,9 +108,9 @@ GetTransactionDetailKlass.prototype = {
 
     for (var i = 0; i < transactionLogRecords.length; i++) {
       const transactionLogRecord = transactionLogRecords[i]
-        , formattedReceipt = JSON.parse(transactionLogRecord.formatted_receipt || '{}')
-        , inputParams = JSON.parse(transactionLogRecord.input_params)
-        , gasPriceBig = basicHelper.convertToBigNumber(inputParams.gas_price)
+        , formattedReceipt = transactionLogRecord.formatted_receipt
+        , inputParams = transactionLogRecord.input_params
+        , gasPriceBig = basicHelper.convertToBigNumber(transactionLogRecord.gas_price)
       ;
 
       oThis.chainMaps[transactionLogRecord.transaction_uuid] = new TransactionLogModel().chainTypes[transactionLogRecord.chain_type];
@@ -130,19 +130,19 @@ GetTransactionDetailKlass.prototype = {
         client_token_id: transactionLogRecord.client_token_id,
         transaction_hash: transactionLogRecord.transaction_hash,
         status: new TransactionLogModel().statuses[transactionLogRecord.status],
-        gas_price: inputParams.gas_price,
+        gas_price: transactionLogRecord.gas_price,
         transaction_timestamp: Math.floor(new Date(transactionLogRecord.created_at).getTime() / 1000),
         uts: Date.now()
       };
 
-      if (formattedReceipt.gas_used) {
-        const gasUsedBig = basicHelper.convertToBigNumber(formattedReceipt.gas_used)
+      if (transactionLogRecord.gas_used) {
+        const gasUsedBig = basicHelper.convertToBigNumber(transactionLogRecord.gas_used)
           , gasValue = gasUsedBig.mul(gasPriceBig)
         ;
 
         transactionMapObj.gas_used = gasUsedBig.toString(10);
         transactionMapObj.transaction_fee = basicHelper.convertToNormal(gasValue).toString(10);
-        transactionMapObj.block_number = formattedReceipt.block_number;
+        transactionMapObj.block_number = transactionLogRecord.block_number;
         transactionMapObj.bt_transfer_value = basicHelper.convertToNormal(formattedReceipt.bt_transfer_in_wei);
         transactionMapObj.bt_commission_amount = basicHelper.convertToNormal(formattedReceipt.commission_amount_in_wei);
       }
