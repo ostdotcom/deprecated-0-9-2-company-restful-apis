@@ -32,8 +32,8 @@ SetPaymentsWorkerKlass.prototype = {
     const setWorkerObj = new PaymentsWorkerKlass();
     var resp = await setWorkerObj.perform({gasPrice: chainConstants.UTILITY_GAS_PRICE, chainId: chainConstants.UTILITY_CHAIN_ID});
 
-    logger.info(" ********* Response *****");
-    logger.info(resp);
+    logger.debug(" ********* Response *****");
+    logger.debug(resp);
     process.exit(0);
 
   }

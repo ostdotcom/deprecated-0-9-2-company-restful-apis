@@ -63,4 +63,4 @@ PopulateClientAddresses.prototype = {
 };
 
 const populateData = new PopulateClientAddresses();
-populateData.perform().then(console.log);
+populateData.perform().then(logger.debug);

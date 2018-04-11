@@ -64,7 +64,7 @@ const promiseExecutor = function (onResolve, onReject, params ) {
         logger.error('e_rmqs_et_1', 'Something went wrong in transaction execution unAckCount ->', unAckCount, response, params);
       }
       unAckCount--;
-      logger.info("------ unAckCount -> ", unAckCount);
+      logger.debug("------ unAckCount -> ", unAckCount);
       // ack RMQ
       return onResolve();
     }).catch(function (err) {
@@ -87,7 +87,7 @@ const publishToSlowQueue = async function (parsedParams) {
       publisher: parsedParams.publisher,
       message: parsedParams.message
     }
-  ).then(console.log, console.log);
+  ).then(logger.debug, logger.error);
 };
 
 
@@ -132,7 +132,7 @@ function handle() {
   // The OLD Way - Begin
   var f = function(){
     if ( unAckCount != PromiseQueueManager.getPendingCount() ) {
-      console.log("ERROR :: unAckCount and pending counts are not in sync.");
+      logger.error("ERROR :: unAckCount and pending counts are not in sync.");
     }
     if ( PromiseQueueManager.getPendingCount() <= 0 || unAckCount <= 0 ) {
       console.log("SIGINT/SIGTERM handle :: No pending Promises.");

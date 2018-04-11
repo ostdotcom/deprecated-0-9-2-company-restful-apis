@@ -63,19 +63,19 @@ FundUsersWithSTPrimeFromReserveKlass.prototype = {
 
       const promiseArray = [];
 
-      logger.info("Starting Fund ST' for client ids ", batchedClientIds);
+      logger.debug("Starting Fund ST' for client ids ", batchedClientIds);
       for(var i = 0; i < batchedClientIds.length; i++) {
-        logger.info("Funding ST' for client id ", batchedClientIds[i]);
+        logger.debug("Funding ST' for client id ", batchedClientIds[i]);
         const fundClientAddressObj = new FundClientAddressKlass({client_id: batchedClientIds[i]});
         promiseArray.push(fundClientAddressObj.perform());
       }
 
       logger.info("Waiting for all promises");
       await Promise.all(promiseArray);
-      logger.info("Ended Fund ST' for client ids ", batchedClientIds);
+      logger.debug("Ended Fund ST' for client ids ", batchedClientIds);
     }
 
-    logger.info("Can exit now");
+    logger.debug("Can exit now");
     process.exit(0);
   }
 

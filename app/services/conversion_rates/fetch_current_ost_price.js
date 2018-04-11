@@ -94,7 +94,7 @@ FetchCurrentOSTPriceKlass.prototype = {
 
     // Update transaction hash
     var updateTransactionResponse = await currencyConversionRateModel.updateTransactionHash(oThis.dbRowId, transactionHash);
-    logger.info(updateTransactionResponse);
+    logger.debug(updateTransactionResponse);
 
     //Keep on checking for a price in contract whether its set to new value.
     return oThis.compareContractPrice();
@@ -110,7 +110,7 @@ FetchCurrentOSTPriceKlass.prototype = {
     const oThis = this;
     try {
       var ostValue = JSON.parse(response)[0];
-      logger.info("OST Value From CoinMarketCap:" + JSON.stringify(ostValue));
+      logger.debug("OST Value From CoinMarketCap:", ostValue);
       if (!ostValue || ostValue.symbol != conversionRateConstants.ost_currency()) {
         logger.notify('f_c_o_p_3', "Invalid OST Value", response);
         return;
@@ -144,15 +144,15 @@ FetchCurrentOSTPriceKlass.prototype = {
   setPriceInContract: function () {
     const oThis = this;
 
-    logger.info("Price Input for contract:" + oThis.currentOstValue.conversion_rate);
+    logger.debug("Price Input for contract:" + oThis.currentOstValue.conversion_rate);
     var num = new BigNumber(oThis.currentOstValue.conversion_rate);
-    logger.info("Quote Currency for contract:" + oThis.quoteCurrency);
+    logger.debug("Quote Currency for contract:" + oThis.quoteCurrency);
     var priceResponse = priceOracle.fixedPointIntegerPrice(num.toNumber());
     if (priceResponse.isFailure()) {
       return Promise.resolve(priceResponse);
     }
     var amountInWei = priceResponse.data.price.toNumber();
-    logger.info("Price Point in Wei for contract:" + amountInWei);
+    logger.debug("Price Point in Wei for contract:" + amountInWei);
     return priceOracle.setPrice(chainId, conversionRateConstants.ost_currency(), oThis.quoteCurrency,
       amountInWei, gasPrice);
   },

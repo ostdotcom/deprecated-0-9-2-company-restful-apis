@@ -138,7 +138,7 @@ const checkSystemServiceStatuses = async function(req, res, next) {
   }
 
   if (rParams && rParams.api_key && ['67ac5a9b79f49bcdba5e', '02db2e7059d66d8e83f2', '771044c4e1f943eb1f77'].includes(rParams.api_key)) {
-    console.log('Bypassing system maintainence checks for', rParams.api_key);
+    logger.info('Bypassing system maintainence checks for', rParams.api_key);
     return next();
   }
 

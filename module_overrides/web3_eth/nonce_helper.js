@@ -166,7 +166,7 @@ const NonceHelperKlassPrototype = {
       const allTxPoolPromiseResult = await Promise.all(allTxPoolPromise);
       const queuedData = {};
 
-      console.log("allTxPoolPromiseResult: ",allTxPoolPromiseResult);
+      logger.debug("allTxPoolPromiseResult: ",allTxPoolPromiseResult);
       var isTransactionAvailable = false;
 
       for (var i = allTxPoolPromiseResult.length - 1; i >= 0; i--){
@@ -364,7 +364,7 @@ const NonceHelperKlassPrototype = {
 
         const pendingTransaction = await web3Provider.pendingTransactions();
 
-        console.log("pendingTransaction: ",pendingTransaction);
+        logger.debug("pendingTransaction: ",pendingTransaction);
         if (pendingTransaction) {
           return onResolve(responseHelper.successWithData({pending_transaction: pendingTransaction}));
         }

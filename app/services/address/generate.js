@@ -39,7 +39,6 @@ const GenerateAddressKlass = function(params){
     params = {};
   }
 
-  console.log(params);
 
   oThis.addressType = params['addressType'];
   oThis.clientId = params['clientId'];

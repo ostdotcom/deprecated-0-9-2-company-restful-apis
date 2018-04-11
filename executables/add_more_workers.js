@@ -294,4 +294,4 @@ addMoreWorkersKlass.prototype = {
 };
 
 const obj = new addMoreWorkersKlass({startClientId: 1021, endClientId: 1021, newWorkersCnt: 4, clientIds: []});
-obj.perform().then(console.log);
+obj.perform().then(logger.debug);

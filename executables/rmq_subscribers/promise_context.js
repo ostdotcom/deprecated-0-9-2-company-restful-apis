@@ -291,7 +291,7 @@ PromiseContext.prototype = {
   , logInfo : function () {
     const oThis = this;
 
-    logger.info(" PromiseContext Info :: "
+    logger.debug(" PromiseContext Info :: "
       , "isResolved:"   , oThis.isResolved
       , "isRejected:"   , oThis.isRejected
       , "hasTimedout:"  , oThis.hasTimedout

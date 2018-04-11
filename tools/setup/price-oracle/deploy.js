@@ -35,8 +35,8 @@ DeployPriceOracleKlass.prototype = {
     var resp = await deployerObj.perform({gasPrice: chainConstants.UTILITY_GAS_PRICE,
       baseCurrency: "OST", quoteCurrency: "USD"});
 
-    logger.info(" ********* Response *****");
-    logger.info(resp);
+    logger.debug(" ********* Response *****");
+    logger.debug(resp);
     process.exit(0);
 
   }

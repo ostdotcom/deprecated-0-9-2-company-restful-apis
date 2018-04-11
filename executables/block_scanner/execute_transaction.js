@@ -112,7 +112,7 @@ BlockScannerBaseKlass.prototype = {
 
         oThis.schedule();
       } catch (err) {
-        logger.info('Exception got:', err);
+        logger.error('Exception got:', err);
 
         if (oThis.interruptSignalObtained) {
           logger.win('* Exiting Process after interrupt signal obtained.');

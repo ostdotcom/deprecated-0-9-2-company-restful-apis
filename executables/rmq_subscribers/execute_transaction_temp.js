@@ -9,6 +9,8 @@
  */
 const rootPrefix = '../..';
 
+const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+
 // Load external packages
 const openSTNotification = require('@openstfoundation/openst-notification');
 
@@ -20,7 +22,7 @@ const publishToSlowQueue = async function (parsedParams) {
       publisher: parsedParams.publisher,
       message: parsedParams.message
     }
-  ).then(console.log, console.log);
+  ).then(logger.debug, logger.error);
 };
 
 openSTNotification.subscribeEvent.rabbit(["transaction.execute"],

@@ -63,7 +63,7 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
       const balanceBigNumberInWei = balanceResponse.data.balance;
 
       if (balanceBigNumberInWei.lessThan(minBalanceInWei)) {
-        logger.info("Funding ETH to ", userName);
+        logger.debug("Funding ETH to ", userName);
         await oThis._transferEthBalance(ethereumAddress, minBalanceInWei)
       }
     }
@@ -72,7 +72,7 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
     // keep threshold for utility chain owner sufficiently high so that it is able to fund high no of refills
     const utilityChainOwnerResponse = await oThis._checkBalanceOfChainOwner();
 
-    logger.info("Can exit now");
+    logger.debug("Can exit now");
     process.exit(0);
 
   },
