@@ -35,7 +35,7 @@ logger.win("InterComm Script for Stake and Mint initiated.");
 
 
 process.on('uncaughtException', function() {
-  console.log("Received uncaughtException");
+  logger.error("Received uncaughtException");
   setTimeout(function () {
     process.exit(1);
   }, 60000)

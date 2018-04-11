@@ -7,6 +7,7 @@ const BasePackage = require(basePackage)
 ;
 
 const rootPrefix = '../..'
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
 var requireData
@@ -38,7 +39,7 @@ const Derived = function () {
   // over-riding unlockAccount method
   oThis.unlockAccount = function () {
 
-    console.log('HACKED unlockAccount INVOKED');
+    logger.debug('HACKED unlockAccount INVOKED');
 
     const chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
       , addressToUnlock = arguments['0']
@@ -46,10 +47,10 @@ const Derived = function () {
 
     // if address has passphrase, use the base package unlock account.
     if (chainInteractionConstants.ADDRESSES_TO_UNLOCK_VIA_KEYSTORE_FILE_MAP[addressToUnlock.toLowerCase()]) {
-      console.log('WEB3_OVERRIDE: performing unlockAccount using passphrase for address:', addressToUnlock);
+      logger.info('WEB3_OVERRIDE: performing unlockAccount using passphrase for address:', addressToUnlock);
       return _unlockAccount.apply(this, arguments);
     } else {
-      console.log('WEB3_OVERRIDE: dummy response for unlockAccount for address:', addressToUnlock);
+      logger.info('WEB3_OVERRIDE: dummy response for unlockAccount for address:', addressToUnlock);
       return Promise.resolve(true)
     }
   };

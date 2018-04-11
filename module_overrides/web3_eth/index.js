@@ -32,7 +32,7 @@ for (var k in require.cache) {
 
 const Derived = function () {
   var oThis = this;
-  console.log("Derived Constructor of ", basePackage, " invoked!");
+  logger.debug("Derived Constructor of ", basePackage, " invoked!");
 
   //Constructor sometimes return other instance of object.
   //Always have a safety-net
@@ -44,8 +44,8 @@ const Derived = function () {
 
   oThis.sendTransaction = function () {
 
-    console.log('HACKED sendTransaction INVOKED');
-    console.log("arguments of sendTransaction", arguments);
+    logger.debug('HACKED sendTransaction INVOKED');
+    logger.debug("arguments of sendTransaction", arguments);
 
     const rawTx = arguments['0']
       , fromAddress = rawTx.from
@@ -69,19 +69,19 @@ const Derived = function () {
 
     if ( bnGasPrice.isNaN() || bnGasPrice.lessThan( 1 ) ) {
       if ( bnChainGasPrice.isZero() ) {
-        console.log("WARN :: Gas Price for chainKind", chainKind, "is zero.");
+        logger.debug("WARN :: Gas Price for chainKind", chainKind, "is zero.");
       } else {
         rawTx.gasPrice = chainGasPrice;
-        console.log("Auto-corrected gas price to", rawTx.gasPrice );
+        logger.debug("Auto-corrected gas price to", rawTx.gasPrice );
         console.trace("WARN :: sendTransaction called without setting gas price.\nPlease see trace for more info");
       }
     }
 
     if (chainInteractionConstants.ADDRESSES_TO_UNLOCK_VIA_KEYSTORE_FILE_MAP[fromAddress.toLowerCase()]) {
-      console.log('WEB3_OVERRIDE: sendTransaction using passphrase from address:', fromAddress);
+      logger.info('WEB3_OVERRIDE: sendTransaction using passphrase from address:', fromAddress);
       return _sendTransaction.apply(this, arguments);
     } else {
-      console.log('WEB3_OVERRIDE: sendTransaction using private key from address:', fromAddress);
+      logger.info('WEB3_OVERRIDE: sendTransaction using private key from address:', fromAddress);
 
       const Web3PromiEvent = require('web3-core-promievent')
         , hackedReturnedPromiEvent = Web3PromiEvent()
@@ -205,7 +205,7 @@ const Derived = function () {
         const onError = async function (error) {
           const nonceTooLowError = error.message.indexOf('nonce too low') > -1;
           if(nonceTooLowError && retryCount < maxRetryFor) {
-            logger.info('NONCE too low error. retrying with higher nonce.');
+            logger.error('NONCE too low error. retrying with higher nonce.');
             retryCount = retryCount + 1;
 
             // clear the nonce

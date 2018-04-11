@@ -1,5 +1,8 @@
 "use strict";
 
+const rootPrefix = '..';
+const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+
 /**
  *
  * @constructor
@@ -63,7 +66,7 @@ BitWiseOperationsKlass.prototype = {
 
     var resp = oThis.findValueOfBit(bitName);
     if (resp) {
-      console.log(resp);
+      logger.debug(resp);
       return (resp['bitValue'] | previousValue);
     }
 

@@ -36,7 +36,7 @@ var waitingForEvents = false;
 openSTNotification.subscribeEvent.rabbit(["#"], {queue: 'log_all_events_from_restful_apis'},
   function (eventContent) {
     eventContent = JSON.parse(eventContent);
-    logger.info('Consumed event -> ', eventContent);
+    logger.debug('Consumed event -> ', eventContent);
 
     global.eventsAggregator.push(eventContent);
 
@@ -60,7 +60,7 @@ var bulkInsertInLog = function () {
 
   return new Promise(async function (onResolve, onReject) {
 
-    logger.info("Bulk Insert In Event log table");
+    logger.debug("Bulk Insert In Event log table");
     const events = global.eventsAggregator
       , fields = ['kind', 'event_data']
     ;

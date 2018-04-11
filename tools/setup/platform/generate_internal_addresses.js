@@ -41,7 +41,7 @@ generateInternalAddressesKlass.prototype = {
         , generateAddrRsp = addrGenerator.perform();
 
       if (generateAddrRsp.isFailure()) {
-        logger.info('Address generation failed ============ ', generateAddrRsp);
+        logger.error('Address generation failed ============ ', generateAddrRsp);
         process.exit(0);
       }
 
@@ -56,7 +56,7 @@ generateInternalAddressesKlass.prototype = {
       var r = await generateEthAddress.perform();
 
       if (r.isFailure()) {
-        logger.info('Address generation failed ============ ', r);
+        logger.error('Address generation failed ============ ', r);
         process.exit(0);
       }
       addressesArr.push({address: eth_address, privateKey: privateKey});

@@ -67,12 +67,23 @@ BasicHelperKlass.prototype = {
   /**
    * Convert number to big number. Make sure it's a valid number
    *
-   * @param {number} amountInWei - amount in wei to be formatted
+   * @param {number} number - number to be formatted
    *
    * @return {BigNumber}
    */
   convertToBigNumber: function (number) {
     return (number instanceof BigNumber) ? number : new BigNumber(number);
+  },
+
+  /**
+   * Convert number to Hex
+   *
+   * @param {number} number - number to be formatted
+   *
+   * @return {BigNumber}
+   */
+  convertToHex: function (number) {
+    return '0x' + new BigNumber(number).toString(16).toUpperCase();
   },
 
   /**
