@@ -10,11 +10,11 @@ const dbName = "saas_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreCons
   , QueryDBObj = new QueryDBKlass(dbName)
 ;
 
-const ManagedAddressSaltKlass = function () {
+const ManagedAddressSaltModel = function () {
   ModelBaseKlass.call(this, {dbName: dbName});
 };
 
-ManagedAddressSaltKlass.prototype = Object.create(ModelBaseKlass.prototype);
+ManagedAddressSaltModel.prototype = Object.create(ModelBaseKlass.prototype);
 
 const ManagedAddressSaltKlassPrototype = {
 
@@ -26,15 +26,11 @@ const ManagedAddressSaltKlassPrototype = {
 
   getById: function (id) {
     var oThis = this;
-    return oThis.QueryDB.read(
-      oThis.tableName,
-      [],
-      'id=?',
-      [id]);
+    return oThis.select('*').where(['id=?', id]).fire();
   }
 
 };
 
-Object.assign(ManagedAddressSaltKlass.prototype, ManagedAddressSaltKlassPrototype);
+Object.assign(ManagedAddressSaltModel.prototype, ManagedAddressSaltKlassPrototype);
 
-module.exports = ManagedAddressSaltKlass;
+module.exports = ManagedAddressSaltModel;

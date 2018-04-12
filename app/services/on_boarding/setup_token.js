@@ -18,7 +18,7 @@ const rootPrefix = '../../..'
   , clientBrandedToken = new ClientBrandedTokenKlass()
   , ClientWorkerManagedAddressIdsKlass = require(rootPrefix + '/app/models/client_worker_managed_address_id')
   , clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id')
-  , ManagedAddressSaltKlass = require(rootPrefix + '/app/models/managed_address_salt')
+  , ManagedAddressSaltModel = require(rootPrefix + '/app/models/managed_address_salt')
   , ManagedAddressModelKlass = require(rootPrefix + '/app/models/managed_address')
   , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
   , ClientSecuredBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
@@ -144,14 +144,7 @@ SetupToken.prototype = {
 
     const addressSalt = newKey["CiphertextBlob"];
 
-    try {
-      await new ManagedAddressSaltKlass().create({
-        client_id: oThis.clientId,
-        managed_address_salt: addressSalt
-      });
-    } catch (err) {
-      logger.notify('ob_st_1', 'Something Went Wrong', err);
-    }
+    await new ManagedAddressSaltModel().insert({client_id: oThis.clientId, managed_address_salt: addressSalt}).fire();
 
     return Promise.resolve(responseHelper.successWithData({}));
   },

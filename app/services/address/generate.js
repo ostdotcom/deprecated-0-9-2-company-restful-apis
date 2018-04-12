@@ -11,8 +11,7 @@ const rootPrefix = '../../..'
   , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
   , EthAddrPrivateKeyCacheKlass = require(rootPrefix + '/lib/cache_management/address_private_key')
   , managedAddressConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
-  , ManagedAddressSaltKlass = require(rootPrefix + '/app/models/managed_address_salt')
-  , managedAddressSaltObj = new ManagedAddressSaltKlass()
+  , ManagedAddressSaltModel = require(rootPrefix + '/app/models/managed_address_salt')
   , kmsWrapperKlass = require(rootPrefix + '/lib/authentication/kms_wrapper')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
@@ -227,10 +226,7 @@ GenerateAddressKlass.prototype = {
 
       const addressSalt = newKey["CiphertextBlob"];
 
-      insertedRec = await managedAddressSaltObj.create({
-        client_id: clientId,
-        managed_address_salt: addressSalt
-      });
+      insertedRec = await new ManagedAddressSaltModel().insert({client_id: clientId, managed_address_salt: addressSalt}).fire();
       new ClientAddressSaltMapping({client_id: clientId}).clear();
 
       if (insertedRec.affectedRows == 0) {
