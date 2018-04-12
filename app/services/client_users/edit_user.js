@@ -9,7 +9,7 @@ const rootPrefix = '../../..'
   , EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
-  , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
+  , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
@@ -119,23 +119,12 @@ const editUser = {
       return responseHelper.successWithData(apiResponseData);
     }
 
-    const managedAddressObj = new ManagedAddressKlass();
-
-    const updateQueryResponse = managedAddressObj.edit({
-      qParams: {
-        name: name
-      },
-      whereCondition: {
-        uuid: userUuid
-      }
-    });
+    new ManagedAddressModel().update({name: name}).where({uuid: userUuid}).fire();
 
     managedAddressCache.clear();
 
     return responseHelper.successWithData(apiResponseData);
-
   }
-
 };
 
 module.exports = editUser;

@@ -5,8 +5,7 @@ const uuid = require('uuid')
 
 const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
-  , managedAddressObj = new ManagedAddressKlass()
+  , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
   , AddressesEncryptorKlass = require(rootPrefix + '/lib/encryptors/addresses_encryptor')
   , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
   , EthAddrPrivateKeyCacheKlass = require(rootPrefix + '/lib/cache_management/address_private_key')
@@ -100,14 +99,10 @@ GenerateAddressKlass.prototype = {
       return responseHelper.error('s_a_g_2', 'invalid params', '', [errors_object], {sendErrorEmail: false});
     }
 
-    const insertedRec = await managedAddressObj.create(
-        {
-          client_id: clientId,
-          name: name,
-          uuid: addrUuid,
-          address_type: addressType,
-          status: 'active'
-        });
+    const insertedRec = await new ManagedAddressModel()
+      .insert({client_id: clientId, name: name, uuid: addrUuid,
+        address_type: new ManagedAddressModel().invertedAddressTypes[addressType],
+        status: new ManagedAddressModel().invertedStatuses['active']}).fire();
 
     if (insertedRec.affectedRows > 0) {
       oThis._processAddressInBackground(insertedRec.insertId, addrUuid);
@@ -253,29 +248,20 @@ GenerateAddressKlass.prototype = {
    * @return {Promise<*>}
    */
   _updateInDb: async function (company_managed_address_id, eth_address, privateKeyD, managed_address_salt_id) {
+    const addressEncryptorObj = new AddressesEncryptorKlass({managedAddressSaltId: managed_address_salt_id});
 
-    var obj = new AddressesEncryptorKlass({managedAddressSaltId: managed_address_salt_id});
-
-    var privateKeyEncr = await obj.encrypt(privateKeyD);
+    const privateKeyEncr = await addressEncryptorObj.encrypt(privateKeyD);
     if (!privateKeyEncr) {
       return Promise.resolve(responseHelper.error("s_a_g_7", "Error while encrypting private key.", null, [],
         {sendErrorEmail: false}));
     }
 
-    var updateQueryResponse = managedAddressObj.edit({
-      qParams: {
-        managed_address_salt_id: managed_address_salt_id,
-        private_key: privateKeyEncr,
-        ethereum_address: eth_address
-      },
-      whereCondition: {
-        id: company_managed_address_id
-      }
-    });
-
-    return updateQueryResponse;
-
+    return new ManagedAddressModel().update({
+      managed_address_salt_id: managed_address_salt_id,
+      private_key: privateKeyEncr,
+      ethereum_address: eth_address
+    }).where({id: company_managed_address_id}).fire();
   }
+};
 
-}
 module.exports = GenerateAddressKlass;

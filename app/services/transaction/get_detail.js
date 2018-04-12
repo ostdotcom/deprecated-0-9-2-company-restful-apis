@@ -11,10 +11,10 @@
 
 const rootPrefix = '../../..'
   , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
-  , ClientTransactionTypeKlass = require(rootPrefix + '/app/models/client_transaction_type')
-  , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
+  , ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type')
+  , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
+  , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
@@ -45,7 +45,7 @@ GetTransactionDetailKlass.prototype = {
     const oThis = this;
 
     return oThis.asyncPerform()
-      .catch(function(error) {
+      .catch(function (error) {
         if (responseHelper.isCustomResult(error)) {
           return error;
         } else {
@@ -101,7 +101,7 @@ GetTransactionDetailKlass.prototype = {
     const transactionLogRecords = await new TransactionLogModel()
       .getByTransactionUuid(oThis.transactionUuids);
 
-    if(!transactionLogRecords || transactionLogRecords.length == 0){
+    if (!transactionLogRecords || transactionLogRecords.length == 0) {
       return Promise.reject(responseHelper.error('s_t_gd_3', 'Invalid UUIDs passed', null, [],
         {sendErrorEmail: false}));
     }
@@ -165,11 +165,11 @@ GetTransactionDetailKlass.prototype = {
       , clientTokenIds = Object.keys(oThis.clientTokenMap)
     ;
 
-    if(!clientTokenIds || clientTokenIds.length == 0){
+    if (!clientTokenIds || clientTokenIds.length == 0) {
       return Promise.reject(responseHelper.error('s_t_gd_2', 'tokens not found for given input', null, [],
         {sendErrorEmail: false}));
     }
-    const clientTokenRecords = await new ClientBrandedTokenKlass().select('*').where(["id in (?)", clientTokenIds]).fire();
+    const clientTokenRecords = await new ClientBrandedTokenModel().select('*').where(["id in (?)", clientTokenIds]).fire();
 
     for (var i = 0; i < clientTokenRecords.length; i++) {
       const currRecord = clientTokenRecords[i]
@@ -202,9 +202,8 @@ GetTransactionDetailKlass.prototype = {
    */
   _getTransactionTypes: async function () {
     const oThis = this
-      , transactionTypesObj = new ClientTransactionTypeKlass()
       , transactionTypeIds = Object.keys(oThis.transactionTypeMap)
-      , transactionTypeRecords = await transactionTypesObj.select('*').where(["id in (?)", transactionTypeIds]).fire()
+      , transactionTypeRecords = await new ClientTransactionTypeModel().select('*').where(["id IN (?)", transactionTypeIds]).fire()
     ;
 
     for (var i = 0; i < transactionTypeRecords.length; i++) {
@@ -214,11 +213,11 @@ GetTransactionDetailKlass.prototype = {
       oThis.transactionTypeMap[currRecord.id] = {
         id: currRecord.id,
         name: currRecord.name || '',
-        kind: transactionTypesObj.kinds[currRecord.kind],
-        currency_type: transactionTypesObj.currencyTypes[currRecord.currency_type],
-        currency_value: transactionTypesObj.getValue(currRecord),
+        kind: new ClientTransactionTypeModel().kinds[currRecord.kind],
+        currency_type: new ClientTransactionTypeModel().currencyTypes[currRecord.currency_type],
+        currency_value: new ClientTransactionTypeModel().getValue(currRecord),
         commission_percent: currRecord.commission_percent,
-        status: transactionTypesObj.statuses[currRecord.status],
+        status: new ClientTransactionTypeModel().statuses[currRecord.status],
         uts: Date.now()
       };
     }
@@ -237,9 +236,8 @@ GetTransactionDetailKlass.prototype = {
    */
   _getEconomyUsers: async function () {
     const oThis = this
-      , managedAddressObj = new ManagedAddressKlass()
       , userUuids = Object.keys(oThis.economyUserMap)
-      , economyUsersRecords = await managedAddressObj.select('*').where(["uuid in (?)", userUuids]).fire()
+      , economyUsersRecords = await new ManagedAddressModel().select('*').where(["uuid IN (?)", userUuids]).fire()
     ;
 
     for (var i = 0; i < economyUsersRecords.length; i++) {
@@ -250,7 +248,7 @@ GetTransactionDetailKlass.prototype = {
         id: currRecord.uuid,
         uuid: currRecord.uuid,
         name: currRecord.name || '',
-        kind: managedAddressObj.addressTypes[currRecord.address_type],
+        kind: new ManagedAddressModel().addressTypes[currRecord.address_type],
         uts: Date.now()
       };
     }

@@ -10,10 +10,9 @@ const openStPayments = require('@openstfoundation/openst-payments')
     , SetWorkerKlass = openStPayments.services.workers.setWorker
 ;
 
-const ClientWorkerAddressModelKlass = require(rootPrefix + '/app/models/client_worker_managed_address_id')
+const ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/client_worker_managed_address_id')
     , clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id')
-    , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
-    , clientBrandedTokenObj = new ClientBrandedTokenKlass()
+    , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
     , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
     , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
     , GenerateEthAddressKlass = require(rootPrefix + '/app/services/address/generate')
@@ -158,19 +157,24 @@ addMoreWorkersKlass.prototype = {
 
       for(var i=0; i<oThis.newWorkersCnt; i++) {
 
-        var r = await generateEthAddress.perform()
-            , clientWorkerAddrObj = new ClientWorkerAddressModelKlass();
+        var r = await generateEthAddress.perform();
 
         if (r.isFailure()) {
           return Promise.resolve(r);
         }
 
         const resultData = r.data[r.data.result_type][0];
-        managedAddressInsertData.push([clientId, resultData.id,
-          clientWorkerAddrObj.invertedStatuses[clientWorkerManagedAddressConst.inactiveStatus], currentTime, currentTime]);
+        managedAddressInsertData.push(
+          [
+            clientId,
+            resultData.id,
+            new ClientWorkerManagedAddressIdModel().invertedStatuses[clientWorkerManagedAddressConst.inactiveStatus],
+            currentTime,
+            currentTime
+          ]);
       }
 
-      await new ClientWorkerAddressModelKlass().insertMultiple(dbFields, managedAddressInsertData).fire();
+      await new ClientWorkerManagedAddressIdModel().insertMultiple(dbFields, managedAddressInsertData).fire();
 
     }
 
@@ -183,7 +187,7 @@ addMoreWorkersKlass.prototype = {
           onResolve(responseHelper.successWithData({}));
         }, 3000);
       });
-    }
+    };
 
     return await wait();
 
@@ -192,7 +196,7 @@ addMoreWorkersKlass.prototype = {
   setclientIdSymbolMap: async function() {
 
     const oThis = this
-        , clientBrandedTokens = await clientBrandedTokenObj.getByClientIds(oThis.clientIds);
+        , clientBrandedTokens = await new ClientBrandedTokenModel().getByClientIds(oThis.clientIds);
 
     var clientBrandedToken = null;
     
@@ -219,7 +223,7 @@ addMoreWorkersKlass.prototype = {
 
       logger.info('sending txs for clientId', clientId);
 
-      var existingWorkerManagedAddresses = await new ClientWorkerAddressModelKlass().getInActiveByClientId(clientId)
+      var existingWorkerManagedAddresses = await new ClientWorkerManagedAddressIdModel().getInActiveByClientId(clientId)
           , managedAddressIdClientWorkerAddrIdMap = {}
           , workerAddressesIdToUpdateMap = {}
       ;
@@ -283,7 +287,7 @@ addMoreWorkersKlass.prototype = {
         return Promise.reject(errorRsp);
       }
 
-      await new ClientWorkerAddressModelKlass().markStatusActive(successWorkerAddrIds);
+      await new ClientWorkerManagedAddressIdModel().markStatusActive(successWorkerAddrIds);
 
     }
 

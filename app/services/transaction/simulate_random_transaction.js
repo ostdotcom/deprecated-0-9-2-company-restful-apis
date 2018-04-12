@@ -6,10 +6,8 @@
  * @module /app/services/transaction/simulate_random_transaction
  */
 const rootPrefix = "../../.."
-  , clientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type')
-  , clientTrxTypeObj = new clientTransactionTypeModel()
-  , ManagedAdressModelKlass = require(rootPrefix + '/app/models/managed_address')
-  , managedAddressObj = new ManagedAdressModelKlass()
+  , ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type')
+  , ManagedAdressModel = require(rootPrefix + '/app/models/managed_address')
   , ClientUsersCntCacheKlass = require(rootPrefix + '/lib/cache_management/client_users_count')
   , ClientTrxTypeCntCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type_count')
   , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
@@ -164,7 +162,7 @@ simulateRandomTransactionKlass.prototype = {
         {sendErrorEmail: false}));
     }
 
-    var users = await managedAddressObj.getRandomActiveUsers(
+    var users = await new ManagedAdressModel().getRandomActiveUsers(
         oThis.clientId, oThis.maxUsersToAttempt, parseInt(resp.data)
     );
 
@@ -241,7 +239,7 @@ simulateRandomTransactionKlass.prototype = {
       offset: offset
     };
 
-    var trxTypes = await clientTrxTypeObj.getAll(params);
+    var trxTypes = await new ClientTransactionTypeModel().getAll(params);
 
     if(!trxTypes[0]){
       return Promise.resolve(responseHelper.error('s_tr_srt_6', 'No active transactions for client.', null, [],

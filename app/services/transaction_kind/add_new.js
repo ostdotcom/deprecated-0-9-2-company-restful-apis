@@ -11,8 +11,7 @@ var rootPrefix = '../../..'
   , util = require(rootPrefix + '/lib/util')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , ClientTransactionTypeKlass = require(rootPrefix + '/app/models/client_transaction_type')
-  , clientTransactionTypeObj = new ClientTransactionTypeKlass()
+  , ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type')
   , ClientTxKindCntCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type_count')
   , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
 ;
@@ -113,7 +112,7 @@ AddNew.prototype = {
       errors_object['name'] = 'Come on, the ' + name + ' you entered is inappropriate. Please choose a nicer word.';
     }
 
-    if(!kind || !clientTransactionTypeObj.invertedKinds[kind]){
+    if(!kind || !new ClientTransactionTypeModel().invertedKinds[kind]){
       errors_object['kind'] = 'invalid kind';
     }
 
@@ -143,7 +142,7 @@ AddNew.prototype = {
       errors_object['commission_percent'] = 'Commission Percentage is allowed only for user to user Transactions.';
     }
 
-    var existingTKind = await clientTransactionTypeObj.getTransactionByName({clientId: client_id, name: name});
+    var existingTKind = await new ClientTransactionTypeModel().getTransactionByName({clientId: client_id, name: name});
     if(existingTKind.length > 0){
       errors_object['name'] = 'Transaction kind name "'+ name +'" already present.';
     }
@@ -172,15 +171,16 @@ AddNew.prototype = {
    *
    */
   createTransactionKind: async function(){
-    var oThis = this;
+    const oThis = this
+    ;
 
-    try{
-      const clientTransactionKind = await clientTransactionTypeObj.create(util.clone(oThis.transactionKindObj));
-      oThis.transactionKindObj.id = clientTransactionKind.insertId;
-    } catch(err){
-      return Promise.resolve(responseHelper.error('s_tk_an_3', 'Something went wrong.', null, [],
-        {sendErrorEmail: false}));
-    }
+    const newObj = util.clone(oThis.transactionKindObj);
+    newObj.kind = new ClientTransactionTypeModel().invertedKinds[newObj.kind];
+    newObj.currency_type = new ClientTransactionTypeModel().invertedCurrencyTypes[newObj.currency_type];
+    newObj.status = new ClientTransactionTypeModel().invertedStatuses[newObj.status];
+
+    const clientTransactionKind = await new ClientTransactionTypeModel().insert(newObj).fire();
+    oThis.transactionKindObj.id = clientTransactionKind.insertId;
 
     return Promise.resolve(responseHelper.successWithData({}));
   },

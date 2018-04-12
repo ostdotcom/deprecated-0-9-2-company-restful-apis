@@ -12,8 +12,7 @@ var rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , ClientTransactionTypeKlass = require(rootPrefix + '/app/models/client_transaction_type')
-  , clientTransactionTypeObj = new ClientTransactionTypeKlass()
+  , ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type')
   , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
   , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
   , ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points')
@@ -79,7 +78,7 @@ List.prototype = {
     //TODO: Support pagination
     return new Promise(async function (onResolve, onReject) {
 
-      const result = await clientTransactionTypeObj.getAll({clientId: oThis.clientId});
+      const result = await new ClientTransactionTypeModel().getAll({clientId: oThis.clientId});
 
       var currency_value = null;
 
@@ -111,7 +110,7 @@ List.prototype = {
 
   getClientTokens: function(){
 
-    var oThis = this;
+    const oThis = this;
 
     return new Promise(async function (onResolve, onReject) {
 
@@ -129,11 +128,11 @@ List.prototype = {
 
   prepareApiResponse: async function () {
 
-    var oThis = this;
+    const oThis = this;
 
     await Promise.all(oThis.allPromises);
 
-    var ostPrices = await new ostPriceCacheKlass().fetch();
+    const ostPrices = await new ostPriceCacheKlass().fetch();
 
     return Promise.resolve(responseHelper.successWithData(
       {
@@ -145,9 +144,7 @@ List.prototype = {
         client_tokens: oThis.clientTokens
       }
     ));
-
   }
-
 };
 
 module.exports = List;

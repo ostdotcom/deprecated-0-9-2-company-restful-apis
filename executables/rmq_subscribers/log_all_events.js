@@ -22,7 +22,7 @@ const openSTNotification = require('@openstfoundation/openst-notification')
 ;
 
 //All Module Requires.
-const EventLoggerKlass = require(rootPrefix + '/app/models/event_logs')
+const EventLogModel = require(rootPrefix + '/app/models/event_logs')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
@@ -75,14 +75,14 @@ var bulkInsertInLog = function () {
       sql_rows_array.push([kind, JSON.stringify(event)]);
 
       if (sql_rows_array.length >= 2000) {
-        await new EventLoggerKlass().insertMultiple(fields, sql_rows_array).fire();
+        await new EventLogModel().insertMultiple(fields, sql_rows_array).fire();
         sql_rows_array = [];
       }
 
     }
 
     if (sql_rows_array.length > 0) {
-      await new EventLoggerKlass().insertMultiple(fields, sql_rows_array).fire();
+      await new EventLogModel().insertMultiple(fields, sql_rows_array).fire();
       sql_rows_array = [];
     }
 

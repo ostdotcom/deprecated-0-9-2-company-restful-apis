@@ -55,7 +55,7 @@ CriticalChainInteractionLogModel.prototype = Object.create(ModelBaseKlass.protot
 /*
  * Public methods
  */
-const CriticalChainInteractionLogPrototype = {
+const CriticalChainInteractionLogModelSpecificPrototype = {
 
   tableName: 'critical_chain_interaction_logs',
 
@@ -223,6 +223,6 @@ const CriticalChainInteractionLogPrototype = {
 
 };
 
-Object.assign(CriticalChainInteractionLogModel.prototype, CriticalChainInteractionLogPrototype);
+Object.assign(CriticalChainInteractionLogModel.prototype, CriticalChainInteractionLogModelSpecificPrototype);
 
 module.exports = CriticalChainInteractionLogModel;

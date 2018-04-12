@@ -3,8 +3,7 @@
 const rootPrefix = '../../..'
     , responseHelper = require(rootPrefix + '/lib/formatter/response')
     , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-    , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
-    , managedAddress = new ManagedAddressKlass()
+    , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
 ;
 
 /**
@@ -48,7 +47,7 @@ GetAddressesByUuidKlass.prototype = {
     
     const oThis = this;
     
-    var usersData = await managedAddress.getByUuids(oThis.uuids);
+    var usersData = await new ManagedAddressModel().getByUuids(oThis.uuids);
 
     if (usersData.length <= 0) {
       return Promise.resolve(responseHelper.error("s_cu_gabu_1", "No Data found", null, [], {sendErrorEmail: false}));

@@ -30,7 +30,7 @@ const rootPrefix = '../../..'
   , ApproveContractKlass = require(rootPrefix + '/lib/transactions/approve_contract')
   , TransferStPrimeKlass = require(rootPrefix + '/lib/transactions/stPrime_transfer')
   , ClientTrxRateCacheKlass = require(rootPrefix + '/lib/cache_management/client_transactions_rate_limit')
-  , ClientWorkerManagedAddressIdsKlass = require(rootPrefix + '/app/models/client_worker_managed_address_id')
+  , ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/client_worker_managed_address_id')
   , clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id')
   , ClientActiveWorkerUuidCacheKlass = require(rootPrefix + '/lib/cache_management/client_active_worker_uuid')
   ;
@@ -467,12 +467,16 @@ ExecuteTransactionKlass.prototype = {
 
         // Mark ST Prime balance is low for worker for future transactions.
 
-        const dbObject = await new ClientWorkerManagedAddressIdsKlass().select('id, properties')
-            .where(['client_id=? AND managed_address_id=?', oThis.clientId, oThis.workerUser.id]).fire()[0];
+        const dbObject = (await new ClientWorkerManagedAddressIdModel().select('id, properties')
+            .where({client_id: oThis.clientId,managed_address_id: oThis.workerUser.id}).fire())[0];
 
-        await new ClientWorkerManagedAddressIdsKlass()
-            .update({properties: new ClientWorkerManagedAddressIdsKlass().unsetBit(clientWorkerManagedAddressConst.hasStPrimeBalanceProperty, dbObject.properties)})
-            .where({id: dbObject.id}).fire();
+        let newPropertiesValue = new ClientWorkerManagedAddressIdModel().unsetBit(
+          clientWorkerManagedAddressConst.hasStPrimeBalanceProperty, dbObject.properties);
+
+        await new ClientWorkerManagedAddressIdModel()
+          .update({properties: newPropertiesValue})
+          .where({id: dbObject.id})
+          .fire();
 
         // Flush worker uuids cache
         new ClientActiveWorkerUuidCacheKlass({client_id: oThis.clientId}).clear();

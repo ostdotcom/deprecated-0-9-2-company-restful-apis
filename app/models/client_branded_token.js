@@ -2,76 +2,60 @@
 
 const rootPrefix = '../..'
   , coreConstants = require(rootPrefix + '/config/core_constants')
-  , QueryDBKlass = require(rootPrefix + '/app/models/queryDb')
   , ModelBaseKlass = require(rootPrefix + '/app/models/base')
-  ;
-
-const dbName = "saas_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
-  , QueryDBObj = new QueryDBKlass(dbName)
 ;
 
-const ClientBrandedTokenKlass = function () {
-  const oThis = this;
+const dbName = "saas_client_economy_" + coreConstants.SUB_ENVIRONMENT + "_" + coreConstants.ENVIRONMENT
+;
 
-  ModelBaseKlass.call(this, {dbName: dbName});
+const ClientBrandedTokenModel = function () {
+  const oThis = this
+  ;
+
+  ModelBaseKlass.call(oThis, {dbName: dbName});
 };
 
-ClientBrandedTokenKlass.prototype = Object.create(ModelBaseKlass.prototype);
+ClientBrandedTokenModel.prototype = Object.create(ModelBaseKlass.prototype);
 
 /*
  * Public methods
  */
-const ClientBrandedTokenKlassPrototype = {
-
-  QueryDB: QueryDBObj,
-
+const ClientBrandedTokenModelSpecificPrototype = {
   tableName: 'client_branded_tokens',
 
   enums: {},
 
-  getById: function(id){
-    const oThis = this;
-    return oThis.QueryDB.read(
-      oThis.tableName,
-      [],
-      "id=?",
-      [id]);
+  getById: function (id) {
+    const oThis = this
+    ;
+
+    return oThis.select('*').where({id: id}).fire();
   },
 
-  getBySymbol: function(symbol){
-    const oThis = this;
-    return oThis.QueryDB.read(
-      oThis.tableName,
-      [],
-      "symbol=?",
-      [symbol]);
+  getBySymbol: function (symbol) {
+    const oThis = this
+    ;
+
+    return oThis.select('*').where({symbol: symbol}).fire();
   },
 
-  getByClientId: function(client_id){
-    const oThis = this;
-    return oThis.QueryDB.read(
-      oThis.tableName,
-      [],
-      "client_id=?",
-      [client_id],
-      {
-        order: 'id DESC'
-      }
-    );
+  getByClientId: function (clientId) {
+    const oThis = this
+    ;
+
+    return oThis.select('*').where({client_id: clientId}).order_by('id DESC').fire();
   },
 
-  getByClientIds: function(client_ids){
-    const oThis = this;
-    return oThis.QueryDB.readByInQuery(
-        oThis.tableName,
-        ['client_id','symbol'],
-        client_ids,
-        'client_id'
-    );
+  getByClientIds: function (clientIds) {
+    const oThis = this
+    ;
+
+    return oThis.select(['client_id', 'symbol'])
+      .where(['client_id IN (?)', clientIds])
+      .fire();
   }
-
 };
 
-Object.assign(ClientBrandedTokenKlass.prototype, ClientBrandedTokenKlassPrototype);
+Object.assign(ClientBrandedTokenModel.prototype, ClientBrandedTokenModelSpecificPrototype);
 
-module.exports = ClientBrandedTokenKlass;
+module.exports = ClientBrandedTokenModel;

@@ -13,8 +13,7 @@ var rootPrefix = '../../..'
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , ClientTransactionTypeCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type')
   , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
-  , ClientTransactionTypeKlass = require(rootPrefix + '/app/models/client_transaction_type')
-  , clientTransactionTypeObj = new ClientTransactionTypeKlass()
+  , ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
@@ -103,7 +102,7 @@ Edit.prototype = {
       return Promise.resolve(responseHelper.error('tk_e_4', 'client_transaction_id not present.'));
     }
 
-    if(kind && !clientTransactionTypeObj.invertedKinds[kind]){
+    if(kind && !new ClientTransactionTypeModel().invertedKinds[kind]){
       errors_object['kind'] = 'invalid kind';
     }
 
@@ -111,7 +110,7 @@ Edit.prototype = {
       if(!currency_value || currency_value < 0.01 || currency_value > 100){
         errors_object['currency_value'] = 'Value of a transaction in $USD is out of range. Min value is 0.01$ and Max value is 100$';
       }
-      oThis.transactionKindObj['currency_type'] = oThis.params.currency_type;
+      oThis.transactionKindObj['currency_type'] = new ClientTransactionTypeModel().invertedCurrencyTypes[oThis.params.currency_type];
       oThis.transactionKindObj['value_in_bt_wei'] = null;
       oThis.transactionKindObj['value_in_usd'] = currency_value;
 
@@ -124,7 +123,7 @@ Edit.prototype = {
       if(!basicHelper.isWeiValid(value_in_bt_wei)){
         errors_object['currency_value'] = 'Value in BT is not valid';
       }
-      oThis.transactionKindObj['currency_type'] = oThis.params.currency_type;
+      oThis.transactionKindObj['currency_type'] = new ClientTransactionTypeModel().invertedCurrencyTypes[oThis.params.currency_type];
       oThis.transactionKindObj['value_in_bt_wei'] = basicHelper.formatWeiToString(value_in_bt_wei);
       oThis.transactionKindObj['value_in_usd'] = null;
 
@@ -161,7 +160,7 @@ Edit.prototype = {
         errors_object['name'] = 'Come on, the ' + name + ' you entered is inappropriate. Please choose a nicer word.';
       }
       else {
-        var existingTKind = await clientTransactionTypeObj.getTransactionByName({clientId: clientId, name: name});
+        var existingTKind = await new ClientTransactionTypeModel().getTransactionByName({clientId: clientId, name: name});
         if(existingTKind.length > 0 && oThis.clientTransactionId != existingTKind.id){
           errors_object['name'] = "Transaction kind name '"+ name +"' already present.";
         }
@@ -185,7 +184,7 @@ Edit.prototype = {
    */
   getCurrentTransactionKind: function(){
     var oThis = this;
-    return clientTransactionTypeObj.getTransactionById({clientTransactionId: oThis.clientTransactionId});
+    return new ClientTransactionTypeModel().getTransactionById({clientTransactionId: oThis.clientTransactionId});
   },
 
   /**
@@ -196,25 +195,20 @@ Edit.prototype = {
    *
    */
   editTransactionKind: async function(){
-    var oThis = this;
+    const oThis = this
+    ;
 
     if(oThis.params.client_id) oThis.transactionKindObj['client_id'] = oThis.params.client_id;
     if(oThis.params.name) oThis.transactionKindObj['name'] = oThis.params.name;
-    if(oThis.params.kind) oThis.transactionKindObj['kind'] = oThis.params.kind;
+    if(oThis.params.kind) oThis.transactionKindObj['kind'] = new ClientTransactionTypeModel().invertedKinds[oThis.params.kind];
     if(oThis.params.commission_percent) oThis.transactionKindObj['commission_percent'] = oThis.params.commission_percent;
 
-    try {
-      await clientTransactionTypeObj.edit(
-        {
-          qParams: util.clone(oThis.transactionKindObj),
-          whereCondition: {id: oThis.clientTransactionId}
-        }
-      );
-      new ClientTransactionTypeCacheKlass({client_id: oThis.currentTransactionKind['client_id'],
-        transaction_kind: oThis.currentTransactionKind['name']}).clear();
-    } catch(err){
-      return Promise.resolve(responseHelper.error('tk_e_3', 'Something went wrong.'));
-    }
+    await new ClientTransactionTypeModel().update(
+      util.clone(oThis.transactionKindObj)
+    ).where({id: oThis.clientTransactionId}).fire();
+
+    new ClientTransactionTypeCacheKlass({client_id: oThis.currentTransactionKind['client_id'],
+      transaction_kind: oThis.currentTransactionKind['name']}).clear();
 
     return Promise.resolve(responseHelper.successWithData({}));
   },
@@ -226,7 +220,9 @@ Edit.prototype = {
    *
    */
   returnResponse: function(){
-    var oThis = this;
+    const oThis = this
+    ;
+
     return Promise.resolve(responseHelper.successWithData(
       {
         result_type: "transactions",

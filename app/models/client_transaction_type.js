@@ -2,43 +2,38 @@
 
 const rootPrefix = '../..'
   , coreConstants = require(rootPrefix + '/config/core_constants')
-  , QueryDBKlass = require(rootPrefix + '/app/models/queryDb')
   , util = require(rootPrefix + '/lib/util')
   , ModelBaseKlass = require(rootPrefix + '/app/models/base')
   , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
   , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
 
-const dbName = "saas_client_economy_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
-  , QueryDBObj = new QueryDBKlass(dbName)
+const dbName = "saas_client_economy_" + coreConstants.SUB_ENVIRONMENT + "_" + coreConstants.ENVIRONMENT
   , kinds = {
-    '1':clientTxTypesConst.userToUserKind,
-    '2':clientTxTypesConst.userToCompanyKind,
-    '3':clientTxTypesConst.companyToUserKind
+    '1': clientTxTypesConst.userToUserKind,
+    '2': clientTxTypesConst.userToCompanyKind,
+    '3': clientTxTypesConst.companyToUserKind
   }
   , invertedKinds = util.invert(kinds)
   , currencyTypes = {
-    '1':clientTxTypesConst.usdCurrencyType,
-    '2':clientTxTypesConst.btCurrencyType
+    '1': clientTxTypesConst.usdCurrencyType,
+    '2': clientTxTypesConst.btCurrencyType
   }
   , invertedCurrencyTypes = util.invert(currencyTypes)
-  , statuses = {'1':clientTxTypesConst.activeStatus, '2':clientTxTypesConst.inactiveStatus}
+  , statuses = {'1': clientTxTypesConst.activeStatus, '2': clientTxTypesConst.inactiveStatus}
   , invertedStatuses = util.invert(statuses)
 ;
 
-const ClientTransactionTypeKlass = function () {
+const ClientTransactionTypeModel = function () {
   ModelBaseKlass.call(this, {dbName: dbName});
 };
 
-ClientTransactionTypeKlass.prototype = Object.create(ModelBaseKlass.prototype);
+ClientTransactionTypeModel.prototype = Object.create(ModelBaseKlass.prototype);
 
 /*
  * Public methods
  */
-const ClientTransactionTypeKlassPrototype = {
-
-  QueryDB: QueryDBObj,
-
+const ClientTransactionTypeModelSpecificPrototype = {
   tableName: 'client_transaction_types',
 
   kinds: kinds,
@@ -69,56 +64,51 @@ const ClientTransactionTypeKlassPrototype = {
   },
 
   getAll: async function (params) {
-
     const oThis = this
       , return_result = []
     ;
 
-    const results = await oThis.QueryDB.read(
-      oThis.tableName,
-      [],
-      'client_id=?',
-      [params['clientId']],
-      {
-        limit: params['limit'],
-        offset: params['offset']
-      }
-    );
+    const results = await oThis.select('*').where({client_id: params['clientId']})
+      .limit(params['limit']).offset(params['offset']).fire();
 
-    for(var i=0; i<results.length; i++){
+    for (var i = 0; i < results.length; i++) {
       return_result.push(oThis.convertEnumForResult(results[i]));
     }
 
     return Promise.resolve(return_result);
-
   },
 
   getTransactionById: function (params) {
-    const oThis = this;
-    return oThis.QueryDB.read(oThis.tableName, [], 'id=?', [params['clientTransactionId']]);
+    const oThis = this
+    ;
+
+    return oThis.select('*').where({id: params['clientTransactionId']}).fire();
   },
 
   getTransactionByName: function (params) {
-    const oThis = this;
-    return oThis.QueryDB.read(oThis.tableName, [], 'client_id=? AND name=?', [params['clientId'], params['name']]);
+    const oThis = this
+    ;
+
+    return oThis.select('*').where({client_id: params['clientId'], name: params['name']}).fire();
   },
 
   getCount: function (params) {
-    const oThis = this;
-    return oThis.QueryDB.read(oThis.tableName, ['count(*) as cnt'], 'client_id=?', [params['clientId']]);
+    const oThis = this
+    ;
+
+    return oThis.select('count(*) as cnt').where({client_id: params['clientId']}).fire();
   },
 
-  getValue: function(record) {
+  getValue: function (record) {
     const oThis = this;
-    if(oThis.currencyTypes[record.currency_type] == clientTxTypesConst.usdCurrencyType) {
+    if (oThis.currencyTypes[record.currency_type] == clientTxTypesConst.usdCurrencyType) {
       return record.value_in_usd;
     } else {
       return basicHelper.convertToNormal(record.value_in_bt_wei).toString(10);
     }
   }
-
 };
 
-Object.assign(ClientTransactionTypeKlass.prototype, ClientTransactionTypeKlassPrototype);
+Object.assign(ClientTransactionTypeModel.prototype, ClientTransactionTypeModelSpecificPrototype);
 
-module.exports = ClientTransactionTypeKlass;
+module.exports = ClientTransactionTypeModel;

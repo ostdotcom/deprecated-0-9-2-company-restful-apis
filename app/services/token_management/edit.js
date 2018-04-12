@@ -7,14 +7,11 @@ const openStPlatform = require('@openstfoundation/openst-platform')
 const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , basicHelper = require(rootPrefix + '/helpers/basic')
-  , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
+  , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
   , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
   , ClientSecuredBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
   , chainIntConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-;
-
-const clientBrandedTokenObj = new ClientBrandedTokenKlass()
 ;
 
 const EditBrandedTokenKlass = function (params) {
@@ -31,7 +28,7 @@ const EditBrandedTokenKlass = function (params) {
   oThis.token_uuid = oThis.params.token_uuid;
   oThis.conversion_factor = oThis.params.conversion_factor;
 
-  oThis.brandedTokenAr = null;
+  oThis.brandedTokenRecordObject = null;
 
 };
 
@@ -84,47 +81,47 @@ EditBrandedTokenKlass.prototype = {
       return Promise.resolve(responseHelper.error('tm_e_1', 'Unauthorized access'));
     }
 
-    const clientBrandedTokens = await clientBrandedTokenObj.getBySymbol(oThis.symbol);
+    const clientBrandedTokens = await new ClientBrandedTokenModel().getBySymbol(oThis.symbol);
     if(clientBrandedTokens.length <= 0){
       return Promise.resolve(responseHelper.error('tm_e_2', 'Invalid Edit request'));
     }
 
-    oThis.brandedTokenAr = clientBrandedTokens[0];
+    oThis.brandedTokenRecordObject = clientBrandedTokens[0];
 
-    if(oThis.brandedTokenAr.client_id != oThis.client_id){
+    if(oThis.brandedTokenRecordObject.client_id != oThis.client_id){
       return Promise.resolve(responseHelper.error('tm_e_3', 'Unauthorized access'));
     }
 
-    if(oThis.name && basicHelper.isBTNameValid(oThis.name) && oThis.name != oThis.brandedTokenAr.name){
-      oThis.brandedTokenAr.name = oThis.name;
+    if(oThis.name && basicHelper.isBTNameValid(oThis.name) && oThis.name != oThis.brandedTokenRecordObject.name){
+      oThis.brandedTokenRecordObject.name = oThis.name;
     }
 
-    if(oThis.symbol_icon && oThis.symbol_icon != oThis.brandedTokenAr.symbol_icon){
-      oThis.brandedTokenAr.symbol_icon = oThis.symbol_icon;
+    if(oThis.symbol_icon && oThis.symbol_icon != oThis.brandedTokenRecordObject.symbol_icon){
+      oThis.brandedTokenRecordObject.symbol_icon = oThis.symbol_icon;
     }
 
     if(oThis.token_erc20_address && basicHelper.isAddressValid(oThis.token_erc20_address) &&
-      oThis.token_erc20_address != oThis.brandedTokenAr.token_erc20_address
+      oThis.token_erc20_address != oThis.brandedTokenRecordObject.token_erc20_address
     ){
-      oThis.brandedTokenAr.token_erc20_address = oThis.token_erc20_address;
+      oThis.brandedTokenRecordObject.token_erc20_address = oThis.token_erc20_address;
     }
 
     if(oThis.airdrop_contract_addr && basicHelper.isAddressValid(oThis.airdrop_contract_addr) &&
-      oThis.airdrop_contract_addr != oThis.brandedTokenAr.airdrop_contract_addr
+      oThis.airdrop_contract_addr != oThis.brandedTokenRecordObject.airdrop_contract_addr
     ){
-      oThis.brandedTokenAr.airdrop_contract_addr = oThis.airdrop_contract_addr;
+      oThis.brandedTokenRecordObject.airdrop_contract_addr = oThis.airdrop_contract_addr;
     }
 
     if((oThis.token_uuid && basicHelper.isUuidValid(oThis.token_uuid)) &&
-        (oThis.token_uuid != oThis.brandedTokenAr.token_uuid)
+        (oThis.token_uuid != oThis.brandedTokenRecordObject.token_uuid)
     ){
-      oThis.brandedTokenAr.token_uuid = oThis.token_uuid;
+      oThis.brandedTokenRecordObject.token_uuid = oThis.token_uuid;
     }
 
     if(oThis.conversion_factor && basicHelper.isBTConversionRateValid(oThis.conversion_factor) &&
-      oThis.conversion_factor != oThis.brandedTokenAr.conversion_factor
+      oThis.conversion_factor != oThis.brandedTokenRecordObject.conversion_factor
     ){
-      oThis.brandedTokenAr.conversion_factor = oThis.conversion_factor;
+      oThis.brandedTokenRecordObject.conversion_factor = oThis.conversion_factor;
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -141,12 +138,12 @@ EditBrandedTokenKlass.prototype = {
 
     const oThis = this;
 
-    if (!oThis.brandedTokenAr.token_uuid) {
+    if (!oThis.brandedTokenRecordObject.token_uuid) {
       return Promise.resolve(responseHelper.successWithData({}));
     }
 
     const object = new openStPlatform.services.utils.getBrandedTokenDetails({
-      uuid: oThis.brandedTokenAr.token_uuid
+      uuid: oThis.brandedTokenRecordObject.token_uuid
     });
 
     const handleOpenStPlatformSuccess = function (getBTDetailsRsp) {
@@ -154,7 +151,7 @@ EditBrandedTokenKlass.prototype = {
         logger.log(getBTDetailsRsp.data);
         const simpleStakeContractAddr = getBTDetailsRsp.data.simple_stake_contract_address;
         if (simpleStakeContractAddr) {
-          oThis.brandedTokenAr.simple_stake_contract_addr = simpleStakeContractAddr;
+          oThis.brandedTokenRecordObject.simple_stake_contract_addr = simpleStakeContractAddr;
         }
         return Promise.resolve(responseHelper.successWithData({}));
       } else {
@@ -172,14 +169,14 @@ EditBrandedTokenKlass.prototype = {
     var oThis = this
       , publish_data = {};
 
-    publish_data.name = oThis.brandedTokenAr.name;
-    publish_data.ost_to_bt_conversion_factor = oThis.brandedTokenAr.conversion_factor;
-    publish_data.symbol_icon = oThis.brandedTokenAr.symbol_icon;
-    publish_data.symbol = oThis.brandedTokenAr.symbol;
-    publish_data.uuid = oThis.brandedTokenAr.token_uuid;
-    publish_data.created_at = new Date(oThis.brandedTokenAr.created_at).getTime() / 1000;
+    publish_data.name = oThis.brandedTokenRecordObject.name;
+    publish_data.ost_to_bt_conversion_factor = oThis.brandedTokenRecordObject.conversion_factor;
+    publish_data.symbol_icon = oThis.brandedTokenRecordObject.symbol_icon;
+    publish_data.symbol = oThis.brandedTokenRecordObject.symbol;
+    publish_data.uuid = oThis.brandedTokenRecordObject.token_uuid;
+    publish_data.created_at = new Date(oThis.brandedTokenRecordObject.created_at).getTime() / 1000;
 
-    if(Object.keys(publish_data).length == 0 || !oThis.brandedTokenAr.token_erc20_address){
+    if(Object.keys(publish_data).length == 0 || !oThis.brandedTokenRecordObject.token_erc20_address){
       return Promise.resolve(responseHelper.successWithData({}));
     }
     openSTNotification.publishEvent.perform(
@@ -191,7 +188,7 @@ EditBrandedTokenKlass.prototype = {
           payload: {
             entity: 'branded_token',
             identifier: {
-              erc20_contract_address: oThis.brandedTokenAr.token_erc20_address,
+              erc20_contract_address: oThis.brandedTokenRecordObject.token_erc20_address,
               chain_id: chainIntConstants.UTILITY_CHAIN_ID
             },
             operation: 'update',
@@ -207,14 +204,8 @@ EditBrandedTokenKlass.prototype = {
 
     var oThis = this;
 
-    await clientBrandedTokenObj.edit(
-      {
-        qParams: oThis.brandedTokenAr,
-        whereCondition: {
-          id: oThis.brandedTokenAr.id
-        }
-      }
-    );
+    await new ClientBrandedTokenModel().update(oThis.brandedTokenRecordObject)
+      .where(['id = ?', oThis.brandedTokenRecordObject.id]).fire();
 
     return Promise.resolve(responseHelper.successWithData({}));
 

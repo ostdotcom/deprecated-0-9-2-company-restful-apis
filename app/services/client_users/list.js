@@ -3,8 +3,7 @@
 const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
-  , managedAddress = new ManagedAddressKlass()
+  , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
   , EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance')
   , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
@@ -69,7 +68,7 @@ listKlass.prototype = {
       params.order = 'desc';
     }
 
-    const queryResponse = await managedAddress.getByFilterAndPaginationParams(params);
+    const queryResponse = await new ManagedAddressModel().getByFilterAndPaginationParams(params);
 
     var usersList = []
       , ethereumAddresses = []

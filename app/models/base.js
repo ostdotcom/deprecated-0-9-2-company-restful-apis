@@ -9,7 +9,8 @@ const rootPrefix = '../..'
 ;
 
 const ModelBaseKlass = function (params) {
-  var oThis = this;
+  const oThis = this
+  ;
 
   oThis.dbName = params.dbName;
   MysqlQueryKlass.call(this);
@@ -20,17 +21,17 @@ ModelBaseKlass.prototype = Object.create(MysqlQueryKlass.prototype);
 const ModelBaseKlassPrototype = {
 
   // get read connection
-  onReadConnection: function() {
+  onReadConnection: function () {
     return mysqlWrapper.getPoolFor(this.dbName, 'master');
   },
 
   // get read connection
-  onWriteConnection: function() {
+  onWriteConnection: function () {
     return mysqlWrapper.getPoolFor(this.dbName, 'master');
   },
 
   convertEnumForDB: function (params, readable) {
-    var oThis = this
+    const oThis = this
       , enumKeys = Object.keys(oThis.enums);
 
     for (var i = 0; i < enumKeys.length; i++) {
@@ -48,19 +49,19 @@ const ModelBaseKlassPrototype = {
   },
 
   fire: function () {
-    var oThis = this;
+    const oThis = this;
 
     return new Promise(
       function (onResolve, onReject) {
 
         const queryGenerator = oThis.generate();
-        if(queryGenerator.isSuccess()){
+        if (queryGenerator.isSuccess()) {
           //logger.log(queryGenerator.data.query, queryGenerator.data.queryData);
         }
 
         var pre_query = Date.now();
         var qry = oThis.onWriteConnection().query(queryGenerator.data.query, queryGenerator.data.queryData, function (err, result, fields) {
-          logger.info("("+(Date.now() - pre_query)+" ms)", qry.sql);
+          logger.info("(" + (Date.now() - pre_query) + " ms)", qry.sql);
           if (err) {
             onReject(err);
           } else {
@@ -70,64 +71,7 @@ const ModelBaseKlassPrototype = {
       }
     );
 
-  },
-
-  create: function (params) {
-
-    var oThis = this
-      , createFields = []
-      , setFieldsValues = []
-    ;
-
-    params = oThis.convertEnumForDB(params);
-
-    for (var key in params) {
-      if(key=='id' || key=='updated_at' || key=='created_at') continue;
-      createFields.push(key);
-      setFieldsValues.push(params[key])
-    }
-
-    return oThis.QueryDB.insert(
-      oThis.tableName,
-      createFields,
-      setFieldsValues
-    );
-
-  },
-
-  edit: function (params) {
-    var oThis = this
-      , editFields = []
-      , setFieldsValues = []
-      , whereCondFields = []
-      , whereCondFieldsValues = []
-    ;
-
-    params['qParams'] = oThis.convertEnumForDB(params['qParams']);
-    for (var key in params['qParams']) {
-      if(key=='id' || key=='updated_at' || key=='created_at') continue;
-      editFields.push(key + '=?');
-      setFieldsValues.push(params['qParams'][key])
-    }
-
-    for (var key in params['whereCondition']) {
-      if (Array.isArray(params['whereCondition'][key])) {
-        whereCondFields.push(key + ' IN ?');
-      } else {
-        whereCondFields.push(key + '=?');
-      }
-      whereCondFieldsValues.push(params['whereCondition'][key]);
-    }
-
-    return oThis.QueryDB.edit(
-      oThis.tableName,
-      editFields,
-      setFieldsValues,
-      whereCondFields,
-      whereCondFieldsValues
-    );
   }
-
 };
 
 Object.assign(ModelBaseKlass.prototype, ModelBaseKlassPrototype);

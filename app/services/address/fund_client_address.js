@@ -14,13 +14,13 @@
 
 const rootPrefix = '../../..'
   , openStPlatform = require('@openstfoundation/openst-platform')
-  , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
-  , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
+  , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
+  , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
-  , ClientWorkerManagedAddressIdsKlass = require(rootPrefix + '/app/models/client_worker_managed_address_id')
+  , ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/client_worker_managed_address_id')
   , clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id')
   , ClientActiveWorkerUuidCacheKlass = require(rootPrefix + '/lib/cache_management/client_active_worker_uuid')
 ;
@@ -128,15 +128,12 @@ FundClientAddressKlass.prototype = {
    */
   _setAddresses: async function() {
 
-    const oThis = this;
-
-    const clientBrandedTokenObj = new ClientBrandedTokenKlass();
-    const clientBrandedTokens = await clientBrandedTokenObj.getByClientId(oThis.clientId);
+    const oThis = this
+      , clientBrandedTokenRecords = await new ClientBrandedTokenModel().getByClientId(oThis.clientId);
 
     // assuming that the last token is the only token.
-    const brandedToken = clientBrandedTokens[clientBrandedTokens.length - 1]
-        , clientWorkerAddrObj = new ClientWorkerManagedAddressIdsKlass()
-        , existingWorkerManagedAddresses = await clientWorkerAddrObj.getActiveByClientId(oThis.clientId)
+    const brandedToken = clientBrandedTokenRecords[clientBrandedTokenRecords.length - 1]
+        , existingWorkerManagedAddresses = await new ClientWorkerManagedAddressIdModel().getActiveByClientId(oThis.clientId)
         , workerManagedAddressIds = []
     ;
 
@@ -144,13 +141,12 @@ FundClientAddressKlass.prototype = {
       workerManagedAddressIds.push(existingWorkerManagedAddresses[i].managed_address_id);
     }
 
-    const managedAddressObj = new ManagedAddressKlass()
-        , reserveAddressType = managedAddressObj.invertedAddressTypes[managedAddressesConst.reserveAddressType]
-        , airdropHolderAddressType = managedAddressObj.invertedAddressTypes[managedAddressesConst.airdropHolderAddressType]
-        , workerAddressType = managedAddressObj.invertedAddressTypes[managedAddressesConst.workerAddressType]
+    const reserveAddressType = new ManagedAddressModel().invertedAddressTypes[managedAddressesConst.reserveAddressType]
+        , airdropHolderAddressType = new ManagedAddressModel().invertedAddressTypes[managedAddressesConst.airdropHolderAddressType]
+        , workerAddressType = new ManagedAddressModel().invertedAddressTypes[managedAddressesConst.workerAddressType]
     ;
 
-    const managedAddresses = await managedAddressObj.getByIds([
+    const managedAddresses = await new ManagedAddressModel().getByIds([
       brandedToken.reserve_managed_address_id,
       brandedToken.airdrop_holder_managed_address_id
     ].concat(workerManagedAddressIds));
@@ -194,12 +190,15 @@ FundClientAddressKlass.prototype = {
 
         if(transferBalanceResponse.isSuccess()) {
 
-          const dbObjects = await new ClientWorkerManagedAddressIdsKlass().select('id, properties')
-              .where(['client_id=? AND managed_address_id=?', oThis.clientId, workerAddrObj.id]).fire()
-          , dbObject = dbObjects[0];
+          const dbObject = (await new ClientWorkerManagedAddressIdModel().select('id, properties')
+              .where({client_id: oThis.clientId, managed_address_id: workerAddrObj.id}).fire())[0]
+          ;
 
-          await new ClientWorkerManagedAddressIdsKlass()
-            .update({properties: new ClientWorkerManagedAddressIdsKlass().setBit(clientWorkerManagedAddressConst.hasStPrimeBalanceProperty, dbObject.properties)})
+          let newPropertiesValue = new ClientWorkerManagedAddressIdModel()
+            .setBit(clientWorkerManagedAddressConst.hasStPrimeBalanceProperty, dbObject.properties);
+
+          await new ClientWorkerManagedAddressIdModel()
+            .update({properties: newPropertiesValue})
             .where({id: dbObject.id}).fire();
 
           new ClientActiveWorkerUuidCacheKlass({client_id: oThis.clientId}).clear();

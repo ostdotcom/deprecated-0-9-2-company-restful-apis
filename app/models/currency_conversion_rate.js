@@ -1,111 +1,91 @@
 "use strict";
 
-  const rootPrefix = '../..'
+const rootPrefix = '../..'
   , coreConstants = require(rootPrefix + '/config/core_constants')
-  , QueryDBKlass = require(rootPrefix + '/app/models/queryDb')
+  , ModelBaseKlass = require(rootPrefix + '/app/models/base')
   , utils = require(rootPrefix + '/lib/util')
-  , conversionRates = require(rootPrefix + '/lib/global_constant/conversion_rates')
-  ;
+  , conversionRatesConst = require(rootPrefix + '/lib/global_constant/conversion_rates')
+;
 
-  const dbName = "company_saas_shared_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
-  , QueryDB = new QueryDBKlass(dbName)
+const dbName = "company_saas_shared_" + coreConstants.SUB_ENVIRONMENT + "_" + coreConstants.ENVIRONMENT
   , tableName = 'currency_conversion_rates'
   , tableColumns = ['base_currency', 'quote_currency', 'conversion_rate', 'timestamp', 'transaction_hash', 'status']
+  , statuses = {
+    1: conversionRatesConst.active_status(),
+    2: conversionRatesConst.inactive_status(),
+    3: conversionRatesConst.inprocess_status()
+  }
+  , invertedStatuses = util.invert(statuses)
+  , baseCurrencies = {
+    1: conversionRatesConst.ost_currency()
+  }
+  , invertedBaseCurrencies = util.invert(baseCurrencies)
+  , quoteCurrencies = {
+    1: conversionRatesConst.usd_currency(),
+    2: conversionRatesConst.eur_currency()
+  }
+  , invertedQuoteCurrencies = util.invert(quoteCurrencies)
+;
+
+const CurrencyConversionRateModel = function () {
+  const oThis = this
   ;
 
+  ModelBaseKlass.call(oThis, {dbName: dbName});
+};
 
-/*
-* Public methods
-*/
+CurrencyConversionRateModel.prototype = Object.create(ModelBaseKlass.prototype);
 
-const currencyConversionRate = {
+const CurrencyConversionRateModelSpecificPrototype = {
+  tableName: tableName,
 
   // Define ENUM fields as constants
-  status: {1: conversionRates.active_status(),
-    2: conversionRates.inactive_status(),
-    3: conversionRates.inprocess_status()
-  },
+  status: statuses,
 
-  base_currency: {1: conversionRates.ost_currency()
-  },
+  invertedStatuses: invertedStatuses,
 
-  quote_currency: {1: conversionRates.usd_currency(),
-    2: conversionRates.eur_currency()
-  },
+  base_currency: baseCurrencies,
 
-  // Create new record in currency conversion rates table
-  create: function (params) {
+  invertedBaseCurrencies: invertedBaseCurrencies,
 
-    var oThis = this
-      , creatableFields = tableColumns
-      , createFields = []
-      , setFieldsValues = []
-    ;
+  quote_currency: quoteCurrencies,
 
-    for(var i=0; i<creatableFields.length; i++){
-      var column = creatableFields[i];
-      if(params[column]){
-        createFields.push(column);
-
-        // Check if field is an enum field then get its number value to insert
-        if(oThis[column]){
-          var enumValues = oThis[column];
-          // Check if inverted data is present in input then use enumValues key
-          var invertedEnumValues = utils.invert(enumValues);
-          if(invertedEnumValues[params[column]]){
-            params[column] = invertedEnumValues[params[column]];
-          }
-        }
-        setFieldsValues.push(params[column])
-      }
-    }
-
-    return QueryDB.insert(
-      tableName,
-      createFields,
-      setFieldsValues
-    );
-
-  },
+  invertedQuoteCurrencies: invertedQuoteCurrencies,
 
   // Update transaction hash for a record
-  updateTransactionHash: function(id, transactionHash){
-    return QueryDB.edit(
-      tableName,
-      ['transaction_hash = ?'],
-      [transactionHash],
-      ['id=?'],
-      [id]
-    );
+  updateTransactionHash: function (id, transactionHash) {
+    const oThis = this
+    ;
+
+    return oThis.update({transaction_hash: transactionHash})
+      .where({id: id}).fire();
   },
 
   // Update Status for a record
-  updateStatus: function(id, status){
-    var oThis = this;
+  updateStatus: function (id, status) {
+    const oThis = this
+    ;
+
     // Check if inverted data is present in input then use enumValues key
-    var invertedStatus = utils.invert(oThis.status);
-    if(invertedStatus[status]){
-      status = invertedStatus[status];
+    if (oThis.invertedStatuses[status]) {
+      status = oThis.invertedStatuses[status];
     }
-    return QueryDB.edit(
-      tableName,
-      ['status = ?'],
-      [status],
-      ['id=?'],
-      [id]
-    );
+
+    return oThis.update({status: status}).where({id: id}).fire();
   },
 
-  getLastActiveRates: function(currencyCode){
-    var oThis = this;
-    return QueryDB.read(
-      tableName,
-      [],
-      'quote_currency=? and base_currency=?',
-      [utils.invert(oThis.quote_currency)[currencyCode], utils.invert(oThis.base_currency)[conversionRates.ost_currency()]],
-      {limit: 1, order: 'timestamp desc'});
-  }
+  getLastActiveRates: function (currencyCode) {
+    const oThis = this
+    ;
 
+    return oThis.select('*').where(
+      {
+        quote_currency: utils.invert(oThis.quote_currency)[currencyCode],
+        base_currency: utils.invert(oThis.base_currency)[conversionRatesConst.ost_currency()]
+      }).limit(1).order_by('timestamp DESC').fire();
+  }
 };
 
-module.exports = currencyConversionRate;
+Object.assign(CurrencyConversionRateModel.prototype, CurrencyConversionRateModelSpecificPrototype);
+
+module.exports = CurrencyConversionRateModel;

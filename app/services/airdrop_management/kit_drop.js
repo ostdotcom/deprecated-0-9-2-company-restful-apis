@@ -6,7 +6,7 @@ const rootPrefix = '../../..'
   , AirdropRouterKlass = require(rootPrefix + '/lib/allocate_airdrop/router')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , ManagedAddressesCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
-  , managedAddressModel = require(rootPrefix + '/app/models/managed_address')
+  , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
   , clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , basicHelper = require(rootPrefix + '/helpers/basic')
@@ -137,7 +137,8 @@ StartAirdropForKitKlass.prototype = {
    * @return {promise<result>}
    */
   validateReserveBalance: async function () {
-    const oThis = this;
+    const oThis = this
+    ;
 
     var macObj = new ManagedAddressesCacheKlass({'uuids': [oThis.clientBrandedToken.reserve_address_uuid]});
     var addr = await macObj.fetch();
@@ -147,12 +148,11 @@ StartAirdropForKitKlass.prototype = {
 
     var reserveAddressObj = addr.data[oThis.clientBrandedToken.reserve_address_uuid];
 
-    var maObj = new managedAddressModel();
     var params = {client_id: oThis.clientId};
     if (oThis.airdropUserListType == clientAirdropConst.neverAirdroppedAddressesAirdropListType) {
-      params['property_unset_bit_value'] = maObj.invertedProperties[managedAddressesConst.airdropGrantProperty]
+      params['property_unset_bit_value'] = new ManagedAddressModel().invertedProperties[managedAddressesConst.airdropGrantProperty]
     }
-    var response = await maObj.getFilteredActiveUsersCount(params);
+    var response = await new ManagedAddressModel().getFilteredActiveUsersCount(params);
     if (!response[0] || response[0].total_count == 0) {
       return Promise.reject(responseHelper.error("s_am_kd_7", "No users found to airdrop for this list type", "",
         [{airdrop_list_type: 'No users found to airdrop for this list type'}], {sendErrorEmail: false}));

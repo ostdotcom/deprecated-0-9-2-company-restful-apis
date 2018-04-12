@@ -23,7 +23,7 @@ require(rootPrefix + '/module_overrides/index');
 
 // Load Packages
 const FundClientAddressKlass = require(rootPrefix + '/app/services/address/fund_client_address')
-  , ClientBrandedTokenKlass = require(rootPrefix + '/app/models/client_branded_token')
+  , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
@@ -45,7 +45,7 @@ FundUsersWithSTPrimeFromReserveKlass.prototype = {
     const oThis = this
       , batchSize = 1
       , clientIds = []
-      , clientObjects = await new ClientBrandedTokenKlass().select("*").fire();
+      , clientObjects = await new ClientBrandedTokenModel().select("*").fire();
 
     for(var i=0; i<clientObjects.length; i++){
       const c_o = clientObjects[i];

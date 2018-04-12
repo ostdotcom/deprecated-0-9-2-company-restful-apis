@@ -2,7 +2,6 @@
 
 const rootPrefix = '../..'
   , coreConstants = require(rootPrefix + '/config/core_constants')
-  , QueryDBKlass = require(rootPrefix + '/app/models/queryDb')
   , util = require(rootPrefix + '/lib/util')
   , ModelBaseKlass = require(rootPrefix + '/app/models/base')
   , clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop')
@@ -10,8 +9,6 @@ const rootPrefix = '../..'
 ;
 
 const dbName = "saas_airdrop_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
-  , QueryDBObj = new QueryDBKlass(dbName)
-
   , statuses = {
     '1':clientAirdropConst.incompleteStatus,
     '2':clientAirdropConst.processingStatus,
@@ -34,20 +31,18 @@ const dbName = "saas_airdrop_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.E
   , invertedAirdropListType = util.invert(airdropListType)
 ;
 
-const ClientAirdropKlass = function () {
-  const oThis = this;
+const ClientAirdropModel = function () {
+  const oThis = this
+  ;
 
-  bitWiseHelperKlass.call(this);
-  ModelBaseKlass.call(this, {dbName: dbName});
+  bitWiseHelperKlass.call(oThis);
+  ModelBaseKlass.call(oThis, {dbName: dbName});
 };
 
-ClientAirdropKlass.prototype = Object.create(ModelBaseKlass.prototype);
-Object.assign(ClientAirdropKlass.prototype, bitWiseHelperKlass.prototype);
+ClientAirdropModel.prototype = Object.create(ModelBaseKlass.prototype);
+Object.assign(ClientAirdropModel.prototype, bitWiseHelperKlass.prototype);
 
-const ClientAirdropKlassPrototype = {
-
-  QueryDB: QueryDBObj,
-
+const ClientAirdropModelSpecificPrototype = {
   tableName: 'client_airdrops',
 
   statuses: statuses,
@@ -72,32 +67,18 @@ const ClientAirdropKlassPrototype = {
   },
 
   getById: function (id) {
-    const oThis = this;
-    return oThis.QueryDB.read(
-      oThis.tableName,
-      [],
-      'id=?',
-      [id]);
+    const oThis = this
+    ;
+
+    return oThis.select('*').where({id: id}).fire();
   },
 
   getByClientId: function (clientId) {
-    var oThis = this;
-    return oThis.QueryDB.read(
-      oThis.tableName,
-      [],
-      'client_id=?',
-      [clientId]);
-  },
+    const oThis = this
+    ;
 
-  getByUuid: function (uuid) {
-    var oThis = this;
-    return oThis.QueryDB.read(
-      oThis.tableName,
-      [],
-      'airdrop_uuid=?',
-      [uuid]);
+    return oThis.select('*').where({client_id: clientId}).fire();
   }
-
 };
 
 /**
@@ -106,7 +87,7 @@ const ClientAirdropKlassPrototype = {
  *
  * @return {{}}
  */
-ClientAirdropKlass.prototype.setBitColumns = function () {
+ClientAirdropModel.prototype.setBitColumns = function () {
   const oThis = this;
 
   oThis.bitColumns = {'steps_complete': invertedStepsComplete};
@@ -114,6 +95,6 @@ ClientAirdropKlass.prototype.setBitColumns = function () {
   return oThis.bitColumns;
 };
 
-Object.assign(ClientAirdropKlass.prototype, ClientAirdropKlassPrototype);
+Object.assign(ClientAirdropModel.prototype, ClientAirdropModelSpecificPrototype);
 
-module.exports = ClientAirdropKlass;
+module.exports = ClientAirdropModel;

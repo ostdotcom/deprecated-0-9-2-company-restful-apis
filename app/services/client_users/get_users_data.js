@@ -3,8 +3,7 @@
 const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , ManagedAddressKlass = require(rootPrefix + '/app/models/managed_address')
-  , managedAddress = new ManagedAddressKlass()
+  , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
   , EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance')
   , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
@@ -46,7 +45,7 @@ GetUsersDataKlass.prototype = {
    */
   asyncPerform: async function () {
     const oThis = this;
-    var users = await managedAddress.getByEthAddresses(oThis.ethAddresses);
+    var users = await new ManagedAddressModel().getByEthAddresses(oThis.ethAddresses);
 
     if (users.length <= 0) {
       return Promise.resolve(responseHelper.error("s_cu_gud_1", "No Data found", null, [], {sendErrorEmail: false}));

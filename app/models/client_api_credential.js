@@ -2,27 +2,34 @@
 
 const rootPrefix = '../..'
   , coreConstants = require(rootPrefix + '/config/core_constants')
-  , QueryDBKlass = require(rootPrefix + '/app/models/queryDb')
+  , ModelBaseKlass = require(rootPrefix + '/app/models/base')
 ;
 
-const dbName = "company_saas_shared_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
-  , QueryDB = new QueryDBKlass(dbName)
+const dbName = "company_saas_shared_" + coreConstants.SUB_ENVIRONMENT + "_" + coreConstants.ENVIRONMENT
   , tableName = 'client_api_credentials'
 ;
 
-/*
- * Public methods
- */
-const clientApiCredential = {
+const ClientAPICredentialModel = function () {
+  const oThis = this
+  ;
 
-  getClientApi: function(apiKey){
-    return QueryDB.read(
-      tableName,
-      ['client_id','api_key', 'api_secret', 'api_salt', 'expiry_timestamp'],
-      'api_key=?',
-      [apiKey]);
-  }
-
+  ModelBaseKlass.call(oThis, {dbName: dbName});
 };
 
-module.exports = clientApiCredential;
+ClientAPICredentialModel.prototype = Object.create(ModelBaseKlass.prototype);
+
+const ClientAPICredentialModelSpecificPrototype = {
+  tableName: tableName,
+
+  getClientApi: function (apiKey) {
+    const oThis = this
+    ;
+
+    return oThis.select(['client_id', 'api_key', 'api_secret', 'api_salt', 'expiry_timestamp'])
+      .where({api_key: apiKey}).fire();
+  }
+};
+
+Object.assign(ClientAPICredentialModel.prototype, ClientAPICredentialModelSpecificPrototype);
+
+module.exports = ClientAPICredentialModel;

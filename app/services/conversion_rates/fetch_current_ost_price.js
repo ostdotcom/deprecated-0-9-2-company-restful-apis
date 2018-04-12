@@ -14,7 +14,7 @@ const request = require('request-promise')
 const rootPrefix = "../../.."
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , logger = require(rootPrefix + "/lib/logger/custom_console_logger")
-  , currencyConversionRateModel = require(rootPrefix + "/app/models/currency_conversion_rate")
+  , CurrencyConversionRateModel = require(rootPrefix + "/app/models/currency_conversion_rate")
   , conversionRateConstants = require(rootPrefix + "/lib/global_constant/conversion_rates")
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points')
@@ -81,7 +81,14 @@ FetchCurrentOSTPriceKlass.prototype = {
     }
 
     // Insert current ost value in database
-    var insertResponse = await currencyConversionRateModel.create(oThis.currentOstValue);
+    const insertResponse = await new CurrencyConversionRateModel().insert({
+      base_currency: new CurrencyConversionRateModel().invertedBaseCurrencies[oThis.currentOstValue.base_currency],
+      quote_currency: new CurrencyConversionRateModel().invertedQuoteCurrencies[oThis.currentOstValue.quoteCurrency],
+      conversion_rate: oThis.currentOstValue.conversion_rate,
+      timestamp: oThis.currentTime,
+      status: new CurrencyConversionRateModel().invertedStatuses[oThis.currentOstValue.status]
+    }).fire();
+
     oThis.dbRowId = insertResponse.insertId;
 
     // Set current price in contract
@@ -93,7 +100,7 @@ FetchCurrentOSTPriceKlass.prototype = {
     var transactionHash = contractResponse.data.transactionHash;
 
     // Update transaction hash
-    var updateTransactionResponse = await currencyConversionRateModel.updateTransactionHash(oThis.dbRowId, transactionHash);
+    var updateTransactionResponse = await new CurrencyConversionRateModel().updateTransactionHash(oThis.dbRowId, transactionHash);
     logger.debug(updateTransactionResponse);
 
     //Keep on checking for a price in contract whether its set to new value.
@@ -177,14 +184,14 @@ FetchCurrentOSTPriceKlass.prototype = {
           logger.notify('f_c_o_p_6', "Error while getting price from contract." + JSON.stringify(priceInDecimal));
           return onResolve('error');
         } else if (priceInDecimal.isSuccess() && priceInDecimal.data.price == conversionRate) {
-          await currencyConversionRateModel.updateStatus(dbRowId, conversionRateConstants.active_status());
+          await new CurrencyConversionRateModel().updateStatus(dbRowId, conversionRateConstants.active_status());
           new ostPriceCacheKlass().clear();
           logger.win("Price point updated in contract.");
           return onResolve('success');
         } else {
           return setTimeout(loopCompareContractPrice, 10000);
         }
-      }
+      };
 
       loopCompareContractPrice();
     });

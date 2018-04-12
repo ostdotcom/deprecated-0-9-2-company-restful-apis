@@ -51,7 +51,7 @@ GetAirdropStatusKlass.prototype = {
     const oThis = this
     ;
 
-    var response = await new ClientAirdropModel().getByUuid(oThis.airdropUuid);
+    var response = await new ClientAirdropModel().select('*').where(['airdrop_uuid=?', oThis.airdropUuid]).fire();
     if(response[0]){
       var record = response[0];
       if(record.client_id != oThis.clientId){
