@@ -22,11 +22,13 @@ PopulateNewColumnsKlass.prototype = {
     var startId = oThis.startId
         , transactionLog = undefined
         , inputParams = undefined
-        , formattedReceipt = undefined;
+        , formattedReceipt = undefined
+        , promise = undefined;
 
     while(startId <= oThis.endId) {
 
       var transactionLogs = await new transactionLogModel().select().where(['id >= ? AND id <= ?', startId, oThis.endId]).limit(pageLimit).fire();
+      var promisesArray = [];
 
       for(var i=0; i<transactionLogs.length; i++) {
 
@@ -40,17 +42,18 @@ PopulateNewColumnsKlass.prototype = {
 
         formattedReceipt = JSON.parse(transactionLog.formatted_receipt);
 
-        new transactionLogModel().updateRecord(
-            transactionLog.id,
-            {
-              transaction_type: transaction_type,
-              gas_used: formattedReceipt.gas_used,
-              gas_price: basicHelper.convertToBigNumber(inputParams.gas_price).toString(10),
-              block_number: formattedReceipt.block_number
-            }
-        )
+        promise = new transactionLogModel().update({
+          transaction_type: transaction_type,
+          gas_used: formattedReceipt.gas_used,
+          gas_price: basicHelper.convertToBigNumber(inputParams.gas_price).toString(10),
+          block_number: formattedReceipt.block_number
+        }).where({id: transactionLog.id}).fire();
+
+        promisesArray.push(promise);
 
       }
+
+      await Promise.all(promisesArray);
 
       startId = startId + pageLimit;
 
