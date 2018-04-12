@@ -2,14 +2,12 @@
 
 const rootPrefix = '../..'
   , coreConstants = require(rootPrefix + '/config/core_constants')
-  , QueryDBKlass = require(rootPrefix + '/app/models/queryDb')
   , util = require(rootPrefix + '/lib/util')
   , ModelBaseKlass = require(rootPrefix + '/app/models/base')
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
 ;
 
 const dbName = "saas_transaction_" + coreConstants.SUB_ENVIRONMENT + "_" + coreConstants.ENVIRONMENT
-  , QueryDBObj = new QueryDBKlass(dbName)
 
   , statuses = {
     '1': transactionLogConst.processingStatus,
@@ -36,8 +34,6 @@ const TransactionLogKlass = function () {
 TransactionLogKlass.prototype = Object.create(ModelBaseKlass.prototype);
 
 const TransactionLogKlassPrototype = {
-
-  QueryDB: QueryDBObj,
 
   tableName: 'transaction_logs',
 
