@@ -61,7 +61,7 @@ GenerateAddressKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_a_g_2", "Unhandled result", null, {}, {});
+          return responseHelper.error("s_a_g_1", "Unhandled result", null, [], {sendErrorEmail: false});
         }
       });
   },
@@ -98,7 +98,7 @@ GenerateAddressKlass.prototype = {
     }
 
     if(Object.keys(errors_object).length > 0){
-      return responseHelper.error('s_a_g_1', 'invalid params', '', [errors_object]);
+      return responseHelper.error('s_a_g_2', 'invalid params', '', [errors_object], {sendErrorEmail: false});
     }
 
     const insertedRec = await managedAddressObj.create(
@@ -163,7 +163,7 @@ GenerateAddressKlass.prototype = {
 
       if (generateAddrRsp.isFailure()) {
         logger.notify('s_ad_g_4', 'Something Went Wrong', generateAddrRsp.toHash);
-        return Promise.resolve(responseHelper.error('s_ad_g_4', 'Something Went Wrong'));
+        return Promise.resolve(responseHelper.error('s_a_g_3', 'Something Went Wrong', null, [], {sendErrorEmail: false}));
       }
 
       var eth_address = generateAddrRsp.data['address'];
@@ -179,7 +179,7 @@ GenerateAddressKlass.prototype = {
     var generateSaltRsp = await OThis._generateManagedAddressSalt(clientId);
     if (generateSaltRsp.isFailure()) {
       logger.notify('s_ad_g_5', 'Something Went Wrong', generateSaltRsp.toHash);
-      return Promise.resolve(responseHelper.error('s_ad_g_5', 'Something Went Wrong'));
+      return Promise.resolve(responseHelper.error('s_a_g_4', 'Something Went Wrong', null, [], {sendErrorEmail: false}));
     }
 
     await OThis._updateInDb(
@@ -235,12 +235,12 @@ GenerateAddressKlass.prototype = {
 
       if (insertedRec.affectedRows == 0) {
         logger.notify('s_ad_g_1', 'Something Went Wrong', err);
-        return Promise.resolve(responseHelper.error('s_ad_g_1', 'Something Went Wrong'));
+        return Promise.resolve(responseHelper.error('s_a_g_5', 'Something Went Wrong', null, [], {sendErrorEmail: false}));
       }
 
     } catch (err) {
       logger.notify('s_ad_g_2', 'Something Went Wrong', err);
-      return Promise.resolve(responseHelper.error('s_ad_g_2', 'Something Went Wrong'));
+      return Promise.resolve(responseHelper.error('s_a_g_6', 'Something Went Wrong', null, [], {sendErrorEmail: false}));
     }
 
     return Promise.resolve(responseHelper.successWithData({managed_address_salt_id: insertedRec.insertId}));
@@ -262,7 +262,8 @@ GenerateAddressKlass.prototype = {
 
     var privateKeyEncr = await obj.encrypt(privateKeyD);
     if (!privateKeyEncr) {
-      return Promise.resolve(responseHelper.error("s_ad_g_3", "Error while encrypting private key."));
+      return Promise.resolve(responseHelper.error("s_a_g_7", "Error while encrypting private key.", null, [],
+        {sendErrorEmail: false}));
     }
 
     var updateQueryResponse = managedAddressObj.edit({
