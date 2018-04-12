@@ -16,8 +16,8 @@ PopulateNewColumnsKlass.prototype = {
   perform: async function () {
 
     const oThis = this
-        , pageLimit = 10
-        , transaction_type = 'token_transfer';
+        , pageLimit = 100
+        , transaction_type = '1';
 
     var startId = oThis.startId
         , transactionLog = undefined
@@ -40,16 +40,14 @@ PopulateNewColumnsKlass.prototype = {
 
         formattedReceipt = JSON.parse(transactionLog.formatted_receipt);
 
-        new transactionLogModel().edit(
-          {
-            qParams: {
+        new transactionLogModel().updateRecord(
+            transactionLog.id,
+            {
               transaction_type: transaction_type,
               gas_used: formattedReceipt.gas_used,
               gas_price: basicHelper.convertToBigNumber(inputParams.gas_price).toString(10),
               block_number: formattedReceipt.block_number
-            },
-            whereCondition: {id: transactionLog.id}
-          }
+            }
         )
 
       }

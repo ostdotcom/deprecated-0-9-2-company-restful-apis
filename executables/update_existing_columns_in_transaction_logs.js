@@ -14,7 +14,7 @@ UpdateExistingColumnsKlass.prototype = {
   perform: async function () {
 
     const oThis = this
-        , pageLimit = 10;
+        , pageLimit = 1000;
 
     var startId = oThis.startId
         , transactionLog = undefined

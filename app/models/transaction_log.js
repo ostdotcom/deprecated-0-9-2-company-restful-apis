@@ -183,23 +183,36 @@ const TransactionLogKlassPrototype = {
    * @return {Promise<>}
    */
   _formatDbRecords: function (dbRecords) {
+
     const oThis = this;
+
     var fDbRecords = []
         , dbRecord = null;
+
     for(var i=0; i<dbRecords.length; i++) {
+
       dbRecord = dbRecords[i];
 
       if (dbRecord.input_params) {
         dbRecord.input_params = JSON.parse(dbRecord.input_params);
         dbRecord.input_params = oThis._elongateInputParams(dbRecord.input_params);
+      } else {
+        dbRecord.input_params = {};
       }
+
       if (dbRecord.formatted_receipt) {
         dbRecord.formatted_receipt = JSON.parse(dbRecord.formatted_receipt);
         dbRecord.formatted_receipt = oThis._elongateFormattedReceipt(dbRecord.formatted_receipt);
+      } else {
+        dbRecord.formatted_receipt = {};
       }
+
       fDbRecords.push(dbRecord);
+
     }
+
     return Promise.resolve(fDbRecords);
+
   },
 
   /**
