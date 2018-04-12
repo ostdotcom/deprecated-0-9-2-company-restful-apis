@@ -42,6 +42,11 @@ PopulateNewColumnsKlass.prototype = {
 
         formattedReceipt = JSON.parse(transactionLog.formatted_receipt);
 
+        if (!inputParams.gas_price) {
+          console.error('problem_with_row: ', transactionLog.id);
+          continue;
+        }
+
         promise = new transactionLogModel().update({
           transaction_type: transaction_type,
           gas_used: formattedReceipt.gas_used,
