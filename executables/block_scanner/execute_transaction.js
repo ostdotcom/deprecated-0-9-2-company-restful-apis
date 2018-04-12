@@ -204,13 +204,13 @@ BlockScannerBaseKlass.prototype = {
         const txReceipt = txReceiptResults[i];
         const decodedEvents = abiDecoder.decodeLogs(txReceipt.logs);
 
-        if (batchedTxObjs[i].input_params && batchedTxObjs[i].input_params.postAirdropParams) {
-          const postAirdropParams = batchedTxObjs[i].input_params.postAirdropParams;
+        if (batchedTxObjs[i].input_params && batchedTxObjs[i].input_params.postReceiptProcessParams) {
+          const postAirdropParams = batchedTxObjs[i].input_params.postReceiptProcessParams;
           const postAirdropPay = new PostAirdropPayKlass(postAirdropParams, decodedEvents,txReceipt.status);
           const postAirdropPayResponse = await postAirdropPay.perform();
 
           if (postAirdropPayResponse.isSuccess()) {
-            delete batchedTxObjs[i].input_params.postAirdropParams;
+            delete batchedTxObjs[i].input_params.postReceiptProcessParams;
           }
         }
 

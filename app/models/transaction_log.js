@@ -216,6 +216,7 @@ const TransactionLogKlassPrototype = {
     shortenedInputParams.tk = elongatedInputParams.transaction_kind;
     shortenedInputParams.tki = elongatedInputParams.transaction_kind_id;
     shortenedInputParams.ts = elongatedInputParams.token_symbol;
+    shortenedInputParams.prpp = elongatedInputParams.postReceiptProcessParams;
     return shortenedInputParams;
   },
 
@@ -233,6 +234,7 @@ const TransactionLogKlassPrototype = {
     elongatedInputParams.transaction_kind = shortInputParams.transaction_kind || shortInputParams.tk;
     elongatedInputParams.transaction_kind_id = shortInputParams.transaction_kind_id || shortInputParams.tki;
     elongatedInputParams.token_symbol = shortInputParams.token_symbol || shortInputParams.ts;
+    elongatedInputParams.postReceiptProcessParams = shortInputParams.prpp;
     return elongatedInputParams;
   },
 
