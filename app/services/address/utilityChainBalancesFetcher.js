@@ -46,7 +46,7 @@ UtilityChainBalancesFetcherKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_a_bf_1", "Unhandled result", null, {}, {});
+          return responseHelper.error("s_a_ucbf_1", "Unhandled result", null, [], {sendErrorEmail: false});
         }
       });
   },
@@ -156,11 +156,12 @@ UtilityChainBalancesFetcherKlass.prototype = {
     const clientBrandedTokenSecureCacheData = clientBrandedTokenSecureCacheRsp.data;
 
     if (parseInt(clientBrandedTokenSecureCacheData.client_id) != parseInt(oThis.clientId)) {
-      return Promise.resolve(responseHelper.error('bf_1', 'Unauthorised for some other client'));
+      return Promise.resolve(responseHelper.error('s_a_ucbf_2', 'Unauthorised for some other client', null, [],
+        {sendErrorEmail: false}));
     }
 
     if (!clientBrandedTokenSecureCacheData.token_erc20_address) {
-      return Promise.resolve(responseHelper.error('bf_2', 'Token Contract Not Deployed'));
+      return Promise.resolve(responseHelper.error('s_a_ucbf_3', 'Token Contract Not Deployed'));
     }
 
     const obj = new openStPlatform.services.balance.brandedToken(

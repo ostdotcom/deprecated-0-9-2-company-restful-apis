@@ -95,7 +95,7 @@ FundClientAddressKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_a_fca_2", "Unhandled result", null, {}, {});
+          return responseHelper.error("s_a_fca_2", "Unhandled result", [], {sendErrorEmail: false});
         }
       });
   },

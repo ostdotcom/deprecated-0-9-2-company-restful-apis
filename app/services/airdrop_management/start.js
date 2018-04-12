@@ -47,7 +47,7 @@ StartAirdropKlass.prototype = {
             logger.error(`${__filename}::perform::catch`);
             logger.error(error);
 
-            return responseHelper.error("s_am_s_1", "Unhandled result", null, {}, {});
+            return responseHelper.error("s_am_s_1", "Unhandled result", null, [], {sendErrorEmail: false});
           }
         })
   },
@@ -83,11 +83,12 @@ StartAirdropKlass.prototype = {
     var oThis = this;
 
     if(!oThis.clientId){
-      return Promise.reject(responseHelper.error('s_am_s_2', 'Invalid Params'));
+      return Promise.reject(responseHelper.error('s_am_s_2', 'Invalid Params', null, [], {sendErrorEmail: false}));
     }
 
     if (!oThis.airdropAmount || !oThis.airdropUserListType) {
-      return Promise.reject(responseHelper.error('s_am_s_3', 'Invalid airdropParams', null, oThis.airdropParams));
+      return Promise.reject(responseHelper.error('s_am_s_3', 'Invalid airdropParams', null, oThis.airdropParams,
+        {sendErrorEmail: false}));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));

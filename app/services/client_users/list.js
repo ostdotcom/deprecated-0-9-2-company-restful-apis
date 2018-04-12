@@ -32,7 +32,7 @@ listKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_cu_l_2", "Unhandled result", null, {}, {});
+          return responseHelper.error("s_cu_l_2", "Unhandled result", null, [], {sendErrorEmail: false});
         }
       });
   },
@@ -50,7 +50,7 @@ listKlass.prototype = {
     params.limit = pageSize;
 
     if (!params.client_id) {
-      return Promise.resolve(responseHelper.error('cu_l_1', 'invalid client id'));
+      return Promise.resolve(responseHelper.error('cu_l_1', 'invalid client id', null, [], {sendErrorEmail: false}));
     }
 
     if (!params.page_no || parseInt(params.page_no) < 1) {
