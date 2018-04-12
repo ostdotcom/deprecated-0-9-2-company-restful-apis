@@ -34,7 +34,7 @@ GetAddressesByUuidKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_cu_gabu_3", "Unhandled result", null, {}, {});
+          return responseHelper.error("s_cu_gabu_3", "Unhandled result", null, [], {sendErrorEmail: false});
         }
       });
   },
@@ -51,7 +51,7 @@ GetAddressesByUuidKlass.prototype = {
     var usersData = await managedAddress.getByUuids(oThis.uuids);
 
     if (usersData.length <= 0) {
-      return Promise.resolve(responseHelper.error("s_cu_gabu_1", "No Data found"));
+      return Promise.resolve(responseHelper.error("s_cu_gabu_1", "No Data found", null, [], {sendErrorEmail: false}));
     }
     
     var response = {};
@@ -61,7 +61,8 @@ GetAddressesByUuidKlass.prototype = {
       var user = usersData[i];
 
       if (user['client_id'] != oThis.clientId) {
-        return Promise.resolve(responseHelper.error("s_cu_gabu_2", "Invalid client details."));
+        return Promise.resolve(responseHelper.error("s_cu_gabu_2", "Invalid client details.", null, [],
+          {sendErrorEmail: false}));
       }
 
       response[user['uuid']] = user['ethereum_address'];

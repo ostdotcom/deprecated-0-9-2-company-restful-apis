@@ -2,14 +2,12 @@
 
 const rootPrefix = '../..'
   , coreConstants = require(rootPrefix + '/config/core_constants')
-  , QueryDBKlass = require(rootPrefix + '/app/models/queryDb')
   , util = require(rootPrefix + '/lib/util')
   , ModelBaseKlass = require(rootPrefix + '/app/models/base')
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
 ;
 
 const dbName = "saas_transaction_" + coreConstants.SUB_ENVIRONMENT + "_" + coreConstants.ENVIRONMENT
-  , QueryDBObj = new QueryDBKlass(dbName)
 
   , statuses = {
     '1': transactionLogConst.processingStatus,
@@ -36,8 +34,6 @@ const TransactionLogKlass = function () {
 TransactionLogKlass.prototype = Object.create(ModelBaseKlass.prototype);
 
 const TransactionLogKlassPrototype = {
-
-  QueryDB: QueryDBObj,
 
   tableName: 'transaction_logs',
 
@@ -251,6 +247,9 @@ const TransactionLogKlassPrototype = {
     var shortenedFormattedReceipt = {};
     shortenedFormattedReceipt.caiw = elongatedFormattedReceipt.commission_amount_in_wei;
     shortenedFormattedReceipt.btiw = elongatedFormattedReceipt.bt_transfer_in_wei;
+    // error related data. this is temp as would move out to error_code later.
+    shortenedFormattedReceipt.e_c = elongatedFormattedReceipt.code;
+    shortenedFormattedReceipt.e_m = elongatedFormattedReceipt.msg;
     return shortenedFormattedReceipt;
   },
 
@@ -265,6 +264,8 @@ const TransactionLogKlassPrototype = {
     var elongatedFormattedReceipt = {};
     elongatedFormattedReceipt.commission_amount_in_wei = shortFormattedReceipt.commission_amount_in_wei || shortFormattedReceipt.caiw;
     elongatedFormattedReceipt.bt_transfer_in_wei = shortFormattedReceipt.bt_transfer_in_wei || shortFormattedReceipt.btiw;
+    elongatedFormattedReceipt.code = shortFormattedReceipt.code || shortFormattedReceipt.e_c;
+    elongatedFormattedReceipt.msg = shortFormattedReceipt.msg || shortFormattedReceipt.e_m;
     return elongatedFormattedReceipt;
   }
 

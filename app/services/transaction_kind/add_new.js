@@ -54,7 +54,7 @@ AddNew.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_tk_an_1", "Unhandled result", null, {}, {});
+          return responseHelper.error("s_tk_an_4", "Unhandled result", null, [], {sendErrorEmail: false});
         }
       })
   },
@@ -100,7 +100,7 @@ AddNew.prototype = {
     ;
 
     if(!client_id || client_id==0){
-      return Promise.resolve(responseHelper.error('tk_an_1', 'invalid Client'));
+      return Promise.resolve(responseHelper.error('s_tk_an_1', 'invalid Client', null, [], {sendErrorEmail: false}));
     }
 
     if (name) {
@@ -149,8 +149,8 @@ AddNew.prototype = {
     }
 
     if(Object.keys(errors_object).length > 0){
-      logger.notify('tk_an_2', 'invalid params', errors_object);
-      return Promise.resolve(responseHelper.error('tk_an_2', 'invalid params', '', [errors_object]));
+      return Promise.resolve(responseHelper.error('s_tk_an_2', 'invalid params', '', [errors_object],
+        {sendErrorEmail: false}));
     }
 
     oThis.transactionKindObj.client_id = client_id;
@@ -178,7 +178,8 @@ AddNew.prototype = {
       const clientTransactionKind = await clientTransactionTypeObj.create(util.clone(oThis.transactionKindObj));
       oThis.transactionKindObj.id = clientTransactionKind.insertId;
     } catch(err){
-      return Promise.resolve(responseHelper.error('tk_an_3', 'Something went wrong.'));
+      return Promise.resolve(responseHelper.error('s_tk_an_3', 'Something went wrong.', null, [],
+        {sendErrorEmail: false}));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));

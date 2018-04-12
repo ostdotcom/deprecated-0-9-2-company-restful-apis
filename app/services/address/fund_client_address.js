@@ -95,7 +95,7 @@ FundClientAddressKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_a_fca_2", "Unhandled result", null, {}, {});
+          return responseHelper.error("s_a_fca_2", "Unhandled result", [], {sendErrorEmail: false});
         }
       });
   },
@@ -230,9 +230,7 @@ FundClientAddressKlass.prototype = {
    */
   _checkBalanceOfReserveAddress: async function () {
     const oThis = this
-      , managedAddressObj = new ManagedAddressKlass()
       , ethereumAddress = oThis.reserveAddrObj.ethereum_address
-      , minReserveAddrBalanceInWei = oThis._MIN_ALERT_BALANCE_RESERVE
       , minReserveAddrBalanceToProceedInWei = oThis._MIN_AVAILABLE_BALANCE_RESERVE
       , fetchBalanceObj = new openStPlatform.services.balance.simpleTokenPrime({address: ethereumAddress})
       , balanceResponse = await fetchBalanceObj.perform()
@@ -242,17 +240,9 @@ FundClientAddressKlass.prototype = {
 
     const balanceBigNumberInWei = basicHelper.convertToBigNumber(balanceResponse.data.balance);
 
-    // if (balanceBigNumberInWei.lessThan(minReserveAddrBalanceInWei)) {
-    //   logger.notify('s_a_fca_1', 'ST PRIME Balance Of Reserve Address is LOW - ' + ethereumAddress,
-    //     {
-    //       balance_st_prime: basicHelper.convertToNormal(balanceBigNumberInWei),
-    //       min_required_balance: basicHelper.convertToNormal(minReserveAddrBalanceInWei)
-    //     }
-    //   );
-    // }
-
     if (balanceBigNumberInWei.lessThan(minReserveAddrBalanceToProceedInWei)) {
-      return Promise.resolve(responseHelper.error('s_a_fca_1', 'Not enough balance'));
+      return Promise.resolve(responseHelper.error('s_a_fca_1', 'Not enough balance', null, [],
+        {sendErrorEmail: false}));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
