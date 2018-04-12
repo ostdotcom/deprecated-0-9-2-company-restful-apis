@@ -348,6 +348,7 @@ ExecuteTransactionKlass.prototype = {
     return new transactionLogModel().insertRecord({
       client_id: oThis.clientId,
       client_token_id: oThis.clientBrandedToken.id,
+      transaction_type: new transactionLogModel().invertedTransactionTypes[transactionLogConst.tokenTransferTransactionType],
       input_params: inputParams,
       chain_type: new transactionLogModel().invertedChainTypes[transactionLogConst.utilityChainType],
       status: new transactionLogModel().invertedStatuses[transactionLogConst.processingStatus],
