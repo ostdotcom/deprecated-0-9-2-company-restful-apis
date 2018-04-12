@@ -174,7 +174,7 @@ ExecuteTransactionKlass.prototype = {
       .getById([oThis.transactionLogId]);
 
     const transactionLog = transactionLogs[0];
-console.log('transactionLog', transactionLog);
+
     // check if the transaction log uuid is same as that passed in the params, otherwise error out
     if (transactionLog.transaction_uuid !== oThis.transactionUuid) {
       return Promise.resolve(
@@ -188,8 +188,9 @@ console.log('transactionLog', transactionLog);
         responseHelper.error("s_t_et_1", "Only processing statuses are allowed here.", null, {}, {sendErrorEmail: false})
       )
     }
+
     const ransaction_params = transactionLog.input_params;
-    console.log('ransaction_params', ransaction_params);
+
     oThis.clientId = transactionLog.client_id;
     oThis.fromUuid = ransaction_params.from_uuid;
     oThis.toUuid = ransaction_params.to_uuid;
@@ -372,9 +373,6 @@ console.log('transactionLog', transactionLog);
 
     var approveResponse = await new ApproveContractKlass(inputParams).perform();
 
-    inputParams = approveResponse.data['input_params'];
-    var error = approveResponse.data['error']
-      , approveTransactionHash = approveResponse.data['transaction_hash'];
     var approveStatus = (approveResponse.isFailure() ? transactionLogConst.failedStatus : transactionLogConst.completeStatus);
 
     if(approveResponse.isFailure()) {
@@ -382,6 +380,7 @@ console.log('transactionLog', transactionLog);
     }
 
     return Promise.resolve(approveResponse);
+
   },
 
   /**
@@ -401,9 +400,6 @@ console.log('transactionLog', transactionLog);
     };
     var refillGasResponse = await new TransferStPrimeKlass(inputParams).perform();
 
-    inputParams = refillGasResponse.data['input_params'];
-    var error = refillGasResponse.data['error']
-      , TransactionHash = refillGasResponse.data['transaction_hash'];
     var refillStatus = (refillGasResponse.isFailure() ? transactionLogConst.failedStatus : transactionLogConst.completeStatus);
 
     if (refillGasResponse.isFailure()) {
@@ -411,6 +407,7 @@ console.log('transactionLog', transactionLog);
     }
 
     return Promise.resolve(refillGasResponse);
+
   },
 
   /**
@@ -422,10 +419,9 @@ console.log('transactionLog', transactionLog);
     const oThis = this
       , reserveUser = oThis.userRecords[oThis.clientBrandedToken.reserve_address_uuid]
     ;
-console.log('reserveUser', reserveUser);
-    console.log('oThis.workerUser', oThis.workerUser);
+
     if(!oThis.workerUser || !reserveUser){
-      await oThis.updateParentTransactionLog(transactionLogConst.failedStatus, {error: "Worker or reserve user not found. "});
+      await oThis.updateParentTransactionLog(transactionLogConst.failedStatus, {msg: "Worker or reserve user not found. "});
       return Promise.resolve(responseHelper.error('s_t_et_14', "Worker or reserve user not found", null, {}, {sendErrorEmail: false}));
     }
 
@@ -453,8 +449,6 @@ console.log('reserveUser', reserveUser);
       gas_price: oThis.gasPrice,
       options: {tag: oThis.transactionTypeRecord.name, returnType: 'txHash'}
     };
-
-    console.log('payMethodParams', payMethodParams);
 
     const payObject = new AirdropManagerPayKlass(payMethodParams);
 

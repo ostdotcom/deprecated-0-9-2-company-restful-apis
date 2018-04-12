@@ -247,6 +247,9 @@ const TransactionLogKlassPrototype = {
     var shortenedFormattedReceipt = {};
     shortenedFormattedReceipt.caiw = elongatedFormattedReceipt.commission_amount_in_wei;
     shortenedFormattedReceipt.btiw = elongatedFormattedReceipt.bt_transfer_in_wei;
+    // error related data. this is temp as would move out to error_code later.
+    shortenedFormattedReceipt.e_c = elongatedFormattedReceipt.code;
+    shortenedFormattedReceipt.e_m = elongatedFormattedReceipt.msg;
     return shortenedFormattedReceipt;
   },
 
@@ -261,6 +264,8 @@ const TransactionLogKlassPrototype = {
     var elongatedFormattedReceipt = {};
     elongatedFormattedReceipt.commission_amount_in_wei = shortFormattedReceipt.commission_amount_in_wei || shortFormattedReceipt.caiw;
     elongatedFormattedReceipt.bt_transfer_in_wei = shortFormattedReceipt.bt_transfer_in_wei || shortFormattedReceipt.btiw;
+    elongatedFormattedReceipt.code = shortFormattedReceipt.code || shortFormattedReceipt.e_c;
+    elongatedFormattedReceipt.msg = shortFormattedReceipt.msg || shortFormattedReceipt.e_m;
     return elongatedFormattedReceipt;
   }
 
