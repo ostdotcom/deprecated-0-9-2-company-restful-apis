@@ -503,7 +503,7 @@ ExecuteTransactionKlass.prototype = {
   updateParentTransactionLog: function (statusString, failedResponse) {
     const oThis = this
         , statusInt = new transactionLogModel().invertedStatuses[statusString];
-    var dataToUpdate = {status: statusInt, transaction_hash: oThis.transactionHash, input_params: JSON.stringify(oThis.inputParams)};
+    var dataToUpdate = {status: statusInt, transaction_hash: oThis.transactionHash, input_params: oThis.inputParams};
     if (failedResponse) {
       dataToUpdate['formatted_receipt'] = failedResponse;
     }
