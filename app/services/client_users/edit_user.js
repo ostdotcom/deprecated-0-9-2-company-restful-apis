@@ -27,7 +27,7 @@ const editUser = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_cu_eu_4", "Unhandled result", null, {}, {});
+          return responseHelper.error("s_cu_eu_4", "Unhandled result", null, [], {sendErrorEmail: false});
         }
       });
   },
@@ -46,7 +46,7 @@ const editUser = {
       , errors_object = {};
 
     if (!clientId || !userUuid) {
-      return responseHelper.error("s_cu_eu_1", "Mandatory parameters missing");
+      return responseHelper.error("s_cu_eu_1", "Mandatory parameters missing", null, [], {sendErrorEmail: false});
     }
 
     if (name) {
@@ -62,7 +62,7 @@ const editUser = {
     }
 
     if(Object.keys(errors_object).length > 0){
-      return responseHelper.error('s_cu_eu_2', 'invalid params', '', [errors_object]);
+      return responseHelper.error('s_cu_eu_2', 'invalid params', '', [errors_object], {sendErrorEmail: false});
     }
 
     var managedAddressCache = new ManagedAddressCacheKlass({'uuids': [userUuid]});
@@ -70,17 +70,17 @@ const editUser = {
     const cacheFetchResponse = await managedAddressCache.fetch();
 
     if (cacheFetchResponse.isFailure()) {
-      return responseHelper.error("s_cu_eu_2", "User not found");
+      return responseHelper.error("s_cu_eu_2", "User not found", null, [], {sendErrorEmail: false});
     }
 
     const response = cacheFetchResponse.data[userUuid];
 
     if (!response) {
-      return responseHelper.error("s_cu_eu_2.1", "User not found");
+      return responseHelper.error("s_cu_eu_2.1", "User not found", null, [], {sendErrorEmail: false});
     }
 
     if (response['client_id'] != clientId) {
-      return responseHelper.error("s_cu_eu_3", "User does not belong to client");
+      return responseHelper.error("s_cu_eu_3", "User does not belong to client", null, [], {sendErrorEmail: false});
     }
 
     const ethereumAddress = response['ethereum_address']
