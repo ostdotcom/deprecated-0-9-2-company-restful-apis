@@ -188,14 +188,14 @@ ExecuteTransactionKlass.prototype = {
         responseHelper.error("s_t_et_1", "Only processing statuses are allowed here.", null, {}, {sendErrorEmail: false})
       )
     }
-
-    const ransaction_params = transactionLog.input_params;
+    const transaction_params = transactionLog.input_params;
 
     oThis.clientId = transactionLog.client_id;
-    oThis.fromUuid = ransaction_params.from_uuid;
-    oThis.toUuid = ransaction_params.to_uuid;
-    oThis.transactionKind = ransaction_params.transaction_kind;
+    oThis.fromUuid = transaction_params.from_uuid;
+    oThis.toUuid = transaction_params.to_uuid;
+    oThis.transactionKind = transaction_params.transaction_kind;
     oThis.gasPrice = basicHelper.convertToHex(transactionLog.gas_price);
+    oThis.inputParams = transaction_params;
 
     return Promise.resolve(responseHelper.successWithData({}));
 
@@ -348,6 +348,7 @@ ExecuteTransactionKlass.prototype = {
     return new transactionLogModel().insertRecord({
       client_id: oThis.clientId,
       client_token_id: oThis.clientBrandedToken.id,
+      transaction_type: new transactionLogModel().invertedTransactionTypes[transactionLogConst.tokenTransferTransactionType],
       input_params: inputParams,
       chain_type: new transactionLogModel().invertedChainTypes[transactionLogConst.utilityChainType],
       status: new transactionLogModel().invertedStatuses[transactionLogConst.processingStatus],
@@ -447,7 +448,7 @@ ExecuteTransactionKlass.prototype = {
       intended_price_point: basicHelper.convertToWei(ostValue).toString(),
       spender: oThis.userRecords[oThis.fromUuid].ethereum_address,
       gas_price: oThis.gasPrice,
-      options: {tag: oThis.transactionTypeRecord.name, returnType: 'txHash'}
+      options: {tag: oThis.transactionTypeRecord.name, returnType: 'txHash', shouldHandlePostPay:0 }
     };
 
     const payObject = new AirdropManagerPayKlass(payMethodParams);
@@ -490,6 +491,7 @@ ExecuteTransactionKlass.prototype = {
 
     oThis.transactionHash = payResponse.data.transaction_hash;
 
+    oThis.inputParams.postAirdropParams = payResponse.data.post_pay_params;
     oThis.updateParentTransactionLog(transactionLogConst.waitingForMiningStatus);
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -506,7 +508,7 @@ ExecuteTransactionKlass.prototype = {
   updateParentTransactionLog: function (statusString, failedResponse) {
     const oThis = this
         , statusInt = new transactionLogModel().invertedStatuses[statusString];
-    var dataToUpdate = {status: statusInt, transaction_hash: oThis.transactionHash};
+    var dataToUpdate = {status: statusInt, transaction_hash: oThis.transactionHash, input_params: oThis.inputParams};
     if (failedResponse) {
       dataToUpdate['formatted_receipt'] = failedResponse;
     }

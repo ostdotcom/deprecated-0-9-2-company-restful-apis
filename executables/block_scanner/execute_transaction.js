@@ -11,6 +11,7 @@ const fs = require('fs')
   , Web3 = require('web3')
   , abiDecoder = require('abi-decoder')
   , openStPlatform = require('@openstfoundation/openst-platform')
+  , openStPayments = require('@openstfoundation/openst-payments')
 ;
 
 const rootPrefix = '../..'
@@ -18,6 +19,7 @@ const rootPrefix = '../..'
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
+  , PostAirdropPayKlass = openStPayments.services.airdropManager.postAirdropPay
 ;
 
 const coreAbis = openStPlatform.abis
@@ -163,7 +165,8 @@ BlockScannerBaseKlass.prototype = {
         oThis.shortlistedTxObjs.push(
           {
             transaction_hash: currRecord.transaction_hash,
-            id: currRecord.id
+            id: currRecord.id,
+            input_params: currRecord.input_params
           });
       }
     }
@@ -201,11 +204,22 @@ BlockScannerBaseKlass.prototype = {
         const txReceipt = txReceiptResults[i];
         const decodedEvents = abiDecoder.decodeLogs(txReceipt.logs);
 
+        if (batchedTxObjs[i].input_params && batchedTxObjs[i].input_params.postReceiptProcessParams) {
+          const postAirdropParams = batchedTxObjs[i].input_params.postReceiptProcessParams;
+          const postAirdropPay = new PostAirdropPayKlass(postAirdropParams, decodedEvents,txReceipt.status);
+          const postAirdropPayResponse = await postAirdropPay.perform();
+
+          if (postAirdropPayResponse.isSuccess()) {
+            delete batchedTxObjs[i].input_params.postReceiptProcessParams;
+          }
+        }
+
         const eventData = oThis._getEventData(decodedEvents);
 
         batchedTxObjs[i].commission_amount_in_wei = eventData._commissionTokenAmount;
         batchedTxObjs[i].bt_transfer_in_wei = eventData._tokenAmount;
         batchedTxObjs[i].gas_used = txReceipt.gasUsed;
+
         batchedTxObjs[i].status = parseInt(txReceipt.status, 16);
       }
 
@@ -247,7 +261,7 @@ BlockScannerBaseKlass.prototype = {
 
         const promise = new TransactionLogModel().updateRecord(
           batchedTxObjs[i].id,
-          {status: status, formatted_receipt: formattedReceipt,
+          {status: status, formatted_receipt: formattedReceipt, input_params: batchedTxObjs[i].input_params,
             block_number: oThis.currentBlock, gas_used: batchedTxObjs[i].gas_used}
         );
 
