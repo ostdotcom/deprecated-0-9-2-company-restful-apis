@@ -72,10 +72,9 @@ listKlass.prototype = {
 
     var usersList = []
       , ethereumAddresses = []
-      , length = queryResponse.length
       , hasMore = false;
 
-    for (var i = 0; i < length; i++) {
+    for (var i = 0; i < queryResponse.length; i++) {
       const object = queryResponse[i];
 
       if (!object['name']) {
@@ -101,7 +100,7 @@ listKlass.prototype = {
       balanceHashData = userBalancesResponse.data;
     }
 
-    for (var i = 0; i < length; i++) {
+    for (var i = 0; i < queryResponse.length; i++) {
 
       const object = queryResponse[i];
 

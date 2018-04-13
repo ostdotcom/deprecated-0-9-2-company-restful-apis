@@ -131,8 +131,7 @@ const ManagedAddressKlassPrototype = {
       , filter = params.filter
     ;
 
-    let query = oThis.select(['id', 'name', 'uuid', 'ethereum_address'])
-      .where({client_id: clientId});
+    let query = oThis.select(['id', 'name', 'uuid', 'ethereum_address']).where({client_id: clientId});
 
     if (filter == clientAirdropConst.neverAirdroppedAddressesAirdropListType) {
       query.where(['(properties & ?) = 0', invertedProperties[managedAddressesConst.airdropGrantProperty]]);
@@ -141,7 +140,7 @@ const ManagedAddressKlassPrototype = {
     let orderByStr = (orderBy.toLowerCase() == 'name') ? 'name' : 'id';
     orderByStr += (orderType.toLowerCase() == 'asc') ? ' ASC' : ' DESC';
 
-    return query.order_by(orderByStr).limit(params.limit).offset(params.offset);
+    return query.order_by(orderByStr).limit(params.limit).offset(params.offset).fire();
   },
 
   getByUuids: function (uuids) {

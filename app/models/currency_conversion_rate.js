@@ -15,16 +15,16 @@ const dbName = "company_saas_shared_" + coreConstants.SUB_ENVIRONMENT + "_" + co
     2: conversionRatesConst.inactive_status(),
     3: conversionRatesConst.inprocess_status()
   }
-  , invertedStatuses = util.invert(statuses)
+  , invertedStatuses = utils.invert(statuses)
   , baseCurrencies = {
     1: conversionRatesConst.ost_currency()
   }
-  , invertedBaseCurrencies = util.invert(baseCurrencies)
+  , invertedBaseCurrencies = utils.invert(baseCurrencies)
   , quoteCurrencies = {
     1: conversionRatesConst.usd_currency(),
     2: conversionRatesConst.eur_currency()
   }
-  , invertedQuoteCurrencies = util.invert(quoteCurrencies)
+  , invertedQuoteCurrencies = utils.invert(quoteCurrencies)
 ;
 
 const CurrencyConversionRateModel = function () {
