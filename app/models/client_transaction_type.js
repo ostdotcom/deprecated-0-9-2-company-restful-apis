@@ -68,9 +68,12 @@ const ClientTransactionTypeModelSpecificPrototype = {
       , return_result = []
     ;
 
-    const results = await oThis.select('*').where({client_id: params['clientId']})
-      .limit(params['limit']).offset(params['offset']).fire();
+    const query = oThis.select('*').where({client_id: params['clientId']});
 
+    if(params && params.limit) query.limit(params.limit);
+    if(params && params.offset) query.offset(params.offset);
+
+    const results = await query.fire();
     for (var i = 0; i < results.length; i++) {
       return_result.push(oThis.convertEnumForResult(results[i]));
     }
