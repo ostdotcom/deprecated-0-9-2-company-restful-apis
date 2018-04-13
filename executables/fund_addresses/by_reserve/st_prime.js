@@ -32,55 +32,67 @@ const FundClientAddressKlass = require(rootPrefix + '/app/services/address/fund_
  *
  * @constructor
  */
-const FundUsersWithSTPrimeFromReserveKlass = function () {};
+const FundUsersWithSTPrimeFromReserveKlass = function () {
+};
 
 FundUsersWithSTPrimeFromReserveKlass.prototype = {
+  /**
+   * perform
+   *
+   * @return {promise<result>}
+   */
+  perform: function () {
+    const oThis = this;
+
+    return oThis.asyncPerform()
+      .catch(function (error) {
+        logger.error(`${__filename}::perform::catch`);
+        logger.error(error);
+        process.exit(1);
+      });
+  },
 
   /**
-   * Perform
+   * asyncPerform
    *
+   * @return {promise<result>}
    */
-  perform: async function () {
+  asyncPerform: async function () {
+    const batchSize = 100
+    ;
 
-    const oThis = this
-      , batchSize = 1
-      , clientIds = []
-      , clientObjects = await new ClientBrandedTokenModel().select("*").fire();
+    var pageNo = 1;
 
-    for(var i=0; i<clientObjects.length; i++){
-      const c_o = clientObjects[i];
-      if(c_o.airdrop_contract_addr){
-        clientIds.push(clientObjects[i].client_id);
+    while (true) {
+      const offset = (pageNo - 1) * batchSize;
+
+      const clientBrandedTokenRecords = await new ClientBrandedTokenModel()
+        .select(['airdrop_contract_addr', 'client_id'])
+        .limit(batchSize)
+        .offset(offset)
+        .fire();
+
+      if (clientBrandedTokenRecords.length == 0) break;
+
+      pageNo = pageNo + 1;
+
+      for (var i = 0; i < clientBrandedTokenRecords.length; i++) {
+        if (!clientBrandedTokenRecords[i].airdrop_contract_addr) continue;
+
+        const clientId = clientBrandedTokenRecords[i].client_id;
+
+        logger.step('* Funding ST prime for client id:', clientId);
+
+        await new FundClientAddressKlass({client_id: clientId}).perform();
+
+        logger.win('* DONE with ST prime funding for client id:', clientId);
       }
     }
 
-    const numberOfClients = clientIds.length;
-
-    var currStart = 0;
-    while(currStart < numberOfClients) {
-      const batchedClientIds = clientIds.slice(currStart, currStart + batchSize);
-      currStart = currStart + batchSize;
-
-      const promiseArray = [];
-
-      logger.debug("Starting Fund ST' for client ids ", batchedClientIds);
-      for(var i = 0; i < batchedClientIds.length; i++) {
-        logger.debug("Funding ST' for client id ", batchedClientIds[i]);
-        const fundClientAddressObj = new FundClientAddressKlass({client_id: batchedClientIds[i]});
-        promiseArray.push(fundClientAddressObj.perform());
-      }
-
-      logger.info("Waiting for all promises");
-      await Promise.all(promiseArray);
-      logger.debug("Ended Fund ST' for client ids ", batchedClientIds);
-    }
-
-    logger.debug("Can exit now");
+    logger.step('* Exiting after all funding done.');
     process.exit(0);
   }
-
 };
 
 // perform action
-const FundUsersWithSTPrimeFromReserveObj = new FundUsersWithSTPrimeFromReserveKlass();
-FundUsersWithSTPrimeFromReserveObj.perform();
+new FundUsersWithSTPrimeFromReserveKlass().perform();
