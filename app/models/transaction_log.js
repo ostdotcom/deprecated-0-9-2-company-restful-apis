@@ -242,6 +242,7 @@ const TransactionLogKlassPrototype = {
    */
   _elongateInputParams: function (shortInputParams) {
     var elongatedInputParams = {};
+    // TODO: After migrating remove support for long keys
     elongatedInputParams.from_uuid = shortInputParams.from_uuid || shortInputParams.fu;
     elongatedInputParams.to_uuid = shortInputParams.to_uuid || shortInputParams.tu;
     elongatedInputParams.transaction_kind = shortInputParams.transaction_kind || shortInputParams.tk;

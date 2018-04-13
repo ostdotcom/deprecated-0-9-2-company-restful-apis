@@ -188,14 +188,14 @@ ExecuteTransactionKlass.prototype = {
         responseHelper.error("s_t_et_1", "Only processing statuses are allowed here.", null, {}, {sendErrorEmail: false})
       )
     }
-    const transaction_params = transactionLog.input_params;
+    const transactionParams = transactionLog.input_params;
 
     oThis.clientId = transactionLog.client_id;
-    oThis.fromUuid = transaction_params.from_uuid;
-    oThis.toUuid = transaction_params.to_uuid;
-    oThis.transactionKind = transaction_params.transaction_kind;
+    oThis.fromUuid = transactionParams.from_uuid;
+    oThis.toUuid = transactionParams.to_uuid;
+    oThis.transactionKind = transactionParams.transaction_kind;
     oThis.gasPrice = basicHelper.convertToHex(transactionLog.gas_price);
-    oThis.inputParams = transaction_params;
+    oThis.inputParams = transactionParams;
 
     return Promise.resolve(responseHelper.successWithData({}));
 
