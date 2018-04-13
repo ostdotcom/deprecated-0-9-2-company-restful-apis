@@ -85,7 +85,6 @@ const NonceCacheKlassPrototype = {
     ;
 
     return lockStatusResponse.isSuccess() && lockStatusResponse.data.response > 0;
-
   },
 
   /**
@@ -309,21 +308,30 @@ const NonceCacheKlassPrototype = {
    */
   _acquireLock: async function() {
     const oThis = this
-      , lockResponse = await oThis.cacheImplementer.increment(oThis.cacheLockKey)
     ;
-    logger.log("NM :: oThis.cacheLockKey: ",oThis.cacheLockKey);
-    if (lockResponse.isSuccess()) {
-      // Response should be 1 to call it acquired.
-      if (lockResponse.data.response == 1) {
-        return Promise.resolve(responseHelper.successWithData({}));
-      }
+
+    // check if already locked
+    const isLocked = await oThis.isLocked();
+    if(isLocked) {
+      return responseHelper.error("l_nm_acquireLock_1", "Lock is already given to some other process. Waiting for lock release.",
+        null, [], {sendErrorEmail: false});
+    }
+
+    const lockResponse = await oThis.cacheImplementer.increment(oThis.cacheLockKey);
+    if(lockResponse.isFailure()) {
+      return responseHelper.error("l_nm_acquireLock_2", "Error in acquiring lock using cache increment.");
+    }
+
+    // lock was not given to current request
+    if (lockResponse.data.response != 1) {
       // Revert the increased lock if value is not 1.
       // Means someone else has acquired the lock already.
       await oThis.cacheImplementer.decrement(oThis.cacheLockKey);
+      return responseHelper.error("l_nm_acquireLock_3", "Lock is already given to some other process. Waiting for lock release.",
+        null, [], {sendErrorEmail: false});
     }
-    return Promise.resolve(responseHelper.error("l_nm_acquireLock_1", "unable to acquire lock",
-      null, [], {sendErrorEmail: false}));
 
+    return responseHelper.successWithData({});
   },
 
   /**
