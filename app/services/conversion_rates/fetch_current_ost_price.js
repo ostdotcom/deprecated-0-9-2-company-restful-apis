@@ -83,7 +83,7 @@ FetchCurrentOSTPriceKlass.prototype = {
     // Insert current ost value in database
     const insertResponse = await new CurrencyConversionRateModel().insert({
       base_currency: new CurrencyConversionRateModel().invertedBaseCurrencies[oThis.currentOstValue.base_currency],
-      quote_currency: new CurrencyConversionRateModel().invertedQuoteCurrencies[oThis.currentOstValue.quoteCurrency],
+      quote_currency: new CurrencyConversionRateModel().invertedQuoteCurrencies[oThis.currentOstValue.quote_currency],
       conversion_rate: oThis.currentOstValue.conversion_rate,
       timestamp: oThis.currentTime,
       status: new CurrencyConversionRateModel().invertedStatuses[oThis.currentOstValue.status]
