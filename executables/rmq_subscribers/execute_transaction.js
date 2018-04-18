@@ -15,7 +15,6 @@ require(rootPrefix + '/module_overrides/index');
 
 // Include Process Locker File
 const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker')
-  , PromiseQueueManagerKlass = require( rootPrefix + "/executables/rmq_subscribers/promise_queue_manager")
   , ProcessLocker = new ProcessLockerKlass()
 ;
 const args = process.argv
@@ -29,7 +28,9 @@ ProcessLocker.canStartProcess({process_title: 'executables_rmq_subscribers_execu
 //ProcessLocker.endAfterTime({time_in_minutes: 60});
 
 // Load external packages
-const openSTNotification = require('@openstfoundation/openst-notification');
+const openSTNotification = require('@openstfoundation/openst-notification')
+  , OSTCore = require('@openstfoundation/openst-core')
+;
 
 //All Module Requires.
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
@@ -92,7 +93,7 @@ const publishToSlowQueue = async function (parsedParams) {
 
 
 const prefetchCount = ((slowProcessor || '') == 'slow') ? 25 : 100;
-const PromiseQueueManager = new PromiseQueueManagerKlass(promiseExecutor, {
+const PromiseQueueManager = new OSTCore.OSTPromise.QueueManager(promiseExecutor, {
   name: "execute_tx_promise_queue_manager"
   , timeoutInMilliSecs: 3 * 60 * 1000 //3 minutes
   , maxZombieCount: Math.round( prefetchCount * 0.25 )
@@ -102,7 +103,6 @@ const PromiseQueueManager = new PromiseQueueManagerKlass(promiseExecutor, {
     process.kill(process.pid, "SIGTERM");
   }
 });
-
 
 const topicPrefix = slowProcessor ? 'slow.' : '';
 openSTNotification.subscribeEvent.rabbit([topicPrefix + "transaction.execute"],
