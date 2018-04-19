@@ -70,7 +70,7 @@ addMoreWorkersKlass.prototype = {
             logger.error('executables/add_more_workers.js::perform::catch');
             logger.error(error);
 
-            errorObj = responseHelper.error("l_sw_1", "Inside catch block", null, {error: error}, {sendErrorEmail: true});
+            errorObj = responseHelper.error("l_sw_1", "Inside catch block", {error: error}, {sendErrorEmail: true});
 
           }
 
@@ -272,7 +272,7 @@ addMoreWorkersKlass.prototype = {
       for(var i=0; i<promiseResolvers.length; i++) {
         var r = promiseResponses[i];
         if (r.isFailure()) {
-          logger.notify('l_sw_2', 'Set Worker Failed', r.toHash());
+          logger.notify('l_sw_2', 'Set Worker Failed', r.toHash(), {clientId: clientId});
         } else {
           formattedPromiseResponses[workerAddressesIdToUpdateMap[workerAddrs[i]]] = r.data;
           successWorkerAddrIds.push(workerAddressesIdToUpdateMap[workerAddrs[i]]);
@@ -281,8 +281,7 @@ addMoreWorkersKlass.prototype = {
 
       if (successWorkerAddrIds.length == 0) {
         const errorRsp = responseHelper.error(
-            'l_sw_3', 'could not set any worker',
-            null, {data: formattedPromiseResponses}
+            'l_sw_3', 'could not set any worker', {data: formattedPromiseResponses}
         );
         return Promise.reject(errorRsp);
       }

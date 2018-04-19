@@ -55,7 +55,7 @@ FetchCurrentOSTPriceKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("f_c_o_p_7", "Unhandled result", null, [], {sendErrorEmail: false});
+          return responseHelper.error("f_c_o_p_7", "Unhandled result", {}, {sendErrorEmail: false});
         }
       });
   },
