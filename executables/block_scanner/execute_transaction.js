@@ -138,6 +138,8 @@ BlockScannerBaseKlass.prototype = {
     const oThis = this
       , batchSize = 100
       , waitingForMiningStatus = new TransactionLogModel().invertedStatuses[transactionLogConst.waitingForMiningStatus]
+      , tokenTransferTransactionType = new TransactionLogModel().invertedTransactionTypes[transactionLogConst.tokenTransferTransactionType]
+
     ;
 
     var batchNo = 1;
@@ -161,6 +163,8 @@ BlockScannerBaseKlass.prototype = {
         const currRecord = batchedTxLogRecords[i];
 
         if(currRecord.status != waitingForMiningStatus) continue;
+
+        if(currRecord.transaction_type != tokenTransferTransactionType) continue;
 
         oThis.shortlistedTxObjs.push(
           {
