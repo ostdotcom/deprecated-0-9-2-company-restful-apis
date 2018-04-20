@@ -127,7 +127,7 @@ const TransactionLogKlassPrototype = {
    */
   getByTransactionHash: async function (transaction_hashes) {
     const oThis = this;
-    const dbRecords = await oThis.select(['id', 'transaction_hash', 'transaction_uuid', 'process_uuid', 'status', 'input_params']).
+    const dbRecords = await oThis.select(['id', 'transaction_hash', 'transaction_uuid', 'process_uuid', 'status', 'input_params', 'transaction_type']).
               where(['transaction_hash IN (?)', transaction_hashes]).fire();
     return oThis._formatDbRecords(dbRecords);
   },

@@ -494,7 +494,7 @@ ExecuteTransactionKlass.prototype = {
 
     oThis.transactionHash = payResponse.data.transaction_hash;
 
-    oThis.inputParams.postAirdropParams = payResponse.data.post_pay_params;
+    oThis.inputParams.postReceiptProcessParams = payResponse.data.post_receipt_process_params;
     oThis.updateParentTransactionLog(transactionLogConst.waitingForMiningStatus);
 
     return Promise.resolve(responseHelper.successWithData({}));
