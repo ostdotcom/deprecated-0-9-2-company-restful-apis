@@ -41,7 +41,7 @@ GetStakedAmountKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_sam_gsa_1", "Unhandled result", null, {}, {});
+          return responseHelper.error("s_sam_gsa_1", "Unhandled result", {}, {});
         }
       })
   },

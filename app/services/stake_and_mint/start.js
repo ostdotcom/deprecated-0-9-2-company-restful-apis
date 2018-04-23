@@ -52,7 +52,7 @@ StartStakeAndMintKlass.prototype = {
             logger.error(`${__filename}::perform::catch`);
             logger.error(error);
 
-            return responseHelper.error("s_s_sm_s_1", "Unhandled result", null, {}, {});
+            return responseHelper.error("s_s_sm_s_1", "Unhandled result", {}, {});
           }
         })
   },
@@ -94,7 +94,7 @@ StartStakeAndMintKlass.prototype = {
     if (!oThis.stakeAndMintParams || !oThis.stakeAndMintParams.bt_to_mint ||
         !oThis.stakeAndMintParams.st_prime_to_mint || !oThis.stakeAndMintParams.client_eth_address ||
         !oThis.stakeAndMintParams.transaction_hash) {
-      return Promise.reject(responseHelper.error('s_sm_s_3', 'Invalid stakeAndMintParams', null, oThis.stakeAndMintParams));
+      return Promise.reject(responseHelper.error('s_sm_s_3', 'Invalid stakeAndMintParams', oThis.stakeAndMintParams));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));

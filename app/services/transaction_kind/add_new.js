@@ -53,7 +53,7 @@ AddNew.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_tk_an_4", "Unhandled result", null, [], {sendErrorEmail: false});
+          return responseHelper.error("s_tk_an_4", "Unhandled result", {}, {sendErrorEmail: false});
         }
       })
   },
@@ -99,7 +99,7 @@ AddNew.prototype = {
     ;
 
     if(!client_id || client_id==0){
-      return Promise.resolve(responseHelper.error('s_tk_an_1', 'invalid Client', null, [], {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error('s_tk_an_1', 'invalid Client', {}, {sendErrorEmail: false}));
     }
 
     if (name) {

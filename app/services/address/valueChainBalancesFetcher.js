@@ -39,7 +39,7 @@ valueChainBalancesFetcherKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_a_vcbf_1", "Unhandled result", null, [], {sendErrorEmail: false});
+          return responseHelper.error("s_a_vcbf_1", "Unhandled result", {}, {sendErrorEmail: false});
         }
       });
   },
@@ -65,9 +65,10 @@ valueChainBalancesFetcherKlass.prototype = {
 
       } else {
 
-        var promise = Promise.resolve(responseHelper.error('s_a_vcbf_2', "unsupported balanceType: " + balanceTypes[i],
-          null, [], {sendErrorEmail: false}));
-
+        var promise = Promise.resolve(responseHelper.error(
+            's_a_vcbf_2',
+            "unsupported balanceType: " + balanceTypes[i],
+            {}, {sendErrorEmail: false}));
       }
 
       promiseResolvers.push(promise);
@@ -83,7 +84,7 @@ valueChainBalancesFetcherKlass.prototype = {
         , balance = null;
 
       if (response.isFailure()) {
-        logger.notify('b_f1_2', 'Something Went Wrong', response);
+        logger.notify('b_f1_2', 'Something Went Wrong', response, {clientId: oThis.clientId});
       } else {
         var data = response.data;
         if (data && data.balance) {

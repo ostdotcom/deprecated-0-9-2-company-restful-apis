@@ -61,7 +61,7 @@ simulateRandomTransactionKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_tr_srt_10", "Unhandled result", null, [], {sendErrorEmail: false});
+          return responseHelper.error("s_tr_srt_10", "Unhandled result", {}, {sendErrorEmail: false});
         }
       })
   },
@@ -118,7 +118,7 @@ simulateRandomTransactionKlass.prototype = {
     const cacheRsp = await btSecureCache.fetch();
 
     if (cacheRsp.isFailure()) {
-      return Promise.resolve(responseHelper.error("s_tr_srt_1", "Invalid Token Symbol", null, [], {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error("s_tr_srt_1", "Invalid Token Symbol", {}, {sendErrorEmail: false}));
     }
 
     oThis.clientBrandedToken = cacheRsp.data;
@@ -158,7 +158,7 @@ simulateRandomTransactionKlass.prototype = {
     var countCacheObj = new ClientUsersCntCacheKlass({client_id: oThis.clientId});
     var resp = await countCacheObj.fetch();
     if(resp.isFailure() || parseInt(resp.data) <= 0){
-      return Promise.resolve(responseHelper.error('s_tr_srt_1', 'No active users for client.', null, [],
+      return Promise.resolve(responseHelper.error('s_tr_srt_1', 'No active users for client.', {},
         {sendErrorEmail: false}));
     }
 
@@ -169,7 +169,7 @@ simulateRandomTransactionKlass.prototype = {
     var usersCount = users.length;
 
     if(usersCount < 2){
-      return Promise.resolve(responseHelper.error('s_tr_srt_2', 'No active users for client.', null, [],
+      return Promise.resolve(responseHelper.error('s_tr_srt_2', 'No active users for client.', {},
         {sendErrorEmail: false}));
     }
 
@@ -188,7 +188,7 @@ simulateRandomTransactionKlass.prototype = {
     //     , user = null;
     //
     // if (userBalancesResponse.isFailure()) {
-    //   return Promise.resolve(responseHelper.error('s_tr_srt_3', 'could not fetch balances', null, [],
+    //   return Promise.resolve(responseHelper.error('s_tr_srt_3', 'could not fetch balances', {},
     //      {sendErrorEmail: false}));
     // } else {
     //   balanceHashData = userBalancesResponse.data;
@@ -226,7 +226,7 @@ simulateRandomTransactionKlass.prototype = {
     var countCacheObj = new ClientTrxTypeCntCacheKlass({clientId: oThis.clientId});
     var resp = await countCacheObj.fetch();
     if(resp.isFailure() || parseInt(resp.data) <= 0){
-      return Promise.resolve(responseHelper.error('s_tr_srt_4', 'No active transactions for client.', null, [],
+      return Promise.resolve(responseHelper.error('s_tr_srt_4', 'No active transactions for client.', {},
         {sendErrorEmail: false}));
     }
 
@@ -242,7 +242,7 @@ simulateRandomTransactionKlass.prototype = {
     var trxTypes = await new ClientTransactionTypeModel().getAll(params);
 
     if(!trxTypes[0]){
-      return Promise.resolve(responseHelper.error('s_tr_srt_6', 'No active transactions for client.', null, [],
+      return Promise.resolve(responseHelper.error('s_tr_srt_6', 'No active transactions for client.', {},
         {sendErrorEmail: false}));
     }
 
@@ -439,12 +439,12 @@ simulateRandomTransactionKlass.prototype = {
     const oThis = this;
 
     if(!txParams.from_uuid || !txParams.to_uuid){
-      return Promise.resolve(responseHelper.error("s_tr_srt_8", "Something went wrong.", null, [],
+      return Promise.resolve(responseHelper.error("s_tr_srt_8", "Something went wrong.", {},
         {sendErrorEmail: false}));
     }
 
     if(txParams.from_uuid === txParams.to_uuid){
-      return Promise.resolve(responseHelper.error("s_tr_srt_9", "Something went wrong.", null, [],
+      return Promise.resolve(responseHelper.error("s_tr_srt_9", "Something went wrong.", {},
         {sendErrorEmail: false}));
     }
 

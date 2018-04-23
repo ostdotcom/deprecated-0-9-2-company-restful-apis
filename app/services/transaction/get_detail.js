@@ -52,7 +52,7 @@ GetTransactionDetailKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_t_gd_1", "Unhandled result", null, {}, {});
+          return responseHelper.error("s_t_gd_1", "Unhandled result", {}, {});
         }
       })
   },
@@ -102,7 +102,7 @@ GetTransactionDetailKlass.prototype = {
       .getByTransactionUuid(oThis.transactionUuids);
 
     if (!transactionLogRecords || transactionLogRecords.length == 0) {
-      return Promise.reject(responseHelper.error('s_t_gd_3', 'Invalid UUIDs passed', null, [],
+      return Promise.reject(responseHelper.error('s_t_gd_3', 'Invalid UUIDs passed', {},
         {sendErrorEmail: false}));
     }
 
@@ -166,7 +166,7 @@ GetTransactionDetailKlass.prototype = {
     ;
 
     if (!clientTokenIds || clientTokenIds.length == 0) {
-      return Promise.reject(responseHelper.error('s_t_gd_2', 'tokens not found for given input', null, [],
+      return Promise.reject(responseHelper.error('s_t_gd_2', 'tokens not found for given input', {},
         {sendErrorEmail: false}));
     }
     const clientTokenRecords = await new ClientBrandedTokenModel().select('*').where(["id in (?)", clientTokenIds]).fire();

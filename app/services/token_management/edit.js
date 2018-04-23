@@ -45,7 +45,7 @@ EditBrandedTokenKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_tm_e_4", "Unhandled result", null, {}, {});
+          return responseHelper.error("s_tm_e_4", "Unhandled result", {}, {});
         }
       });
   },
