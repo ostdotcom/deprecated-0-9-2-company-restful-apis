@@ -85,11 +85,10 @@ const validateApiSignature = function (req, res, next){
 
 // before action for verifying the jwt token and setting the decoded info in req obj
 const decodeJwt = function(req, res, next) {
-  assignParams(req);
-
-  var token = req.decodedParams.token;
-  if(!token){
-    return next();
+  if (req.method == 'POST') {
+    var token = req.body.token || '';
+  } else if (req.method == 'GET') {
+    var token = req.query.token || '';
   }
 
   // Set the decoded params in the re and call the next in control flow.
@@ -101,8 +100,7 @@ const decodeJwt = function(req, res, next) {
 
   // send error, if token is invalid
   const jwtOnReject = function (err) {
-    logger.notify('a_1', 'Invalid token or expired', err);
-    return responseHelper.error('a_1', 'Invalid token or expired', null, [], {sendErrorEmail: false}).renderResponse(res);
+    return responseHelper.error('a_1', 'Invalid token or expired', null, err, {sendErrorEmail: false}).renderResponse(res);
   };
 
   // Verify token
@@ -113,8 +111,7 @@ const decodeJwt = function(req, res, next) {
         jwtOnReject
       )
   ).catch(function (err) {
-    logger.notify('a_2', 'Something went wrong', err);
-    responseHelper.error('a_2', 'Something went wrong', null, [], {sendErrorEmail: false}).renderResponse(res)
+    responseHelper.error('a_2', 'Something went wrong', null, err, {sendErrorEmail: true}).renderResponse(res)
   });
 
 };
