@@ -85,11 +85,10 @@ const validateApiSignature = function (req, res, next){
 
 // before action for verifying the jwt token and setting the decoded info in req obj
 const decodeJwt = function(req, res, next) {
-  assignParams(req);
-
-  var token = req.decodedParams.token;
-  if(!token){
-    return next();
+  if (req.method == 'POST') {
+    var token = req.body.token || '';
+  } else if (req.method == 'GET') {
+    var token = req.query.token || '';
   }
 
   // Set the decoded params in the re and call the next in control flow.
