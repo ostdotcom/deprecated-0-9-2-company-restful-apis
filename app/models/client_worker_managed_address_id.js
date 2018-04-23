@@ -116,6 +116,13 @@ const ClientWorkerManagedAddressIdModelSpecificPrototype = {
       .where(['id IN (?)', ids]).fire();
   },
 
+  // Mark Status inactive for records
+  markStatusInActive: function (ids) {
+    const oThis = this;
+    return oThis.update(['status = ?', oThis.invertedStatuses[clientWorkerManagedAddressConst.inactiveStatus]])
+        .where(['id IN (?)', ids]).fire();
+  },
+
   /**
    * Set all BitWise columns as hash
    * key would be column name and value would be hash of all bitwise values
