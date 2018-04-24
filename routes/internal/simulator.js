@@ -1,6 +1,6 @@
 const express = require('express')
   , router = express.Router()
-  , rootPrefix = '..'
+  , rootPrefix = '../..'
   , routeHelper = require(rootPrefix + '/routes/helper')
 ;
 

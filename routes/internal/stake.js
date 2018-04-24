@@ -2,7 +2,7 @@ const express = require('express')
   , router = express.Router()
 ;
 
-const rootPrefix = '..'
+const rootPrefix = '../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , openStPlatform = require('@openstfoundation/openst-platform')

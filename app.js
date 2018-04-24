@@ -27,16 +27,11 @@ const express = require('express')
   , http = require('http')
 ;
 
-const rootRoutes = require(rootPrefix + '/routes/root')
-  , jwtAuth = require(rootPrefix + '/lib/jwt/jwt_auth')
+const jwtAuth = require(rootPrefix + '/lib/jwt/jwt_auth')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , transactionRoutes = require(rootPrefix + '/routes/transaction_types')
-  , onBoardingRoutes = require(rootPrefix + '/routes/on_boarding')
-  , stakeRoutes = require(rootPrefix + '/routes/stake')
+  , internalRoutes = require(rootPrefix + '/routes/internal/index')
   , clientUsersRoutes = require(rootPrefix + '/routes/client_users')
-  , clientUsersJwtRoutes = require(rootPrefix + '/routes/client_users_jwt')
-  , clientRoutes = require(rootPrefix + '/routes/client')
-  , simulatorRoutes = require(rootPrefix + '/routes/simulator')
   , inputValidator = require(rootPrefix + '/lib/authentication/validate_signature')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , customMiddleware = require(rootPrefix + '/helpers/custom_middleware')
@@ -225,21 +220,13 @@ if (cluster.isMaster) {
   */
 
   // Following are the routes
-  app.use('/', rootRoutes);
+  app.use('/', internalRoutes);
+
+  app.use('/internal', sanitizer(), checkSystemServiceStatuses, appendRequestDebugInfo, decodeJwt, internalRoutes);
 
   app.use('/transaction-types', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), transactionRoutes);
 
   app.use('/users', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), clientUsersRoutes);
-
-  app.use('/on-boarding', sanitizer(), checkSystemServiceStatuses, appendRequestDebugInfo, decodeJwt, onBoardingRoutes);
-
-  app.use('/stake', sanitizer(), checkSystemServiceStatuses, appendRequestDebugInfo, decodeJwt, stakeRoutes);
-
-  app.use('/client', sanitizer(), checkSystemServiceStatuses, appendRequestDebugInfo, decodeJwt, clientRoutes);
-
-  app.use('/simulator', sanitizer(), checkSystemServiceStatuses, appendRequestDebugInfo, decodeJwt, simulatorRoutes);
-
-  app.use('/client-users', sanitizer(), checkSystemServiceStatuses, appendRequestDebugInfo, decodeJwt, clientUsersJwtRoutes);
 
 // catch 404 and forward to error handler
   app.use(function (req, res, next) {

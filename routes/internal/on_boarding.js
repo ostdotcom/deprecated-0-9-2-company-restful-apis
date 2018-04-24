@@ -4,7 +4,7 @@ const express = require('express')
   , openStPlatform = require('@openstfoundation/openst-platform')
 ;
 
-const rootPrefix = '..'
+const rootPrefix = '../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , routeHelper = require(rootPrefix + '/routes/helper')
