@@ -33,7 +33,7 @@ GetAddressesByUuidKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_cu_gabu_3", "Unhandled result", null, [], {sendErrorEmail: false});
+          return responseHelper.error("s_cu_gabu_3", "Unhandled result", {}, {sendErrorEmail: false});
         }
       });
   },
@@ -50,7 +50,7 @@ GetAddressesByUuidKlass.prototype = {
     var usersData = await new ManagedAddressModel().getByUuids(oThis.uuids);
 
     if (usersData.length <= 0) {
-      return Promise.resolve(responseHelper.error("s_cu_gabu_1", "No Data found", null, [], {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error("s_cu_gabu_1", "No Data found", {}, {sendErrorEmail: false}));
     }
     
     var response = {};
@@ -60,7 +60,7 @@ GetAddressesByUuidKlass.prototype = {
       var user = usersData[i];
 
       if (user['client_id'] != oThis.clientId) {
-        return Promise.resolve(responseHelper.error("s_cu_gabu_2", "Invalid client details.", null, [],
+        return Promise.resolve(responseHelper.error("s_cu_gabu_2", "Invalid client details.", {},
           {sendErrorEmail: false}));
       }
 

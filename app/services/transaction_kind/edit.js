@@ -53,7 +53,7 @@ Edit.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_tk_e_1", "Unhandled result", null, {}, {});
+          return responseHelper.error("s_tk_e_1", "Unhandled result", {}, {});
         }
       });
   },

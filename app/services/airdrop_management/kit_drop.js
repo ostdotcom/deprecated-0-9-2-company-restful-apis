@@ -57,7 +57,7 @@ StartAirdropForKitKlass.prototype = {
           if (responseHelper.isCustomResult(error)){
             return error;
           } else {
-            return responseHelper.error("s_am_kd_1", "Unhandled result", null, [], {sendErrorEmail: false});
+            return responseHelper.error("s_am_kd_1", "Unhandled result", {}, {sendErrorEmail: false});
           }
         })
   },
@@ -98,11 +98,11 @@ StartAirdropForKitKlass.prototype = {
     const oThis = this;
 
     if(!oThis.clientId || !oThis.tokenSymbol){
-      return Promise.reject(responseHelper.error('s_am_kd_2', 'Invalid Params', null, [], {sendErrorEmail: false}));
+      return Promise.reject(responseHelper.error('s_am_kd_2', 'Invalid Params', {}, {sendErrorEmail: false}));
     }
 
     if (isNaN(oThis.airdropAmount) || oThis.airdropAmount <= 0) {
-      return Promise.reject(responseHelper.error("s_am_kd_3", "Invalid amount", "", [{amount: 'Invalid amount'}]
+      return Promise.reject(responseHelper.error("s_am_kd_3", "Invalid amount",[{amount: 'Invalid amount'}]
         , {sendErrorEmail: false}));
     }
 
@@ -119,13 +119,13 @@ StartAirdropForKitKlass.prototype = {
     }
 
     if (oThis.clientId != cacheRsp.data.client_id) {
-      return Promise.reject(responseHelper.error("s_am_kd_5", "Invalid Token Symbol", null, [], {sendErrorEmail: false}));
+      return Promise.reject(responseHelper.error("s_am_kd_5", "Invalid Token Symbol", {}, {sendErrorEmail: false}));
     }
 
     oThis.clientBrandedToken = cacheRsp.data;
 
     if (!oThis.clientBrandedToken) {
-      return Promise.reject(responseHelper.error("s_am_kd_6", "Invalid Token", null, [], {sendErrorEmail: false}));
+      return Promise.reject(responseHelper.error("s_am_kd_6", "Invalid Token", {}, {sendErrorEmail: false}));
     }
 
     return Promise.resolve(responseHelper.successWithData({}))
@@ -164,7 +164,7 @@ StartAirdropForKitKlass.prototype = {
 
     var resp = await obj.perform();
     if (resp.isFailure()) {
-      return Promise.reject(responseHelper.error("s_am_kd_8", "Something went wrong.", null, [], {sendErrorEmail: false}));
+      return Promise.reject(responseHelper.error("s_am_kd_8", "Something went wrong.", {}, {sendErrorEmail: false}));
     }
 
     var amountInWei = basicHelper.convertToWei(oThis.airdropAmount);
@@ -173,7 +173,6 @@ StartAirdropForKitKlass.prototype = {
         responseHelper.error(
           "s_am_kd_9",
           "Insufficient funds to airdrop users",
-          "",
           [{amount: 'Available token amount is insufficient. Please mint more tokens or reduce the amount to complete the process.'}],
           {sendErrorEmail: false}
         )

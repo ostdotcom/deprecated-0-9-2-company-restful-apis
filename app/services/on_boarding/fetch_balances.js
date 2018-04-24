@@ -45,7 +45,7 @@ FetchBalances.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("ob_fb_3", "Unhandled result", null, {}, {});
+          return responseHelper.error("ob_fb_3", "Unhandled result", {}, {});
         }
       })
   },

@@ -34,7 +34,7 @@ GetUsersDataKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_cu_gud_3", "Unhandled result", null, [], {sendErrorEmail: false});
+          return responseHelper.error("s_cu_gud_3", "Unhandled result", {}, {sendErrorEmail: false});
         }
       })
   },
@@ -48,7 +48,7 @@ GetUsersDataKlass.prototype = {
     var users = await new ManagedAddressModel().getByEthAddresses(oThis.ethAddresses);
 
     if (users.length <= 0) {
-      return Promise.resolve(responseHelper.error("s_cu_gud_1", "No Data found", null, [], {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error("s_cu_gud_1", "No Data found", {}, {sendErrorEmail: false}));
     }
 
     const economyUserBalance = new EconomyUserBalanceKlass({client_id: oThis.clientId, ethereum_addresses: oThis.ethAddresses})
@@ -65,7 +65,7 @@ GetUsersDataKlass.prototype = {
       var user = users[i];
 
       if (user['client_id'] != oThis.clientId) {
-        return Promise.resolve(responseHelper.error("s_cu_gud_2", "Invalid client details.", null, [],
+        return Promise.resolve(responseHelper.error("s_cu_gud_2", "Invalid client details.", {},
           {sendErrorEmail: false}));
       }
 

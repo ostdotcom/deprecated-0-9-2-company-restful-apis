@@ -32,7 +32,7 @@ clientStatsKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_c_fs_1", "Unhandled result", null, [], {sendErrorEmail: false});
+          return responseHelper.error("s_c_fs_1", "Unhandled result", {}, {sendErrorEmail: false});
         }
       });
   },
