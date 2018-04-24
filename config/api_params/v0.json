@@ -1,0 +1,10 @@
+{
+  create_user: {
+    mandatory: [
+
+    ],
+    optional: [
+
+    ]
+  }
+}
