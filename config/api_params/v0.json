@@ -1,10 +1,14 @@
 {
-  create_user: {
-    mandatory: [
-
-    ],
-    optional: [
-
-    ]
+  "create_user": {
+    "mandatory": [],
+    "optional": ["name"]
+  },
+  "edit_user":{
+    "mandatory":["name","uuid"],
+    "optional":[]
+  },
+  "list_users":{
+    "mandatory":[],
+    "optional":["page_no","filter","order_by","order"]
   }
 }
