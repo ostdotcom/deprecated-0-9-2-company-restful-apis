@@ -15,7 +15,7 @@ const routeMethods = {
         response.renderResponse(res);
       };
 
-      const decodedParams = req.decodedParams;
+      const decodedParams = req.serviceParams;
 
       const callerObject = new CallerKlass(decodedParams);
 
@@ -26,6 +26,14 @@ const routeMethods = {
       responseHelper.error(errorCode, 'Something went wrong').renderResponse(res)
     }
 
+  },
+  
+  replaceKey: function (inObj, existingKey, newKey) {
+    const keyValue = inObj[existingKey];
+    delete inObj[existingKey];
+    inObj[newKey] = keyValue;
+
+    return inObj;
   }
 
 };
