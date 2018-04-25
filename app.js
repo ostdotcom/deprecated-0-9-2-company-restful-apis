@@ -54,12 +54,17 @@ morgan.token('endDateTime', function getEndDateTime (req) {
 });
 
 const assignParams = function (req) {
+
   logger.requestStartLog(customUrlParser.parse(req.originalUrl).pathname, req.method);
+
   if (req.method == 'POST') {
     req.decodedParams = req.body;
   } else if (req.method == 'GET') {
     req.decodedParams = req.query;
   }
+
+  Object.assign(req.decodedParams, req.params); // merge param in URL
+
 };
 
 const validateApiSignature = function (req, res, next){
@@ -80,6 +85,7 @@ const validateApiSignature = function (req, res, next){
 
 // before action for verifying the jwt token and setting the decoded info in req obj
 const decodeJwt = function(req, res, next) {
+
   if (req.method == 'POST') {
     var token = req.body.token || '';
   } else if (req.method == 'GET') {
