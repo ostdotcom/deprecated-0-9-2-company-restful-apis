@@ -56,7 +56,7 @@ GetAirdropStatusKlass.prototype = {
       var record = response[0];
       if(record.client_id != oThis.clientId){
         return Promise.resolve(responseHelper.error("s_am_gas_2", "Invalid Airdrop Request Id.", {},
-          {sendErrorEmail: false, clientId: oThis.clientId}));
+          {sendErrorEmail: false}));
       }
       var current_status = 'pending';
       if(record.status == new ClientAirdropModel().invertedStatuses[clientAirdropConst.completeStatus]){
@@ -68,7 +68,7 @@ GetAirdropStatusKlass.prototype = {
         current_status: current_status, steps_complete: new ClientAirdropModel().getAllBits('steps_complete', record.steps_complete)}));
     } else {
       return Promise.resolve(responseHelper.error("s_am_gas_1", "Invalid Airdrop Request Id.", {},
-        {sendErrorEmail: false, clientId: oThis.clientId}));
+        {sendErrorEmail: false}));
     }
   }
 

@@ -88,10 +88,10 @@ const validateApiSignature = function (req, res, next){
 
 // before action for verifying the jwt token and setting the decoded info in req obj
 const decodeJwt = function(req, res, next) {
+  if(req.method == 'POST') {
 
-  if (req.method == 'POST') {
-    var token = req.body.token || '';
-  } else if (req.method == 'GET') {
+  var token = req.body.token|| '';
+  } elseif(req.method == 'GET'){
     var token = req.query.token || '';
   }
 
