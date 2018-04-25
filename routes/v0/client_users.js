@@ -1,6 +1,9 @@
+"use strict";
+
 const express = require('express')
-  , router = express.Router()
-  , rootPrefix = '..'
+;
+
+const rootPrefix = '../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , listAddressesKlass = require(rootPrefix + '/app/services/client_users/list')
@@ -8,6 +11,9 @@ const express = require('express')
   , ucBalanceFetcherKlass = require(rootPrefix + '/app/services/address/utilityChainBalancesFetcher')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , routeHelper = require(rootPrefix + '/routes/helper')
+;
+
+const router = express.Router()
 ;
 
 /**
@@ -22,7 +28,7 @@ const express = require('express')
  */
 router.post('/create', function (req, res, next) {
 
-  const performer = function() {
+  const performer = function () {
 
     const decodedParams = req.decodedParams
       , GenerateEthAddressKlass = require(rootPrefix + '/app/services/address/generate')
@@ -62,7 +68,7 @@ router.post('/create', function (req, res, next) {
  *
  */
 router.post('/edit', function (req, res, next) {
-  const performer = function() {
+  const performer = function () {
     const decodedParams = req.decodedParams
       , editUser = require(rootPrefix + '/app/services/client_users/edit_user')
     ;
@@ -98,10 +104,10 @@ router.post('/edit', function (req, res, next) {
  */
 router.get('/list', function (req, res, next) {
 
-  const performer = function() {
+  const performer = function () {
 
-      const decodedParams = req.decodedParams
-          , listAddresses = new listAddressesKlass();
+    const decodedParams = req.decodedParams
+      , listAddresses = new listAddressesKlass();
 
     // handle final response
     const handleResponse = function (response) {
@@ -158,11 +164,12 @@ router.get('/airdrop/status', function (req, res, next) {
 /* Get status of Airdrop request */
 router.get('/get-st-prime-balance', function (req, res, next) {
 
-  const performer = function() {
+  const performer = function () {
 
     const decodedParams = req.decodedParams
-        , params = {'client_id': decodedParams.client_id, 'address_uuid': decodedParams.uuid, 'balance_types': ['ostPrime']}
-        , ucBalanceFetcher = new ucBalanceFetcherKlass(params);
+      ,
+      params = {'client_id': decodedParams.client_id, 'address_uuid': decodedParams.uuid, 'balance_types': ['ostPrime']}
+      , ucBalanceFetcher = new ucBalanceFetcherKlass(params);
 
     // handle final response
     const handleResponse = function (response) {

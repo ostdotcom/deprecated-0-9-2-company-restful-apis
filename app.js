@@ -16,7 +16,6 @@ require(rootPrefix + '/module_overrides/index');
 const express = require('express')
   , path = require('path')
   , createNamespace = require('continuation-local-storage').createNamespace
-  , requestSharedNameSpace = createNamespace('openST-Platform-NameSpace')
   , morgan = require('morgan')
   , cookieParser = require('cookie-parser')
   , bodyParser = require('body-parser')
@@ -29,13 +28,17 @@ const express = require('express')
 
 const jwtAuth = require(rootPrefix + '/lib/jwt/jwt_auth')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , transactionRoutes = require(rootPrefix + '/routes/transaction_types')
+  , v0TransactionRoutes = require(rootPrefix + '/routes/v0/transaction_types')
+  , v0ClientUsersRoutes = require(rootPrefix + '/routes/v0/client_users')
+  , v01Routes = require(rootPrefix + '/routes/v0.1/index')
   , internalRoutes = require(rootPrefix + '/routes/internal/index')
-  , clientUsersRoutes = require(rootPrefix + '/routes/client_users')
   , inputValidator = require(rootPrefix + '/lib/authentication/validate_signature')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , customMiddleware = require(rootPrefix + '/helpers/custom_middleware')
-  , SystemServiceStatusesCacheKlass = require('./lib/cache_management/system_service_statuses')
+  , SystemServiceStatusesCacheKlass = require(rootPrefix + '/lib/cache_management/system_service_statuses')
+;
+
+const requestSharedNameSpace = createNamespace('openST-Platform-NameSpace')
   , systemServiceStatusesCache = new SystemServiceStatusesCacheKlass({})
 ;
 
@@ -230,9 +233,11 @@ if (cluster.isMaster) {
 
   app.use('/internal', sanitizer(), checkSystemServiceStatuses, appendRequestDebugInfo, decodeJwt, internalRoutes);
 
-  app.use('/transaction-types', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), transactionRoutes);
+  app.use('/v0.1', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), v01Routes);
 
-  app.use('/users', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), clientUsersRoutes);
+  app.use('/transaction-types', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), v0TransactionRoutes);
+
+  app.use('/users', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), v0ClientUsersRoutes);
 
 // catch 404 and forward to error handler
   app.use(function (req, res, next) {
