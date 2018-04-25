@@ -44,7 +44,7 @@ GetReceiptKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_t_gr_1", "Unhandled result", null, {}, {});
+          return responseHelper.error("s_t_gr_1", "Unhandled result", {}, {});
         }
       })
   },

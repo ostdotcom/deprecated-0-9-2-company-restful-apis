@@ -46,7 +46,7 @@ UtilityChainBalancesFetcherKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_a_ucbf_1", "Unhandled result", null, [], {sendErrorEmail: false});
+          return responseHelper.error("s_a_ucbf_1", "Unhandled result", {}, {sendErrorEmail: false});
         }
       });
   },
@@ -95,7 +95,7 @@ UtilityChainBalancesFetcherKlass.prototype = {
         , balance = null;
 
       if (response.isFailure()) {
-        logger.notify('ub_bf_1', 'Something Went Wrong', response);
+        logger.notify('ub_bf_1', 'Something Went Wrong', response, {clientId: oThis.clientId});
       } else {
         var data = response.data;
         if (data && data.balance) {
@@ -156,7 +156,7 @@ UtilityChainBalancesFetcherKlass.prototype = {
     const clientBrandedTokenSecureCacheData = clientBrandedTokenSecureCacheRsp.data;
 
     if (parseInt(clientBrandedTokenSecureCacheData.client_id) != parseInt(oThis.clientId)) {
-      return Promise.resolve(responseHelper.error('s_a_ucbf_2', 'Unauthorised for some other client', null, [],
+      return Promise.resolve(responseHelper.error('s_a_ucbf_2', 'Unauthorised for some other client', {},
         {sendErrorEmail: false}));
     }
 

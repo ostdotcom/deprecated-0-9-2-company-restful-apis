@@ -95,7 +95,7 @@ FundClientAddressKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_a_fca_2", "Unhandled result", null, [], {sendErrorEmail: false});
+          return responseHelper.error("s_a_fca_2", "Unhandled result", {}, {sendErrorEmail: false, clientId: oThis.clientId});
         }
       });
   },
@@ -240,8 +240,8 @@ FundClientAddressKlass.prototype = {
     const balanceBigNumberInWei = basicHelper.convertToBigNumber(balanceResponse.data.balance);
 
     if (balanceBigNumberInWei.lessThan(minReserveAddrBalanceToProceedInWei)) {
-      return Promise.resolve(responseHelper.error('s_a_fca_1', 'Not enough balance', null, [],
-        {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error('s_a_fca_1', 'Not enough balance', {},
+        {sendErrorEmail: false, clientId: oThis.clientId}));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -264,7 +264,10 @@ FundClientAddressKlass.prototype = {
     ;
 
     if (balanceResponse.isFailure()) {
-      logger.notify('e_fa_e_ceb_1', "Error in fetching balance of Address - " + ethereumAddress, balanceResponse);
+      logger.notify(
+          'e_fa_e_ceb_1', "Error in fetching balance of Address - " + ethereumAddress,
+          balanceResponse, {clientId: oThis.clientId}
+      );
       throw "Error in fetching balance of Address - " + ethereumAddress;
     }
 
@@ -306,7 +309,12 @@ FundClientAddressKlass.prototype = {
     const transferResponse = await transferSTPrimeBalanceObj.perform();
 
     if (transferResponse.isFailure()) {
-      logger.notify('e_fa_e_teb_1', "Error in transfer of " + transferAmountInWei + "Wei Eth to Address - " + recipientAddress, transferResponse);
+      logger.notify(
+          'e_fa_e_teb_1',
+          "Error in transfer of " + transferAmountInWei + "Wei Eth to Address - " + recipientAddress,
+          transferResponse,
+          {clientId: oThis.clientId}
+      );
       return Promise.resolve(transferResponse);
     }
 

@@ -56,7 +56,7 @@ StartOnBoardingKlass.prototype = {
             logger.error(`${__filename}::perform::catch`);
             logger.error(error);
 
-            return responseHelper.error("s_sam_gsa_1", "Unhandled result", null, {}, {});
+            return responseHelper.error("s_sam_gsa_1", "Unhandled result", {}, {});
           }
         })
   },
@@ -99,11 +99,11 @@ StartOnBoardingKlass.prototype = {
     if (!oThis.stakeAndMintParams || !oThis.stakeAndMintParams.bt_to_mint ||
         !oThis.stakeAndMintParams.st_prime_to_mint || !oThis.stakeAndMintParams.client_eth_address ||
         !oThis.stakeAndMintParams.transaction_hash) {
-      return Promise.reject(responseHelper.error('sam_gsa_2', 'Invalid stakeAndMintParams', null, oThis.stakeAndMintParams));
+      return Promise.reject(responseHelper.error('sam_gsa_2', 'Invalid stakeAndMintParams', oThis.stakeAndMintParams));
     }
 
     if (!oThis.airdropParams || !oThis.airdropParams.airdrop_amount || !oThis.airdropParams.airdrop_user_list_type) {
-      return Promise.reject(responseHelper.error('sam_gsa_3', 'Invalid airdropParams', null, oThis.airdropParams));
+      return Promise.reject(responseHelper.error('sam_gsa_3', 'Invalid airdropParams', oThis.airdropParams));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
