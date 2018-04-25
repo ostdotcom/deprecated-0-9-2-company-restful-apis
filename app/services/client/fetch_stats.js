@@ -44,8 +44,13 @@ clientStatsKlass.prototype = {
    */
   asyncPerform: async function (params) {
 
-    const oThis = this
-        , cacheObj = new ClientTxKindCntCacheKlass({clientId: oThis.clientId});
+    const oThis = this;
+
+    if(!oThis.clientId){
+      return Promise.reject(responseHelper.error("s_c_fs_2", "Invalid params", {}, {sendErrorEmail: false}));
+    }
+
+    const cacheObj = new ClientTxKindCntCacheKlass({clientId: oThis.clientId});
 
     const txKindCountData = await cacheObj.fetch();
 
@@ -59,6 +64,6 @@ clientStatsKlass.prototype = {
 
   }
 
-}
+};
 
 module.exports = clientStatsKlass;
