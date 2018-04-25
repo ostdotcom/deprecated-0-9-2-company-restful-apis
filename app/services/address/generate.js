@@ -178,7 +178,7 @@ GenerateAddressKlass.prototype = {
       return Promise.resolve(responseHelper.error(
           's_a_g_4', 'Something Went Wrong',
           generateSaltRsp.toHash(),
-          {sendErrorEmail: false, clientId: clientId}
+          {sendErrorEmail: true, clientId: clientId}
       ));
     }
 

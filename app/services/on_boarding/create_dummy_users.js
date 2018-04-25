@@ -48,7 +48,7 @@ CreateDummyUsers.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("ob_cdu_4", "Unhandled result", {}, {clientId: oThis.clientId});
+          return responseHelper.error("ob_cdu_4", "Unhandled result", {}, {});
         }
       })
   },

@@ -38,25 +38,25 @@ StartServicesKlass.prototype = {
       , servicesList = [];
 
     // Start REDIS server
-    // logger.step("** Starting Redis Server");
+    logger.step("** Starting Redis Server");
     var cmd = "redis-server --port 6379  --requirepass 'st123'"
       + " >> " + homeAbsolutePath + "/openst-setup/logs/redis.log";
     // servicesList.push(cmd);
-    // oThis._asyncCommand(cmd);
+    oThis._asyncCommand(cmd);
 
     // Start Memcached server
-    // logger.step("** Starting Memcached Server");
+    logger.step("** Starting Memcached Server");
     var cmd = "memcached -p 11211 -d"
       + " >> " + homeAbsolutePath + "/openst-setup/logs/memcached.log";
     // servicesList.push(cmd);
-    // oThis._asyncCommand(cmd);
+    oThis._asyncCommand(cmd);
 
     // Start RabbitMQ server
-    // logger.step("** Starting RabbitMQ Server");
+    logger.step("** Starting RabbitMQ Server");
     var cmd = "rabbitmq-server"
       + " >> " + homeAbsolutePath + "/openst-setup/logs/rabbitmq.log";
     // servicesList.push(cmd);
-    // oThis._asyncCommand(cmd);
+    oThis._asyncCommand(cmd);
 
     // Start Value Chain
     logger.step("** Start value chain");
