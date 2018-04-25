@@ -15,7 +15,8 @@ const routeMethods = {
         response.renderResponse(res);
       };
 
-      const decodedParams = req.serviceParams;
+      // TODO: req.decodedParams should be removed. It is just testing hack.
+      const decodedParams = req.serviceParams || req.decodedParams;
 
       const callerObject = new CallerKlass(decodedParams);
 

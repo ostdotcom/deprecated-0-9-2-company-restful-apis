@@ -12,7 +12,7 @@ const rootPrefix = '../..'
   , clientUsersRoutes = require(rootPrefix + '/routes/internal/client_users')
 ;
 
-const router = express.Router()
+var router = express.Router()
 ;
 
 router.use('/', rootRoutes);
