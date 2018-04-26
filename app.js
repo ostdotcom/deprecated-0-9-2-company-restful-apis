@@ -30,7 +30,7 @@ const jwtAuth = require(rootPrefix + '/lib/jwt/jwt_auth')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , v0TransactionRoutes = require(rootPrefix + '/routes/v0/transaction_types')
   , v0ClientUsersRoutes = require(rootPrefix + '/routes/v0/client_users')
-  , v01Routes = require(rootPrefix + '/routes/v0.1/index')
+  , v0dot1Routes = require(rootPrefix + '/routes/v0.1/index')
   , internalRoutes = require(rootPrefix + '/routes/internal/index')
   , inputValidator = require(rootPrefix + '/lib/authentication/validate_signature')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
@@ -233,7 +233,7 @@ if (cluster.isMaster) {
 
   app.use('/internal', sanitizer(), checkSystemServiceStatuses, appendRequestDebugInfo, decodeJwt, internalRoutes);
 
-  app.use('/v0.1', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), v01Routes);
+  app.use('/v0.1', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), v0dot1Routes);
 
   app.use('/transaction-types', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), v0TransactionRoutes);
 
