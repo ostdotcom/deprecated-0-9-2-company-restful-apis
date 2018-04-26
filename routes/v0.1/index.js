@@ -4,6 +4,7 @@ const express = require('express')
 ;
 
 const rootPrefix = '../..'
+  , rootRoutes = require(rootPrefix + '/routes/internal/root')
   , usersRoutes = require(rootPrefix + '/routes/v0.1/users')
   , actionRoutes = require(rootPrefix + '/routes/v0.1/actions')
   , transactionsRoutes = require(rootPrefix + '/routes/v0.1/transactions')

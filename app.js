@@ -88,6 +88,7 @@ const validateApiSignature = function (req, res, next){
 
 // before action for verifying the jwt token and setting the decoded info in req obj
 const decodeJwt = function(req, res, next) {
+  logger.requestStartLog(customUrlParser.parse(req.originalUrl).pathname, req.method);
 
   if (req.method == 'POST') {
     var token = req.body.token || '';
