@@ -13,7 +13,7 @@ require(rootPrefix + '/module_overrides/index');
 
 // Load external packages
 const openSTNotification = require('@openstfoundation/openst-notification')
-  , OSTCore = require('@openstfoundation/openst-core')
+  , OSTBase = require('@openstfoundation/openst-base')
 ;
 
 const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker')
@@ -126,7 +126,7 @@ const promiseExecutor = function (onResolve, onReject, params ) {
 
 };
 
-const PromiseQueueManager = new OSTCore.OSTPromise.QueueManager(
+const PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(
   promiseExecutor,
   {
     name: "executables_rmq_subscribers_factory",

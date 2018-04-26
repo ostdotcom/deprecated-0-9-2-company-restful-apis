@@ -29,7 +29,7 @@ ProcessLocker.canStartProcess({process_title: 'executables_rmq_subscribers_execu
 
 // Load external packages
 const openSTNotification = require('@openstfoundation/openst-notification')
-  , OSTCore = require('@openstfoundation/openst-core')
+  , OSTBase = require('@openstfoundation/openst-base')
 ;
 
 //All Module Requires.
@@ -93,7 +93,7 @@ const publishToSlowQueue = async function (parsedParams) {
 
 
 const prefetchCount = ((slowProcessor || '') == 'slow') ? 25 : 100;
-const PromiseQueueManager = new OSTCore.OSTPromise.QueueManager(promiseExecutor, {
+const PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseExecutor, {
   name: "execute_tx_promise_queue_manager"
   , timeoutInMilliSecs: 3 * 60 * 1000 //3 minutes
   , maxZombieCount: Math.round( prefetchCount * 0.25 )
