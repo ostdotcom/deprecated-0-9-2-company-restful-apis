@@ -96,7 +96,7 @@ GenerateAddressKlass.prototype = {
     }
 
     if(Object.keys(errors_object).length > 0){
-      return responseHelper.error('s_a_g_2', 'invalid params', '', [errors_object], {sendErrorEmail: false});
+      return responseHelper.error('s_a_g_2', 'invalid params', [errors_object], {sendErrorEmail: false});
     }
 
     const insertedRec = await new ManagedAddressModel()

@@ -314,7 +314,7 @@ const NonceCacheKlassPrototype = {
     const isLocked = await oThis.isLocked();
     if(isLocked) {
       return responseHelper.error("l_nm_acquireLock_1", "Lock is already given to some other process. Waiting for lock release.",
-        null, [], {sendErrorEmail: false});
+        {}, {sendErrorEmail: false});
     }
 
     const lockResponse = await oThis.cacheImplementer.increment(oThis.cacheLockKey);
@@ -328,10 +328,11 @@ const NonceCacheKlassPrototype = {
       // Means someone else has acquired the lock already.
       await oThis.cacheImplementer.decrement(oThis.cacheLockKey);
       return responseHelper.error("l_nm_acquireLock_3", "Lock is already given to some other process. Waiting for lock release.",
-        null, [], {sendErrorEmail: false});
+        {}, {sendErrorEmail: false});
     }
 
     return responseHelper.successWithData({});
+
   },
 
   /**

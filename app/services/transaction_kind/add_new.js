@@ -148,7 +148,7 @@ AddNew.prototype = {
     }
 
     if(Object.keys(errors_object).length > 0){
-      return Promise.resolve(responseHelper.error('s_tk_an_2', 'invalid params', '', [errors_object],
+      return Promise.resolve(responseHelper.error('s_tk_an_2', 'invalid params', [errors_object],
         {sendErrorEmail: false}));
     }
 

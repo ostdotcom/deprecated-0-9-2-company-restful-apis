@@ -62,7 +62,7 @@ const editUser = {
     }
 
     if(Object.keys(errors_object).length > 0){
-      return responseHelper.error('s_cu_eu_2', 'invalid params', '', [errors_object], {sendErrorEmail: false});
+      return responseHelper.error('s_cu_eu_2', 'invalid params', [errors_object], {sendErrorEmail: false});
     }
 
     var managedAddressCache = new ManagedAddressCacheKlass({'uuids': [userUuid]});
