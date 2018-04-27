@@ -169,7 +169,7 @@ Edit.prototype = {
     }
 
     if(Object.keys(errors_object).length > 0){
-      return Promise.resolve(responseHelper.error('tk_e_2', 'invalid params', '', [errors_object]));
+      return Promise.resolve(responseHelper.error('tk_e_2', 'invalid params', [errors_object]));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
