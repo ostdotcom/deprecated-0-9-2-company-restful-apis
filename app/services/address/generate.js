@@ -146,11 +146,11 @@ GenerateAddressKlass.prototype = {
    */
   _processAddressInBackground: async function (company_managed_address_id, addrUuid) {
 
-    const OThis = this
-        , clientId = OThis.clientId
-        , addressType = OThis.addressType;
+    const oThis = this
+        , clientId = oThis.clientId
+        , addressType = oThis.addressType;
 
-    if (!OThis.ethAddress || !OThis.privateKey) {
+    if (!oThis.ethAddress || !oThis.privateKey) {
 
       const addrGenerator = new openStPlatform.services.utils.generateRawKey()
           , generateAddrRsp = addrGenerator.perform();
@@ -168,12 +168,12 @@ GenerateAddressKlass.prototype = {
 
     } else {
 
-      var eth_address = OThis.ethAddress;
-      var privateKey_d = OThis.privateKey;
+      var eth_address = oThis.ethAddress;
+      var privateKey_d = oThis.privateKey;
 
     }
 
-    var generateSaltRsp = await OThis._generateManagedAddressSalt(clientId);
+    var generateSaltRsp = await oThis._generateManagedAddressSalt(clientId);
     if (generateSaltRsp.isFailure()) {
       return Promise.resolve(responseHelper.error(
           's_a_g_4', 'Something Went Wrong',
@@ -182,7 +182,7 @@ GenerateAddressKlass.prototype = {
       ));
     }
 
-    await OThis._updateInDb(
+    await oThis._updateInDb(
         company_managed_address_id,
         eth_address, privateKey_d,
         generateSaltRsp.data['managed_address_salt_id']

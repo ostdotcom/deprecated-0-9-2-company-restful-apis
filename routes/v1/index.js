@@ -5,11 +5,11 @@ const express = require('express')
 
 const rootPrefix = '../..'
   , rootRoutes = require(rootPrefix + '/routes/internal/root')
-  , usersRoutes = require(rootPrefix + '/routes/v0.1/users')
-  , actionRoutes = require(rootPrefix + '/routes/v0.1/actions')
-  , transactionsRoutes = require(rootPrefix + '/routes/v0.1/transactions')
-  , airdropsRoutes = require(rootPrefix + '/routes/v0.1/airdrops')
-  , transfersRoutes = require(rootPrefix + '/routes/v0.1/transfers')
+  , usersRoutes = require(rootPrefix + '/routes/v1/users')
+  , actionRoutes = require(rootPrefix + '/routes/v1/actions')
+  , transactionsRoutes = require(rootPrefix + '/routes/v1/transactions')
+  , airdropsRoutes = require(rootPrefix + '/routes/v1/airdrops')
+  , transfersRoutes = require(rootPrefix + '/routes/v1/transfers')
 ;
 
 const router = express.Router()

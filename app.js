@@ -30,7 +30,7 @@ const jwtAuth = require(rootPrefix + '/lib/jwt/jwt_auth')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , v0TransactionRoutes = require(rootPrefix + '/routes/v0/transaction_types')
   , v0ClientUsersRoutes = require(rootPrefix + '/routes/v0/client_users')
-  , v0dot1Routes = require(rootPrefix + '/routes/v0.1/index')
+  , v1Routes = require(rootPrefix + '/routes/v1/index')
   , internalRoutes = require(rootPrefix + '/routes/internal/index')
   , inputValidator = require(rootPrefix + '/lib/authentication/validate_signature')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
@@ -153,6 +153,16 @@ const checkSystemServiceStatuses = async function(req, res, next) {
 
 };
 
+const appendV0Version = function(req, res, next){
+  req.decodedParams.apiVersion = 'v0';
+  next();
+};
+
+const appendV1Version = function(req, res, next){
+  req.decodedParams.apiVersion = 'v1';
+  next();
+};
+
 // if the process is a master.
 if (cluster.isMaster) {
   // Set worker process title
@@ -232,13 +242,13 @@ if (cluster.isMaster) {
   // Following are the routes
   app.use('/', internalRoutes);
 
-  app.use('/internal', sanitizer(), checkSystemServiceStatuses, appendRequestDebugInfo, decodeJwt, internalRoutes);
+  app.use('/internal', sanitizer(), checkSystemServiceStatuses, appendRequestDebugInfo, decodeJwt, appendV0Version, internalRoutes);
 
-  app.use('/v0.1', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), v0dot1Routes);
+  app.use('/v1', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), appendV1Version, v1Routes);
 
   app.use('/transaction-types', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), v0TransactionRoutes);
 
-  app.use('/users', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), v0ClientUsersRoutes);
+  app.use('/users', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), appendV0Version, v0ClientUsersRoutes);
 
 // catch 404 and forward to error handler
   app.use(function (req, res, next) {
