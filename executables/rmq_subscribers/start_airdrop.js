@@ -49,8 +49,9 @@ openSTNotification.subscribeEvent.rabbit(["airdrop.start.#"],
       const payload = parsedParams.message.payload
         , clientAirdropId = payload.client_airdrop_id
         , criticalInteractionLogId = payload.critical_chain_interaction_log_id
+        , userIds = payload.user_ids
         , startAirdrop = new startAirdropKlass(
-          {client_airdrop_id: clientAirdropId, critical_chain_interaction_log_id: criticalInteractionLogId})
+          {client_airdrop_id: clientAirdropId, critical_chain_interaction_log_id: criticalInteractionLogId, user_ids: userIds})
       ;
 
       startAirdrop.perform().then(function (response) {

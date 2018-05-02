@@ -60,10 +60,6 @@ const ClientAirdropModelSpecificPrototype = {
     'status': {
       val: statuses,
       inverted: invertedStatuses
-    },
-    'airdrop_list_type': {
-      val: airdropListType,
-      inverted: invertedAirdropListType
     }
   },
 
@@ -91,7 +87,7 @@ const ClientAirdropModelSpecificPrototype = {
 ClientAirdropModel.prototype.setBitColumns = function () {
   const oThis = this;
 
-  oThis.bitColumns = {'steps_complete': invertedStepsComplete, airdrop_list_type: invertedAirdropListType};
+  oThis.bitColumns = {'steps_complete': invertedStepsComplete, 'airdrop_list_type': invertedAirdropListType};
 
   return oThis.bitColumns;
 };

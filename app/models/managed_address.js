@@ -91,14 +91,22 @@ const ManagedAddressKlassPrototype = {
     const oThis = this
       , clientId = params.client_id
       , propertyUnsetBitVal = params.property_unset_bit_value
+      , propertySetBitVal = params.property_set_bit_value
+      , uuids = params.uuids
       , addressTypeInt = invertedAddressTypes[managedAddressesConst.userAddressType]
       , statusInt = invertedStatuses[managedAddressesConst.activeStatus]
     ;
 
     let query = oThis.select(['id']).where({client_id: clientId, status: statusInt, address_type: addressTypeInt});
 
+    if(uuids){
+      query.where(["uuid in (?)", uuids]);
+    }
+
     if (propertyUnsetBitVal) {
       query.where(['(properties & ?) = 0', propertyUnsetBitVal]);
+    } else if (propertySetBitVal){
+      oThis.where(['(properties & ?) > 0', propertySetBitVal]);
     }
 
     return query.limit(params.limit).offset(params.offset).order_by('id ASC').fire();
@@ -108,6 +116,8 @@ const ManagedAddressKlassPrototype = {
     const oThis = this
       , clientId = params.client_id
       , propertyUnsetBitVal = params.property_unset_bit_value
+      , propertySetBitVal = params.property_set_bit_value
+      , uuids = params.uuids
     ;
 
     oThis.select('count(1) as total_count').where({
@@ -116,8 +126,14 @@ const ManagedAddressKlassPrototype = {
       address_type: invertedAddressTypes[managedAddressesConst.userAddressType]
     });
 
+    if(uuids){
+      oThis.where(["uuid in (?)", uuids]);
+    }
+
     if (propertyUnsetBitVal) {
       oThis.where(['(properties & ?) = 0', propertyUnsetBitVal]);
+    } else if (propertySetBitVal){
+      oThis.where(['(properties & ?) > 0', propertySetBitVal]);
     }
 
     return oThis.fire();
