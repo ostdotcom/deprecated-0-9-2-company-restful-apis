@@ -36,6 +36,9 @@ const jwtAuth = require(rootPrefix + '/lib/jwt/jwt_auth')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , customMiddleware = require(rootPrefix + '/helpers/custom_middleware')
   , SystemServiceStatusesCacheKlass = require(rootPrefix + '/lib/cache_management/system_service_statuses')
+  , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
+  , routeHelper = require(rootPrefix + '/routes/helper')
+  , errorConfig = routeHelper.fetchErrorConfig(apiVersions.internal)
 ;
 
 const requestSharedNameSpace = createNamespace('openST-Platform-NameSpace')
@@ -78,7 +81,7 @@ const validateApiSignature = function (req, res, next){
       req.decodedParams["client_id"] = result.data["clientId"];
       next();
     } else {
-      return responseHelper.error('401', 'Unauthorized', {}, {sendErrorEmail: false}).renderResponse(res, 401);
+      return responseHelper.error('401', 'unauthorized_api_request', {}).renderResponse(res, errorConfig);
     }
   };
 
@@ -105,7 +108,7 @@ const decodeJwt = function(req, res, next) {
 
   // send error, if token is invalid
   const jwtOnReject = function (err) {
-    return responseHelper.error('a_1', 'Invalid token or expired', {}, {sendErrorEmail: false}).renderResponse(res);
+    return responseHelper.error('a_1', 'invalid_or_expired_jwt_token', {}).renderResponse(res, errorConfig);
   };
 
   // Verify token
@@ -116,7 +119,8 @@ const decodeJwt = function(req, res, next) {
         jwtOnReject
       )
   ).catch(function (err) {
-    responseHelper.error('a_2', 'Something went wrong', {}, {sendErrorEmail: true}).renderResponse(res)
+    logger.notify('a_2', 'JWT Decide Failed', {token: token});
+    responseHelper.error('a_2', 'something_went_wrong', {}).renderResponse(res, errorConfig)
   });
 
 };
@@ -146,7 +150,7 @@ const checkSystemServiceStatuses = async function(req, res, next) {
 
   const statusRsp = await systemServiceStatusesCache.fetch();
   if (statusRsp.isSuccess && statusRsp.data && statusRsp.data['saas_api_available'] != 1) {
-    return responseHelper.error('a_4', 'API Under Maintenance', {}, {sendErrorEmail: false}).renderResponse(res, 503);
+    return responseHelper.error('a_4', 'api_under_maintenance', {}).renderResponse(res, errorConfig);
   }
 
   next();
@@ -253,14 +257,14 @@ if (cluster.isMaster) {
 // catch 404 and forward to error handler
   app.use(function (req, res, next) {
     logger.requestStartLog(customUrlParser.parse(req.originalUrl).pathname, req.method);
-    return responseHelper.error('404', 'Not Found', {}, {sendErrorEmail: false}).renderResponse(res, 404);
+    return responseHelper.error('404', 'route_not_found', {}).renderResponse(res, errorConfig);
   });
 
 // error handler
   app.use(function (err, req, res, next) {
     // set locals, only providing error in development
     logger.notify('a_5', 'Something went wrong', err);
-    return responseHelper.error('500', 'Something went wrong', {}, {sendErrorEmail: false}).renderResponse(res, 500);
+    return responseHelper.error('500', 'something_went_wrong', {}).renderResponse(res, errorConfig);
   });
 
   /**

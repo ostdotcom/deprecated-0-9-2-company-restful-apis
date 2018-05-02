@@ -56,6 +56,8 @@ const routeMethods = {
       paramErrorConfig = v0ParamErrorConfig;
     } else if (apiVersion === apiVersions.v0) {
       paramErrorConfig = v1ParamErrorConfig;
+    } else if (apiVersion === apiVersions.internal) {
+      paramErrorConfig = {};
     } else {
       throw "unsupported API Version " + apiVersion;
     }

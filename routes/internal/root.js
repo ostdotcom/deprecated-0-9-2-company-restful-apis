@@ -5,6 +5,9 @@ const rootPrefix = '../..'
   , router = express.Router()
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
+  , routeHelper = require(rootPrefix + '/routes/helper')
+  , errorConfig = routeHelper.fetchErrorConfig(apiVersions.internal)
 ;
 
 /* Elb health checker request */
@@ -17,7 +20,7 @@ router.get('/', function (req, res, next) {
     if (req.headers['user-agent'] === "ELB-HealthChecker/2.0") {
       return responseHelper.successWithData({}).renderResponse(res);
     } else {
-      return responseHelper.error('404', 'Not Found').renderResponse(res, 404);
+      return responseHelper.error('404', 'route_not_found', {}).renderResponse(res, errorConfig);
     }
 
   };
