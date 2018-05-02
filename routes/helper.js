@@ -3,6 +3,10 @@
 const rootPrefix = '..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
+  , v0ParamErrorConfig = require(rootPrefix + '/config/api_params/v0/error_config')
+  , v1ParamErrorConfig = require(rootPrefix + '/config/api_params/v1/error_config')
+  , apiErrorConfig = require(rootPrefix + '/config/api_params/api_error_config')
 ;
 
 const routeMethods = {
@@ -35,6 +39,32 @@ const routeMethods = {
     inObj[newKey] = keyValue;
 
     return inObj;
+  },
+
+  /**
+   * Fetch Error Config
+   *
+   * @param {String} apiVersion
+   *
+   * @return {object}
+   */
+  fetchErrorConfig: function (apiVersion) {
+
+    var paramErrorConfig;
+
+    if (apiVersion === apiVersions.v0) {
+      paramErrorConfig = v0ParamErrorConfig;
+    } else if (apiVersion === apiVersions.v0) {
+      paramErrorConfig = v1ParamErrorConfig;
+    } else {
+      throw "unsupported API Version " + apiVersion;
+    }
+
+    return {
+      param_error_config: paramErrorConfig,
+      api_error_config: apiErrorConfig
+    }
+
   }
 
 };
