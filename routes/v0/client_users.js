@@ -49,6 +49,10 @@ router.post('/create', function (req, res, next) {
 
   };
 
+  console.log("-----------------------------------------------------------------------------------------------");
+  console.log(req.decodedParams);
+  console.log("-----------------------------------------------------------------------------------------------");
+
   Promise.resolve(performer()).catch(function (err) {
     logger.notify('r_cu_1', 'Something went wrong', err);
     responseHelper.error('r_cu_1', 'Something went wrong').renderResponse(res)

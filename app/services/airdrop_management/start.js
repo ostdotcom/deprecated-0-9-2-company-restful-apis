@@ -1,8 +1,15 @@
 "use strict";
 
+/**
+ * Schedule new airdrop task.
+ *
+ * @module app/services/airdrop_management/start
+ */
+
 const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , AllocateAirdropKlass = require(rootPrefix + '/lib/allocate_airdrop/start_airdrop')
+  , clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
@@ -10,11 +17,10 @@ const rootPrefix = '../../..'
  * Add new transaction kind constructor
  *
  * @param {object} params - external passed parameters
- * @param {number} params.client_id - client id
- * @param {number} params.client_token_id - client token id (optional)
- * @param {number} params.token_symbol - token symbol
- * @param {object} params.list_type -
- * @param {object} params.amount -
+ * @param {number} params.client_id (Mandatory) - client id
+ * @param {Decimal} params.amount (Mandatory) - number of tokens to be airdropped to each shortlisted address.
+ * @param {Boolean} params.airdropped (optional) - true: already airdropped, false: never airdropped
+ * @param {string} params.user_ids (optional) - specific set of users can get shortlisted for airdrop.
  *
  * @constructor
  *
@@ -25,7 +31,9 @@ const StartAirdropKlass = function (params) {
 
   oThis.clientId = params.client_id;
   oThis.airdropAmount = params.amount;
-  oThis.airdropUserListType = params.list_type;
+  oThis.airdropped = params.airdropped;
+  oThis.userIds = params.user_ids;
+  oThis.airdropUserListType = null;
 
 };
 
@@ -67,14 +75,15 @@ StartAirdropKlass.prototype = {
         client_id: oThis.clientId,
         airdrop_params: {
           airdrop_amount: oThis.airdropAmount,
-          airdrop_user_list_type: oThis.airdropUserListType
+          airdrop_user_list_type: oThis.airdropUserListType,
+          user_ids: oThis.userIds
         }
     }).perform()
 
   },
 
   /**
-   * Async Perform
+   * Validate and Sanitize
    *
    * @return {promise<result>}
    */
@@ -86,9 +95,17 @@ StartAirdropKlass.prototype = {
       return Promise.reject(responseHelper.error('s_am_s_2', 'Invalid Params', {}, {sendErrorEmail: false}));
     }
 
-    if (!oThis.airdropAmount || !oThis.airdropUserListType) {
-      return Promise.reject(responseHelper.error('s_am_s_3', 'Invalid airdropParams', oThis.airdropParams,
+    if (!oThis.airdropAmount) {
+      return Promise.reject(responseHelper.error('s_am_s_3', 'Invalid airdropAmount', oThis.airdropAmount,
         {sendErrorEmail: false}));
+    }
+
+    if(oThis.airdropped == 'true'){
+      oThis.airdropUserListType = clientAirdropConst.everAirdroppedAddressesAirdropListType;
+    } else if (oThis.airdropped == 'false'){
+      oThis.airdropUserListType = clientAirdropConst.neverAirdroppedAddressesAirdropListType;
+    } else {
+      oThis.airdropUserListType = clientAirdropConst.allAddressesAirdropListType;
     }
 
     return Promise.resolve(responseHelper.successWithData({}));

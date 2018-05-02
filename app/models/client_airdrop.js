@@ -24,7 +24,8 @@ const dbName = "saas_airdrop_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.E
   , airdropListType = {
     '1':clientAirdropConst.allAddressesAirdropListType,
     '2':clientAirdropConst.neverAirdroppedAddressesAirdropListType,
-    '3':clientAirdropConst.specificAddressesAirdropListType
+    '4':clientAirdropConst.everAirdroppedAddressesAirdropListType,
+    '8':clientAirdropConst.specificAddressesAirdropListType
   }
   , invertedStatuses = util.invert(statuses)
   , invertedStepsComplete = util.invert(stepsComplete)
@@ -90,7 +91,7 @@ const ClientAirdropModelSpecificPrototype = {
 ClientAirdropModel.prototype.setBitColumns = function () {
   const oThis = this;
 
-  oThis.bitColumns = {'steps_complete': invertedStepsComplete};
+  oThis.bitColumns = {'steps_complete': invertedStepsComplete, airdrop_list_type: invertedAirdropListType};
 
   return oThis.bitColumns;
 };
