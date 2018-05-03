@@ -41,8 +41,11 @@ FetchChainInteractionParams.prototype = {
         } else {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
-
-          return responseHelper.error("ob_fcip_2", "Unhandled result", {}, {});
+          return responseHelper.error({
+            internal_error_identifier: 'ob_fcip_2',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
         }
       })
   },
@@ -58,7 +61,12 @@ FetchChainInteractionParams.prototype = {
     const oThis = this;
 
     if (!oThis.clientId) {
-      return Promise.resolve(responseHelper.error('ob_fcip_1', 'missing clientId'));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 'ob_fcip_1',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_client_id'],
+        debug_options: {}
+      }));
     }
 
     var responseData = {

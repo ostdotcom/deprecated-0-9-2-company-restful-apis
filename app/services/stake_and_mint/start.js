@@ -51,8 +51,11 @@ StartStakeAndMintKlass.prototype = {
           } else {
             logger.error(`${__filename}::perform::catch`);
             logger.error(error);
-
-            return responseHelper.error("s_s_sm_s_1", "Unhandled result", {}, {});
+            return responseHelper.error({
+              internal_error_identifier: 's_s_sm_s_1',
+              api_error_identifier: 'unhandled_catch_response',
+              debug_options: {}
+            });
           }
         })
   },
@@ -88,13 +91,23 @@ StartStakeAndMintKlass.prototype = {
     var oThis = this;
 
     if(!oThis.clientId || !oThis.clientTokenId || !oThis.tokenSymbol){
-      return Promise.reject(responseHelper.error('s_sm_s_2', 'Invalid Params'));
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_sm_s_2',
+        api_error_identifier: 'invalid_api_params',
+        debug_options: {}
+      }));
     }
 
     if (!oThis.stakeAndMintParams || !oThis.stakeAndMintParams.bt_to_mint ||
         !oThis.stakeAndMintParams.st_prime_to_mint || !oThis.stakeAndMintParams.client_eth_address ||
         !oThis.stakeAndMintParams.transaction_hash) {
-      return Promise.reject(responseHelper.error('s_sm_s_3', 'Invalid stakeAndMintParams', oThis.stakeAndMintParams));
+
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_sm_s_3',
+        api_error_identifier: 'invalid_api_params',
+        debug_options: {stakeAndMintParams: oThis.stakeAndMintParams}
+      }));
+
     }
 
     return Promise.resolve(responseHelper.successWithData({}));

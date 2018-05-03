@@ -44,7 +44,12 @@ GetReceiptKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_t_gr_1", "Unhandled result", {}, {});
+          return responseHelper.error({
+            internal_error_identifier: 's_t_gr_1',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
+
         }
       })
   },
@@ -64,7 +69,7 @@ GetReceiptKlass.prototype = {
     if(response.isSuccess()){
       return Promise.resolve(responseHelper.successWithData(response.data));
     } else {
-      return Promise.resolve(responseHelper.error(response.err.code, response.err.message));
+      return Promise.resolve(response);
     }
   }
 

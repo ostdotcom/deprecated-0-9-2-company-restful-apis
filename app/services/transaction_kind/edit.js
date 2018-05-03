@@ -52,8 +52,11 @@ Edit.prototype = {
         } else {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
-
-          return responseHelper.error("s_tk_e_1", "Unhandled result", {}, {});
+          return responseHelper.error({
+            internal_error_identifier: 'tk_e_1',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
         }
       });
   },
@@ -93,22 +96,27 @@ Edit.prototype = {
       , currency_type = (oThis.params.currency_type || '').toUpperCase()
       , currency_value = oThis.params.currency_value
       , commission_percent = oThis.params.commission_percent
-      , errors_object = {}
+      , errors_object = []
     ;
 
     oThis.clientTransactionId = oThis.params.client_transaction_id;
 
     if(!oThis.clientTransactionId){
-      return Promise.resolve(responseHelper.error('tk_e_4', 'client_transaction_id not present.'));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 'tk_e_4',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_client_transaction_id'],
+        debug_options: {}
+      }));
     }
 
     if(kind && !new ClientTransactionTypeModel().invertedKinds[kind]){
-      errors_object['kind'] = 'invalid kind';
+      errors_object.push('invalid_transactionkind');
     }
 
     if (currency_type == 'USD') {
       if(!currency_value || currency_value < 0.01 || currency_value > 100){
-        errors_object['currency_value'] = 'Value of a transaction in $USD is out of range. Min value is 0.01$ and Max value is 100$';
+        errors_object.push('out_of_bound_transaction_usd_value');
       }
       oThis.transactionKindObj['currency_type'] = new ClientTransactionTypeModel().invertedCurrencyTypes[oThis.params.currency_type];
       oThis.transactionKindObj['value_in_bt_wei'] = null;
@@ -117,11 +125,11 @@ Edit.prototype = {
     } else if (currency_type == 'BT'){
       oThis.params.value_in_usd = null;
       if(!currency_value || currency_value < 0.00001 || currency_value>100){
-        errors_object['currency_value'] = 'Value of a transaction is out of range. Min value is 0.00001 and Max value is 100';
+        errors_object.push('out_of_bound_transaction_bt_value');
       }
       var value_in_bt_wei = basicHelper.convertToWei(currency_value);
       if(!basicHelper.isWeiValid(value_in_bt_wei)){
-        errors_object['currency_value'] = 'Value in BT is not valid';
+        errors_object.push('out_of_bound_transaction_bt_value');
       }
       oThis.transactionKindObj['currency_type'] = new ClientTransactionTypeModel().invertedCurrencyTypes[oThis.params.currency_type];
       oThis.transactionKindObj['value_in_bt_wei'] = basicHelper.formatWeiToString(value_in_bt_wei);
@@ -130,22 +138,26 @@ Edit.prototype = {
     }
 
     if(commission_percent && (parseInt(commission_percent) < 0 || parseFloat(commission_percent) > 100)){
-      errors_object['commission_percent'] = 'Invalid Commission Percentage.';
+      errors_object.push('invalid_commission_percent');
     }
 
     if(parseFloat(commission_percent) > 0 && kind != clientTxTypesConst.userToUserKind){
-      errors_object['commission_percent'] = 'Commission Percentage is allowed only for user to user Transactions.';
+      errors_object.push('invalid_commission_percent');
     }
 
     var qResult = await oThis.getCurrentTransactionKind();
     oThis.currentTransactionKind = qResult[0];
 
     if(!oThis.currentTransactionKind || oThis.currentTransactionKind.length==0){
-      errors_object['kind'] = 'Invalid Client Transaction Id.';
+      errors_object.push('invalid_client_transaction_id');
     }
 
     if(oThis.currentTransactionKind && oThis.currentTransactionKind['client_id'] != clientId){
-      return Promise.resolve(responseHelper.error('tk_e_1', 'Unauthorised access.'));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 'tk_e_1',
+        api_error_identifier: 'unauthorized_for_other_client',
+        debug_options: {}
+      }));
     }
 
     if (name) {
@@ -155,9 +167,9 @@ Edit.prototype = {
     if(name && oThis.currentTransactionKind && oThis.currentTransactionKind['name'].toLowerCase() != name.toLowerCase()){
 
       if(!basicHelper.isTxKindNameValid(name)){
-        errors_object['name'] = 'Only letters, numbers and spaces allowed. (3 to 20 characters)';
+        errors_object.push('invalid_transactionname');
       } else if (basicHelper.hasStopWords(name)) {
-        errors_object['name'] = 'Come on, the ' + name + ' you entered is inappropriate. Please choose a nicer word.';
+        errors_object.push('inappropriate_transactionname');
       }
       else {
         var existingTKind = await new ClientTransactionTypeModel().getTransactionByName({clientId: clientId, name: name});
@@ -169,7 +181,12 @@ Edit.prototype = {
     }
 
     if(Object.keys(errors_object).length > 0){
-      return Promise.resolve(responseHelper.error('tk_e_2', 'invalid params', [errors_object]));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 'tk_e_2',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: errors_object,
+        debug_options: {}
+      }));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));

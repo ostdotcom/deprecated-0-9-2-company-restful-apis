@@ -57,7 +57,11 @@ StartAirdropForKitKlass.prototype = {
           if (responseHelper.isCustomResult(error)){
             return error;
           } else {
-            return responseHelper.error("s_am_kd_1", "Unhandled result", {}, {sendErrorEmail: false});
+            return responseHelper.error({
+              internal_error_identifier: 's_am_kd_1',
+              api_error_identifier: 'unhandled_catch_response',
+              debug_options: {}
+            });
           }
         })
   },
@@ -98,18 +102,30 @@ StartAirdropForKitKlass.prototype = {
     const oThis = this;
 
     if(!oThis.clientId || !oThis.tokenSymbol){
-      return Promise.reject(responseHelper.error('s_am_kd_2', 'Invalid Params', {}, {sendErrorEmail: false}));
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_am_kd_2',
+        api_error_identifier: 'invalid_api_params',
+        debug_options: {}
+      }));
     }
 
     if (isNaN(oThis.airdropAmount) || oThis.airdropAmount <= 0) {
-      return Promise.reject(responseHelper.error("s_am_kd_3", "Invalid amount",[{amount: 'Invalid amount'}]
-        , {sendErrorEmail: false}));
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_am_kd_3',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_airdrop_amount']
+        debug_options: {}
+      }));
     }
 
     if (![clientAirdropConst.allAddressesAirdropListType,
         clientAirdropConst.neverAirdroppedAddressesAirdropListType].includes(oThis.airdropUserListType)) {
-      return Promise.reject(responseHelper.error("s_am_kd_4", "Invalid List type to airdrop users", "",
-        [{airdrop_list_type: 'Invalid List type to airdrop users'}], {sendErrorEmail: false}));
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_am_kd_4',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_airdrop_list_type']
+        debug_options: {}
+      }));
     }
 
     var btSecureCache = new BTSecureCacheKlass({tokenSymbol: oThis.tokenSymbol});
@@ -119,13 +135,22 @@ StartAirdropForKitKlass.prototype = {
     }
 
     if (oThis.clientId != cacheRsp.data.client_id) {
-      return Promise.reject(responseHelper.error("s_am_kd_5", "Invalid Token Symbol", {}, {sendErrorEmail: false}));
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_am_kd_5',
+        api_error_identifier: 'unauthorized_for_other_client',
+        debug_options: {}
+      }));
     }
 
     oThis.clientBrandedToken = cacheRsp.data;
 
     if (!oThis.clientBrandedToken) {
-      return Promise.reject(responseHelper.error("s_am_kd_6", "Invalid Token", {}, {sendErrorEmail: false}));
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_am_kd_6',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_token_symbol']
+        debug_options: {}
+      }));
     }
 
     return Promise.resolve(responseHelper.successWithData({}))
@@ -154,8 +179,12 @@ StartAirdropForKitKlass.prototype = {
     }
     var response = await new ManagedAddressModel().getFilteredActiveUsersCount(params);
     if (!response[0] || response[0].total_count == 0) {
-      return Promise.reject(responseHelper.error("s_am_kd_7", "No users found to airdrop for this list type", "",
-        [{airdrop_list_type: 'No users found to airdrop for this list type'}], {sendErrorEmail: false}));
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_am_kd_7',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['no_users_for_airdrop_list_type']
+        debug_options: {}
+      }));
     }
 
     const obj = new openStPlatform.services.balance.brandedToken(
@@ -164,19 +193,21 @@ StartAirdropForKitKlass.prototype = {
 
     var resp = await obj.perform();
     if (resp.isFailure()) {
-      return Promise.reject(responseHelper.error("s_am_kd_8", "Something went wrong.", {}, {sendErrorEmail: false}));
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_am_kd_8',
+        api_error_identifier: 'something_went_wrong',
+        debug_options: {}
+      }));
     }
 
     var amountInWei = basicHelper.convertToWei(oThis.airdropAmount);
     if (amountInWei.mul(response[0].total_count).toNumber() > resp.data.balance) {
-      return Promise.reject(
-        responseHelper.error(
-          "s_am_kd_9",
-          "Insufficient funds to airdrop users",
-          [{amount: 'Available token amount is insufficient. Please mint more tokens or reduce the amount to complete the process.'}],
-          {sendErrorEmail: false}
-        )
-      );
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_am_kd_9',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['insufficient_airdrop_amount']
+        debug_options: {}
+      }));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));

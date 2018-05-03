@@ -42,7 +42,11 @@ GetAirdropStatusKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_am_gas_3", "Unhandled result", {}, {sendErrorEmail: false});
+          return responseHelper.error({
+            internal_error_identifier: 's_am_gas_3',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
         }
       });
   },
@@ -55,8 +59,11 @@ GetAirdropStatusKlass.prototype = {
     if(response[0]){
       var record = response[0];
       if(record.client_id != oThis.clientId){
-        return Promise.resolve(responseHelper.error("s_am_gas_2", "Invalid Airdrop Request Id.", {},
-          {sendErrorEmail: false}));
+        return Promise.resolve(responseHelper.error({
+          internal_error_identifier: 's_am_gas_2',
+          api_error_identifier: 'unauthorized_for_other_client',
+          debug_options: {}
+        }));
       }
       var current_status = 'pending';
       if(record.status == new ClientAirdropModel().invertedStatuses[clientAirdropConst.completeStatus]){
@@ -67,8 +74,12 @@ GetAirdropStatusKlass.prototype = {
       return Promise.resolve(responseHelper.successWithData({airdrop_uuid: oThis.airdropUuid,
         current_status: current_status, steps_complete: new ClientAirdropModel().getAllBits('steps_complete', record.steps_complete)}));
     } else {
-      return Promise.resolve(responseHelper.error("s_am_gas_1", "Invalid Airdrop Request Id.", {},
-        {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_am_gas_2',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_airdrop_uuid'],
+        debug_options: {}
+      }));
     }
   }
 

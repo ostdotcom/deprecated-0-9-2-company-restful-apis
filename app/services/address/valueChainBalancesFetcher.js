@@ -39,7 +39,11 @@ valueChainBalancesFetcherKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_a_vcbf_1", 'unhandled_catch_response', {});
+          return responseHelper.error({
+            internal_error_identifier: 's_a_vcbf_1',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
         }
       });
   },
@@ -64,8 +68,11 @@ valueChainBalancesFetcherKlass.prototype = {
         var promise = oThis["_fetch" + balanceTypes[i] + "Balance"].apply(oThis);
 
       } else {
-
-        var promise = Promise.resolve(responseHelper.error('s_a_vcbf_2', 'unsupported_balance_type', {}));
+        var promise = Promise.resolve(responseHelper.error({
+          internal_error_identifier: 's_a_vcbf_2',
+          api_error_identifier: 'unsupported_balance_type',
+          debug_options: {}
+        }));
       }
 
       promiseResolvers.push(promise);

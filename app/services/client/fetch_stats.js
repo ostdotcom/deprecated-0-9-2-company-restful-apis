@@ -31,8 +31,11 @@ clientStatsKlass.prototype = {
         } else {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
-
-          return responseHelper.error("s_c_fs_1", 'unhandled_catch_response', {});
+          return responseHelper.error({
+            internal_error_identifier: 's_c_fs_1',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
         }
       });
   },
@@ -47,7 +50,12 @@ clientStatsKlass.prototype = {
     const oThis = this;
 
     if(!oThis.clientId){
-      return Promise.reject(responseHelper.error("s_c_fs_2", 'invalid_api_params', {}));
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_c_fs_2',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_client_id'],
+        debug_options: {}
+      }));
     }
 
     const cacheObj = new ClientTxKindCntCacheKlass({clientId: oThis.clientId});

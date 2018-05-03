@@ -54,8 +54,11 @@ FetchCurrentOSTPriceKlass.prototype = {
         } else {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
-
-          return responseHelper.error("f_c_o_p_7", 'unhandled_catch_response', {});
+          return responseHelper.error({
+            internal_error_identifier: 'f_c_o_p_7',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
         }
       });
   },

@@ -51,8 +51,11 @@ GetTransactionDetailKlass.prototype = {
         } else {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
-
-          return responseHelper.error("s_t_gd_1", "Unhandled result", {}, {});
+          return responseHelper.error({
+            internal_error_identifier: 's_t_gd_1',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
         }
       })
   },
@@ -102,8 +105,11 @@ GetTransactionDetailKlass.prototype = {
       .getByTransactionUuid(oThis.transactionUuids);
 
     if (!transactionLogRecords || transactionLogRecords.length == 0) {
-      return Promise.reject(responseHelper.error('s_t_gd_3', 'Invalid UUIDs passed', {},
-        {sendErrorEmail: false}));
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_t_gd_3',
+        api_error_identifier: 'data_not_found',
+        debug_options: {}
+      }));
     }
 
     for (var i = 0; i < transactionLogRecords.length; i++) {
@@ -166,9 +172,13 @@ GetTransactionDetailKlass.prototype = {
     ;
 
     if (!clientTokenIds || clientTokenIds.length == 0) {
-      return Promise.reject(responseHelper.error('s_t_gd_2', 'tokens not found for given input', {},
-        {sendErrorEmail: false}));
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_t_gd_3',
+        api_error_identifier: 'something_went_wrong',
+        debug_options: {}
+      }));
     }
+
     const clientTokenRecords = await new ClientBrandedTokenModel().select('*').where(["id in (?)", clientTokenIds]).fire();
 
     for (var i = 0; i < clientTokenRecords.length; i++) {

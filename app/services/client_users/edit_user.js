@@ -26,8 +26,11 @@ const editUser = {
         } else {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
-
-          return responseHelper.error("s_cu_eu_4", 'unhandled_catch_response', {});
+          return responseHelper.error({
+            internal_error_identifier: 's_cu_eu_4',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
         }
       });
   },
@@ -43,10 +46,14 @@ const editUser = {
   asycnPerform: async function (clientId, userUuid, name) {
 
     const oThis = this
-      , errors_object = {};
+      , errors_object = [];
 
     if (!clientId || !userUuid) {
-      return responseHelper.error("s_cu_eu_1", 'invalid_api_params', {});
+      return responseHelper.error({
+        internal_error_identifier: 's_cu_eu_1',
+        api_error_identifier: 'invalid_api_params',
+        debug_options: {}
+      });
     }
 
     if (name) {
@@ -54,15 +61,18 @@ const editUser = {
     }
 
     if(!basicHelper.isUserNameValid(name)){
-      errors_object['name'] = 'Only letters, numbers and spaces allowed. (3 to 20 characters)';
-    }
-
-    if(basicHelper.hasStopWords(name)){
-      errors_object['name'] = 'Come on, the ' + name + ' you entered is inappropriate. Please choose a nicer word.';
+      errors_object.push('invalid_username');
+    } else if(basicHelper.hasStopWords(name)){
+      errors_object.push('inappropriate_username');
     }
 
     if(Object.keys(errors_object).length > 0){
-      return responseHelper.error('s_cu_eu_2', 'invalid params', [errors_object], {sendErrorEmail: false});
+      return responseHelper.paramValidationError({
+        internal_error_identifier: 's_cu_eu_2',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: errors_object
+        debug_options: {}
+      });
     }
 
     var managedAddressCache = new ManagedAddressCacheKlass({'uuids': [userUuid]});
@@ -70,17 +80,29 @@ const editUser = {
     const cacheFetchResponse = await managedAddressCache.fetch();
 
     if (cacheFetchResponse.isFailure()) {
-      return responseHelper.error("s_cu_eu_2", "resource_not_found", {});
+      return responseHelper.error({
+        internal_error_identifier: 's_cu_eu_2',
+        api_error_identifier: 'resource_not_found',
+        debug_options: {}
+      });
     }
 
     const response = cacheFetchResponse.data[userUuid];
 
     if (!response) {
-      return responseHelper.error("s_cu_eu_2.1", "resource_not_found", {});
+      return responseHelper.error({
+        internal_error_identifier: 's_cu_eu_2.1',
+        api_error_identifier: 'resource_not_found',
+        debug_options: {}
+      });
     }
 
     if (response['client_id'] != clientId) {
-      return responseHelper.error("s_cu_eu_3", 'unauthorized_for_other_client', {});
+      return responseHelper.error({
+        internal_error_identifier: 's_cu_eu_3',
+        api_error_identifier: 'unauthorized_for_other_client',
+        debug_options: {}
+      });
     }
 
     const ethereumAddress = response['ethereum_address']

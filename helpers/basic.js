@@ -9,7 +9,8 @@
 const BigNumber = require('bignumber.js')
 ;
 
-const apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
+const rootPrefix = '..'
+  , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
   , v0ParamErrorConfig = require(rootPrefix + '/config/api_params/v0/error_config')
   , v1ParamErrorConfig = require(rootPrefix + '/config/api_params/v1/error_config')
   , internalParamErrorConfig = require(rootPrefix + '/config/api_params/internal/error_config')

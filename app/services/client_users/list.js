@@ -30,8 +30,11 @@ listKlass.prototype = {
         } else {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
-
-          return responseHelper.error("s_cu_l_2", 'unhandled_catch_response', {});
+          return responseHelper.error({
+            internal_error_identifier: 's_cu_l_2',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
         }
       });
   },
@@ -49,7 +52,12 @@ listKlass.prototype = {
     params.limit = pageSize;
 
     if (!params.client_id) {
-      return Promise.resolve(responseHelper.error('cu_l_1', 'invalid_api_params', {}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_cu_l_2',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_client_id'],
+        debug_options: {}
+      }));
     }
 
     if (!params.page_no || parseInt(params.page_no) < 1) {

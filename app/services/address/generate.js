@@ -59,7 +59,11 @@ GenerateAddressKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_a_g_1", 'unhandled_catch_response', {});
+          return responseHelper.error({
+            internal_error_identifier: 's_a_g_1',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
         }
       });
   },
@@ -76,12 +80,12 @@ GenerateAddressKlass.prototype = {
         , clientId = oThis.clientId
         , addressType = oThis.addressType
         , addrUuid = uuid.v4()
-        , errors_object = {}
+        , errors_object = []
     ;
 
     // Client id is mandatory for all address types but for internalChainIndenpendentAddressType
     if ((!clientId || clientId === '') && addressType != managedAddressConst.internalChainIndenpendentAddressType) {
-      errors_object['client_id'] = 'Mandatory client missing';
+      errors_object.push('invalid_client_id');
     }
 
     if (name) {
@@ -89,14 +93,18 @@ GenerateAddressKlass.prototype = {
     }
 
     if(name && !basicHelper.isUserNameValid(name)){
-      errors_object['name'] = 'Only letters, numbers and spaces allowed. (3 to 20 characters)';
-    }
-    if(name && basicHelper.hasStopWords(name)){
-      errors_object['name'] = 'Come on, the ' + name + ' you entered is inappropriate. Please choose a nicer word.';
+      errors_object.push('invalid_username');
+    } else if (name && basicHelper.hasStopWords(name)){
+      errors_object.push('inappropriate_username');
     }
 
     if(Object.keys(errors_object).length > 0){
-      return responseHelper.error('s_a_g_2', 'invalid params', [errors_object], {sendErrorEmail: false});
+      return responseHelper.paramValidationError({
+        internal_error_identifier: 's_a_g_2',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: errors_object
+        debug_options: {}
+      });
     }
 
     const insertedRec = await new ManagedAddressModel()
@@ -157,7 +165,11 @@ GenerateAddressKlass.prototype = {
 
       if (generateAddrRsp.isFailure()) {
         logger.notify('s_a_g_3', 'generate address failure', {rsp: generateAddrRsp.toHash(), clientId: clientId});
-        return Promise.resolve(responseHelper.error('s_a_g_3', 'something_went_wrong', {}));
+        return responseHelper.error({
+          internal_error_identifier: 's_a_g_3',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {}
+        });
       }
 
       var eth_address = generateAddrRsp.data['address'];
@@ -173,7 +185,11 @@ GenerateAddressKlass.prototype = {
     var generateSaltRsp = await oThis._generateManagedAddressSalt(clientId);
     if (generateSaltRsp.isFailure()) {
       logger.notify('s_a_g_4', 'generate salt failure', {rsp: generateSaltRsp.toHash(), clientId: clientId});
-      return Promise.resolve(responseHelper.error('s_a_g_4', 'something_went_wrong', {}))
+      return responseHelper.error({
+        internal_error_identifier: 's_a_g_4',
+        api_error_identifier: 'something_went_wrong',
+        debug_options: {}
+      });
     }
 
     await oThis._updateInDb(
@@ -225,12 +241,20 @@ GenerateAddressKlass.prototype = {
       new ClientAddressSaltMapping({client_id: clientId}).clear();
 
       if (insertedRec.affectedRows == 0) {
-        return Promise.resolve(responseHelper.error('s_a_g_5', 'something_went_wrong', {}));
+        return responseHelper.error({
+          internal_error_identifier: 's_a_g_5',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {}
+        });
       }
 
     } catch (err) {
       logger.notify('s_a_g_6', 'address salt generation failed', err);
-      return Promise.resolve(responseHelper.error('s_a_g_6', 'something_went_wrong', {}));
+      return responseHelper.error({
+        internal_error_identifier: 's_a_g_6',
+        api_error_identifier: 'something_went_wrong',
+        debug_options: {}
+      });
     }
 
     return Promise.resolve(responseHelper.successWithData({managed_address_salt_id: insertedRec.insertId}));
@@ -251,7 +275,11 @@ GenerateAddressKlass.prototype = {
 
     const privateKeyEncr = await addressEncryptorObj.encrypt(privateKeyD);
     if (!privateKeyEncr) {
-      return Promise.resolve(responseHelper.error("s_a_g_7", 'key_encryption_failed', {}));
+      return responseHelper.error({
+        internal_error_identifier: 's_a_g_7',
+        api_error_identifier: 'key_encryption_failed',
+        debug_options: {}
+      });
     }
 
     return new ManagedAddressModel().update({

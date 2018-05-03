@@ -94,8 +94,11 @@ ExecuteTransactionKlass.prototype = {
         } else {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
-
-          return responseHelper.error("s_t_et_22", "Unhandled result", {}, {});
+          return responseHelper.error({
+            internal_error_identifier: 's_t_et_22',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
         }
       });
   },
@@ -146,8 +149,11 @@ ExecuteTransactionKlass.prototype = {
         logger.error('app/services/transaction/execute_transaction.js::executeTransaction::catch');
         logger.error(error);
 
-        return Promise.resolve(responseHelper.error("s_t_et_21", "Inside catch block", {}, {sendErrorEmail: false})
-        );
+        return Promise.resolve(responseHelper.error({
+          internal_error_identifier: 's_t_et_21',
+          api_error_identifier: 'unhandled_catch_response',
+          debug_options: {}
+        }));
       });
 
     if (executeTransactionResponse.isFailure()) return Promise.resolve(executeTransactionResponse);
@@ -177,17 +183,22 @@ ExecuteTransactionKlass.prototype = {
 
     // check if the transaction log uuid is same as that passed in the params, otherwise error out
     if (transactionLog.transaction_uuid !== oThis.transactionUuid) {
-      return Promise.resolve(
-        responseHelper.error("s_t_et_18", "Invalid params.", {}, {sendErrorEmail: false})
-      );
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_t_et_18',
+        api_error_identifier: 'something_went_wrong',
+        debug_options: {}
+      }));
     }
 
     // check if the transaction log status is processing, otherwise error out
     if ((new transactionLogModel().statuses[transactionLog.status]) != transactionLogConst.processingStatus) {
-      return Promise.resolve(
-        responseHelper.error("s_t_et_1", "Only processing statuses are allowed here.", {}, {sendErrorEmail: false})
-      )
+      return Promise.resolve(responseHelper.error({
+            internal_error_identifier: 's_t_et_1',
+            api_error_identifier: 'something_went_wrong',
+            debug_options: {}
+          }));
     }
+
     const transactionParams = transactionLog.input_params;
 
     oThis.clientId = transactionLog.client_id;
@@ -220,7 +231,11 @@ ExecuteTransactionKlass.prototype = {
     oThis.tokenSymbol = btCacheRsp.data.symbol;
 
     if (!oThis.tokenSymbol) {
-      return Promise.resolve(responseHelper.error("s_t_et_2", "Invalid Token Symbol", {}, {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_t_et_2',
+        api_error_identifier: 'invalid_token_symbol',
+        debug_options: {}
+      }));
     }
 
     var btSecureCache = new BTSecureCacheKlass({tokenSymbol: oThis.tokenSymbol});
@@ -230,19 +245,31 @@ ExecuteTransactionKlass.prototype = {
     }
 
     if (oThis.clientId != cacheRsp.data.client_id) {
-      return Promise.resolve(responseHelper.error("s_t_et_3", "Invalid Token Symbol", {}, {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_t_et_2',
+        api_error_identifier: 'unauthorized_for_other_client',
+        debug_options: {}
+      }));
     }
 
     // Client Token has not been set if worker uuid or token address or airdrop address not present.
     if(!cacheRsp.data.token_erc20_address || !cacheRsp.data.airdrop_contract_address){
-      return Promise.resolve(responseHelper.error("s_t_et_4", "Token not set", {}, {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_t_et_3',
+        api_error_identifier: 'token_not_setup',
+        debug_options: {}
+      }));
     }
 
     oThis.clientBrandedToken = cacheRsp.data;
 
     const clientUuidCacheRsp = await new ClientActiveWorkerUuidCacheKlass({client_id: oThis.clientId}).fetch();
     if (clientUuidCacheRsp.isFailure() || clientUuidCacheRsp.data.length == 0) {
-      return Promise.resolve(responseHelper.error("s_t_et_5", "no workers to process", {}, {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_t_et_4',
+        api_error_identifier: 'token_not_setup',
+        debug_options: {}
+      }));
     }
     oThis.availableWorkerUuids = clientUuidCacheRsp.data.workerUuids;
 
@@ -260,7 +287,11 @@ ExecuteTransactionKlass.prototype = {
     const oThis = this;
 
     if (!oThis.fromUuid || !oThis.toUuid || oThis.fromUuid == oThis.toUuid) {
-      return Promise.resolve(responseHelper.error("s_t_et_5", "Invalid users.", {}, {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_t_et_3',
+        api_error_identifier: 'invalid_api_params',
+        debug_options: {}
+      }));
     }
 
     const uuidsToFetch = [oThis.fromUuid, oThis.toUuid, oThis.clientBrandedToken.reserve_address_uuid];
@@ -269,33 +300,61 @@ ExecuteTransactionKlass.prototype = {
     const cacheFetchResponse = await managedAddressCache.fetch();
 
     if (cacheFetchResponse.isFailure()) {
-      return Promise.resolve(responseHelper.error("s_t_et_6", "Invalid user Ids", {}, {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_t_et_6',
+        api_error_identifier: 'something_went_wrong',
+        debug_options: {}
+      }));
     }
 
     var fromUSer = cacheFetchResponse.data[oThis.fromUuid];
     if (!fromUSer || fromUSer.client_id != oThis.clientId || fromUSer.status != managedAddressesConst.activeStatus) {
-      return Promise.resolve(responseHelper.error("s_t_et_7", "Invalid From user", {}, {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_t_et_7',
+        api_error_identifier: 'invalid_from_user_uuid',
+        debug_options: {}
+      }));
     }
 
     var toUser = cacheFetchResponse.data[oThis.toUuid];
     if (!toUser || toUser.client_id != oThis.clientId || toUser.status != managedAddressesConst.activeStatus) {
-      return Promise.resolve(responseHelper.error("s_t_et_8", "Invalid To user", {}, {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_t_et_8',
+        api_error_identifier: 'invalid_to_user_uuid',
+        debug_options: {}
+      }));
     }
 
     if (oThis.transactionTypeRecord.kind === clientTransactionTypeConst.companyToUserKind) {
       if (oThis.fromUuid !== oThis.clientBrandedToken.reserve_address_uuid) {
-        return Promise.resolve(responseHelper.error("s_t_et_9", "Invalid from Company user uuid", {}, {sendErrorEmail: false}));
+        return Promise.resolve(responseHelper.error({
+          internal_error_identifier: 's_t_et_9',
+          api_error_identifier: 'invalid_from_user_uuid',
+          debug_options: {}
+        }));
       }
     } else if (oThis.transactionTypeRecord.kind === clientTransactionTypeConst.userToCompanyKind) {
       if (oThis.toUuid !== oThis.clientBrandedToken.reserve_address_uuid) {
-        return Promise.resolve(responseHelper.error("s_t_et_10", "Invalid to Company user uuid", {}, {sendErrorEmail: false}));
+        return Promise.resolve(responseHelper.error({
+          internal_error_identifier: 's_t_et_10',
+          api_error_identifier: 'invalid_to_user_uuid',
+          debug_options: {}
+        }));
       }
     } else if (oThis.transactionTypeRecord.kind === clientTransactionTypeConst.userToUserKind) {
       if (oThis.fromUuid === oThis.clientBrandedToken.reserve_address_uuid) {
-        return Promise.resolve(responseHelper.error("s_t_et_11", "Unexpected uuid in From field", {}, {sendErrorEmail: false}));
+        return Promise.resolve(responseHelper.error({
+          internal_error_identifier: 's_t_et_11',
+          api_error_identifier: 'invalid_from_user_uuid',
+          debug_options: {}
+        }));
       }
       if (oThis.toUuid === oThis.clientBrandedToken.reserve_address_uuid) {
-        return Promise.resolve(responseHelper.error("s_t_et_11", "Unexpected uuid in To field", {}, {sendErrorEmail: false}));
+        return Promise.resolve(responseHelper.error({
+          internal_error_identifier: 's_t_et_12',
+          api_error_identifier: 'invalid_to_user_uuid',
+          debug_options: {}
+        }));
       }
     }
 
@@ -314,7 +373,11 @@ ExecuteTransactionKlass.prototype = {
     const oThis = this;
 
     if (!oThis.transactionKind) {
-      return Promise.resolve(responseHelper.error("s_t_et_12", "Mandatory parameters missing", {}, {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_t_et_12',
+        api_error_identifier: 'invalid_api_params',
+        debug_options: {}
+      }));
     }
 
     var cacheObj = new clientTransactionTypeCacheKlass({
@@ -328,7 +391,12 @@ ExecuteTransactionKlass.prototype = {
     oThis.transactionTypeRecord = cachedResp.data;
 
     if (oThis.transactionTypeRecord.status != clientTransactionTypeConst.activeStatus) {
-      return Promise.resolve(responseHelper.error("s_t_et_13", "Invalid transaction kind", {}, {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_t_et_13',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_transactionkind'],
+        debug_options: {}
+      }));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -423,7 +491,11 @@ ExecuteTransactionKlass.prototype = {
 
     if(!oThis.workerUser || !reserveUser){
       await oThis.updateParentTransactionLog(transactionLogConst.failedStatus, {msg: "Worker or reserve user not found. "});
-      return Promise.resolve(responseHelper.error('s_t_et_14', "Worker or reserve user not found", {}, {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_t_et_14',
+        api_error_identifier: 'token_not_setup',
+        debug_options: {}
+      }));
     }
 
     var ostPrices = await new ostPriceCacheKlass().fetch();
@@ -457,11 +529,11 @@ ExecuteTransactionKlass.prototype = {
       .catch(function (error) {
         logger.error('app/services/transaction/execute_transaction.js::airdropPayment.pay::catch');
         logger.error(error);
-        return Promise.resolve(responseHelper.error(
-            "s_t_et_15", "Inside catch block",
-            {}, {sendErrorEmail: true, clientId: oThis.clientId}
-          )
-      );
+        return Promise.resolve(responseHelper.error({
+          internal_error_identifier: 's_t_et_15',
+          api_error_identifier: 'token_not_setup',
+          debug_options: {}
+        }));
     });
 
     if (payResponse.isFailure()) {
@@ -613,7 +685,11 @@ ExecuteTransactionKlass.prototype = {
         , cacheFetchResponse = await managedAddressCache.fetch();
 
     if (cacheFetchResponse.isFailure()) {
-      return Promise.resolve(responseHelper.error("s_t_et_16", "Couldn't fetch data for worker uuid", {}, {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_t_et_16',
+        api_error_identifier: 'something_went_wrong',
+        debug_options: {}
+      }));
     }
 
     oThis.workerUser = cacheFetchResponse.data[workerUuid];

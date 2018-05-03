@@ -52,8 +52,11 @@ AddNew.prototype = {
         } else {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
-
-          return responseHelper.error("s_tk_an_4", "Unhandled result", {}, {sendErrorEmail: false});
+          return responseHelper.error({
+            internal_error_identifier: 's_tk_an_4',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
         }
       })
   },
@@ -95,11 +98,16 @@ AddNew.prototype = {
       , currency_type = (oThis.params.currency_type || '').toUpperCase()
       , currency_value = oThis.params.currency_value
       , commission_percent = oThis.params.commission_percent
-      , errors_object = {}
+      , errors_object = []
     ;
 
     if(!client_id || client_id==0){
-      return Promise.resolve(responseHelper.error('s_tk_an_1', 'invalid Client', {}, {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_tk_an_1',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_client_id'],
+        debug_options: {}
+      }));
     }
 
     if (name) {
@@ -107,49 +115,53 @@ AddNew.prototype = {
     }
 
     if(!basicHelper.isTxKindNameValid(name)){
-      errors_object['name'] = 'Only letters, numbers and spaces allowed. (3 to 20 characters)';
+      errors_object.push('invalid_transactionname');
     } else if (basicHelper.hasStopWords(name)) {
-      errors_object['name'] = 'Come on, the ' + name + ' you entered is inappropriate. Please choose a nicer word.';
+      errors_object.push('inappropriate_transactionname');
     }
 
     if(!kind || !new ClientTransactionTypeModel().invertedKinds[kind]){
-      errors_object['kind'] = 'invalid kind';
+      errors_object.push('invalid_transactionkind');
     }
 
     if (currency_type == 'USD' ) {
       if(!currency_value || currency_value < 0.01 || currency_value > 100){
-        errors_object['currency_value'] = 'Value of a transaction in $USD is out of range. Min value is 0.01$ and Max value is 100$ ';
+        errors_object.push('out_of_bound_transaction_usd_value');
       }
       oThis.transactionKindObj.value_in_usd = currency_value;
     } else if (currency_type == 'BT' ){
       if(!currency_value || currency_value < 0.00001 || currency_value > 100){
-        errors_object['currency_value'] = 'Value of a transaction is out of range. Min value is 0.00001 and Max value is 100';
+        errors_object.push('out_of_bound_transaction_bt_value');
       }
       var value_in_bt_wei = basicHelper.convertToWei(currency_value);
       if(!basicHelper.isWeiValid(value_in_bt_wei)){
-        errors_object['currency_value'] = 'currency value in BT is not valid';
+        errors_object.push('out_of_bound_transaction_bt_value');
       }
       oThis.transactionKindObj.value_in_bt_wei = basicHelper.formatWeiToString(value_in_bt_wei);
     } else {
-      errors_object['currency_type'] = 'Atleast one currency type(USD or BT) to mention';
+      errors_object.push('invalid_currency_type');
     }
 
     if(!commission_percent || parseInt(commission_percent) < 0 || parseFloat(commission_percent) > 100){
-      errors_object['commission_percent'] = 'Invalid Commission Percentage.';
+      errors_object.push('invalid_commission_percent');
     }
 
     if(parseFloat(commission_percent) > 0 && kind != clientTxTypesConst.userToUserKind){
-      errors_object['commission_percent'] = 'Commission Percentage is allowed only for user to user Transactions.';
+      errors_object.push('invalid_commission_percent');
     }
 
     var existingTKind = await new ClientTransactionTypeModel().getTransactionByName({clientId: client_id, name: name});
     if(existingTKind.length > 0){
-      errors_object['name'] = 'Transaction kind name "'+ name +'" already present.';
+      errors_object.push('duplicate_transactionname');
     }
 
     if(Object.keys(errors_object).length > 0){
-      return Promise.resolve(responseHelper.error('s_tk_an_2', 'invalid params', [errors_object],
-        {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_tk_an_2',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: errors_object,
+        debug_options: {}
+      }));
     }
 
     oThis.transactionKindObj.client_id = client_id;

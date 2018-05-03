@@ -32,8 +32,11 @@ GetAddressesByUuidKlass.prototype = {
         } else {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
-
-          return responseHelper.error("s_cu_gabu_3", 'unhandled_catch_response', {});
+          return responseHelper.error({
+            internal_error_identifier: 's_cu_gabu_3',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
         }
       });
   },
@@ -50,7 +53,11 @@ GetAddressesByUuidKlass.prototype = {
     var usersData = await new ManagedAddressModel().getByUuids(oThis.uuids);
 
     if (usersData.length <= 0) {
-      return Promise.resolve(responseHelper.error("s_cu_gabu_1", 'data_not_found', {}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_cu_gabu_1',
+        api_error_identifier: 'data_not_found',
+        debug_options: {}
+      }));
     }
     
     var response = {};
@@ -60,7 +67,11 @@ GetAddressesByUuidKlass.prototype = {
       var user = usersData[i];
 
       if (user['client_id'] != oThis.clientId) {
-        return Promise.resolve(responseHelper.error("s_cu_gabu_2", 'unauthorized_for_other_client', {}));
+        return Promise.resolve(responseHelper.error({
+          internal_error_identifier: 's_cu_gabu_2',
+          api_error_identifier: 'unauthorized_for_other_client',
+          debug_options: {}
+        }));
       }
 
       response[user['uuid']] = user['ethereum_address'];

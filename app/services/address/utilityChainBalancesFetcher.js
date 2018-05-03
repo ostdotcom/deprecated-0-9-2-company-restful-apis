@@ -46,7 +46,11 @@ UtilityChainBalancesFetcherKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_a_ucbf_1", 'unhandled_catch_response', {});
+          return responseHelper.error({
+            internal_error_identifier: 's_a_ucbf_1',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
         }
       });
   },
@@ -156,11 +160,19 @@ UtilityChainBalancesFetcherKlass.prototype = {
     const clientBrandedTokenSecureCacheData = clientBrandedTokenSecureCacheRsp.data;
 
     if (parseInt(clientBrandedTokenSecureCacheData.client_id) != parseInt(oThis.clientId)) {
-      return Promise.resolve(responseHelper.error('s_a_ucbf_2', 'unauthorized_for_other_client', {}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_a_ucbf_2',
+        api_error_identifier: 'unauthorized_for_other_client',
+        debug_options: {}
+      }));
     }
 
     if (!clientBrandedTokenSecureCacheData.token_erc20_address) {
-      return Promise.resolve(responseHelper.error('s_a_ucbf_3', 'token_contract_not_deployed', {}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_a_ucbf_3',
+        api_error_identifier: 'token_contract_not_deployed',
+        debug_options: {}
+      }));
     }
 
     const obj = new openStPlatform.services.balance.brandedToken(

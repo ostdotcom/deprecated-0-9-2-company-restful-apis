@@ -55,8 +55,11 @@ StartOnBoardingKlass.prototype = {
           } else {
             logger.error(`${__filename}::perform::catch`);
             logger.error(error);
-
-            return responseHelper.error("s_sam_gsa_1", "Unhandled result", {}, {});
+            return responseHelper.error({
+              internal_error_identifier: 's_sam_gsa_1',
+              api_error_identifier: 'unhandled_catch_response',
+              debug_options: {}
+            });
           }
         })
   },
@@ -93,17 +96,31 @@ StartOnBoardingKlass.prototype = {
     var oThis = this;
 
     if(!oThis.clientId || !oThis.clientTokenId || !oThis.tokenSymbol){
-      return Promise.reject(responseHelper.error('sam_gsa_1', 'Invalid Params'));
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 'sam_gsa_1',
+        api_error_identifier: 'invalid_api_params',
+        debug_options: {}
+      }));
     }
 
     if (!oThis.stakeAndMintParams || !oThis.stakeAndMintParams.bt_to_mint ||
         !oThis.stakeAndMintParams.st_prime_to_mint || !oThis.stakeAndMintParams.client_eth_address ||
         !oThis.stakeAndMintParams.transaction_hash) {
-      return Promise.reject(responseHelper.error('sam_gsa_2', 'Invalid stakeAndMintParams', oThis.stakeAndMintParams));
+
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 'sam_gsa_2',
+        api_error_identifier: 'invalid_api_params',
+        debug_options: {stakeAndMintParams: oThis.stakeAndMintParams}
+      }));
+
     }
 
     if (!oThis.airdropParams || !oThis.airdropParams.airdrop_amount || !oThis.airdropParams.airdrop_user_list_type) {
-      return Promise.reject(responseHelper.error('sam_gsa_3', 'Invalid airdropParams', oThis.airdropParams));
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 'sam_gsa_3',
+        api_error_identifier: 'invalid_api_params',
+        debug_options: {airdropParams: oThis.airdropParams}
+      }));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));

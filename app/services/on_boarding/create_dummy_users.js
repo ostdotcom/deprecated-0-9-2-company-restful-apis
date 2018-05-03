@@ -47,8 +47,11 @@ CreateDummyUsers.prototype = {
         } else {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
-
-          return responseHelper.error("ob_cdu_4", 'unhandled_catch_response', {});
+          return responseHelper.error({
+            internal_error_identifier: 'ob_cdu_4',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
         }
       })
   },
@@ -86,9 +89,12 @@ CreateDummyUsers.prototype = {
     const oThis = this;
 
     if (!oThis.numberOfUsers) {
-      return Promise.resolve(responseHelper.error(
-        'ob_cdu_1', 'invalid_api_params', {})
-      );
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 'ob_cdu_1',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_number_of_users'],
+        debug_options: {}
+      }));
     }
 
     if (oThis.numberOfUsers > 25) {
@@ -96,18 +102,24 @@ CreateDummyUsers.prototype = {
     }
 
     if (!oThis.clientId) {
-      return Promise.resolve(responseHelper.error(
-        'ob_cdu_2', 'invalid_api_params', {})
-      );
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 'ob_cdu_2',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_client_id'],
+        debug_options: {}
+      }));
     }
 
     const clientBrandedTokenCache = new ClientBrandedTokenCacheKlass({'clientId': oThis.clientId})
       , clientDetail = await clientBrandedTokenCache.fetch();
 
     if (clientDetail.isFailure()) {
-      return Promise.resolve(responseHelper.error(
-        'ob_cdu_3', 'Invlaid Client')
-      );
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 'ob_cdu_3',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_client_id'],
+        debug_options: {}
+      }));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));

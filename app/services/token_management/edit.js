@@ -44,8 +44,11 @@ EditBrandedTokenKlass.prototype = {
         } else {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
-
-          return responseHelper.error("s_tm_e_4", "Unhandled result", {}, {});
+          return responseHelper.error({
+            internal_error_identifier: 's_tm_e_4',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
         }
       });
   },
@@ -78,18 +81,31 @@ EditBrandedTokenKlass.prototype = {
     var oThis = this;
 
     if(!oThis.client_id || !oThis.symbol || !basicHelper.isBTSymbolValid(oThis.symbol)){
-      return Promise.resolve(responseHelper.error('tm_e_1', 'Unauthorized access'));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 'tm_e_1',
+        api_error_identifier: 'invalid_api_params',
+        debug_options: {}
+      }));
     }
 
     const clientBrandedTokens = await new ClientBrandedTokenModel().getBySymbol(oThis.symbol);
     if(clientBrandedTokens.length <= 0){
-      return Promise.resolve(responseHelper.error('tm_e_2', 'Invalid Edit request'));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 'tm_e_2',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_token_symbol'],
+        debug_options: {}
+      }));
     }
 
     oThis.brandedTokenRecordObject = clientBrandedTokens[0];
 
     if(oThis.brandedTokenRecordObject.client_id != oThis.client_id){
-      return Promise.resolve(responseHelper.error('tm_e_3', 'Unauthorized access'));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 'tm_e_3',
+        api_error_identifier: 'unauthorized_for_other_client',
+        debug_options: {}
+      }));
     }
 
     if(oThis.name && basicHelper.isBTNameValid(oThis.name) && oThis.name != oThis.brandedTokenRecordObject.name){
@@ -155,7 +171,7 @@ EditBrandedTokenKlass.prototype = {
         }
         return Promise.resolve(responseHelper.successWithData({}));
       } else {
-        return Promise.resolve(responseHelper.error(getBTDetailsRsp.err.code, getBTDetailsRsp.err.message));
+        return Promise.resolve(getBTDetailsRsp);
       }
     };
 

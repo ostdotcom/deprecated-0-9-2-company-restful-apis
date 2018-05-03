@@ -40,8 +40,11 @@ GetStakedAmountKlass.prototype = {
         } else {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
-
-          return responseHelper.error("s_sam_gsa_1", "Unhandled result", {}, {});
+          return responseHelper.error({
+            internal_error_identifier: 's_sam_gsa_1',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
         }
       })
   },
@@ -66,7 +69,7 @@ GetStakedAmountKlass.prototype = {
         const amountInWei = getStakedAmountRsp.data.allTimeStakedAmount;
         return responseHelper.successWithData({allTimeStakedAmount: basicHelper.convertToNormal(amountInWei)});
       } else {
-        return responseHelper.error(getStakedAmountRsp.err.code, getStakedAmountRsp.err.message);
+        return getStakedAmountRsp;
       }
     };
 
@@ -79,7 +82,11 @@ GetStakedAmountKlass.prototype = {
     var oThis = this;
 
     if(!oThis.clientId || !oThis.tokenSymbol){
-      return Promise.resolve(responseHelper.error('sam_gsa_1', 'Invalid Params'));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 'sam_gsa_1',
+        api_error_identifier: 'invalid_api_params',
+        debug_options: {}
+      }));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));

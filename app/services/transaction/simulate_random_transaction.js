@@ -60,8 +60,11 @@ simulateRandomTransactionKlass.prototype = {
         } else {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
-
-          return responseHelper.error("s_tr_srt_10", "Unhandled result", {}, {sendErrorEmail: false});
+          return responseHelper.error({
+            internal_error_identifier: 's_tr_srt_10',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
         }
       })
   },
@@ -118,7 +121,11 @@ simulateRandomTransactionKlass.prototype = {
     const cacheRsp = await btSecureCache.fetch();
 
     if (cacheRsp.isFailure()) {
-      return Promise.resolve(responseHelper.error("s_tr_srt_1", "Invalid Token Symbol", {}, {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_tr_srt_1',
+        api_error_identifier: 'invalid_token_symbol',
+        debug_options: {}
+      }));
     }
 
     oThis.clientBrandedToken = cacheRsp.data;
@@ -158,8 +165,11 @@ simulateRandomTransactionKlass.prototype = {
     var countCacheObj = new ClientUsersCntCacheKlass({client_id: oThis.clientId});
     var resp = await countCacheObj.fetch();
     if(resp.isFailure() || parseInt(resp.data) <= 0){
-      return Promise.resolve(responseHelper.error('s_tr_srt_1', 'No active users for client.', {},
-        {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_tr_srt_2',
+        api_error_identifier: 'no_users_found_for_client',
+        debug_options: {}
+      }));
     }
 
     var users = await new ManagedAdressModel().getRandomActiveUsers(
@@ -169,8 +179,11 @@ simulateRandomTransactionKlass.prototype = {
     var usersCount = users.length;
 
     if(usersCount < 2){
-      return Promise.resolve(responseHelper.error('s_tr_srt_2', 'No active users for client.', {},
-        {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_tr_srt_3',
+        api_error_identifier: 'no_users_found_for_client',
+        debug_options: {}
+      }));
     }
 
     var userEthAddresses = [];
@@ -226,8 +239,11 @@ simulateRandomTransactionKlass.prototype = {
     var countCacheObj = new ClientTrxTypeCntCacheKlass({clientId: oThis.clientId});
     var resp = await countCacheObj.fetch();
     if(resp.isFailure() || parseInt(resp.data) <= 0){
-      return Promise.resolve(responseHelper.error('s_tr_srt_4', 'No active transactions for client.', {},
-        {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_tr_srt_4',
+        api_error_identifier: 'no_actions_found_for_client',
+        debug_options: {}
+      }));
     }
 
     var offset = (parseInt(resp.data) - oThis.maxTxTypesToAttempt + 1);
@@ -242,8 +258,11 @@ simulateRandomTransactionKlass.prototype = {
     var trxTypes = await new ClientTransactionTypeModel().getAll(params);
 
     if(!trxTypes[0]){
-      return Promise.resolve(responseHelper.error('s_tr_srt_6', 'No active transactions for client.', {},
-        {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_tr_srt_5',
+        api_error_identifier: 'no_actions_found_for_client',
+        debug_options: {}
+      }));
     }
 
     if (oThis.prioritizeCompanyTxs) {
@@ -439,13 +458,19 @@ simulateRandomTransactionKlass.prototype = {
     const oThis = this;
 
     if(!txParams.from_uuid || !txParams.to_uuid){
-      return Promise.resolve(responseHelper.error("s_tr_srt_8", "Something went wrong.", {},
-        {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_tr_srt_8',
+        api_error_identifier: 'something_went_wrong',
+        debug_options: {}
+      }));
     }
 
     if(txParams.from_uuid === txParams.to_uuid){
-      return Promise.resolve(responseHelper.error("s_tr_srt_9", "Something went wrong.", {},
-        {sendErrorEmail: false}));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_tr_srt_9',
+        api_error_identifier: 'something_went_wrong',
+        debug_options: {}
+      }));
     }
 
     var obj = new executeTransactionKlass(txParams);

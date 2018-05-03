@@ -44,8 +44,11 @@ FetchBalances.prototype = {
         } else {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
-
-          return responseHelper.error("ob_fb_3", "Unhandled result", {}, {});
+          return responseHelper.error({
+            internal_error_identifier: 'ob_fb_3',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
         }
       })
   },
@@ -61,11 +64,21 @@ FetchBalances.prototype = {
     const oThis = this;
 
     if (!oThis.clientId) {
-      return Promise.resolve(responseHelper.error('ob_fb_1', 'missing clientId'));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 'ob_fb_1',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_client_id'],
+        debug_options: {}
+      }));
     }
 
     if (!oThis.balancesToFetch) {
-      return Promise.resolve(responseHelper.error('ob_fb_2', 'missing balancesToFetch'));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 'ob_fb_2',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['missing_balances_to_fetch'],
+        debug_options: {}
+      }));
     }
 
     var ostPrices = await new ostPriceCacheKlass().fetch();

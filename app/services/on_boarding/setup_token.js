@@ -70,8 +70,11 @@ SetupToken.prototype = {
         } else {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
-
-          return responseHelper.error("ob_st_2", "Unhandled result", {}, {});
+          return responseHelper.error({
+            internal_error_identifier: 'ob_st_2',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
         }
       })
   },
@@ -122,7 +125,12 @@ SetupToken.prototype = {
       , tokenBySymbol = await new ClientBrandedTokenModel().getBySymbol(oThis.symbol);
 
     if (tokenBySymbol.length > 0) {
-      return Promise.resolve(responseHelper.error('s_ob_1', 'Symbol is already present', '', {'symbol': 'Symbol is already present'}))
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 's_ob_1',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['token_symbol_already_exists'],
+        debug_options: {}
+      }));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
