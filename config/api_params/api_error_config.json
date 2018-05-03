@@ -103,6 +103,21 @@
     "http_code": "422",
     "code": "insufficient_balance_for_airdrop",
     "message": "Insufficient Balance of Reserved Address for Airdrop"
+  },
+  "unhandled_current_step": {
+    "http_code": "422",
+    "code": "unhandled_current_step",
+    "message": "Unhandled current step"
+  },
+  "invalid_branded_token": {
+    "http_code": "422",
+    "code": "invalid_branded_token",
+    "message": "no client branded token found"
+  },
+  "duplicate_record": {
+    "http_code": "422",
+    "code": "duplicate_record",
+    "message": "duplicate record"
   }
 
 }
