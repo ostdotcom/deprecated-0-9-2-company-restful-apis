@@ -4,11 +4,25 @@
     "optional":["name"]
   },
   "edit_user":{
-    "mandatory":["name","uuid"],
+    "mandatory":[
+      {
+        "parameter": "name",
+        "error_identifier": "user_name_missing"
+      },
+      {
+        "parameter": "uuid",
+        "error_identifier": "user_uuid_missing"
+      }
+    ],
     "optional":[]
   },
   "list_user":{
-    "mandatory":["id"],
+    "mandatory":[
+      {
+        "parameter": "id",
+        "error_identifier": "user_id_missing"
+      },
+    ],
     "optional":[]
   },
   "list_users":{

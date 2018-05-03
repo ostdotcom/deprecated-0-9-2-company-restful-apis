@@ -1,18 +1,1 @@
-{
-  "create_user":{
-    "mandatory":[],
-    "optional":["name"]
-  },
-  "edit_user":{
-    "mandatory":["name","uuid"],
-    "optional":[]
-  },
-  "list_user":{
-    "mandatory":["id"],
-    "optional":[]
-  },
-  "list_users":{
-    "mandatory":[],
-    "optional":["airdropped","order_by","order","limit","offset"]
-  }
-}
+{}
