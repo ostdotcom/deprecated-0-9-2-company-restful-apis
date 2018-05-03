@@ -11,6 +11,9 @@ const rootPrefix = '../..'
   , ucBalanceFetcherKlass = require(rootPrefix + '/app/services/address/utilityChainBalancesFetcher')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , routeHelper = require(rootPrefix + '/routes/helper')
+  , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
+  , routeHelper = require(rootPrefix + '/routes/helper')
+  , errorConfig = routeHelper.fetchErrorConfig(apiVersions.v0)
 ;
 
 const router = express.Router()
@@ -42,20 +45,16 @@ router.post('/create', function (req, res, next) {
 
     // handle final response
     const handleResponse = function (response) {
-      return response.renderResponse(res);
+      return response.renderResponse(res, errorConfig);
     };
 
     return generateEthAddress.perform().then(handleResponse);
 
   };
 
-  console.log("-----------------------------------------------------------------------------------------------");
-  console.log(req.decodedParams);
-  console.log("-----------------------------------------------------------------------------------------------");
-
   Promise.resolve(performer()).catch(function (err) {
     logger.notify('r_cu_1', 'Something went wrong', err);
-    responseHelper.error('r_cu_1', 'Something went wrong').renderResponse(res)
+    responseHelper.error('r_cu_1', 'Something went wrong').renderResponse(res, errorConfig)
   });
 
 });
@@ -82,14 +81,14 @@ router.post('/edit', function (req, res, next) {
 
     // handle final response
     const handleResponse = function (response) {
-      return response.renderResponse(res);
+      return response.renderResponse(res, errorConfig);
     };
     return editUser.perform(clientId, uuid, name).then(handleResponse);
   };
 
   Promise.resolve(performer()).catch(function (err) {
     logger.notify('r_cu_2', 'Something went wrong', err);
-    responseHelper.error('r_cu_2', 'Something went wrong').renderResponse(res)
+    responseHelper.error('r_cu_2', 'Something went wrong').renderResponse(res, errorConfig)
   });
 });
 
@@ -115,7 +114,7 @@ router.get('/list', function (req, res, next) {
 
     // handle final response
     const handleResponse = function (response) {
-      return response.renderResponse(res);
+      return response.renderResponse(res, errorConfig);
     };
 
     return listAddresses.perform(decodedParams).then(handleResponse);
@@ -124,7 +123,7 @@ router.get('/list', function (req, res, next) {
 
   Promise.resolve(performer()).catch(function (err) {
     logger.notify('r_cu_3', 'Something went wrong', err);
-    responseHelper.error('r_cu_3', 'Something went wrong').renderResponse(res)
+    responseHelper.error('r_cu_3', 'Something went wrong').renderResponse(res, errorConfig)
   });
 
 });
@@ -177,7 +176,7 @@ router.get('/get-st-prime-balance', function (req, res, next) {
 
     // handle final response
     const handleResponse = function (response) {
-      return response.renderResponse(res);
+      return response.renderResponse(res, errorConfig);
     };
 
     return ucBalanceFetcher.perform().then(handleResponse);
@@ -186,7 +185,7 @@ router.get('/get-st-prime-balance', function (req, res, next) {
 
   Promise.resolve(performer()).catch(function (err) {
     logger.notify('r_cu_8', 'Something went wrong', err);
-    responseHelper.error('r_cu_8', 'Something went wrong').renderResponse(res)
+    responseHelper.error('r_cu_8', 'Something went wrong').renderResponse(res, errorConfig)
   });
 
 });

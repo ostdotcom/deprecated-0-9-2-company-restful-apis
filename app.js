@@ -157,13 +157,18 @@ const checkSystemServiceStatuses = async function(req, res, next) {
 
 };
 
+const appendInternalVersion = function(req, res, next){
+  req.decodedParams.apiVersion = apiVersions.internal;
+  next();
+};
+
 const appendV0Version = function(req, res, next){
-  req.decodedParams.apiVersion = 'v0';
+  req.decodedParams.apiVersion = apiVersions.v0;
   next();
 };
 
 const appendV1Version = function(req, res, next){
-  req.decodedParams.apiVersion = 'v1';
+  req.decodedParams.apiVersion = apiVersions.v1;
   next();
 };
 
@@ -246,11 +251,11 @@ if (cluster.isMaster) {
   // Following are the routes
   app.use('/', internalRoutes);
 
-  app.use('/internal', sanitizer(), checkSystemServiceStatuses, appendRequestDebugInfo, decodeJwt, appendV0Version, internalRoutes);
+  app.use('/internal', sanitizer(), checkSystemServiceStatuses, appendRequestDebugInfo, decodeJwt, appendInternalVersion, internalRoutes);
 
   app.use('/v1', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), appendV1Version, v1Routes);
 
-  app.use('/transaction-types', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), v0TransactionRoutes);
+  app.use('/transaction-types', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), appendV0Version, v0TransactionRoutes);
 
   app.use('/users', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), appendV0Version, v0ClientUsersRoutes);
 

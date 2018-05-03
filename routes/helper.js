@@ -15,8 +15,11 @@ const routeMethods = {
 
     try{
 
+      const oThis = this
+          , errorConfig = oThis.fetchErrorConfig(req.decodedParams.apiVersion);
+
       var handleResponse = function (response) {
-        response.renderResponse(res);
+        response.renderResponse(res, errorConfig);
       };
 
       // TODO: req.decodedParams should be removed. It is just testing hack.
@@ -28,7 +31,7 @@ const routeMethods = {
 
     } catch(err) {
       logger.notify(errorCode, 'Something went wrong', err);
-      responseHelper.error(errorCode, 'Something went wrong').renderResponse(res)
+      responseHelper.error(errorCode, 'something_went_wrong').renderResponse(res, errorConfig)
     }
 
   },

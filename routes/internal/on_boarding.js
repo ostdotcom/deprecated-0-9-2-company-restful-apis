@@ -8,6 +8,9 @@ const rootPrefix = '../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , routeHelper = require(rootPrefix + '/routes/helper')
+  , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
+  , routeHelper = require(rootPrefix + '/routes/helper')
+  , errorConfig = routeHelper.fetchErrorConfig(apiVersions.internal)
 ;
 
 /* On board a branded token */
@@ -32,9 +35,9 @@ router.post('/grant-test-ost', function (req, res, next) {
     // handle final response
     const handleResponse = function (response) {
       if(response.isSuccess()){
-        return responseHelper.successWithData(response.data).renderResponse(res);
+        return responseHelper.successWithData(response.data).renderResponse(res, errorConfig);
       } else {
-        return responseHelper.error(response.err.code, response.err.message).renderResponse(res);
+        return responseHelper.error(response.err.code, response.err.message).renderResponse(res, errorConfig);
       }
     };
 
@@ -50,7 +53,7 @@ router.post('/grant-test-ost', function (req, res, next) {
 
   Promise.resolve(performer()).catch(function (err) {
     logger.notify('r_ob_3', 'Something went wrong', err);
-    responseHelper.error('r_ob_3', 'Something went wrong').renderResponse(res)
+    responseHelper.error('r_ob_3', 'Something went wrong').renderResponse(res, errorConfig)
   });
 });
 
@@ -67,9 +70,9 @@ router.post('/grant-eth', function (req, res, next) {
     // handle final response
     const handleResponse = function (response) {
       if(response.isSuccess()){
-        return responseHelper.successWithData(response.data).renderResponse(res);
+        return responseHelper.successWithData(response.data).renderResponse(res, errorConfig);
       } else {
-        return responseHelper.error(response.err.code, response.err.message).renderResponse(res);
+        return responseHelper.error(response.err.code, response.err.message).renderResponse(res, errorConfig);
       }
     };
 
@@ -85,7 +88,7 @@ router.post('/grant-eth', function (req, res, next) {
 
   Promise.resolve(performer()).catch(function (err) {
     logger.notify('r_ob_4', 'Something went wrong', err);
-    responseHelper.error('r_ob_4', 'Something went wrong').renderResponse(res)
+    responseHelper.error('r_ob_4', 'Something went wrong').renderResponse(res, errorConfig)
   });
 });
 
