@@ -71,7 +71,7 @@ addMoreWorkersKlass.prototype = {
           } else {
             errorObj = responseHelper.error({
               internal_error_identifier: 'e_amw_1',
-              api_error_identifier: 'something_went_wrong',
+              api_error_identifier: 'unhandled_catch_response',
               debug_options: {error: error},
               error_config: errorConfig
             });

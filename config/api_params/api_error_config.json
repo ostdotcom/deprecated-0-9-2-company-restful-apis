@@ -84,6 +84,11 @@
     "code": "invalid_request",
     "message": "Unsupported balance type"
   },
+  "error_getting_balance": {
+    "http_code": "400",
+    "code": "error_getting_balance",
+    "message": "Error while getting the balance"
+  },
   "client_airdrop_not_found": {
     "http_code": "422",
     "code": "client_airdrop_not_found",
@@ -158,6 +163,31 @@
     "http_code": "422",
     "code": "no_users_found_for_this_list_type",
     "message": "No users found to airdrop for this list type"
+  },
+  "address_invalid": {
+    "http_code": "422",
+    "code": "address_invalid",
+    "message": "Address invalid"
+  },
+  "cache_issue": {
+    "http_code": "422",
+    "code": "cache_issue",
+    "message": "Cache Issue"
+  },
+  "cache_key_invalid": {
+    "http_code": "422",
+    "code": "cache_key_invalid",
+    "message": "Cache key validation failed"
+  },
+  "cache_servers_unavailable": {
+    "http_code": "422",
+    "code": "cache_servers_unavailable",
+    "message": "OST_MEMCACHE_SERVERS not available"
+  },
+  "invalid_transaction_type": {
+    "http_code": "422",
+    "code": "invalid_transaction_type",
+    "message": "Invalid transaction type"
   },
   "no_users_found_for_client": {
     "http_code": "422",
