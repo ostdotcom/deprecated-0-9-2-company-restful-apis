@@ -139,6 +139,11 @@
     "code": "invalid_token_symbol",
     "message": "Invalid Token Symbol"
   },
+  "token_not_setup": {
+    "http_code": "422",
+    "code": "token_not_setup",
+    "message": "Token setup not complete"
+  },
   "invalid_client_id": {
     "http_code": "422",
     "code": "invalid_client_id",
@@ -153,6 +158,16 @@
     "http_code": "422",
     "code": "no_users_found_for_this_list_type",
     "message": "No users found to airdrop for this list type"
+  },
+  "no_users_found_for_client": {
+    "http_code": "422",
+    "code": "UNPROCESSABLE_ENTITY",
+    "message": "No users found to execute transaction"
+  },
+  "no_actions_found_for_client": {
+    "http_code": "422",
+    "code": "UNPROCESSABLE_ENTITY",
+    "message": "No actions found to execute transaction"
   }
 
 }

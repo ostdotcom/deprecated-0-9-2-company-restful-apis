@@ -34,5 +34,49 @@
   "invalid_token_symbol": {
     "parameter": "token_symbol",
     "message": "Invalid Token Symbol"
+  },
+  "invalid_transactionname": {
+    "parameter": "name",
+    "message": "Only letters, numbers and spaces allowed. (3 to 20 characters)."
+  },
+  "inappropriate_transactionname": {
+    "parameter": "name",
+    "message": "Must be a minimum of 3 characters, a maximum of 20 characters, and can contain only numbers, letters, and spaces, along with other common sense limitations."
+  },
+  "invalid_transactionkind": {
+    "parameter": "kind",
+    "message": "Invalid transaction kind."
+  },
+  "duplicate_transactionname": {
+    "parameter": "name",
+    "message": "An action with that name already exists."
+  },
+  "out_of_bound_transaction_usd_value": {
+    "parameter": "currency_value",
+    "message": "Can be 0.01 to 100"
+  },
+  "out_of_bound_transaction_bt_value": {
+    "parameter": "currency_value",
+    "message": "Can be 0.00001 to 100"
+  },
+  "invalid_currency_type": {
+    "parameter": "currency",
+    "message": "Must be either 'USD' (fixed) or 'BT' (floating)."
+  },
+  "invalid_commission_percent": {
+    "parameter": "commission_percent",
+    "message": "Can only be set for 'user_to_user' actions and can be 0 to 100."
+  },
+  "invalid_client_transaction_id": {
+    "parameter": "client_transaction_id",
+    "message": "Invalid client_transaction_id"
+  },
+  "invalid_from_user_uuid": {
+    "parameter": "from_uuid",
+    "message": "Invalid from_uuid"
+  },
+  "invalid_to_user_uuid": {
+    "parameter": "to_uuid",
+    "message": "Invalid to_uuid"
   }
 }
