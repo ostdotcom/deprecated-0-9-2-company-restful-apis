@@ -1,13 +1,15 @@
 "use strict";
 
 const rootPrefix = ".."
-    , managedAddressModel = require(rootPrefix + '/app/models/managed_address')
-    , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
-    , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
-    , BrandedTokenKlass = require(rootPrefix + '/node_modules/\@openstfoundation/openst-platform/lib/contract_interact/branded_token')
-    , basicHelper = require(rootPrefix + '/helpers/basic')
-    , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-    , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , managedAddressModel = require(rootPrefix + '/app/models/managed_address')
+  , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
+  , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
+  , BrandedTokenKlass = require(rootPrefix + '/node_modules/\@openstfoundation/openst-platform/lib/contract_interact/branded_token')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
+  , errorConfig = basicHelper.fetchErrorConfig(apiVersions.general)
 ;
 
 const VerifyUserApprovalAmountsKlass = function(params){
@@ -74,7 +76,11 @@ VerifyUserApprovalAmountsKlass.prototype = {
     }
 
     if (!oThis.startClientId || !oThis.endClientId) {
-      return responseHelper.error('e_a_w_1', 'Invalid params');
+      return responseHelper.error({
+        internal_error_identifier: 'e_vuam_1',
+        api_error_identifier: 'invalid_params',
+        error_config: errorConfig
+      });
     }
 
     oThis.clientIds = [];

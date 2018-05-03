@@ -11,15 +11,17 @@ const openStPayments = require('@openstfoundation/openst-payments')
 ;
 
 const ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/client_worker_managed_address_id')
-    , clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id')
-    , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
-    , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
-    , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
-    , GenerateEthAddressKlass = require(rootPrefix + '/app/services/address/generate')
-    , chainIntConstants = require(rootPrefix + '/config/chain_interaction_constants')
-    , responseHelper = require(rootPrefix + '/lib/formatter/response')
-    , basicHelper = require(rootPrefix + '/helpers/basic')
-    , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id')
+  , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
+  , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
+  , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
+  , GenerateEthAddressKlass = require(rootPrefix + '/app/services/address/generate')
+  , chainIntConstants = require(rootPrefix + '/config/chain_interaction_constants')
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
+  , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
+  , errorConfig = basicHelper.fetchErrorConfig(apiVersions.general)
 ;
 
 const addMoreWorkersKlass = function(params){
@@ -60,18 +62,19 @@ addMoreWorkersKlass.prototype = {
 
           var errorObj = null;
 
+          // something unhandled happened
+          logger.error('executables/add_more_workers.js::perform::catch');
+          logger.error(error);
+
           if(responseHelper.isCustomResult(error)) {
-
             errorObj = error;
-
           } else {
-
-            // something unhandled happened
-            logger.error('executables/add_more_workers.js::perform::catch');
-            logger.error(error);
-
-            errorObj = responseHelper.error("l_sw_1", "Inside catch block", {error: error}, {sendErrorEmail: true});
-
+            errorObj = responseHelper.error({
+              internal_error_identifier: 'e_amw_1',
+              api_error_identifier: 'something_went_wrong',
+              debug_options: {error: error},
+              error_config: errorConfig
+            });
           }
 
           if (oThis.criticalChainInteractionLog) {
@@ -101,13 +104,13 @@ addMoreWorkersKlass.prototype = {
     var r = await oThis.setclientIdSymbolMap();
 
     if (r.isFailure()) {
-      return Promise.resolve(r);
+      return Promise.reject(r);
     }
     
     var r = await oThis.generateWorkerAddresses();
 
     if (r.isFailure()) {
-      return Promise.resolve(r);
+      return Promise.reject(r);
     }
     
     var r = await oThis.associateWorkerAddresses();
@@ -124,7 +127,11 @@ addMoreWorkersKlass.prototype = {
     }
 
     if (!oThis.startClientId || !oThis.endClientId) {
-      return responseHelper.error('e_a_w_1', 'Invalid params');
+      return responseHelper.error({
+        internal_error_identifier: 'e_amw_2',
+        api_error_identifier: "invalid_params",
+        error_config: errorConfig
+      });
     }
 
     oThis.clientIds = [];
@@ -281,7 +288,12 @@ addMoreWorkersKlass.prototype = {
 
       if (successWorkerAddrIds.length == 0) {
         const errorRsp = responseHelper.error(
-            'l_sw_3', 'could not set any worker', {data: formattedPromiseResponses}
+          {
+            internal_error_identifier: 'e_amw_3',
+            api_error_identifier: 'could_not_proceed',
+            debug_options: {data: formattedPromiseResponses},
+            error_config: errorConfig
+          }
         );
         return Promise.reject(errorRsp);
       }
