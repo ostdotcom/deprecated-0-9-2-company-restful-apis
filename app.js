@@ -114,7 +114,7 @@ const decodeJwt = function(req, res, next) {
   const jwtOnReject = function (err) {
     return responseHelper.error({
       internal_error_identifier: 'a_1',
-      api_error_identifier: 'invalid_or_expired_jwt_token',
+      api_error_identifier: 'invalid_or_expired_token',
       debug_options: {}
     }).renderResponse(res, errorConfig);
   };

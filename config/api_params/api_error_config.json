@@ -14,10 +14,15 @@
     "code": "UNAUTHORIZED",
     "message": "Unauthorised for some other client."
   },
-  "invalid_or_expired_jwt_token": {
+  "invalid_or_expired_token": {
     "http_code": "401",
     "code": "UNAUTHORIZED",
     "message": "We could not authenticate the request. Please review your credentials and authentication method."
+  },
+  "client_api_credentials_expired": {
+    "http_code": "401",
+    "code": "UNAUTHORIZED",
+    "message": "Client api credentials expired. Contact support to generate new one."
   },
   "api_under_maintenance": {
     "http_code": "502",
