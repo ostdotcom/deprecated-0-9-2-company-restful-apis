@@ -93,6 +93,16 @@
     "http_code": "422",
     "code": "reserveAddressUuid_not_found",
     "message": "reserveAddressUuid not found"
+  },
+  "no_users_found_for_airdrop_list": {
+    "http_code": "422",
+    "code": "no_users_found_for_airdrop_list",
+    "message": "No users found for airdrop list"
+  },
+  "insufficient_balance_for_airdrop": {
+    "http_code": "422",
+    "code": "insufficient_balance_for_airdrop",
+    "message": "Insufficient Balance of Reserved Address for Airdrop"
   }
 
 }
