@@ -1,6 +1,18 @@
 {
-  "user_name_inappropriate": {
-    "name": "Username",
-    "message": "Commom dusre ds dksjdks"
+  "invalid_client_id": {
+    "parameter": "client_id",
+    "message": "Invalid client id"
+  },
+  "invalid_number_of_users": {
+    "parameter": "number_of_users",
+    "message": "Invalid number of users"
+  },
+  "missing_balances_to_fetch": {
+    "parameter": "balances_to_fetch",
+    "message": "missing balances to fetch"
+  },
+  "token_symbol_already_exists": {
+    "parameter": "symbol",
+    "message": "Symbol is already present"
   }
 }
