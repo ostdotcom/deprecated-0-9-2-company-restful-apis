@@ -27,7 +27,7 @@ const editUser = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_cu_eu_4", "Unhandled result", {}, {sendErrorEmail: false});
+          return responseHelper.error("s_cu_eu_4", 'unhandled_catch_response', {});
         }
       });
   },
@@ -46,7 +46,7 @@ const editUser = {
       , errors_object = {};
 
     if (!clientId || !userUuid) {
-      return responseHelper.error("s_cu_eu_1", "Mandatory parameters missing", {}, {sendErrorEmail: false});
+      return responseHelper.error("s_cu_eu_1", 'invalid_api_params', {});
     }
 
     if (name) {
@@ -70,17 +70,17 @@ const editUser = {
     const cacheFetchResponse = await managedAddressCache.fetch();
 
     if (cacheFetchResponse.isFailure()) {
-      return responseHelper.error("s_cu_eu_2", "User not found", {}, {sendErrorEmail: false});
+      return responseHelper.error("s_cu_eu_2", "resource_not_found", {});
     }
 
     const response = cacheFetchResponse.data[userUuid];
 
     if (!response) {
-      return responseHelper.error("s_cu_eu_2.1", "User not found", {}, {sendErrorEmail: false});
+      return responseHelper.error("s_cu_eu_2.1", "resource_not_found", {});
     }
 
     if (response['client_id'] != clientId) {
-      return responseHelper.error("s_cu_eu_3", "User does not belong to client", {}, {sendErrorEmail: false});
+      return responseHelper.error("s_cu_eu_3", 'unauthorized_for_other_client', {});
     }
 
     const ethereumAddress = response['ethereum_address']

@@ -48,7 +48,7 @@ CreateDummyUsers.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("ob_cdu_4", "Unhandled result", {}, {});
+          return responseHelper.error("ob_cdu_4", 'unhandled_catch_response', {});
         }
       })
   },
@@ -87,7 +87,7 @@ CreateDummyUsers.prototype = {
 
     if (!oThis.numberOfUsers) {
       return Promise.resolve(responseHelper.error(
-        'ob_cdu_1', 'Invlaid numberOfUsers')
+        'ob_cdu_1', 'invalid_api_params', {})
       );
     }
 
@@ -97,7 +97,7 @@ CreateDummyUsers.prototype = {
 
     if (!oThis.clientId) {
       return Promise.resolve(responseHelper.error(
-        'ob_cdu_2', 'missing clientId')
+        'ob_cdu_2', 'invalid_api_params', {})
       );
     }
 

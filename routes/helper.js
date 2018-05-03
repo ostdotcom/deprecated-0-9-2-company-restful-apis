@@ -6,6 +6,7 @@ const rootPrefix = '..'
   , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
   , v0ParamErrorConfig = require(rootPrefix + '/config/api_params/v0/error_config')
   , v1ParamErrorConfig = require(rootPrefix + '/config/api_params/v1/error_config')
+  , internalParamErrorConfig = require(rootPrefix + '/config/api_params/internal/error_config')
   , apiErrorConfig = require(rootPrefix + '/config/api_params/api_error_config')
 ;
 
@@ -60,7 +61,7 @@ const routeMethods = {
     } else if (apiVersion === apiVersions.v0) {
       paramErrorConfig = v1ParamErrorConfig;
     } else if (apiVersion === apiVersions.internal) {
-      paramErrorConfig = {};
+      paramErrorConfig = internalParamErrorConfig;
     } else {
       throw "unsupported API Version " + apiVersion;
     }

@@ -9,6 +9,11 @@
     "code": "UNAUTHORIZED",
     "message": "We could not authenticate the request. Please review your credentials and authentication method."
   },
+  "unauthorized_for_other_client": {
+    "http_code": "401",
+    "code": "UNAUTHORIZED",
+    "message": "Unauthorised for some other client."
+  },
   "invalid_or_expired_jwt_token": {
     "http_code": "401",
     "code": "UNAUTHORIZED",
@@ -19,14 +24,44 @@
     "code": "SERVICE_UNAVAILABLE",
     "message": ""
   },
-  "route_not_found": {
+  "resource_not_found": {
     "http_code": "404",
     "code": "NOT_FOUND",
     "message": "The requested resource could not be located."
+  },
+  "data_not_found": {
+    "http_code": "404",
+    "code": "NOT_FOUND",
+    "message": "Data for the requested resources not found."
   },
   "something_went_wrong": {
     "http_code": "500",
     "code": "INTERNAL_SERVER_ERROR",
     "message": "Something went wrong."
+  },
+  "unhandled_catch_response": {
+    "http_code": "500",
+    "code": "INTERNAL_SERVER_ERROR",
+    "message": "Something went wrong."
+  },
+  "insufficient_funds": {
+    "http_code": "422",
+    "code": "INSUFFICIENT_FUNDS",
+    "message": "The account executing the transaction or transfer does not have sufficient funds to complete the transaction or transfer."
+  },
+  "key_encryption_failed": {
+    "http_code": "500",
+    "code": "INTERNAL_SERVER_ERROR",
+    "message": "Error while encrypting key."
+  },
+  "token_contract_not_deployed": {
+    "http_code": "500",
+    "code": "INTERNAL_SERVER_ERROR",
+    "message": "Token Contract Not Deployed."
+  },
+  "unsupported_balance_type": {
+    "http_code": "400",
+    "code": "invalid_request",
+    "message": "Unsupported balance type"
   }
 }

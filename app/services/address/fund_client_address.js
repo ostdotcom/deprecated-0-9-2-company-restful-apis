@@ -95,7 +95,7 @@ FundClientAddressKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_a_fca_2", "Unhandled result", {}, {sendErrorEmail: false, clientId: oThis.clientId});
+          return responseHelper.error("s_a_fca_2", 'unhandled_catch_response', {clientId: oThis.clientId});
         }
       });
   },
@@ -240,8 +240,7 @@ FundClientAddressKlass.prototype = {
     const balanceBigNumberInWei = basicHelper.convertToBigNumber(balanceResponse.data.balance);
 
     if (balanceBigNumberInWei.lessThan(minReserveAddrBalanceToProceedInWei)) {
-      return Promise.resolve(responseHelper.error('s_a_fca_1', 'Not enough balance', {},
-        {sendErrorEmail: false, clientId: oThis.clientId}));
+      return Promise.resolve(responseHelper.error('s_a_fca_1', 'insufficient_funds', {clientId: oThis.clientId}));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));

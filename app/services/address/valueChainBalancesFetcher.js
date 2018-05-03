@@ -39,7 +39,7 @@ valueChainBalancesFetcherKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
 
-          return responseHelper.error("s_a_vcbf_1", "Unhandled result", {}, {sendErrorEmail: false});
+          return responseHelper.error("s_a_vcbf_1", 'unhandled_catch_response', {});
         }
       });
   },
@@ -65,10 +65,7 @@ valueChainBalancesFetcherKlass.prototype = {
 
       } else {
 
-        var promise = Promise.resolve(responseHelper.error(
-            's_a_vcbf_2',
-            "unsupported balanceType: " + balanceTypes[i],
-            {}, {sendErrorEmail: false}));
+        var promise = Promise.resolve(responseHelper.error('s_a_vcbf_2', 'unsupported_balance_type', {}));
       }
 
       promiseResolvers.push(promise);

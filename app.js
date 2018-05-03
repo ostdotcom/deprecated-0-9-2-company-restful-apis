@@ -262,7 +262,7 @@ if (cluster.isMaster) {
 // catch 404 and forward to error handler
   app.use(function (req, res, next) {
     logger.requestStartLog(customUrlParser.parse(req.originalUrl).pathname, req.method);
-    return responseHelper.error('404', 'route_not_found', {}).renderResponse(res, errorConfig);
+    return responseHelper.error('404', 'resource_not_found', {}).renderResponse(res, errorConfig);
   });
 
 // error handler

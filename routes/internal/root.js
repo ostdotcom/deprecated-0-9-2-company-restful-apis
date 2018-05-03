@@ -20,7 +20,7 @@ router.get('/', function (req, res, next) {
     if (req.headers['user-agent'] === "ELB-HealthChecker/2.0") {
       return responseHelper.successWithData({}).renderResponse(res, errorConfig);
     } else {
-      return responseHelper.error('404', 'route_not_found', {}).renderResponse(res, errorConfig);
+      return responseHelper.error('404', 'resource_not_found', {}).renderResponse(res, errorConfig);
     }
 
   };
