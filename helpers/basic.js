@@ -9,6 +9,13 @@
 const BigNumber = require('bignumber.js')
 ;
 
+const apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
+  , v0ParamErrorConfig = require(rootPrefix + '/config/api_params/v0/error_config')
+  , v1ParamErrorConfig = require(rootPrefix + '/config/api_params/v1/error_config')
+  , internalParamErrorConfig = require(rootPrefix + '/config/api_params/internal/error_config')
+  , apiErrorConfig = require(rootPrefix + '/config/api_params/api_error_config')
+;
+
 /**
  * Basic helper methods constructor
  *
@@ -233,6 +240,36 @@ BasicHelperKlass.prototype = {
     }
 
     return array;
+
+  },
+
+  /**
+   * Fetch Error Config
+   *
+   * @param {String} apiVersion
+   *
+   * @return {object}
+   */
+  fetchErrorConfig: function (apiVersion) {
+
+    var paramErrorConfig;
+
+    if (apiVersion === apiVersions.v0) {
+      paramErrorConfig = v0ParamErrorConfig;
+    } else if (apiVersion === apiVersions.v0) {
+      paramErrorConfig = v1ParamErrorConfig;
+    } else if (apiVersion === apiVersions.internal) {
+      paramErrorConfig = internalParamErrorConfig;
+    } else if (apiVersion === apiVersions.general) {
+      paramErrorConfig = {}
+    } else {
+      throw "unsupported API Version " + apiVersion;
+    }
+
+    return {
+      param_error_config: paramErrorConfig,
+      api_error_config: apiErrorConfig
+    }
 
   }
 

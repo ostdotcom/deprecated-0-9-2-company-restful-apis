@@ -12,8 +12,8 @@ const rootPrefix = '../..'
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , routeHelper = require(rootPrefix + '/routes/helper')
   , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
-  , routeHelper = require(rootPrefix + '/routes/helper')
-  , errorConfig = routeHelper.fetchErrorConfig(apiVersions.v0)
+  , basicHelper = require(rootPrefix + '/helpers/basic')
+  , errorConfig = basicHelper.fetchErrorConfig(apiVersions.v0)
 ;
 
 const router = express.Router()

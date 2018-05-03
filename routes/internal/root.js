@@ -6,8 +6,8 @@ const rootPrefix = '../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
-  , routeHelper = require(rootPrefix + '/routes/helper')
-  , errorConfig = routeHelper.fetchErrorConfig(apiVersions.internal)
+  , basicHelper = require(rootPrefix + '/helpers/basic')
+  , errorConfig = basicHelper.fetchErrorConfig(apiVersions.internal)
 ;
 
 /* Elb health checker request */

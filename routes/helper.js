@@ -3,11 +3,7 @@
 const rootPrefix = '..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
-  , v0ParamErrorConfig = require(rootPrefix + '/config/api_params/v0/error_config')
-  , v1ParamErrorConfig = require(rootPrefix + '/config/api_params/v1/error_config')
-  , internalParamErrorConfig = require(rootPrefix + '/config/api_params/internal/error_config')
-  , apiErrorConfig = require(rootPrefix + '/config/api_params/api_error_config')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
 
 const routeMethods = {
@@ -17,7 +13,7 @@ const routeMethods = {
     try{
 
       const oThis = this
-          , errorConfig = oThis.fetchErrorConfig(req.decodedParams.apiVersion);
+          , errorConfig = basicHelper.fetchErrorConfig(req.decodedParams.apiVersion);
 
       var handleResponse = function (response) {
         response.renderResponse(res, errorConfig);
@@ -43,34 +39,6 @@ const routeMethods = {
     inObj[newKey] = keyValue;
 
     return inObj;
-  },
-
-  /**
-   * Fetch Error Config
-   *
-   * @param {String} apiVersion
-   *
-   * @return {object}
-   */
-  fetchErrorConfig: function (apiVersion) {
-
-    var paramErrorConfig;
-
-    if (apiVersion === apiVersions.v0) {
-      paramErrorConfig = v0ParamErrorConfig;
-    } else if (apiVersion === apiVersions.v0) {
-      paramErrorConfig = v1ParamErrorConfig;
-    } else if (apiVersion === apiVersions.internal) {
-      paramErrorConfig = internalParamErrorConfig;
-    } else {
-      throw "unsupported API Version " + apiVersion;
-    }
-
-    return {
-      param_error_config: paramErrorConfig,
-      api_error_config: apiErrorConfig
-    }
-
   }
 
 };

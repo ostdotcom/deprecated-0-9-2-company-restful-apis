@@ -37,8 +37,8 @@ const jwtAuth = require(rootPrefix + '/lib/jwt/jwt_auth')
   , customMiddleware = require(rootPrefix + '/helpers/custom_middleware')
   , SystemServiceStatusesCacheKlass = require(rootPrefix + '/lib/cache_management/system_service_statuses')
   , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
-  , routeHelper = require(rootPrefix + '/routes/helper')
-  , errorConfig = routeHelper.fetchErrorConfig(apiVersions.internal)
+  , basicHelper = require(rootPrefix + '/helpers/basic')
+  , errorConfig = basicHelper.fetchErrorConfig(apiVersions.internal)
 ;
 
 const requestSharedNameSpace = createNamespace('openST-Platform-NameSpace')
