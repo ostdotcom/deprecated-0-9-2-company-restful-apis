@@ -81,7 +81,11 @@ const validateApiSignature = function (req, res, next){
       req.decodedParams["client_id"] = result.data["clientId"];
       next();
     } else {
-      return responseHelper.error('401', 'unauthorized_api_request', {}).renderResponse(res, errorConfig);
+      return responseHelper.error({
+        internal_error_identifier: 'vas_401',
+        api_error_identifier: 'unauthorized_api_request',
+        debug_options: {}
+      }).renderResponse(res, errorConfig);
     }
   };
 
@@ -108,7 +112,11 @@ const decodeJwt = function(req, res, next) {
 
   // send error, if token is invalid
   const jwtOnReject = function (err) {
-    return responseHelper.error('a_1', 'invalid_or_expired_jwt_token', {}).renderResponse(res, errorConfig);
+    return responseHelper.error({
+      internal_error_identifier: 'a_1',
+      api_error_identifier: 'invalid_or_expired_jwt_token',
+      debug_options: {}
+    }).renderResponse(res, errorConfig);
   };
 
   // Verify token
@@ -120,7 +128,11 @@ const decodeJwt = function(req, res, next) {
       )
   ).catch(function (err) {
     logger.notify('a_2', 'JWT Decide Failed', {token: token});
-    responseHelper.error('a_2', 'something_went_wrong', {}).renderResponse(res, errorConfig)
+    return responseHelper.error({
+      internal_error_identifier: 'a_2',
+      api_error_identifier: 'something_went_wrong',
+      debug_options: {}
+    }).renderResponse(res, errorConfig);
   });
 
 };
@@ -150,7 +162,11 @@ const checkSystemServiceStatuses = async function(req, res, next) {
 
   const statusRsp = await systemServiceStatusesCache.fetch();
   if (statusRsp.isSuccess && statusRsp.data && statusRsp.data['saas_api_available'] != 1) {
-    return responseHelper.error('a_4', 'api_under_maintenance', {}).renderResponse(res, errorConfig);
+    return responseHelper.error({
+      internal_error_identifier: 'a_5',
+      api_error_identifier: 'api_under_maintenance',
+      debug_options: {}
+    }).renderResponse(res, errorConfig);
   }
 
   next();
@@ -262,14 +278,22 @@ if (cluster.isMaster) {
 // catch 404 and forward to error handler
   app.use(function (req, res, next) {
     logger.requestStartLog(customUrlParser.parse(req.originalUrl).pathname, req.method);
-    return responseHelper.error('404', 'resource_not_found', {}).renderResponse(res, errorConfig);
+    return responseHelper.error({
+      internal_error_identifier: 'a_3',
+      api_error_identifier: 'resource_not_found',
+      debug_options: {}
+    }).renderResponse(res, errorConfig);
   });
 
 // error handler
   app.use(function (err, req, res, next) {
     // set locals, only providing error in development
     logger.notify('a_5', 'Something went wrong', err);
-    return responseHelper.error('500', 'something_went_wrong', {}).renderResponse(res, errorConfig);
+    return responseHelper.error({
+      internal_error_identifier: 'a_4',
+      api_error_identifier: 'something_went_wrong',
+      debug_options: {}
+    }).renderResponse(res, errorConfig);
   });
 
   /**
