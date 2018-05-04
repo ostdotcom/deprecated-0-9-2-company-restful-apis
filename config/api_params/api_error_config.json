@@ -293,6 +293,26 @@
     "http_code": "422",
     "code": "st_prime_transfer_failed",
     "message": "ST Prime transfer failed"
+  },
+  "unable_to_get_transaction_count": {
+    "http_code": "422",
+    "code": "unable_to_get_transaction_count",
+    "message": "Unable to get transaction count"
+  },
+  "unable_to_get_queued_transaction": {
+    "http_code": "422",
+    "code": "unable_to_get_queued_transaction",
+    "message": "Unable to get queued transactions"
+  },
+  "could_not_clear_missing_nonce": {
+    "http_code": "422",
+    "code": "could_not_clear_missing_nonce",
+    "message": "Something went wrong while clearing missing nonce"
+  },
+  "callback_function_is_mandatory": {
+    "http_code": "422",
+    "code": "callback_function_is_mandatory",
+    "message": "callback function is mandatory"
   }
 
 }

@@ -10,6 +10,9 @@ const rootPrefix = '../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
+  , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
+  , errorConfig = basicHelper.fetchErrorConfig(apiVersions.general)
 ;
 
 const getWeb3Instance = function (gethURL, chainKind) {
@@ -127,7 +130,11 @@ const NonceHelperKlassPrototype = {
         isNonceAvailable = true;
       }
       if (isNonceAvailable==false) {
-        return Promise.resolve(responseHelper.error("mo_w_nh_getTransactionCount_1", "Unable to get transaction count"));
+        return Promise.resolve(responseHelper.error({
+          internal_error_identifier: 'mo_w_nh_getTransactionCount_1',
+          api_error_identifier: 'unable_to_get_transaction_count',
+          error_config: errorConfig
+        }));
       }
 
       return Promise.resolve(responseHelper.successWithData({nonce: nonceCount}));
@@ -135,7 +142,11 @@ const NonceHelperKlassPrototype = {
     } catch (err) {
       //Format the error
       logger.error("module_overrides/web3_eth/nonce_helper.js:getTransactionCount inside catch ", err);
-      return Promise.resolve(responseHelper.error('mo_w_nh_getTransactionCount_2', 'Unable to get transaction count'));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 'mo_w_nh_getTransactionCount_2',
+        api_error_identifier: 'unable_to_get_transaction_count',
+        error_config: errorConfig
+      }));
     }
 
   },
@@ -191,14 +202,22 @@ const NonceHelperKlassPrototype = {
       }
 
       if (isTransactionAvailable == false) {
-        return Promise.resolve(responseHelper.error("mo_w_nh_getAllQueuedTransaction_1", 'Unable to get queued transactions'));
+        return Promise.resolve(responseHelper.error({
+          internal_error_identifier: 'mo_w_nh_getAllQueuedTransaction_1',
+          api_error_identifier: 'unable_to_get_queued_transaction',
+          error_config: errorConfig
+        }));
       }
       return Promise.resolve(responseHelper.successWithData({queuedData: queuedData}));
 
     } catch (err) {
       //Format the error
       logger.error("module_overrides/web3_eth/nonce_helper.js:getAllQueuedTransaction inside catch ", err);
-      return Promise.resolve(responseHelper.error('mo_w_nh_getAllQueuedTransaction_2', 'Unable to get queued transactions'));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 'mo_w_nh_getAllQueuedTransaction_2',
+        api_error_identifier: 'unable_to_get_queued_transaction',
+        error_config: errorConfig
+      }));
     }
 
 
@@ -220,8 +239,11 @@ const NonceHelperKlassPrototype = {
     try {
       const allQueuedTransaction = await oThis.getAllQueuedTransaction(chainKind);
       if (allQueuedTransaction.isFailure()) {
-        return Promise.resolve(responseHelper.error('mo_w_nh_clearAllMissingNonce_1',
-          'unable to get all queued transaction'));
+        return Promise.resolve(responseHelper.error({
+          internal_error_identifier: 'mo_w_nh_clearAllMissingNonce_1',
+          api_error_identifier: 'unable_to_get_queued_transaction',
+          error_config: errorConfig
+        }));
       }
       var successAddresses = new Array()
         , failAddresses = new Array()
@@ -242,8 +264,11 @@ const NonceHelperKlassPrototype = {
     } catch (err) {
       //Format the error
       logger.error("module_overrides/web3_eth/nonce_helper.js:clearAllMissingNonce inside catch ", err);
-      return Promise.resolve(responseHelper.error('mo_w_nh_clearAllMissingNonce_2',
-        'Something went wrong while clearing missing nonce'));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 'mo_w_nh_clearAllMissingNonce_2',
+        api_error_identifier: 'could_not_clear_missing_nonce',
+        error_config: errorConfig
+      }));
     }
 
 
@@ -264,12 +289,14 @@ const NonceHelperKlassPrototype = {
     const oThis = this;
 
     if (!clearCallback) {
-      return Promise.resolve(responseHelper.error('mo_w_nh_clearMissingNonce_1',
-        'call back function is mandatory'));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 'mo_w_nh_clearMissingNonce_1',
+        api_error_identifier: 'callback_function_is_mandatory',
+        error_config: errorConfig
+      }));
     }
 
     try {
-
 
       const allNoncePromise = []
         , allGethNodes = oThis._getAllGethNodes(chainKind)
@@ -313,8 +340,11 @@ const NonceHelperKlassPrototype = {
     } catch (err) {
       //Format the error
       logger.error("module_overrides/web3_eth/nonce_helper.js:clearMissingNonce inside catch ", err);
-      return Promise.resolve(responseHelper.error('mo_w_nh_clearMissingNonce_2',
-        'Something went wrong while clearing missing nonce'));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 'mo_w_nh_clearMissingNonce_2',
+        api_error_identifier: 'could_not_clear_missing_nonce',
+        error_config: errorConfig
+      }));
     }
 
   },
@@ -334,7 +364,12 @@ const NonceHelperKlassPrototype = {
       try {
         web3Provider.eth.getTransactionCount(address, function(error, result) {
           if (error) {
-            return onResolve(responseHelper.error('mo_w_nh_getNonceFromGethNode_1', error));
+            return onResolve(responseHelper.error({
+              internal_error_identifier: 'mo_w_nh_getNonceFromGethNode_1',
+              api_error_identifier: 'something_went_wrong',
+              debug_options: {error: error},
+              error_config: errorConfig
+            }));
           } else {
             return onResolve(responseHelper.successWithData({mined_transaction_count: result}));
           }
@@ -342,7 +377,11 @@ const NonceHelperKlassPrototype = {
       } catch (err) {
         //Format the error
         logger.error("module_overrides/web3_eth/nonce_helper.js:getNonceFromGethNode inside catch ", err);
-        return onResolve(responseHelper.error('mo_w_nh_getNonceFromGethNode_2', 'Something went wrong'));
+        return onResolve(responseHelper.error({
+          internal_error_identifier: 'mo_w_nh_getNonceFromGethNode_2',
+          api_error_identifier: 'something_went_wrong',
+          error_config: errorConfig
+        }));
       }
     });
   },
@@ -368,12 +407,20 @@ const NonceHelperKlassPrototype = {
         if (pendingTransaction) {
           return onResolve(responseHelper.successWithData({pending_transaction: pendingTransaction}));
         }
-        return onResolve(responseHelper.error('mo_w_nh_getPendingTransactionsFromGethNode_1', 'Something went wrong'));
+        return onResolve(responseHelper.error({
+          internal_error_identifier: 'mo_w_nh_getPendingTransactionsFromGethNode_1',
+          api_error_identifier: 'something_went_wrong',
+          error_config: errorConfig
+        }));
 
       } catch (err) {
         //Format the error
         logger.error("module_overrides/web3_eth/nonce_helper.js:getPendingTransactionsFromGethNode inside catch ", err);
-        return onResolve(responseHelper.error('mo_w_nh_getPendingTransactionsFromGethNode_2', 'Something went wrong'));
+        return onResolve(responseHelper.error({
+          internal_error_identifier: 'mo_w_nh_getPendingTransactionsFromGethNode_2',
+          api_error_identifier: 'something_went_wrong',
+          error_config: errorConfig
+        }));
       }
     });
 
