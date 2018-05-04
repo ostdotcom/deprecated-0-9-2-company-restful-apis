@@ -12,7 +12,7 @@ const routeMethods = {
   performer: async function(req, res, next, CallerKlass, errorCode) {
     const oThis = this;
 
-    return oThis.asyncPerform()
+    return oThis.asyncPerform(req, res, next, CallerKlass)
         .catch(function(error) {
           if (responseHelper.isCustomResult(error)) {
             error.renderResponse(res, req.serviceParams);
@@ -27,7 +27,7 @@ const routeMethods = {
         });
   },
   
-  asyncPerform: async function(req, res, next, CallerKlass, errorCode) {
+  asyncPerform: async function(req, res, next, CallerKlass) {
 
     const oThis = this
         , errorConfig = basicHelper.fetchErrorConfig(req.decodedParams.apiVersion);
