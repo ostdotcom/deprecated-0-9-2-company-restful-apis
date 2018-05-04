@@ -18,5 +18,45 @@
   "invalid_token_symbol": {
     "parameter": "token_symbol",
     "message": "Invalid Token Symbol"
+  },
+  "invalid_ethereum_addresses": {
+    "parameter": "ethereum_addresses",
+    "message": "Invalid ethereum_addresses"
+  },
+  "invalid_uuids": {
+    "parameter": "uuids",
+    "message": "Invalid uuids"
+  },
+  "invalid_amount": {
+    "parameter": "amount",
+    "message": "Invalid amount"
+  },
+  "invalid_client_token_id": {
+    "parameter": "client_token_id",
+    "message": "Invalid client_token_id"
+  },
+  "invalid_list_type": {
+    "parameter": "list_type",
+    "message": "Invalid list_type"
+  },
+  "invalid_airdrop_params": {
+    "parameter": "airdrop_params",
+    "message": "Invalid airdrop_params"
+  },
+  "invalid_stake_and_mint_params": {
+    "parameter": "stake_and_mint_params",
+    "message": "Invalid stake_and_mint_params"
+  },
+  "invalid_token_name": {
+    "parameter": "name",
+    "message": "Invalid token_name"
+  },
+  "invalid_token_symbol_icon": {
+    "parameter": "symbol_icon",
+    "message": "Invalid token_symbol_icon"
+  },
+  "invalid_transaction_uuids": {
+    "parameter": "transaction_uuids",
+    "message": "Invalid transaction_uuids"
   }
 }

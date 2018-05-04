@@ -7,6 +7,8 @@ const express = require('express')
 /* Get users details for given ethereum addresses. */
 router.get('/get-details', function (req, res, next) {
 
+  req.decodedParams.apiName = 'fetch_user_details';
+
   const getUsersDataKlass = require(rootPrefix + '/app/services/client_users/get_users_data');
 
   Promise.resolve(routeHelper.performer(req, res, next, getUsersDataKlass, 'r_cuj_1'));
@@ -14,6 +16,8 @@ router.get('/get-details', function (req, res, next) {
 });
 
 router.get('/get-addresses-by-uuid', function (req, res, next) {
+
+  req.decodedParams.apiName = 'fetch_user_addresses';
 
   const GetAddressesByUuidKlass = require(rootPrefix + '/app/services/client_users/get_addresses_by_uuid');
 
@@ -33,6 +37,8 @@ router.get('/get-addresses-by-uuid', function (req, res, next) {
  *
  */
 router.post('/airdrop/kit-drop', function (req, res, next) {
+
+  req.decodedParams.apiName = 'kit_airdrop';
 
   const StartKitAirdropKlass = require(rootPrefix + '/app/services/airdrop_management/kit_drop');
 

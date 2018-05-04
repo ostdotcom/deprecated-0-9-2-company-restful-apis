@@ -11,6 +11,8 @@ const rootPrefix = '../..'
 
 router.get('/get-staked-amount', function (req, res, next) {
 
+  req.decodedParams.apiName = 'fetch_staked_ost_amount';
+
   const GetStakedAmountKlass = require(rootPrefix + '/app/services/stake_and_mint/get_staked_amount');
 
   Promise.resolve(routeHelper.performer(req, res, next, GetStakedAmountKlass, 'r_su_2'));
@@ -18,6 +20,8 @@ router.get('/get-staked-amount', function (req, res, next) {
 });
 
 router.post('/start', function (req, res, next) {
+
+  req.decodedParams.apiName = 'start_stake_and_mint';
 
   const StartStakeAndMintKlass = require(rootPrefix + '/app/services/stake_and_mint/start');
 

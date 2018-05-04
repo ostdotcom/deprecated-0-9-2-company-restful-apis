@@ -16,6 +16,8 @@ const rootPrefix = '../..'
 /* On board a branded token */
 router.post('/start', function (req, res, next) {
 
+  req.decodedParams.apiName = 'start_on_boarding';
+
   const StartOnBoardingKlass = require(rootPrefix + '/app/services/on_boarding/start');
 
   Promise.resolve(routeHelper.performer(req, res, next, StartOnBoardingKlass, 'r_su_3'));
@@ -95,6 +97,8 @@ router.post('/grant-eth', function (req, res, next) {
 /* Propose a branded token */
 router.post('/setup-token', function (req, res, next) {
 
+  req.decodedParams.apiName = 'setup_bt';
+
   const SetupTokenKlass = require(rootPrefix + '/app/services/on_boarding/setup_token');
 
   Promise.resolve(routeHelper.performer(req, res, next, SetupTokenKlass, 'r_ob_5'));
@@ -104,6 +108,8 @@ router.post('/setup-token', function (req, res, next) {
 /* Propose a branded token */
 router.post('/edit-token', function (req, res, next) {
 
+  req.decodedParams.apiName = 'edit_bt';
+
   const EditTokenKlass = require(rootPrefix + '/app/services/token_management/edit');
 
   Promise.resolve(routeHelper.performer(req, res, next, EditTokenKlass, 'r_ob_6'));
@@ -111,6 +117,8 @@ router.post('/edit-token', function (req, res, next) {
 });
 
 router.post('/create-dummy-users', function (req, res, next) {
+
+  req.decodedParams.apiName = 'create_dummy_users';
 
   const CreateDummyUsersKlass = require(rootPrefix + '/app/services/on_boarding/create_dummy_users');
 
@@ -120,6 +128,8 @@ router.post('/create-dummy-users', function (req, res, next) {
 
 router.get('/get-chain-interaction-params', function (req, res, next) {
 
+  req.decodedParams.apiName = 'fetch_chain_interaction_params';
+
   const FetchChainInteractionParamsKlass = require(rootPrefix + '/app/services/on_boarding/fetch_chain_interaction_params');
 
   Promise.resolve(routeHelper.performer(req, res, next, FetchChainInteractionParamsKlass, 'r_ob_8'));
@@ -127,6 +137,8 @@ router.get('/get-chain-interaction-params', function (req, res, next) {
 });
 
 router.get('/fetch-balances', function (req, res, next) {
+
+  req.decodedParams.apiName = 'fetch_balances';
 
   const FetchBalancesKlass = require(rootPrefix + '/app/services/on_boarding/fetch_balances');
 

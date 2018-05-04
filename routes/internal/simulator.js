@@ -7,6 +7,8 @@ const express = require('express')
 /* Get transaction block info for a transaction hash */
 router.post('/create-transaction', function (req, res, next) {
 
+  req.decodedParams.apiName = 'simulate_random_transaction';
+
   const simulateTransactionKlass = require(rootPrefix + '/app/services/transaction/simulate_random_transaction');
 
   Promise.resolve(routeHelper.performer(req, res, next, simulateTransactionKlass, 'r_tr_srt_1'));
@@ -14,6 +16,8 @@ router.post('/create-transaction', function (req, res, next) {
 });
 
 router.get('/get-transaction-details', function (req, res, next) {
+
+  req.decodedParams.apiName = 'fetch_transaction_details';
 
   const getTransactionDetailsKlass = require(rootPrefix + '/app/services/transaction/get_detail');
 

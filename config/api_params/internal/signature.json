@@ -7,5 +7,215 @@
       }
     ],
     "optional":[]
+  },
+  "fetch_user_details":{
+    "mandatory":[
+      {
+        "parameter": "client_id",
+        "error_identifier": "invalid_client_id"
+      },
+      {
+        "parameter": "ethereum_addresses",
+        "error_identifier": "invalid_ethereum_addresses"
+      }
+    ],
+    "optional":[]
+  },
+  "fetch_user_addresses":{
+    "mandatory":[
+      {
+        "parameter": "client_id",
+        "error_identifier": "invalid_client_id"
+      },
+      {
+        "parameter": "uuids",
+        "error_identifier": "invalid_uuids"
+      }
+    ],
+    "optional":[]
+  },
+  "kit_airdrop":{
+    "mandatory":[
+      {
+        "parameter": "client_id",
+        "error_identifier": "invalid_client_id"
+      },
+      {
+        "parameter": "token_symbol",
+        "error_identifier": "invalid_token_symbol"
+      },
+      {
+        "parameter": "amount",
+        "error_identifier": "invalid_amount"
+      },
+      {
+        "parameter": "client_token_id",
+        "error_identifier": "invalid_client_token_id"
+      },
+      {
+        "parameter": "list_type",
+        "error_identifier": "invalid_list_type"
+      }
+    ],
+    "optional":[]
+  },
+  "start_on_boarding": {
+    "mandatory":[
+      {
+        "parameter": "client_id",
+        "error_identifier": "invalid_client_id"
+      },
+      {
+        "parameter": "token_symbol",
+        "error_identifier": "invalid_token_symbol"
+      },
+      {
+        "parameter": "stake_and_mint_params",
+        "error_identifier": "invalid_stake_and_mint_params"
+      },
+      {
+        "parameter": "client_token_id",
+        "error_identifier": "invalid_client_token_id"
+      },
+      {
+        "parameter": "airdrop_params",
+        "error_identifier": "invalid_airdrop_params"
+      }
+    ],
+    "optional":[]
+  },
+  "setup_bt": {
+    "mandatory":[
+      {
+        "parameter": "client_id",
+        "error_identifier": "invalid_client_id"
+      },
+      {
+        "parameter": "symbol",
+        "error_identifier": "invalid_token_symbol"
+      },
+      {
+        "parameter": "name",
+        "error_identifier": "invalid_token_name"
+      },
+      {
+        "parameter": "symbol_icon",
+        "error_identifier": "invalid_token_symbol_icon"
+      }
+    ],
+    "optional":[]
+  },
+  "edit_bt": {
+    "mandatory":[
+      {
+        "parameter": "client_id",
+        "error_identifier": "invalid_client_id"
+      },
+      {
+        "parameter": "symbol",
+        "error_identifier": "invalid_token_symbol"
+      }
+    ],
+    "optional":[
+      "name",
+      "symbol_icon",
+      "token_erc20_address",
+      "airdrop_contract_addr",
+      "token_uuid",
+      "conversion_factor"
+    ]
+  },
+  "create_dummy_users": {
+    "mandatory":[
+      {
+        "parameter": "client_id",
+        "error_identifier": "invalid_client_id"
+      },
+      {
+        "parameter": "number_of_users",
+        "error_identifier": "invalid_number_of_users"
+      }
+    ],
+    "optional":[]
+  },
+  "fetch_chain_interaction_params": {
+    "mandatory":[
+      {
+        "parameter": "client_id",
+        "error_identifier": "invalid_client_id"
+      }
+    ],
+    "optional":[]
+  },
+  "fetch_balances": {
+    "mandatory":[
+      {
+        "parameter": "client_id",
+        "error_identifier": "invalid_client_id"
+      },
+      {
+        "parameter": "balances_to_fetch",
+        "error_identifier": "missing_balances_to_fetch"
+      }
+    ],
+    "optional":[]
+  },
+  "simulate_random_transaction": {
+    "mandatory":[
+      {
+        "parameter": "client_id",
+        "error_identifier": "invalid_client_id"
+      },
+      {
+        "parameter": "token_symbol",
+        "error_identifier": "invalid_token_symbol"
+      }
+    ],
+    "optional":[
+      "prioritize_company_txs"
+    ]
+  },
+  "fetch_transaction_details": {
+    "mandatory":[
+      {
+        "parameter": "transaction_uuids",
+        "error_identifier": "invalid_transaction_uuids"
+      }
+    ],
+    "optional":[]
+  },
+  "fetch_staked_ost_amount": {
+    "mandatory":[
+      {
+        "parameter": "client_id",
+        "error_identifier": "invalid_client_id"
+      },
+      {
+        "parameter": "token_symbol",
+        "error_identifier": "invalid_token_symbol"
+      }
+    ],
+    "optional":[]
+  },
+  "start_stake_and_mint": {
+    "mandatory": [
+      {
+        "parameter": "client_id",
+        "error_identifier": "invalid_client_id"
+      },
+      {
+        "parameter": "token_symbol",
+        "error_identifier": "invalid_token_symbol"
+      },
+      {
+        "parameter": "stake_and_mint_params",
+        "error_identifier": "invalid_stake_and_mint_params"
+      },
+      {
+        "parameter": "client_token_id",
+        "error_identifier": "invalid_client_token_id"
+      }
+    ],
+    "optional":[]
   }
 }
