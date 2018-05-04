@@ -113,7 +113,7 @@ StartAirdropForKitKlass.prototype = {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_am_kd_3',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_airdrop_amount']
+        params_error_identifiers: ['invalid_airdrop_amount'],
         debug_options: {}
       }));
     }
@@ -123,7 +123,7 @@ StartAirdropForKitKlass.prototype = {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_am_kd_4',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_airdrop_list_type']
+        params_error_identifiers: ['invalid_airdrop_list_type'],
         debug_options: {}
       }));
     }
@@ -148,7 +148,7 @@ StartAirdropForKitKlass.prototype = {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_am_kd_6',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_token_symbol']
+        params_error_identifiers: ['invalid_token_symbol'],
         debug_options: {}
       }));
     }
@@ -182,7 +182,7 @@ StartAirdropForKitKlass.prototype = {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_am_kd_7',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['no_users_for_airdrop_list_type']
+        params_error_identifiers: ['no_users_for_airdrop_list_type'],
         debug_options: {}
       }));
     }
@@ -205,7 +205,7 @@ StartAirdropForKitKlass.prototype = {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_am_kd_9',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['insufficient_airdrop_amount']
+        params_error_identifiers: ['insufficient_airdrop_amount'],
         debug_options: {}
       }));
     }

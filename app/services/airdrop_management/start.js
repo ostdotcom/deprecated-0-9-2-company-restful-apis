@@ -99,7 +99,7 @@ StartAirdropKlass.prototype = {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_am_s_2',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_client_id']
+        params_error_identifiers: ['invalid_client_id'],
         debug_options: {}
       }));
     }
@@ -108,7 +108,7 @@ StartAirdropKlass.prototype = {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_am_s_3',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_airdrop_amount']
+        params_error_identifiers: ['invalid_airdrop_amount'],
         debug_options: {}
       }));
     }

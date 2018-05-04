@@ -12,6 +12,9 @@ const routeMethods = {
   performer: async function(req, res, next, CallerKlass, errorCode) {
     const oThis = this;
 
+    logger.debug('1-req.serviceParams', req.serviceParams);
+    logger.debug('1-req.decodedParams', req.decodedParams);
+
     return oThis.asyncPerform(req, res, next, CallerKlass)
         .catch(function(error) {
           if (responseHelper.isCustomResult(error)) {

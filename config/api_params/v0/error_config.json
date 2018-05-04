@@ -1,7 +1,13 @@
 {
   "invalid_client_id": {
     "parameter": "client_id",
+    "code": "invalid",
     "message": "Invalid client id"
+  },
+  "missing_client_id": {
+    "parameter": "client_id",
+    "code": "missing",
+    "message": "Unauthorized access"
   },
   "invalid_username": {
     "parameter": "name",
@@ -15,13 +21,25 @@
     "parameter": "airdrop_uuid",
     "message": "Invalid airdrop uuid"
   },
+  "missing_airdrop_amount": {
+    "parameter": "amount",
+    "code": "missing",
+    "message": "Invalid airdrop amount"
+  },
   "invalid_airdrop_amount": {
     "parameter": "amount",
+    "code": "invalid",
     "message": "Invalid airdrop amount"
   },
   "insufficient_airdrop_amount": {
     "parameter": "amount",
+    "code": "invalid",
     "message": "Available token amount is insufficient. Please mint more tokens or reduce the amount to complete the process."
+  },
+  "airdropped_filter_empty_list": {
+    "parameter": "airdropped",
+    "code": "invalid",
+    "message": "No users found to airdrop for the filters selected"
   },
   "invalid_airdrop_list_type": {
     "parameter": "airdrop_list_type",
