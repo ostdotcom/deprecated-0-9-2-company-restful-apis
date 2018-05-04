@@ -102,7 +102,7 @@ GenerateAddressKlass.prototype = {
       return responseHelper.paramValidationError({
         internal_error_identifier: 's_a_g_2',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: errors_object
+        params_error_identifiers: errors_object,
         debug_options: {}
       });
     }
