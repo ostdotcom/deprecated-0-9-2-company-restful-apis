@@ -198,6 +198,16 @@
     "http_code": "422",
     "code": "UNPROCESSABLE_ENTITY",
     "message": "No actions found to execute transaction"
+  },
+  "invalid_api_name": {
+    "http_code": "422",
+    "code": "UNPROCESSABLE_ENTITY",
+    "message": "Invalid API Name."
+  },
+  "invalid_api_version": {
+    "http_code": "422",
+    "code": "UNPROCESSABLE_ENTITY",
+    "message": "Invalid API Version."
   }
 
 }

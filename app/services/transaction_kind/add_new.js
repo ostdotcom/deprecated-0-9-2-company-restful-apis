@@ -102,7 +102,7 @@ AddNew.prototype = {
     ;
 
     if(!client_id || client_id==0){
-      return Promise.resolve(responseHelper.error({
+      return Promise.resolve(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_an_1',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_client_id'],
@@ -156,7 +156,7 @@ AddNew.prototype = {
     }
 
     if(Object.keys(errors_object).length > 0){
-      return Promise.resolve(responseHelper.error({
+      return Promise.resolve(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_an_2',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: errors_object,

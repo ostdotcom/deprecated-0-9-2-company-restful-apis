@@ -110,7 +110,7 @@ StartAirdropForKitKlass.prototype = {
     }
 
     if (isNaN(oThis.airdropAmount) || oThis.airdropAmount <= 0) {
-      return Promise.reject(responseHelper.error({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_am_kd_3',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_airdrop_amount']
@@ -120,7 +120,7 @@ StartAirdropForKitKlass.prototype = {
 
     if (![clientAirdropConst.allAddressesAirdropListType,
         clientAirdropConst.neverAirdroppedAddressesAirdropListType].includes(oThis.airdropUserListType)) {
-      return Promise.reject(responseHelper.error({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_am_kd_4',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_airdrop_list_type']
@@ -145,7 +145,7 @@ StartAirdropForKitKlass.prototype = {
     oThis.clientBrandedToken = cacheRsp.data;
 
     if (!oThis.clientBrandedToken) {
-      return Promise.reject(responseHelper.error({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_am_kd_6',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_token_symbol']
@@ -179,7 +179,7 @@ StartAirdropForKitKlass.prototype = {
     }
     var response = await new ManagedAddressModel().getFilteredActiveUsersCount(params);
     if (!response[0] || response[0].total_count == 0) {
-      return Promise.reject(responseHelper.error({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_am_kd_7',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['no_users_for_airdrop_list_type']
@@ -202,7 +202,7 @@ StartAirdropForKitKlass.prototype = {
 
     var amountInWei = basicHelper.convertToWei(oThis.airdropAmount);
     if (amountInWei.mul(response[0].total_count).toNumber() > resp.data.balance) {
-      return Promise.reject(responseHelper.error({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_am_kd_9',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['insufficient_airdrop_amount']

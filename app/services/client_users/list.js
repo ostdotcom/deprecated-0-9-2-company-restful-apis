@@ -52,7 +52,7 @@ listKlass.prototype = {
     params.limit = pageSize;
 
     if (!params.client_id) {
-      return Promise.resolve(responseHelper.error({
+      return Promise.resolve(responseHelper.paramValidationError({
         internal_error_identifier: 's_cu_l_2',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_client_id'],

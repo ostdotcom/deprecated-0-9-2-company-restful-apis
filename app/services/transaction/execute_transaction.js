@@ -391,7 +391,7 @@ ExecuteTransactionKlass.prototype = {
     oThis.transactionTypeRecord = cachedResp.data;
 
     if (oThis.transactionTypeRecord.status != clientTransactionTypeConst.activeStatus) {
-      return Promise.resolve(responseHelper.error({
+      return Promise.resolve(responseHelper.paramValidationError({
         internal_error_identifier: 's_t_et_13',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_transactionkind'],

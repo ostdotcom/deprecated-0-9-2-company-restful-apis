@@ -74,7 +74,7 @@ GetAirdropStatusKlass.prototype = {
       return Promise.resolve(responseHelper.successWithData({airdrop_uuid: oThis.airdropUuid,
         current_status: current_status, steps_complete: new ClientAirdropModel().getAllBits('steps_complete', record.steps_complete)}));
     } else {
-      return Promise.resolve(responseHelper.error({
+      return Promise.resolve(responseHelper.paramValidationError({
         internal_error_identifier: 's_am_gas_2',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_airdrop_uuid'],

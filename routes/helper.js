@@ -4,32 +4,54 @@ const rootPrefix = '..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , basicHelper = require(rootPrefix + '/helpers/basic')
+  , apiParamsValidator = require(rootPrefix + '/lib/validators/api_params')
 ;
 
 const routeMethods = {
 
-  performer: function(req, res, next, CallerKlass, errorCode) {
+  performer: async function(req, res, next, CallerKlass, errorCode) {
+    const oThis = this;
 
-    try{
+    return oThis.asyncPerform()
+        .catch(function(error) {
+          if (responseHelper.isCustomResult(error)) {
+            error.renderResponse(res, req.serviceParams);
+          } else {
+            logger.notify(errorCode, 'Something went wrong', error);
+            responseHelper.error({
+              internal_error_identifier: errorCode,
+              api_error_identifier: 'unhandled_catch_response',
+              debug_options: {}
+            }).renderResponse(res, errorConfig);
+          }
+        });
+  },
+  
+  asyncPerform: async function(req, res, next, CallerKlass, errorCode) {
 
-      const oThis = this
-          , errorConfig = basicHelper.fetchErrorConfig(req.decodedParams.apiVersion);
+    const oThis = this
+        , errorConfig = basicHelper.fetchErrorConfig(req.decodedParams.apiVersion);
 
-      var handleResponse = function (response) {
-        response.renderResponse(res, errorConfig);
-      };
+    const apiParamsValidatorRsp = await new apiParamsValidator({
+      api_name: req.decodedParams.apiName,
+      api_version: req.decodedParams.apiVersion,
+      api_params: req.decodedParams
+    }).perform();
 
-      // TODO: req.decodedParams should be removed. It is just testing hack.
-      const decodedParams = req.serviceParams || req.decodedParams;
+    req.serviceParams = apiParamsValidatorRsp.data.sanitisedApiParams;
 
-      const callerObject = new CallerKlass(decodedParams);
+    // TODO: temp. remove in sometime
+    console.log('req.serviceParams', req.serviceParams);
+    console.log('req.decodedParams', req.decodedParams);
 
-      return callerObject.perform().then(handleResponse);
+    // TODO: req.decodedParams should be removed. It is just testing hack.
+    const decodedParams = req.serviceParams || req.decodedParams;
 
-    } catch(err) {
-      logger.notify(errorCode, 'Something went wrong', err);
-      responseHelper.error(errorCode, 'something_went_wrong').renderResponse(res, errorConfig)
-    }
+    var handleResponse = function (response) {
+      response.renderResponse(res, errorConfig);
+    };
+
+    return new CallerKlass(decodedParams).perform().then(handleResponse);
 
   },
   

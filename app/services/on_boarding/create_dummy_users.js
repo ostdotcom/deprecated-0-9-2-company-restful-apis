@@ -89,7 +89,7 @@ CreateDummyUsers.prototype = {
     const oThis = this;
 
     if (!oThis.numberOfUsers) {
-      return Promise.resolve(responseHelper.error({
+      return Promise.resolve(responseHelper.paramValidationError({
         internal_error_identifier: 'ob_cdu_1',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_number_of_users'],
@@ -102,7 +102,7 @@ CreateDummyUsers.prototype = {
     }
 
     if (!oThis.clientId) {
-      return Promise.resolve(responseHelper.error({
+      return Promise.resolve(responseHelper.paramValidationError({
         internal_error_identifier: 'ob_cdu_2',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_client_id'],
@@ -114,7 +114,7 @@ CreateDummyUsers.prototype = {
       , clientDetail = await clientBrandedTokenCache.fetch();
 
     if (clientDetail.isFailure()) {
-      return Promise.resolve(responseHelper.error({
+      return Promise.resolve(responseHelper.paramValidationError({
         internal_error_identifier: 'ob_cdu_3',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_client_id'],

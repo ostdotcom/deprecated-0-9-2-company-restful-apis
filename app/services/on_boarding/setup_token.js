@@ -125,7 +125,7 @@ SetupToken.prototype = {
       , tokenBySymbol = await new ClientBrandedTokenModel().getBySymbol(oThis.symbol);
 
     if (tokenBySymbol.length > 0) {
-      return Promise.resolve(responseHelper.error({
+      return Promise.resolve(responseHelper.paramValidationError({
         internal_error_identifier: 's_ob_1',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['token_symbol_already_exists'],

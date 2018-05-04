@@ -102,7 +102,7 @@ Edit.prototype = {
     oThis.clientTransactionId = oThis.params.client_transaction_id;
 
     if(!oThis.clientTransactionId){
-      return Promise.resolve(responseHelper.error({
+      return Promise.resolve(responseHelper.paramValidationError({
         internal_error_identifier: 'tk_e_4',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_client_transaction_id'],
@@ -181,7 +181,7 @@ Edit.prototype = {
     }
 
     if(Object.keys(errors_object).length > 0){
-      return Promise.resolve(responseHelper.error({
+      return Promise.resolve(responseHelper.paramValidationError({
         internal_error_identifier: 'tk_e_2',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: errors_object,

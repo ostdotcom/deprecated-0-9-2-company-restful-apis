@@ -49,15 +49,6 @@ clientStatsKlass.prototype = {
 
     const oThis = this;
 
-    if(!oThis.clientId){
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_c_fs_2',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_client_id'],
-        debug_options: {}
-      }));
-    }
-
     const cacheObj = new ClientTxKindCntCacheKlass({clientId: oThis.clientId});
 
     const txKindCountData = await cacheObj.fetch();

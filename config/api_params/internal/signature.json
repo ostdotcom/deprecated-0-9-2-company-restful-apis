@@ -1,1 +1,11 @@
-{}
+{
+  "fetch_client_stats":{
+    "mandatory":[
+      {
+        "parameter": "client_id",
+        "error_identifier": "invalid_client_id"
+      }
+    ],
+    "optional":[]
+  }
+}

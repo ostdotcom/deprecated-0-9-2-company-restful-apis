@@ -90,7 +90,7 @@ EditBrandedTokenKlass.prototype = {
 
     const clientBrandedTokens = await new ClientBrandedTokenModel().getBySymbol(oThis.symbol);
     if(clientBrandedTokens.length <= 0){
-      return Promise.resolve(responseHelper.error({
+      return Promise.resolve(responseHelper.paramValidationError({
         internal_error_identifier: 'tm_e_2',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_token_symbol'],
