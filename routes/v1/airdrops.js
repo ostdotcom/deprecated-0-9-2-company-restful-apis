@@ -28,6 +28,7 @@ const router = express.Router()
 router.post('/', function (req, res, next) {
 
   const StartAirdropKlass = require(rootPrefix + '/app/services/airdrop_management/start');
+  req.decodedParams.apiName = 'start_airdrop';
 
   Promise.resolve(routeHelper.performer(req, res, next, StartAirdropKlass, 'r_v0.1_a_1'));
 

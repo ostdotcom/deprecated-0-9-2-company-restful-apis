@@ -44,14 +44,11 @@ const routeMethods = {
     logger.debug('req.serviceParams', req.serviceParams);
     logger.debug('req.decodedParams', req.decodedParams);
 
-    // TODO: req.decodedParams should be removed. It is just testing hack.
-    const decodedParams = req.serviceParams || req.decodedParams;
-
     var handleResponse = function (response) {
       response.renderResponse(res, errorConfig);
     };
 
-    return new CallerKlass(decodedParams).perform().then(handleResponse);
+    return new CallerKlass(req.serviceParams).perform().then(handleResponse);
 
   },
   

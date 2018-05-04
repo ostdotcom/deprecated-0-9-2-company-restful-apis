@@ -1,1 +1,14 @@
-{}
+{
+  "start_airdrop":{
+    "mandatory":[
+      {
+        "parameter": "amount",
+        "error_identifier": "invalid_amount"
+      }
+    ],
+    "optional":[
+      "airdropped",
+      "user_ids"
+    ]
+  }
+}

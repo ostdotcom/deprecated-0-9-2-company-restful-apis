@@ -1,6 +1,6 @@
 {
-  "user_name_inappropriate": {
-    "parameter": "Username",
-    "message": "Commom dusre ds dksjdks"
+  "invalid_amount": {
+    "parameter": "amount",
+    "message": "invalid amount"
   }
 }
