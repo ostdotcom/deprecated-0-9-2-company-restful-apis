@@ -208,6 +208,66 @@
     "http_code": "422",
     "code": "UNPROCESSABLE_ENTITY",
     "message": "Invalid API Version."
+  },
+  "blank_uuids": {
+    "http_code": "422",
+    "code": "blank_uuids",
+    "message": "blank uuids."
+  },
+  "no_data_found": {
+    "http_code": "422",
+    "code": "no_data_found",
+    "message": "No Data found."
+  },
+  "workers_contract_not_found": {
+    "http_code": "422",
+    "code": "workers_contract_not_found",
+    "message": "Mandatory to have Workers contract deployed."
+  },
+  "workers_addresses_mandatory": {
+    "http_code": "422",
+    "code": "workers_addresses_mandatory",
+    "message": "Mandatory to have Workers addresses."
+  },
+  "branded_token_contract_not_found": {
+    "http_code": "422",
+    "code": "branded_token_contract_not_found",
+    "message": "Mandatory to have Branded token contract deployed."
+  },
+  "airdrop_contract_not_found": {
+    "http_code": "422",
+    "code": "airdrop_contract_not_found",
+    "message": "Mandatory to have Airdrop contract deployed."
+  },
+  "airdrop_holder_address_not_found": {
+    "http_code": "422",
+    "code": "airdrop_holder_address_not_found",
+    "message": "Mandatory to have Airdrop budget holder address deployed."
+  },
+  "proposeBrandedToken_failed": {
+    "http_code": "422",
+    "code": "proposeBrandedToken_failed",
+    "message": "proposeBrandedToken failed."
+  },
+  "registration_status_not_found": {
+    "http_code": "422",
+    "code": "registration_status_not_found",
+    "message": "Unable to get registration status. Max attempts exceeded."
+  },
+  "setAcceptedMargin_failed": {
+    "http_code": "422",
+    "code": "setAcceptedMargin_failed",
+    "message": "setAcceptedMargin failed"
+  },
+  "setPriceOracle_failed": {
+    "http_code": "422",
+    "code": "setPriceOracle_failed",
+    "message": "setPriceOracle failed"
+  },
+  "could_not_set_worker": {
+    "http_code": "422",
+    "code": "could_not_set_worker",
+    "message": "could not set any worker"
   }
 
 }
