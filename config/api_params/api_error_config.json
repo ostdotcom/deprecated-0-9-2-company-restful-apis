@@ -209,6 +209,11 @@
     "code": "UNPROCESSABLE_ENTITY",
     "message": "Invalid API Version."
   },
+  "entity_formatting_failed": {
+    "http_code": "422",
+    "code": "COULD_NOT_PROCEED",
+    "message": "Entity could not be formatted."
+  },
   "blank_uuids": {
     "http_code": "422",
     "code": "blank_uuids",
