@@ -49,6 +49,11 @@
     "code": "INTERNAL_SERVER_ERROR",
     "message": "Something went wrong."
   },
+  "internal_server_error": {
+    "http_code": "500",
+    "code": "INTERNAL_SERVER_ERROR",
+    "message": "Something went wrong."
+  },
   "invalid_params": {
     "http_code": "422",
     "code": "INVALID_PARAMS",

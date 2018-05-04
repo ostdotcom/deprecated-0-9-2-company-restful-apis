@@ -9,6 +9,9 @@ const rootPrefix = '../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , cacheImplementer = require(rootPrefix + '/lib/cache_management/balance_and_nonce_cache_engine')
   , nonceHelperKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_helper')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
+  , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
+  , errorConfig = basicHelper.fetchErrorConfig(apiVersions.general)
   , waitTimeout = 50000 //50 seconds
   , waitTimeInterval = 5 //5 milliseconds
 ;
@@ -208,8 +211,11 @@ const NonceCacheKlassPrototype = {
         if (_getTimeStamp()-startTime > waitTimeout) {  
           //Format the error
           logger.error("NM :: wait :: promise has timed out");
-          var errorResult = responseHelper.error('l_nm_getNonce_1', 'getNonce timeout', "nounce_manager", {
-            timedOut: true
+          var errorResult = responseHelper.error({
+            internal_error_identifier: 'l_nm_getNonce_1',
+            api_error_identifier: 'internal_server_error',
+            debug_options: {timedOut: true},
+            error_config: errorConfig
           });
           return onResolve( errorResult );
         }
@@ -218,7 +224,11 @@ const NonceCacheKlassPrototype = {
         acquireLockAndReturn()
           .catch( function ( reason ) {
             logger.error("NM :: acquireLockAndReturn rejected the Promise. reason :: ", reason);
-            return responseHelper.error('l_nm_aqLockCatch_1', 'Something went wrong');
+            return responseHelper.error({
+              internal_error_identifier: 'l_nm_aqLockCatch_1',
+              api_error_identifier: 'internal_server_error',
+              error_config: errorConfig
+            });
           })
           .then( function ( acquireLockResponse ) {
             if ( acquireLockResponse.isSuccess() ) {
@@ -235,7 +245,11 @@ const NonceCacheKlassPrototype = {
       } catch (err) {
         //Format the error
         logger.error("NM :: IMPORTANT :: wait inside catch ", err);
-        return onResolve(responseHelper.error('l_nm_getNonce_2', 'Something went wrong'));
+        return onResolve(responseHelper.error({
+          internal_error_identifier: 'l_nm_getNonce_2',
+          api_error_identifier: 'internal_server_error',
+          error_config: errorConfig
+        }));
       }
     };
 
@@ -244,7 +258,11 @@ const NonceCacheKlassPrototype = {
     } catch (err) {
       //Format the error
       logger.error("NM :: IMPORTANT :: processNext inside catch ", err);
-      return onResolve(responseHelper.error('l_nm_getNonce_3', 'Something went wrong'));
+      return onResolve(responseHelper.error({
+        internal_error_identifier: 'l_nm_getNonce_3',
+        api_error_identifier: 'internal_server_error',
+        error_config: errorConfig
+      }));
     }
   },
 
@@ -313,13 +331,22 @@ const NonceCacheKlassPrototype = {
     // check if already locked
     const isLocked = await oThis.isLocked();
     if(isLocked) {
-      return responseHelper.error("l_nm_acquireLock_1", "Lock is already given to some other process. Waiting for lock release.",
-        {}, {sendErrorEmail: false});
+      return responseHelper.error({
+        internal_error_identifier: 'l_nm_acquireLock_fail_1',
+        api_error_identifier: 'internal_server_error',
+        debug_options: {msg: "Lock is already given to some other process. Waiting for lock release."},
+        error_config: errorConfig
+      });
     }
 
     const lockResponse = await oThis.cacheImplementer.increment(oThis.cacheLockKey);
     if(lockResponse.isFailure()) {
-      return responseHelper.error("l_nm_acquireLock_2", "Error in acquiring lock using cache increment.");
+      return responseHelper.error({
+        internal_error_identifier: 'l_nm_acquireLock_fail_2',
+        api_error_identifier: 'internal_server_error',
+        debug_options: {msg: "Error in acquiring lock using cache increment."},
+        error_config: errorConfig
+      });
     }
 
     // lock was not given to current request
@@ -327,8 +354,12 @@ const NonceCacheKlassPrototype = {
       // Revert the increased lock if value is not 1.
       // Means someone else has acquired the lock already.
       await oThis.cacheImplementer.decrement(oThis.cacheLockKey);
-      return responseHelper.error("l_nm_acquireLock_3", "Lock is already given to some other process. Waiting for lock release.",
-        {}, {sendErrorEmail: false});
+      return responseHelper.error({
+        internal_error_identifier: 'l_nm_acquireLock_fail_3',
+        api_error_identifier: 'internal_server_error',
+        debug_options: {msg: "Lock is already given to some other process. Waiting for lock release."},
+        error_config: errorConfig
+      });
     }
 
     return responseHelper.successWithData({});
@@ -475,9 +506,19 @@ const NonceCacheKlassPrototype = {
       if (setNonceResponse.isSuccess()) {
         return Promise.resolve(responseHelper.successWithData({nonce: maxNonceCount.toNumber()}));
       }
-      return Promise.resolve(responseHelper.error('l_nm_syncNonce_1', "unable to set nonce in cache"));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 'l_nm_syncNonce_fail_1',
+        api_error_identifier: 'internal_server_error',
+        debug_options: {msg: "unable to set nonce in cache."},
+        error_config: errorConfig
+      }));
     } else {
-      return Promise.resolve(responseHelper.error('l_nm_syncNonce_2', "unable to fetch nonce from geth nodes"));
+      return Promise.resolve(responseHelper.error({
+        internal_error_identifier: 'l_nm_syncNonce_fail_2',
+        api_error_identifier: 'internal_server_error',
+        debug_options: {msg: "unable to fetch nonce from geth nodes."},
+        error_config: errorConfig
+      }));
     }
   },
 
