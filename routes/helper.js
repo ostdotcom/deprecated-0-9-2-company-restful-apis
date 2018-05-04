@@ -41,8 +41,8 @@ const routeMethods = {
     req.serviceParams = apiParamsValidatorRsp.data.sanitisedApiParams;
 
     // TODO: temp. remove in sometime
-    console.log('req.serviceParams', req.serviceParams);
-    console.log('req.decodedParams', req.decodedParams);
+    logger.debug('req.serviceParams', req.serviceParams);
+    logger.debug('req.decodedParams', req.decodedParams);
 
     // TODO: req.decodedParams should be removed. It is just testing hack.
     const decodedParams = req.serviceParams || req.decodedParams;
