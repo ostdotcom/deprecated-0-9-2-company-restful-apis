@@ -288,6 +288,11 @@
     "http_code": "422",
     "code": "invalid_address",
     "message": "Invalid Address"
+  },
+  "st_prime_transfer_failed": {
+    "http_code": "422",
+    "code": "st_prime_transfer_failed",
+    "message": "ST Prime transfer failed"
   }
 
 }
