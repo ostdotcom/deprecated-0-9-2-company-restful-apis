@@ -268,6 +268,26 @@
     "http_code": "422",
     "code": "could_not_set_worker",
     "message": "could not set any worker"
+  },
+  "approve_failed": {
+    "http_code": "422",
+    "code": "approve_failed",
+    "message": "approve failed"
+  },
+  "stake_and_mint_processor_error": {
+    "http_code": "422",
+    "code": "stake_and_mint_processor_error",
+    "message": "Stake and mint Processor returned error"
+  },
+  "receipt_failed_after_maximum_retries": {
+    "http_code": "422",
+    "code": "receipt_failed_after_maximum_retries",
+    "message": "Receipt not successful after maximum retries"
+  },
+  "invalid_address": {
+    "http_code": "422",
+    "code": "invalid_address",
+    "message": "Invalid Address"
   }
 
 }
