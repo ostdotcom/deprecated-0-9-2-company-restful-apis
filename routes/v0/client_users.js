@@ -70,8 +70,7 @@ router.post('/create', function (req, res, next) {
  */
 router.post('/edit', function (req, res, next) {
 
-  req.decodedParams.apiName = 'create_user';
-  req.decodedParams.address_type = managedAddressesConst.userAddressType;
+  req.decodedParams.apiName = 'edit_user';
 
   const EditUserKlass = require(rootPrefix + '/app/services/client_users/edit_user');
 
