@@ -257,7 +257,7 @@ BasicHelperKlass.prototype = {
 
     if (apiVersion === apiVersions.v0) {
       paramErrorConfig = v0ParamErrorConfig;
-    } else if (apiVersion === apiVersions.v0) {
+    } else if (apiVersion === apiVersions.v1) {
       paramErrorConfig = v1ParamErrorConfig;
     } else if (apiVersion === apiVersions.internal) {
       paramErrorConfig = internalParamErrorConfig;
