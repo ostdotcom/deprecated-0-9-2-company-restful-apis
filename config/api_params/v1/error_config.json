@@ -92,6 +92,18 @@
     "code": "invalid",
     "message": "Available token amount is insufficient. Please mint more tokens or reduce the amount to complete the process."
   },
+  "user_name_inappropriate": {
+    "parameter": "Username",
+    "message": "Commom dusre ds dksjdks"
+  },
+  "invalid_amount_arbitrary_combination": {
+    "parameter": "amount",
+    "message": "Amount and arbitrary amount combination is not valid"
+  },
+  "invalid_commission_arbitrary_combination": {
+    "parameter": "commission_percent",
+    "message": "Commission percent and arbitrary commission combination is not valid"
+  },
   "airdrop_uuid_missing": {
     "parameter": "airdrop_uuid",
     "code": "missing",

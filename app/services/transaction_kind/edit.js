@@ -15,6 +15,7 @@ var rootPrefix = '../../..'
   , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
   , ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , commonValidator = require(rootPrefix + '/lib/validators/common')
 ;
 
 /**
@@ -137,7 +138,7 @@ Edit.prototype = {
 
     }
 
-    if(commission_percent && (parseInt(commission_percent) < 0 || parseFloat(commission_percent) > 100)){
+    if(commonValidator.commissionPercentValid(commission_percent)){
       errors_object.push('invalid_commission_percent');
     }
 

@@ -95,5 +95,30 @@
       }
     ],
     "optional": []
+  },
+  "create_new_action":{
+    "mandatory":[
+      {
+        "parameter": "name",
+        "error_identifier": "missing_name"
+      },
+      {
+        "parameter": "kind",
+        "error_identifier": "missing_kind"
+      },
+      {
+        "parameter": "currency",
+        "error_identifier": "missing_currency"
+      },
+      {
+        "parameter": "arbitrary_amount",
+        "error_identifier": "missing_arbitrary_amount"
+      }
+    ],
+    "optional":[
+      "amount",
+      "arbitrary_commission",
+      "commission_percent"
+    ]
   }
 }

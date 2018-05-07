@@ -47,6 +47,16 @@
       "order"
     ]
   },
+  "create_new_action": {
+    "mandatory": [],
+    "optional": [
+      "name",
+      "kind",
+      "currency_type",
+      "currency_value",
+      "commission_percent"
+    ]
+  },
   "airdrop_status": {
     "mandatory":[
       {
