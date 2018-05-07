@@ -106,17 +106,21 @@ listUserKlass.prototype = {
       ethereumAddresses.push(object['ethereum_address']);
     }
 
-    const economyUserBalance = new EconomyUserBalanceKlass({
-        client_id: oThis.clientId,
-        ethereum_addresses: ethereumAddresses
-      })
-      , userBalancesResponse = await economyUserBalance.perform()
-    ;
-
     var balanceHashData = {};
 
-    if (!userBalancesResponse.isFailure()) {
-      balanceHashData = userBalancesResponse.data;
+    if (ethereumAddresses.length > 0) {
+
+      const economyUserBalance = new EconomyUserBalanceKlass({
+            client_id: oThis.clientId,
+            ethereum_addresses: ethereumAddresses
+          })
+          , userBalancesResponse = await economyUserBalance.perform()
+      ;
+
+      if (!userBalancesResponse.isFailure()) {
+        balanceHashData = userBalancesResponse.data;
+      }
+
     }
 
     for (var i = 0; i < queryResponse.length; i++) {

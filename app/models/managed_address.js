@@ -165,10 +165,10 @@ const ManagedAddressKlassPrototype = {
 
     if (!commonValidator.isVarNull(params.airdropped)) {
 
-      if(params.airdropped) {
+      if(commonValidator.isVarTrue(params.airdropped)) {
         // filter for those who were airdropped
         query.where(['(properties & ?) > 0', invertedProperties[managedAddressesConst.airdropGrantProperty]]);
-      } else {
+      } else if (commonValidator.isVarFalse(params.airdropped)) {
         // filter for those who were never airdropped
         query.where(['(properties & ?) = 0', invertedProperties[managedAddressesConst.airdropGrantProperty]]);
       }

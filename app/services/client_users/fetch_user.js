@@ -3,11 +3,10 @@
 const rootPrefix = '../../..'
     , responseHelper = require(rootPrefix + '/lib/formatter/response')
     , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-    , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
     , EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance')
+    , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
     , UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/user')
     , basicHelper = require(rootPrefix + '/helpers/basic')
-    , commonValidator = require(rootPrefix +  '/lib/validators/common')
 ;
 
 /**
@@ -24,6 +23,7 @@ const fetchUserKlass = function (params) {
   const oThis = this;
 
   oThis.userUuid = params.id;
+  oThis.clientId = params.client_id;
 
 };
 
@@ -69,7 +69,7 @@ fetchUserKlass.prototype = {
 
     const oThis = this;
 
-    var managedAddressCache = new ManagedAddressCacheKlass({'uuids': [userUuid]});
+    var managedAddressCache = new ManagedAddressCacheKlass({'uuids': [oThis.userUuid]});
 
     const cacheFetchResponse = await managedAddressCache.fetch();
 
@@ -81,7 +81,7 @@ fetchUserKlass.prototype = {
       }));
     }
 
-    const response = cacheFetchResponse.data[userUuid];
+    const response = cacheFetchResponse.data[oThis.userUuid];
 
     if (!response) {
       return Promise.reject(responseHelper.error({
@@ -91,7 +91,7 @@ fetchUserKlass.prototype = {
       }));
     }
 
-    if (response['client_id'] != clientId) {
+    if (response['client_id'] != oThis.clientId) {
       return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_cu_eu_3',
         api_error_identifier: 'unauthorized_for_other_client',
@@ -100,7 +100,7 @@ fetchUserKlass.prototype = {
     }
 
     const ethereumAddress = response['ethereum_address']
-        , economyUserBalance = new EconomyUserBalanceKlass({client_id: clientId, ethereum_addresses: [ethereumAddress]})
+        , economyUserBalance = new EconomyUserBalanceKlass({client_id: oThis.clientId, ethereum_addresses: [ethereumAddress]})
         , userBalance = await economyUserBalance.perform()
     ;
 
@@ -116,8 +116,8 @@ fetchUserKlass.prototype = {
     }
 
     const userEntityData = {
-      uuid: userUuid,
-      name: name,
+      uuid: oThis.userUuid,
+      name: response['name'],
       address: ethereumAddress,
       total_airdropped_tokens: basicHelper.convertToNormal(totalAirdroppedTokens).toString(10),
       token_balance: basicHelper.convertToNormal(tokenBalance).toString(10)

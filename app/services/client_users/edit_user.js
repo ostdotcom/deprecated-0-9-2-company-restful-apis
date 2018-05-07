@@ -34,7 +34,7 @@ const EditUserKlass = function(params){
   oThis.userUuid = params.id;
   oThis.name = params.name;
 
-}
+};
 
 EditUserKlass.prototype = {
 
@@ -75,9 +75,11 @@ EditUserKlass.prototype = {
 
     const oThis = this
         , clientId = oThis.clientId
-        , userUuid = oThis.userUuid,
-        , name = oThis.name
-        , errors_object = [];
+        , userUuid = oThis.userUuid
+        , errors_object = []
+    ;
+
+    var name = oThis.name;
 
     if (!clientId || !userUuid) {
       return Promise.reject(responseHelper.error({
@@ -101,7 +103,7 @@ EditUserKlass.prototype = {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_cu_eu_2',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: errors_object
+        params_error_identifiers: errors_object,
         debug_options: {}
       }));
     }
@@ -181,6 +183,6 @@ EditUserKlass.prototype = {
 
   }
 
-}
+};
 
 module.exports = EditUserKlass;
