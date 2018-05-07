@@ -44,18 +44,18 @@ const routeMethods = {
     req.serviceParams = apiParamsValidatorRsp.data.sanitisedApiParams;
 
     if(afterValidationFunc){
-      req.serviceParams = afterValidationFunc(req.serviceParams);
+      req.serviceParams = await afterValidationFunc(req.serviceParams);
     }
 
     // TODO: temp. remove in sometime
     logger.debug('req.serviceParams', req.serviceParams);
     logger.debug('req.decodedParams', req.decodedParams);
 
-    var handleResponse = function (response) {
+    var handleResponse = async function (response) {
 
       if (response.isSuccess() && dataFormatterFunc) {
         // if requires this function could reformat data as per API version requirements.
-        dataFormatterFunc(response);
+        await dataFormatterFunc(response);
       }
 
       response.renderResponse(res, errorConfig);

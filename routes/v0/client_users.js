@@ -75,7 +75,7 @@ router.post('/edit', function (req, res, next) {
 
   const EditUserKlass = require(rootPrefix + '/app/services/client_users/edit_user');
 
-  const afterValidationFunc = function(serviceParamsPerThisVersion) {
+  const afterValidationFunc = async function(serviceParamsPerThisVersion) {
 
     const serviceParamsPerLatestVersion = util.clone(serviceParamsPerThisVersion);
 
@@ -123,7 +123,7 @@ router.get('/list', function (req, res, next) {
 
   const ListUsersKlass = require(rootPrefix + '/app/services/client_users/list');
 
-  const afterValidationFunc = function(serviceParamsPerThisVersion) {
+  const afterValidationFunc = async function(serviceParamsPerThisVersion) {
 
     const serviceParamsPerLatestVersion = util.clone(serviceParamsPerThisVersion);
 
@@ -146,21 +146,21 @@ router.get('/list', function (req, res, next) {
 
   const dataFormatterFunc = async function(serviceResponse) {
 
-    const users = response.data.users
+    const users = serviceResponse.data.users
         , formattedusers = []
     ;
 
-    delete response.data.users;
+    delete serviceResponse.data.users;
 
     for(var i=0; i<users.length; i++) {
 
-      const userEntityFormatterRsp = await new UserEntityFormatterKlass(user).perform();
+      const userEntityFormatterRsp = await new UserEntityFormatterKlass(users[i]).perform();
       formattedusers.push(userEntityFormatterRsp.data);
 
     }
 
-    response.data.result_type = 'economy_users';
-    response.data.economy_users = formattedusers
+    serviceResponse.data.result_type = 'economy_users';
+    serviceResponse.data.economy_users = formattedusers
 
   }
 

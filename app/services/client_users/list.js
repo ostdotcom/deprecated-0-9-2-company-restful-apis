@@ -132,8 +132,6 @@ listUserKlass.prototype = {
         continue;
       }
 
-      logger.info("object['ethereum_address'] ", object['ethereum_address']);
-
       var balanceData = balanceHashData[object['ethereum_address']];
       if (!balanceData) {
         var lowerCasedAddr = object['ethereum_address'].toLowerCase();
