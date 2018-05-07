@@ -159,6 +159,16 @@ router.get('/list', function (req, res, next) {
 
     }
 
+    const nextPagePayload = serviceResponse.data.meta.next_page_payload;
+
+    if (nextPagePayload.page_no) {
+      if (nextPagePayload.order_by === 'created') {nextPagePayload.order_by = 'creation_time'}
+      if (nextPagePayload.hasOwnProperty('airdropped') && !nextPagePayload.airdropped) {
+        delete nextPagePayload.airdropped;
+        nextPagePayload.filter = clientAirdropConst.neverAirdroppedAddressesAirdropListType;
+      }
+    }
+
     serviceResponse.data.result_type = 'economy_users';
     serviceResponse.data.economy_users = formattedusers
 
