@@ -76,5 +76,14 @@
       "airdropped",
       "user_ids"
     ]
+  },
+  "fetch_token_details": {
+    "mandatory":[
+      {
+        "parameter": "client_id",
+        "error_identifier": "missing_client_id"
+      }
+    ],
+    "optional": []
   }
 }
