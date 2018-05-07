@@ -55,25 +55,6 @@ router.post('/', function (req, res, next) {
 
 /**
  *
- * @name Fetch info for a given user identifier
- *
- * @route {GET} {base_url}/users/:id
- *
- * @routeparam {string} :id - identifier of user which is to be fetched
- *
- */
-router.get('/:id', function (req, res, next) {
-
-  req.decodedParams.apiName = 'fetch_user';
-
-  const FetchUserKlass = require(rootPrefix + '/app/services/client_users/fetch_user');
-
-  Promise.resolve(routeHelper.performer(req, res, next, FetchUserKlass, 'r_v1_u_3'));
-
-});
-
-/**
- *
  * @name Fetch a list of users
  *
  * @route {GET} {base_url}/users/
@@ -94,3 +75,24 @@ router.get('/', function (req, res, next) {
   Promise.resolve(routeHelper.performer(req, res, next, ListUsersKlass, 'r_v1_u_4'));
 
 });
+
+/**
+ *
+ * @name Fetch info for a given user identifier
+ *
+ * @route {GET} {base_url}/users/:id
+ *
+ * @routeparam {string} :id - identifier of user which is to be fetched
+ *
+ */
+router.get('/:id', function (req, res, next) {
+
+  req.decodedParams.apiName = 'fetch_user';
+
+  const FetchUserKlass = require(rootPrefix + '/app/services/client_users/fetch_user');
+
+  Promise.resolve(routeHelper.performer(req, res, next, FetchUserKlass, 'r_v1_u_3'));
+
+});
+
+module.exports = router;

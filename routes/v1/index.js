@@ -17,7 +17,8 @@ const router = express.Router()
 
 //router.use('/', rootRoutes);
 
-// router.use('/users', usersRoutes);
+router.use('/users', usersRoutes);
+
 //
 // router.use('/actions', actionRoutes);
 //
