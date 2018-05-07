@@ -64,7 +64,7 @@ FetchChainInteractionParams.prototype = {
       return Promise.resolve(responseHelper.paramValidationError({
         internal_error_identifier: 'ob_fcip_1',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_client_id'],
+        params_error_identifiers: ['missing_client_id'],
         debug_options: {}
       }));
     }

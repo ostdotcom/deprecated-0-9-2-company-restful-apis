@@ -155,11 +155,12 @@ addMoreWorkersKlass.prototype = {
 
       var clientId = oThis.clientIds[j]
           , managedAddressInsertData = []
+          , newWorkerUuids = []
       ;
 
       var generateEthAddress = new GenerateEthAddressKlass({
-        addressType: managedAddressesConst.workerAddressType,
-        clientId: clientId
+        address_type: managedAddressesConst.workerAddressType,
+        client_id: clientId
       });
 
       for(var i=0; i<oThis.newWorkersCnt; i++) {
@@ -170,15 +171,22 @@ addMoreWorkersKlass.prototype = {
           return Promise.resolve(r);
         }
 
-        const resultData = r.data[r.data.result_type][0];
+        const resultData = r.data[r.data.result_type];
+        newWorkerUuids.push(resultData.uuid);
+
+      }
+
+      const manageAddrObjs = await new ManagedAddressModel().getByUuids(newWorkerUuids);
+      for(var i = 0; i < manageAddrObjs.length; i++) {
         managedAddressInsertData.push(
           [
             clientId,
-            resultData.id,
+            manageAddrObjs[i].id,
             new ClientWorkerManagedAddressIdModel().invertedStatuses[clientWorkerManagedAddressConst.inactiveStatus],
             currentTime,
             currentTime
-          ]);
+          ]
+        );
       }
 
       await new ClientWorkerManagedAddressIdModel().insertMultiple(dbFields, managedAddressInsertData).fire();

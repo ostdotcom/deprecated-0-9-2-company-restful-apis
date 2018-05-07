@@ -1,4 +1,57 @@
 {
+  "missing_client_id": {
+    "parameter": "client_id",
+    "code": "missing",
+    "message": "Invalid client id"
+  },
+  "missing_address_type": {
+    "parameter": "address_type",
+    "code": "missing",
+    "message": "Missing address_type"
+  },
+  "missing_id": {
+    "parameter": "id",
+    "code": "missing",
+    "message": "missing id"
+  },
+  "missing_name": {
+    "parameter": "name",
+    "code": "missing",
+    "message": "missing name"
+  },
+  "invalid_username": {
+    "parameter": "name",
+    "message": "Must be a minimum of 3 characters, a maximum of 20 characters, and can contain only letters, numbers, and spaces, along with other common sense limitations."
+  },
+  "inappropriate_username": {
+    "parameter": "name",
+    "message": "Come on, the name you entered is inappropriate. Please choose a nicer word."
+  },
+  "invalid_filter_user_list": {
+    "parameter": "airdropped",
+    "code": "invalid",
+    "message": "Invalid airdropped"
+  },
+  "invalid_page_no": {
+    "parameter": "page_no",
+    "code": "invalid",
+    "message": "Invalid page_no"
+  },
+  "invalid_pagination_limit": {
+    "parameter": "limit",
+    "code": "invalid",
+    "message": "Invalid limit"
+  },
+  "invalid_order_by_user_list": {
+    "parameter": "order_by",
+    "code": "invalid",
+    "message": "Invalid order_by"
+  },
+  "invalid_order": {
+    "parameter": "order",
+    "code": "invalid",
+    "message": "Invalid order"
+  },
   "missing_airdrop_amount": {
     "parameter": "amount",
     "code": "missing",

@@ -12,6 +12,7 @@ const rootPrefix = '../../..'
   , managedAddressConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , ManagedAddressSaltModel = require(rootPrefix + '/app/models/managed_address_salt')
   , kmsWrapperKlass = require(rootPrefix + '/lib/authentication/kms_wrapper')
+  , UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/user')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , ClientAddressSaltMapping = require(rootPrefix + '/lib/cache_management/client_address_salt_mapping')
@@ -19,15 +20,19 @@ const rootPrefix = '../../..'
 ;
 
 /**
+ * Generate address klass
+ *
  * If Eth Address & Passphrase is passed insert in db else call platform to generate a fresh pair and then insert
  *
- * @param {object} params -
- *                  addressType - type of address
- *                  clientId - client id for which address is to be generated
- *                  ethAddress - address to be used
- *                  privateKey - private key to be used
- *                  name - user name
  * @constructor
+ *
+ * @param {object} params - external passed parameters
+ * @param {number} params.client_id - client id for whom users are to be created.
+ * @param {number} params.address_type - type of address
+ * @param {number} [params.eth_address] - address to be used
+ * @param {number} [params.private_key] - private key to be used
+ * @param {number} [params.name] - name to be given to this user
+ *
  */
 const GenerateAddressKlass = function(params){
 
@@ -37,11 +42,10 @@ const GenerateAddressKlass = function(params){
     params = {};
   }
 
-
-  oThis.addressType = params['addressType'];
-  oThis.clientId = params['clientId'];
-  oThis.ethAddress = params['ethAddress'];
-  oThis.privateKey = params['privateKey'];
+  oThis.addressType = params['address_type'];
+  oThis.clientId = params['client_id'];
+  oThis.ethAddress = params['eth_address'];
+  oThis.privateKey = params['private_key'];
   oThis.name = params['name'];
 
 };
@@ -85,7 +89,7 @@ GenerateAddressKlass.prototype = {
 
     // Client id is mandatory for all address types but for internalChainIndenpendentAddressType
     if ((!clientId || clientId === '') && addressType != managedAddressConst.internalChainIndenpendentAddressType) {
-      errors_object.push('invalid_client_id');
+      errors_object.push('missing_client_id');
     }
 
     if (name) {
@@ -99,12 +103,12 @@ GenerateAddressKlass.prototype = {
     }
 
     if(Object.keys(errors_object).length > 0){
-      return responseHelper.paramValidationError({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_a_g_2',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: errors_object,
         debug_options: {}
-      });
+      }));
     }
 
     const insertedRec = await new ManagedAddressModel()
@@ -119,38 +123,35 @@ GenerateAddressKlass.prototype = {
     const managedAddressCache = new ManagedAddressCacheKlass({'uuids': [addrUuid]});
     managedAddressCache.clear();
 
-    var userData = {};
-    if(addressType != managedAddressConst.userAddressType){
-      userData['id'] = insertedRec.insertId;
-    } else {
-      userData['id'] = addrUuid;
-    }
+    var userData = {
+      id: insertedRec.insertId,
+      uuid: addrUuid,
+      name: name || '',
+      total_airdropped_tokens: 0,
+      token_balance: 0
+    };
 
-    return responseHelper.successWithData({
-      result_type: "economy_users",
-      'economy_users': [
-        Object.assign(userData, {
-          uuid: addrUuid,
-          name: name || '',
-          total_airdropped_tokens: 0,
-          token_balance: 0
-        })
-      ],
-      meta: {
-        next_page_payload: {}
-      }
-    });
+    const userEntityFormatter = new UserEntityFormatterKlass(userData)
+        , userEntityFormatterRsp = await userEntityFormatter.perform()
+    ;
+
+    return Promise.resolve(responseHelper.successWithData({
+      result_type: "user",
+      user: userEntityFormatterRsp.data
+    }));
 
   },
 
   /**
+   *
    * After returning response, in background create address salt etc.
    *
+   * @private
+   *
    * @param company_managed_address_id
-   * @param clientId
    * @param addrUuid
-   * @param addressType
-   * @return {ResultBase}
+   *
+   * @return {Result}
    */
   _processAddressInBackground: async function (company_managed_address_id, addrUuid) {
 
@@ -165,11 +166,11 @@ GenerateAddressKlass.prototype = {
 
       if (generateAddrRsp.isFailure()) {
         logger.notify('s_a_g_3', 'generate address failure', {rsp: generateAddrRsp.toHash(), clientId: clientId});
-        return responseHelper.error({
+        return Promise.reject(responseHelper.error({
           internal_error_identifier: 's_a_g_3',
           api_error_identifier: 'something_went_wrong',
           debug_options: {}
-        });
+        }));
       }
 
       var eth_address = generateAddrRsp.data['address'];
@@ -185,11 +186,11 @@ GenerateAddressKlass.prototype = {
     var generateSaltRsp = await oThis._generateManagedAddressSalt(clientId);
     if (generateSaltRsp.isFailure()) {
       logger.notify('s_a_g_4', 'generate salt failure', {rsp: generateSaltRsp.toHash(), clientId: clientId});
-      return responseHelper.error({
+      return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_a_g_4',
         api_error_identifier: 'something_went_wrong',
         debug_options: {}
-      });
+      }));
     }
 
     await oThis._updateInDb(
@@ -206,12 +207,14 @@ GenerateAddressKlass.prototype = {
       ethAddrPrivateKeyCache.clear();
     }
 
-    return responseHelper.successWithData({ethereum_address: eth_address});
+    return Promise.resolve(responseHelper.successWithData({ethereum_address: eth_address}));
 
   },
 
   /**
    * Generate managed address salt
+   *
+   * @private
    *
    * @return {promise<result>}
    *
@@ -241,20 +244,20 @@ GenerateAddressKlass.prototype = {
       new ClientAddressSaltMapping({client_id: clientId}).clear();
 
       if (insertedRec.affectedRows == 0) {
-        return responseHelper.error({
+        return Promise.reject(responseHelper.error({
           internal_error_identifier: 's_a_g_5',
           api_error_identifier: 'something_went_wrong',
           debug_options: {}
-        });
+        }));
       }
 
     } catch (err) {
       logger.notify('s_a_g_6', 'address salt generation failed', err);
-      return responseHelper.error({
+      return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_a_g_6',
         api_error_identifier: 'something_went_wrong',
         debug_options: {}
-      });
+      }));
     }
 
     return Promise.resolve(responseHelper.successWithData({managed_address_salt_id: insertedRec.insertId}));
@@ -264,10 +267,13 @@ GenerateAddressKlass.prototype = {
   /**
    * Update the row in database.
    *
+   * @private
+   *
    * @param company_managed_address_id
    * @param eth_address
-   * @param privateKey
-   * @param clientId
+   * @param privateKeyD
+   * @param managed_address_salt_id
+   *
    * @return {Promise<*>}
    */
   _updateInDb: async function (company_managed_address_id, eth_address, privateKeyD, managed_address_salt_id) {
@@ -287,7 +293,9 @@ GenerateAddressKlass.prototype = {
       private_key: privateKeyEncr,
       ethereum_address: eth_address
     }).where({id: company_managed_address_id}).fire();
+
   }
+
 };
 
 module.exports = GenerateAddressKlass;

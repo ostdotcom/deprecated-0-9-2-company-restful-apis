@@ -92,7 +92,7 @@ CreateDummyUsers.prototype = {
       return Promise.resolve(responseHelper.paramValidationError({
         internal_error_identifier: 'ob_cdu_1',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_number_of_users'],
+        params_error_identifiers: ['missing_number_of_users'],
         debug_options: {}
       }));
     }
@@ -105,7 +105,7 @@ CreateDummyUsers.prototype = {
       return Promise.resolve(responseHelper.paramValidationError({
         internal_error_identifier: 'ob_cdu_2',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_client_id'],
+        params_error_identifiers: ['missing_client_id'],
         debug_options: {}
       }));
     }
@@ -141,8 +141,8 @@ CreateDummyUsers.prototype = {
     for (var i = 0; i < oThis.numberOfUsers; i++) {
 
       const generateEthAddress = new GenerateEthAddressKlass({
-        addressType: managedAddressesConst.userAddressType,
-        clientId: oThis.clientId,
+        address_type: managedAddressesConst.userAddressType,
+        client_id: oThis.clientId,
         name: "User " + i
       });
 

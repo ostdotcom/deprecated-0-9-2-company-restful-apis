@@ -15,6 +15,7 @@ const rootPrefix = '../../..'
   , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
+  , UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/user')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
@@ -245,28 +246,42 @@ GetTransactionDetailKlass.prototype = {
    * @return {promise}
    */
   _getEconomyUsers: async function () {
+
     const oThis = this
       , userUuids = Object.keys(oThis.economyUserMap)
       , economyUsersRecords = await new ManagedAddressModel().select('*').where(["uuid IN (?)", userUuids]).fire()
     ;
 
     for (var i = 0; i < economyUsersRecords.length; i++) {
+
+      //TODO: We need to add a var for supported entities in this API. to return users only when passed.
+      //TODO: Fetch actual balances here. for now had to add 0 values for code to work.
+
       const currRecord = economyUsersRecords[i]
+          , userData = {
+            id: currRecord.uuid,
+            uuid: currRecord.uuid,
+            name: currRecord.name || '',
+            kind: new ManagedAddressModel().addressTypes[currRecord.address_type],
+            total_airdropped_tokens: 0,
+            token_balance: 0
+          }
       ;
 
-      oThis.economyUserMap[currRecord.uuid] = {
-        id: currRecord.uuid,
-        uuid: currRecord.uuid,
-        name: currRecord.name || '',
-        kind: new ManagedAddressModel().addressTypes[currRecord.address_type],
-        uts: Date.now()
-      };
+      const userEntityFormatter = new UserEntityFormatterKlass(userData)
+          , userEntityFormatterRsp = await userEntityFormatter.perform()
+      ;
+
+      oThis.economyUserMap[currRecord.uuid] = userEntityFormatterRsp.data;
+
     }
 
-    oThis.response.economy_users = oThis.economyUserMap;
+    oThis.response.users = oThis.economyUserMap;
 
     return Promise.resolve();
+
   }
+
 };
 
 module.exports = GetTransactionDetailKlass;

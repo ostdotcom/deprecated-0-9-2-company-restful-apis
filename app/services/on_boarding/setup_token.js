@@ -219,14 +219,15 @@ SetupToken.prototype = {
       } else {
 
         const generateEthAddress = new GenerateEthAddressKlass({
-          addressType: managedAddressesConst.reserveAddressType,
-          clientId: oThis.clientId
+          address_type: managedAddressesConst.reserveAddressType,
+          client_id: oThis.clientId
         });
         var r = await generateEthAddress.perform();
         if (r.isFailure()) return onResolve(r);
-        const resultData = r.data[r.data.result_type][0];
-        oThis.reserve_managed_address_id = resultData.id;
-        oThis.reserveAddrUuid = resultData.uuid;
+        const resultData = r.data[r.data.result_type];
+        oThis.reserveAddrUuid = resultData.id;
+        const manageAddrObj = await new ManagedAddressModel().getByUuids([oThis.reserveAddrUuid]);
+        oThis.reserve_managed_address_id = manageAddrObj[0].id;
 
         return onResolve(responseHelper.successWithData({}));
       }
@@ -267,9 +268,13 @@ SetupToken.prototype = {
           });
           var r = await generateEthAddress.perform();
           if (r.isFailure()) return onResolve(r);
-          const resultData = r.data[r.data.result_type][0];
+          const resultData = r.data[r.data.result_type];
           oThis.workerAddrUuids.push(resultData.uuid);
-          oThis.newWorkerManagedAddressIds.push(resultData.id);
+        }
+
+        const manageAddrObjs = await new ManagedAddressModel().getByUuids(oThis.workerAddrUuids);
+        for(var i = 0; i < manageAddrObjs.length; i++) {
+          oThis.newWorkerManagedAddressIds.push(manageAddrObjs[i].id);
         }
 
         return onResolve(responseHelper.successWithData({}));
@@ -305,9 +310,10 @@ SetupToken.prototype = {
         });
         var r = await generateEthAddress.perform();
         if (r.isFailure()) return onResolve(r);
-        const resultData = r.data[r.data.result_type][0];
-        oThis.airdrop_holder_managed_address_id = resultData.id;
-        oThis.airdropHolderAddrUuid = resultData.uuid;
+        const resultData = r.data[r.data.result_type];
+        oThis.airdropHolderAddrUuid = resultData.id;
+        const manageAddrObj = await new ManagedAddressModel().getByUuids([oThis.airdropHolderAddrUuid]);
+        oThis.airdrop_holder_managed_address_id = manageAddrObj[0].id;
 
         return onResolve(responseHelper.successWithData({}));
       }

@@ -3,7 +3,7 @@
     "mandatory":[
       {
         "parameter": "client_id",
-        "error_identifier": "invalid_client_id"
+        "error_identifier": "missing_client_id"
       }
     ],
     "optional":[]
@@ -12,11 +12,11 @@
     "mandatory":[
       {
         "parameter": "client_id",
-        "error_identifier": "invalid_client_id"
+        "error_identifier": "missing_client_id"
       },
       {
         "parameter": "ethereum_addresses",
-        "error_identifier": "invalid_ethereum_addresses"
+        "error_identifier": "missing_ethereum_addresses"
       }
     ],
     "optional":[]
@@ -25,11 +25,11 @@
     "mandatory":[
       {
         "parameter": "client_id",
-        "error_identifier": "invalid_client_id"
+        "error_identifier": "missing_client_id"
       },
       {
         "parameter": "uuids",
-        "error_identifier": "invalid_uuids"
+        "error_identifier": "missing_uuids"
       }
     ],
     "optional":[]
@@ -38,23 +38,23 @@
     "mandatory":[
       {
         "parameter": "client_id",
-        "error_identifier": "invalid_client_id"
+        "error_identifier": "missing_client_id"
       },
       {
         "parameter": "token_symbol",
-        "error_identifier": "invalid_token_symbol"
+        "error_identifier": "missing_token_symbol"
       },
       {
         "parameter": "amount",
-        "error_identifier": "invalid_amount"
+        "error_identifier": "missing_amount"
       },
       {
         "parameter": "client_token_id",
-        "error_identifier": "invalid_client_token_id"
+        "error_identifier": "missing_client_token_id"
       },
       {
         "parameter": "list_type",
-        "error_identifier": "invalid_list_type"
+        "error_identifier": "missing_list_type"
       }
     ],
     "optional":[]
@@ -63,23 +63,23 @@
     "mandatory":[
       {
         "parameter": "client_id",
-        "error_identifier": "invalid_client_id"
+        "error_identifier": "missing_client_id"
       },
       {
         "parameter": "token_symbol",
-        "error_identifier": "invalid_token_symbol"
+        "error_identifier": "missing_token_symbol"
       },
       {
         "parameter": "stake_and_mint_params",
-        "error_identifier": "invalid_stake_and_mint_params"
+        "error_identifier": "missing_stake_and_mint_params"
       },
       {
         "parameter": "client_token_id",
-        "error_identifier": "invalid_client_token_id"
+        "error_identifier": "missing_client_token_id"
       },
       {
         "parameter": "airdrop_params",
-        "error_identifier": "invalid_airdrop_params"
+        "error_identifier": "missing_airdrop_params"
       }
     ],
     "optional":[]
@@ -88,19 +88,19 @@
     "mandatory":[
       {
         "parameter": "client_id",
-        "error_identifier": "invalid_client_id"
+        "error_identifier": "missing_client_id"
       },
       {
         "parameter": "symbol",
-        "error_identifier": "invalid_token_symbol"
+        "error_identifier": "missing_token_symbol"
       },
       {
         "parameter": "name",
-        "error_identifier": "invalid_token_name"
+        "error_identifier": "missing_token_name"
       },
       {
         "parameter": "symbol_icon",
-        "error_identifier": "invalid_token_symbol_icon"
+        "error_identifier": "missing_token_symbol_icon"
       }
     ],
     "optional":[]
@@ -109,11 +109,11 @@
     "mandatory":[
       {
         "parameter": "client_id",
-        "error_identifier": "invalid_client_id"
+        "error_identifier": "missing_client_id"
       },
       {
         "parameter": "symbol",
-        "error_identifier": "invalid_token_symbol"
+        "error_identifier": "missing_token_symbol"
       }
     ],
     "optional":[
@@ -129,11 +129,11 @@
     "mandatory":[
       {
         "parameter": "client_id",
-        "error_identifier": "invalid_client_id"
+        "error_identifier": "missing_client_id"
       },
       {
         "parameter": "number_of_users",
-        "error_identifier": "invalid_number_of_users"
+        "error_identifier": "missing_number_of_users"
       }
     ],
     "optional":[]
@@ -142,7 +142,7 @@
     "mandatory":[
       {
         "parameter": "client_id",
-        "error_identifier": "invalid_client_id"
+        "error_identifier": "missing_client_id"
       }
     ],
     "optional":[]
@@ -151,7 +151,7 @@
     "mandatory":[
       {
         "parameter": "client_id",
-        "error_identifier": "invalid_client_id"
+        "error_identifier": "missing_client_id"
       },
       {
         "parameter": "balances_to_fetch",
@@ -164,11 +164,11 @@
     "mandatory":[
       {
         "parameter": "client_id",
-        "error_identifier": "invalid_client_id"
+        "error_identifier": "missing_client_id"
       },
       {
         "parameter": "token_symbol",
-        "error_identifier": "invalid_token_symbol"
+        "error_identifier": "missing_token_symbol"
       }
     ],
     "optional":[
@@ -179,7 +179,7 @@
     "mandatory":[
       {
         "parameter": "transaction_uuids",
-        "error_identifier": "invalid_transaction_uuids"
+        "error_identifier": "missing_transaction_uuids"
       }
     ],
     "optional":[]
@@ -188,11 +188,11 @@
     "mandatory":[
       {
         "parameter": "client_id",
-        "error_identifier": "invalid_client_id"
+        "error_identifier": "missing_client_id"
       },
       {
         "parameter": "token_symbol",
-        "error_identifier": "invalid_token_symbol"
+        "error_identifier": "missing_token_symbol"
       }
     ],
     "optional":[]
@@ -201,19 +201,19 @@
     "mandatory": [
       {
         "parameter": "client_id",
-        "error_identifier": "invalid_client_id"
+        "error_identifier": "missing_client_id"
       },
       {
         "parameter": "token_symbol",
-        "error_identifier": "invalid_token_symbol"
+        "error_identifier": "missing_token_symbol"
       },
       {
         "parameter": "stake_and_mint_params",
-        "error_identifier": "invalid_stake_and_mint_params"
+        "error_identifier": "missing_stake_and_mint_params"
       },
       {
         "parameter": "client_token_id",
-        "error_identifier": "invalid_client_token_id"
+        "error_identifier": "missing_client_token_id"
       }
     ],
     "optional":[]

@@ -9,16 +9,16 @@ const rootPrefix = '..'
 
 const routeMethods = {
 
-  performer: async function(req, res, next, CallerKlass, errorCode) {
-    const oThis = this;
+  performer: async function(req, res, next, CallerKlass, errorCode, afterValidationFunc, dataFormatterFunc) {
 
-    logger.debug('1-req.serviceParams', req.serviceParams);
-    logger.debug('1-req.decodedParams', req.decodedParams);
+    const oThis = this
+      , errorConfig = basicHelper.fetchErrorConfig(req.decodedParams.apiVersion)
+    ;
 
-    return oThis.asyncPerform(req, res, next, CallerKlass)
+    return oThis.asyncPerform(req, res, next, CallerKlass, afterValidationFunc, dataFormatterFunc)
         .catch(function(error) {
           if (responseHelper.isCustomResult(error)) {
-            error.renderResponse(res, req.serviceParams);
+            error.renderResponse(res, errorConfig);
           } else {
             logger.notify(errorCode, 'Something went wrong', error);
             responseHelper.error({
@@ -30,7 +30,7 @@ const routeMethods = {
         });
   },
   
-  asyncPerform: async function(req, res, next, CallerKlass) {
+  asyncPerform: async function(req, res, next, CallerKlass, afterValidationFunc, dataFormatterFunc) {
 
     const oThis = this
         , errorConfig = basicHelper.fetchErrorConfig(req.decodedParams.apiVersion);
@@ -43,12 +43,23 @@ const routeMethods = {
 
     req.serviceParams = apiParamsValidatorRsp.data.sanitisedApiParams;
 
+    if(afterValidationFunc){
+      req.serviceParams = afterValidationFunc(req.serviceParams);
+    }
+
     // TODO: temp. remove in sometime
     logger.debug('req.serviceParams', req.serviceParams);
     logger.debug('req.decodedParams', req.decodedParams);
 
     var handleResponse = function (response) {
+
+      if (response.isSuccess() && dataFormatterFunc) {
+        // if requires this function could reformat data as per API version requirements.
+        dataFormatterFunc(response);
+      }
+
       response.renderResponse(res, errorConfig);
+
     };
 
     return new CallerKlass(req.serviceParams).perform().then(handleResponse);

@@ -180,7 +180,7 @@ Edit.prototype = {
 
     }
 
-    if(Object.keys(errors_object).length > 0){
+    if(errors_object.length > 0){
       return Promise.resolve(responseHelper.paramValidationError({
         internal_error_identifier: 'tk_e_2',
         api_error_identifier: 'invalid_api_params',

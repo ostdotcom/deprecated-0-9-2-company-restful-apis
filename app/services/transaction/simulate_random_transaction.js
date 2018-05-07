@@ -123,7 +123,8 @@ simulateRandomTransactionKlass.prototype = {
     if (cacheRsp.isFailure()) {
       return Promise.resolve(responseHelper.error({
         internal_error_identifier: 's_tr_srt_1',
-        api_error_identifier: 'invalid_token_symbol',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_token_symbol'],
         debug_options: {}
       }));
     }

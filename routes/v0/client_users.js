@@ -13,6 +13,9 @@ const rootPrefix = '../..'
   , routeHelper = require(rootPrefix + '/routes/helper')
   , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
   , basicHelper = require(rootPrefix + '/helpers/basic')
+  , util = require(rootPrefix + '/lib/util')
+  , clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop')
+  , UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/v0/user')
   , errorConfig = basicHelper.fetchErrorConfig(apiVersions.v0)
 ;
 
@@ -31,31 +34,26 @@ const router = express.Router()
  */
 router.post('/create', function (req, res, next) {
 
-  const performer = function () {
+  req.decodedParams.apiName = 'create_user';
+  req.decodedParams.address_type = managedAddressesConst.userAddressType;
 
-    const decodedParams = req.decodedParams
-      , GenerateEthAddressKlass = require(rootPrefix + '/app/services/address/generate')
-    ;
+  const CreateUserKlass = require(rootPrefix + '/app/services/address/generate');
 
-    const generateEthAddress = new GenerateEthAddressKlass({
-      addressType: managedAddressesConst.userAddressType,
-      clientId: decodedParams.client_id,
-      name: decodedParams.name
-    });
+  const dataFormatterFunc = async function(response) {
 
-    // handle final response
-    const handleResponse = function (response) {
-      return response.renderResponse(res, errorConfig);
-    };
+    const userEntityFormatterRsp = await new UserEntityFormatterKlass(response.data.user).perform();
 
-    return generateEthAddress.perform().then(handleResponse);
+    delete response.data.user;
 
-  };
+    response.data.result_type = 'economy_users';
+    response.data.economy_users = [userEntityFormatterRsp.data]
 
-  Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_cu_1', 'Something went wrong', err);
-    responseHelper.error('r_cu_1', 'Something went wrong').renderResponse(res, errorConfig)
-  });
+  }
+
+  Promise.resolve(routeHelper.performer(
+      req, res, next, CreateUserKlass, 'r_v0_u_1',
+      null, dataFormatterFunc
+  ));
 
 });
 
@@ -71,25 +69,39 @@ router.post('/create', function (req, res, next) {
  *
  */
 router.post('/edit', function (req, res, next) {
-  const performer = function () {
-    const decodedParams = req.decodedParams
-      , editUser = require(rootPrefix + '/app/services/client_users/edit_user')
-    ;
-    var clientId = decodedParams.client_id;
-    var uuid = decodedParams.uuid;
-    var name = decodedParams.name;
 
-    // handle final response
-    const handleResponse = function (response) {
-      return response.renderResponse(res, errorConfig);
-    };
-    return editUser.perform(clientId, uuid, name).then(handleResponse);
-  };
+  req.decodedParams.apiName = 'create_user';
+  req.decodedParams.address_type = managedAddressesConst.userAddressType;
 
-  Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_cu_2', 'Something went wrong', err);
-    responseHelper.error('r_cu_2', 'Something went wrong').renderResponse(res, errorConfig)
-  });
+  const EditUserKlass = require(rootPrefix + '/app/services/client_users/edit_user');
+
+  const afterValidationFunc = function(serviceParamsPerThisVersion) {
+
+    const serviceParamsPerLatestVersion = util.clone(serviceParamsPerThisVersion);
+
+    routeHelper.replaceKey(serviceParamsPerLatestVersion, 'uuid', 'id');
+
+    return serviceParamsPerLatestVersion;
+
+  }
+
+  const dataFormatterFunc = async function(response) {
+
+    const userEntityFormatterRsp = await new UserEntityFormatterKlass(response.data.user).perform();
+
+    delete response.data.user;
+
+    response.data.result_type = 'economy_users';
+    response.data.economy_users = [userEntityFormatterRsp.data]
+
+  }
+
+  Promise.resolve(routeHelper.performer(
+      req, res, next,
+      EditUserKlass, 'r_v0_u_2',
+      afterValidationFunc, dataFormatterFunc
+  ));
+
 });
 
 /**
@@ -107,24 +119,56 @@ router.post('/edit', function (req, res, next) {
  */
 router.get('/list', function (req, res, next) {
 
-  const performer = function () {
+  req.decodedParams.apiName = 'list_users';
 
-    const decodedParams = req.decodedParams
-      , listAddresses = new listAddressesKlass();
+  const ListUsersKlass = require(rootPrefix + '/app/services/client_users/list');
 
-    // handle final response
-    const handleResponse = function (response) {
-      return response.renderResponse(res, errorConfig);
-    };
+  const afterValidationFunc = function(serviceParamsPerThisVersion) {
 
-    return listAddresses.perform(decodedParams).then(handleResponse);
+    const serviceParamsPerLatestVersion = util.clone(serviceParamsPerThisVersion);
 
-  };
+    if(serviceParamsPerLatestVersion.order_by === 'creation_time') {
+      serviceParamsPerLatestVersion.order_by = 'created'
+    }
 
-  Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_cu_3', 'Something went wrong', err);
-    responseHelper.error('r_cu_3', 'Something went wrong').renderResponse(res, errorConfig)
-  });
+    const filter = serviceParamsPerLatestVersion.filter;
+    delete serviceParamsPerLatestVersion['filter'];
+
+    if(filter === clientAirdropConst.neverAirdroppedAddressesAirdropListType) {
+      serviceParamsPerLatestVersion.airdropped = false;
+    }
+
+    serviceParamsPerLatestVersion.limit = 25;
+
+    return serviceParamsPerLatestVersion;
+
+  }
+
+  const dataFormatterFunc = async function(serviceResponse) {
+
+    const users = response.data.users
+        , formattedusers = []
+    ;
+
+    delete response.data.users;
+
+    for(var i=0; i<users.length; i++) {
+
+      const userEntityFormatterRsp = await new UserEntityFormatterKlass(user).perform();
+      formattedusers.push(userEntityFormatterRsp.data);
+
+    }
+
+    response.data.result_type = 'economy_users';
+    response.data.economy_users = formattedusers
+
+  }
+
+  Promise.resolve(routeHelper.performer(
+      req, res, next,
+      ListUsersKlass, 'r_v0_u_3',
+      afterValidationFunc, dataFormatterFunc
+  ));
 
 });
 

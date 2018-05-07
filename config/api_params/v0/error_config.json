@@ -1,13 +1,28 @@
 {
+  "missing_client_id": {
+    "parameter": "client_id",
+    "code": "missing",
+    "message": "Unauthorized access"
+  },
   "invalid_client_id": {
     "parameter": "client_id",
     "code": "invalid",
     "message": "Invalid client id"
   },
-  "missing_client_id": {
-    "parameter": "client_id",
+  "missing_address_type": {
+    "parameter": "address_type",
     "code": "missing",
-    "message": "Unauthorized access"
+    "message": "Missing address_type"
+  },
+  "missing_uuid": {
+    "parameter": "uuid",
+    "code": "missing",
+    "message": "missing uuid"
+  },
+  "missing_name": {
+    "parameter": "name",
+    "code": "missing",
+    "message": "missing name"
   },
   "invalid_username": {
     "parameter": "name",
@@ -16,6 +31,31 @@
   "inappropriate_username": {
     "parameter": "name",
     "message": "Come on, the name you entered is inappropriate. Please choose a nicer word."
+  },
+  "invalid_page_no": {
+    "parameter": "page_no",
+    "code": "invalid",
+    "message": "Invalid page_no"
+  },
+  "invalid_pagination_limit": {
+    "parameter": "limit",
+    "code": "invalid",
+    "message": "Invalid limit"
+  },
+  "invalid_order_by_user_list": {
+    "parameter": "order_by",
+    "code": "invalid",
+    "message": "Invalid order_by"
+  },
+  "invalid_order": {
+    "parameter": "order",
+    "code": "invalid",
+    "message": "Invalid order"
+  },
+  "invalid_filter_user_list": {
+    "parameter": "filter",
+    "code": "invalid",
+    "message": "Invalid filter"
   },
   "invalid_airdrop_uuid": {
     "parameter": "airdrop_uuid",

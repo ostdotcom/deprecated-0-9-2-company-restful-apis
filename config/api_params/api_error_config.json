@@ -144,19 +144,14 @@
     "code": "invalid_List_type_to_airdrop",
     "message": "Invalid List type to airdrop users"
   },
-  "invalid_token_symbol": {
-    "http_code": "422",
-    "code": "invalid_token_symbol",
-    "message": "Invalid Token Symbol"
-  },
   "token_not_setup": {
     "http_code": "422",
     "code": "token_not_setup",
     "message": "Token setup not complete"
   },
-  "invalid_client_id": {
+  "missing_client_id": {
     "http_code": "422",
-    "code": "invalid_client_id",
+    "code": "missing_client_id",
     "message": "Invalid client id"
   },
   "airdrop_requests_in_process": {

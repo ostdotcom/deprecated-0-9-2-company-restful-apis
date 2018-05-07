@@ -7,6 +7,7 @@ const rootPrefix = '../..'
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop')
   , bitWiseHelperKlass = require(rootPrefix + '/helpers/bitwise_operations')
+  , commonValidator = require(rootPrefix +  '/lib/validators/common')
 ;
 
 const dbName = "saas_client_economy_" + coreConstants.SUB_ENVIRONMENT + "_" + coreConstants.ENVIRONMENT
@@ -139,24 +140,46 @@ const ManagedAddressKlassPrototype = {
     return oThis.fire();
   },
 
+  /**
+   *
+   * Get List by params
+   *
+   * @param {object} params - this is object with keys.
+   * @param {integer} params.client_id - client_id for which users are to be fetched
+   * @param {boolean} params.airdropped - true / false to filter on users who have (or not) been airdropped
+   * @param {string} params.order_by - ordereing of results to be done by this column
+   * @param {string} params.order - ASC / DESC
+   * @param {string} params.limit - number of results to be returned on this page
+   * @param {string} params.offset - index to start fetching entries from
+   *
+   */
   getByFilterAndPaginationParams: function (params) {
+
     const oThis = this
       , clientId = params.client_id
       , orderBy = params.order_by
       , orderType = params.order
-      , filter = params.filter
     ;
 
     let query = oThis.select(['id', 'name', 'uuid', 'ethereum_address']).where({client_id: clientId});
 
-    if (filter == clientAirdropConst.neverAirdroppedAddressesAirdropListType) {
-      query.where(['(properties & ?) = 0', invertedProperties[managedAddressesConst.airdropGrantProperty]]);
+    if (!commonValidator.isVarNull(params.airdropped)) {
+
+      if(params.airdropped) {
+        // filter for those who were airdropped
+        query.where(['(properties & ?) > 0', invertedProperties[managedAddressesConst.airdropGrantProperty]]);
+      } else {
+        // filter for those who were never airdropped
+        query.where(['(properties & ?) = 0', invertedProperties[managedAddressesConst.airdropGrantProperty]]);
+      }
+
     }
 
     let orderByStr = (orderBy.toLowerCase() == 'name') ? 'name' : 'id';
     orderByStr += (orderType.toLowerCase() == 'asc') ? ' ASC' : ' DESC';
 
     return query.order_by(orderByStr).limit(params.limit).offset(params.offset).fire();
+
   },
 
   getByUuids: function (uuids) {

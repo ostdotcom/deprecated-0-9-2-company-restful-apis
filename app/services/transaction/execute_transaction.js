@@ -233,7 +233,7 @@ ExecuteTransactionKlass.prototype = {
     if (!oThis.tokenSymbol) {
       return Promise.resolve(responseHelper.error({
         internal_error_identifier: 's_t_et_2',
-        api_error_identifier: 'invalid_token_symbol',
+        api_error_identifier: 'missing_token_symbol',
         debug_options: {}
       }));
     }

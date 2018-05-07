@@ -1,1 +1,50 @@
-{}
+{
+  "create_user": {
+    "mandatory": [
+      {
+        "parameter": "client_id",
+        "error_identifier": "missing_client_id"
+      },
+      {
+        "parameter": "address_type",
+        "error_identifier": "missing_address_type"
+      }
+    ],
+    "optional": [
+      "name",
+      "eth_address",
+      "private_key"
+    ]
+  },
+  "edit_user": {
+    "mandatory": [
+      {
+        "parameter": "client_id",
+        "error_identifier": "missing_client_id"
+      },
+      {
+        "parameter": "uuid",
+        "error_identifier": "missing_uuid"
+      },
+      {
+        "parameter": "name",
+        "error_identifier": "missing_name"
+      }
+    ],
+    "optional": []
+  },
+  "list_users": {
+    "mandatory": [
+      {
+        "parameter": "client_id",
+        "error_identifier": "missing_client_id"
+      }
+    ],
+    "optional": [
+      "page_no",
+      "filter",
+      "order_by",
+      "order"
+    ]
+  }
+}

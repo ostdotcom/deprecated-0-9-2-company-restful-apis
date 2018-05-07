@@ -105,7 +105,7 @@ AddNew.prototype = {
       return Promise.resolve(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_an_1',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_client_id'],
+        params_error_identifiers: ['missing_client_id'],
         debug_options: {}
       }));
     }
@@ -155,7 +155,7 @@ AddNew.prototype = {
       errors_object.push('duplicate_transactionname');
     }
 
-    if(Object.keys(errors_object).length > 0){
+    if(errors_object.length > 0){
       return Promise.resolve(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_an_2',
         api_error_identifier: 'invalid_api_params',

@@ -1,42 +1,33 @@
 "use strict";
 
-/**
- * Edit Name of a user
- *
- * @module services/client_users/edit_user
- */
 const rootPrefix = '../../..'
-  , EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance')
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
-  , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
-  , UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/user')
-  , basicHelper = require(rootPrefix + '/helpers/basic')
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+    , responseHelper = require(rootPrefix + '/lib/formatter/response')
+    , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+    , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
+    , EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance')
+    , UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/user')
+    , basicHelper = require(rootPrefix + '/helpers/basic')
+    , commonValidator = require(rootPrefix +  '/lib/validators/common')
 ;
 
 /**
- * Update user klass
  *
  * @constructor
  *
- * @param {object} params - external passed parameters
- * @param {number} params.client_id - client id for whom users are to be updated.
- * @param {number} params.id - identifier of this user
- * @param {number} params.name - name to be given to this user
+ * @param {object} params - this is object with keys.
+ * @param {integer} params.client_id - client_id for which users are to be fetched
+ * @param {string} params.id - identifier of user which is to be fetched
  *
  */
-const EditUserKlass = function(params){
+const fetchUserKlass = function (params) {
 
   const oThis = this;
 
-  oThis.clientId = params.client_id;
   oThis.userUuid = params.id;
-  oThis.name = params.name;
 
-}
+};
 
-EditUserKlass.prototype = {
+fetchUserKlass.prototype = {
 
   /**
    *
@@ -49,7 +40,7 @@ EditUserKlass.prototype = {
 
     const oThis = this;
 
-    return oThis.asycnPerform()
+    return oThis.asyncPerform()
         .catch(function(error) {
           if (responseHelper.isCustomResult(error)){
             return error;
@@ -57,7 +48,7 @@ EditUserKlass.prototype = {
             logger.error(`${__filename}::perform::catch`);
             logger.error(error);
             return responseHelper.error({
-              internal_error_identifier: 's_cu_eu_4',
+              internal_error_identifier: 's_cu_fu_1',
               api_error_identifier: 'unhandled_catch_response',
               debug_options: {}
             });
@@ -66,45 +57,17 @@ EditUserKlass.prototype = {
   },
 
   /**
-   * Perform Edit user operation
+   *
+   * Perform
+   *
+   * @private
    *
    * @return {Promise<result>}
    *
    */
-  asycnPerform: async function () {
+  asyncPerform: async function () {
 
-    const oThis = this
-        , clientId = oThis.clientId
-        , userUuid = oThis.userUuid,
-        , name = oThis.name
-        , errors_object = [];
-
-    if (!clientId || !userUuid) {
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_cu_eu_1',
-        api_error_identifier: 'invalid_api_params',
-        debug_options: {}
-      }));
-    }
-
-    if (name) {
-      name = name.trim();
-    }
-
-    if(!basicHelper.isUserNameValid(name)){
-      errors_object.push('invalid_username');
-    } else if(basicHelper.hasStopWords(name)){
-      errors_object.push('inappropriate_username');
-    }
-
-    if(errors_object.length > 0){
-      return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_cu_eu_2',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: errors_object
-        debug_options: {}
-      }));
-    }
+    const oThis = this;
 
     var managedAddressCache = new ManagedAddressCacheKlass({'uuids': [userUuid]});
 
@@ -112,7 +75,7 @@ EditUserKlass.prototype = {
 
     if (cacheFetchResponse.isFailure()) {
       return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_cu_eu_2',
+        internal_error_identifier: 's_cu_fu_2',
         api_error_identifier: 'something_went_wrong',
         debug_options: {}
       }));
@@ -122,7 +85,7 @@ EditUserKlass.prototype = {
 
     if (!response) {
       return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_cu_eu_2.1',
+        internal_error_identifier: 's_cu_fu_3',
         api_error_identifier: 'resource_not_found',
         debug_options: {}
       }));
@@ -168,18 +131,10 @@ EditUserKlass.prototype = {
       user: userEntityFormatterRsp.data
     };
 
-    if (response['name'] === name) {
-      return Promise.resolve(responseHelper.successWithData(apiResponseData));
-    }
-
-    new ManagedAddressModel().update({name: name}).where({uuid: userUuid}).fire();
-
-    managedAddressCache.clear();
-
     return Promise.resolve(responseHelper.successWithData(apiResponseData));
 
   }
 
-}
+};
 
-module.exports = EditUserKlass;
+module.exports = fetchUserKlass;

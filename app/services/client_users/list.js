@@ -5,25 +5,51 @@ const rootPrefix = '../../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
   , EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance')
+  , UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/user')
   , basicHelper = require(rootPrefix + '/helpers/basic')
+  , commonValidator = require(rootPrefix +  '/lib/validators/common')
 ;
 
 /**
- * constructor
  *
  * @constructor
+ *
+ * @param {object} params - this is object with keys.
+ * @param {integer} params.client_id - client_id for which users are to be fetched
+ * @param {integer} params.page_no - page no
+ * @param {boolean} params.airdropped - true / false to filter on users who have (or not) been airdropped
+ * @param {string} params.order_by - ordereing of results to be done by this column
+ * @param {string} params.order - ASC / DESC
+ * @param {string} params.limit - number of results to be returned on this page
+ *
  */
-const listKlass = function () {
+const listUserKlass = function (params) {
+
+  const oThis = this;
+
+  oThis.clientId = params.client_id;
+  oThis.pageNo = params.page_no;
+  oThis.airdropped = params.airdropped;
+  oThis.orderBy = params.order_by;
+  oThis.order = params.order;
+  oThis.limit = params.limit;
 
 };
 
-listKlass.prototype = {
+listUserKlass.prototype = {
 
-  perform: function(params){
+  /**
+   *
+   * Perform
+   *
+   * @return {Promise<result>}
+   *
+   */
+  perform: function(){
 
     const oThis = this;
 
-    return oThis.asyncPerform(params)
+    return oThis.asyncPerform()
       .catch(function(error) {
         if (responseHelper.isCustomResult(error)){
           return error;
@@ -40,43 +66,28 @@ listKlass.prototype = {
   },
 
   /**
-   * fetch data
+   *
+   * Perform
+   *
+   * @private
    *
    * @return {Promise<result>}
+   *
    */
-  asyncPerform: async function (params) {
+  asyncPerform: async function () {
 
-    const oThis = this
-      , pageSize = 26;
+    const oThis = this;
 
-    params.limit = pageSize;
+    oThis.validateAndSanitize();
 
-    if (!params.client_id) {
-      return Promise.resolve(responseHelper.paramValidationError({
-        internal_error_identifier: 's_cu_l_2',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_client_id'],
-        debug_options: {}
-      }));
-    }
-
-    if (!params.page_no || parseInt(params.page_no) < 1) {
-      params.page_no = 1;
-      params.offset = 0
-    } else {
-      params.page_no = parseInt(params.page_no);
-      params.offset = ((params.limit - 1) * (params.page_no - 1))
-    }
-
-    if (!params.order_by || params.order_by.toString().toLowerCase() != 'name') {
-      params.order_by = 'creation_time';
-    }
-
-    if (!params.order || params.order.toString().toLowerCase() != 'asc') {
-      params.order = 'desc';
-    }
-
-    const queryResponse = await new ManagedAddressModel().getByFilterAndPaginationParams(params);
+    const queryResponse = await new ManagedAddressModel().getByFilterAndPaginationParams({
+      client_id: oThis.clientId,
+      airdropped: oThis.airdropped,
+      order_by: oThis.orderBy,
+      order: oThis.order,
+      offset: oThis.offset,
+      limit: oThis.limit
+    });
 
     var usersList = []
       , ethereumAddresses = []
@@ -96,7 +107,7 @@ listKlass.prototype = {
     }
 
     const economyUserBalance = new EconomyUserBalanceKlass({
-        client_id: params.client_id,
+        client_id: oThis.clientId,
         ethereum_addresses: ethereumAddresses
       })
       , userBalancesResponse = await economyUserBalance.perform()
@@ -129,36 +140,106 @@ listKlass.prototype = {
         balanceData = balanceHashData[lowerCasedAddr];
       }
 
-      usersList.push({
+      var userData = {
         id: object['uuid'],
         name: object['name'],
         uuid: object['uuid'],
         total_airdropped_tokens: basicHelper.convertToNormal((balanceData || {}).totalAirdroppedTokens).toString(10),
         token_balance: basicHelper.convertToNormal((balanceData || {}).tokenBalance).toString(10)
-      })
+      };
+
+      const userEntityFormatter = new UserEntityFormatterKlass(userData)
+          , userEntityFormatterRsp = await userEntityFormatter.perform()
+      ;
+
+      usersList.push(userEntityFormatterRsp.data);
 
     }
 
     var next_page_payload = {};
+
     if (hasMore) {
+
       next_page_payload = {
-        order_by: params.order_by,
-        order: params.order,
-        filter: params.filter,
-        page_no: params.page_no + 1
+        order_by: oThis.orderBy,
+        order: oThis.order,
+        page_no: oThis.pageNo + 1
       };
+
+      if (!commonValidator.isVarNull(oThis.airdropped)) {
+        next_page_payload.airdropped = oThis.airdropped;
+      }
+
     }
 
     return Promise.resolve(responseHelper.successWithData({
-      result_type: 'economy_users',
-      'economy_users': usersList,
+      result_type: 'users',
+      'users': usersList,
       meta: {
         next_page_payload: next_page_payload
       }
     }));
 
+  },
+
+  /**
+   *
+   * Validate & Sanitize Params
+   *
+   * @private
+   *
+   * @return {Promise<result>}
+   *
+   */
+  validateAndSanitize: async function () {
+
+    const errors_object = [];
+
+    if (!commonValidator.isVarNull(oThis.airdropped) && !commonValidator.isValidBoolean(oThis.airdropped)) {
+      errors_object.push('invalid_filter_user_list');
+    }
+
+    if (!oThis.pageNo) {
+      oThis.pageNo = 1;
+      params.offset = 0
+    } else if (parseInt(oThis.pageNo) < 1) {
+      errors_object.push('invalid_page_no');
+    } else {
+      oThis.pageNo = parseInt(oThis.pageNo);
+      params.offset = pageSize * (oThis.pageNo - 1)
+    }
+
+    if (!oThis.limit) {
+      oThis.limit = 25;
+    } else if (parseInt(oThis.limit) < 1) {
+      errors_object.push('invalid_pagination_limit');
+    }
+
+    if (!oThis.orderBy) {
+      oThis.orderBy = 'created';
+    } else if (!['name', 'created'].includes(oThis.orderBy.toLowerCase())) {
+      errors_object.push('invalid_order_by_user_list');
+    }
+
+    if (!oThis.order) {
+      oThis.order = 'desc';
+    } else if (!commonValidator.isValidOrderingString(oThis.order)) {
+      errors_object.push('invalid_order');
+    }
+
+    if (errors_object.length > 0) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_cu_l_3',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: errors_object,
+        debug_options: {}
+      }));
+    }
+
+    return Promise.resolve(responseHelper.successWithData({}));
+
   }
 
 };
 
-module.exports = listKlass;
+module.exports = listUserKlass;

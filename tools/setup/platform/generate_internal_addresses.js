@@ -49,21 +49,26 @@ generateInternalAddressesKlass.prototype = {
       var privateKey = generateAddrRsp.data['privateKey'];
 
       const generateEthAddress = new generateAddressKlass({
-        addressType: managedAddressConst.internalChainIndenpendentAddressType,
-        ethAddress: eth_address,
-        privateKey: privateKey
+        address_type: managedAddressConst.internalChainIndenpendentAddressType,
+        eth_address: eth_address,
+        private_key: privateKey
       });
+
       var r = await generateEthAddress.perform();
 
       if (r.isFailure()) {
         logger.error('Address generation failed ============ ', r);
         process.exit(0);
       }
+
       addressesArr.push({address: eth_address, privateKey: privateKey});
+
     }
 
     return Promise.resolve(addressesArr);
+
   }
+
 };
 
 module.exports = generateInternalAddressesKlass;
