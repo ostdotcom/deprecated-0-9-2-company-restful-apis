@@ -78,7 +78,7 @@ listUserKlass.prototype = {
 
     const oThis = this;
 
-    oThis.validateAndSanitize();
+    await oThis.validateAndSanitize();
 
     const queryResponse = await new ManagedAddressModel().getByFilterAndPaginationParams({
       client_id: oThis.clientId,
@@ -100,7 +100,7 @@ listUserKlass.prototype = {
         continue;
       }
 
-      if (i === pageSize - 1) {
+      if (i === oThis.limit - 1) {
         continue;
       }
       ethereumAddresses.push(object['ethereum_address']);
@@ -127,7 +127,7 @@ listUserKlass.prototype = {
         continue;
       }
 
-      if (i === pageSize - 1) {
+      if (i === oThis.limit - 1) {
         hasMore = true;
         continue;
       }
@@ -144,6 +144,7 @@ listUserKlass.prototype = {
         id: object['uuid'],
         name: object['name'],
         uuid: object['uuid'],
+        address: object['ethereum_address'],
         total_airdropped_tokens: basicHelper.convertToNormal((balanceData || {}).totalAirdroppedTokens).toString(10),
         token_balance: basicHelper.convertToNormal((balanceData || {}).tokenBalance).toString(10)
       };
@@ -193,26 +194,28 @@ listUserKlass.prototype = {
    */
   validateAndSanitize: async function () {
 
-    const errors_object = [];
+    const oThis = this
+        , errors_object = [];
 
     if (!commonValidator.isVarNull(oThis.airdropped) && !commonValidator.isValidBoolean(oThis.airdropped)) {
       errors_object.push('invalid_filter_user_list');
-    }
-
-    if (!oThis.pageNo) {
-      oThis.pageNo = 1;
-      params.offset = 0
-    } else if (parseInt(oThis.pageNo) < 1) {
-      errors_object.push('invalid_page_no');
-    } else {
-      oThis.pageNo = parseInt(oThis.pageNo);
-      params.offset = pageSize * (oThis.pageNo - 1)
     }
 
     if (!oThis.limit) {
       oThis.limit = 25;
     } else if (parseInt(oThis.limit) < 1) {
       errors_object.push('invalid_pagination_limit');
+      oThis.limit = 25; // adding a dummy value here so that remaining validation run as expected
+    }
+
+    if (!oThis.pageNo) {
+      oThis.pageNo = 1;
+      oThis.offset = 0
+    } else if (parseInt(oThis.pageNo) < 1) {
+      errors_object.push('invalid_page_no');
+    } else {
+      oThis.pageNo = parseInt(oThis.pageNo);
+      oThis.offset = oThis.limit * (oThis.pageNo - 1)
     }
 
     if (!oThis.orderBy) {

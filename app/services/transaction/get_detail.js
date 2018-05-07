@@ -262,6 +262,7 @@ GetTransactionDetailKlass.prototype = {
             id: currRecord.uuid,
             uuid: currRecord.uuid,
             name: currRecord.name || '',
+            address: currRecord.ethereum_address,
             kind: new ManagedAddressModel().addressTypes[currRecord.address_type],
             total_airdropped_tokens: 0,
             token_balance: 0

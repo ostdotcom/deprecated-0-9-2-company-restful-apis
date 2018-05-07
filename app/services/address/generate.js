@@ -116,8 +116,22 @@ GenerateAddressKlass.prototype = {
         address_type: new ManagedAddressModel().invertedAddressTypes[addressType],
         status: new ManagedAddressModel().invertedStatuses['active']}).fire();
 
-    if (insertedRec.affectedRows > 0) {
-      oThis._processAddressInBackground(insertedRec.insertId, addrUuid);
+    if (insertedRec.affectedRows == 0) {
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_a_g_3',
+        api_error_identifier: 'something_went_wrong',
+        debug_options: {}
+      }));
+    }
+
+    const updateRsp = await oThis._processAddressInBackground(insertedRec.insertId, addrUuid);
+
+    if (updateRsp.isFailure()) {
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_a_g_3',
+        api_error_identifier: 'something_went_wrong',
+        debug_options: {}
+      }));
     }
 
     const managedAddressCache = new ManagedAddressCacheKlass({'uuids': [addrUuid]});
@@ -126,6 +140,7 @@ GenerateAddressKlass.prototype = {
     var userData = {
       id: insertedRec.insertId,
       uuid: addrUuid,
+      address: updateRsp.data['ethereum_address'],
       name: name || '',
       total_airdropped_tokens: 0,
       token_balance: 0
