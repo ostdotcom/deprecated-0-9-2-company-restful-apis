@@ -36,11 +36,7 @@ router.post('/grant-test-ost', function (req, res, next) {
 
     // handle final response
     const handleResponse = function (response) {
-      if(response.isSuccess()){
-        return responseHelper.successWithData(response.data).renderResponse(res, errorConfig);
-      } else {
-        return responseHelper.error(response.err.code, response.err.message).renderResponse(res, errorConfig);
-      }
+      return response.renderResponse(res, errorConfig);
     };
 
     const obj = new openStPlatform.services.transaction.transfer.simpleToken({
@@ -71,11 +67,7 @@ router.post('/grant-eth', function (req, res, next) {
 
     // handle final response
     const handleResponse = function (response) {
-      if(response.isSuccess()){
-        return responseHelper.successWithData(response.data).renderResponse(res, errorConfig);
-      } else {
-        return responseHelper.error(response.err.code, response.err.message).renderResponse(res, errorConfig);
-      }
+      return response.renderResponse(res, errorConfig);
     };
 
     const obj = new openStPlatform.services.transaction.transfer.eth({

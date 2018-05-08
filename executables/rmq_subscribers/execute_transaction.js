@@ -59,7 +59,7 @@ const promiseExecutor = function (onResolve, onReject, params ) {
   try{
     executeTransactionObj.perform().then(function (response) {
       if (!response.isSuccess()) {
-        if(response.err.msg=='lifo fire'){
+        if(response.toHash().err.msg=='lifo fire'){
           publishToSlowQueue(parsedParams)
         }
         logger.error('e_rmqs_et_1', 'Something went wrong in transaction execution unAckCount ->', unAckCount, response, params);

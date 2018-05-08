@@ -538,8 +538,10 @@ ExecuteTransactionKlass.prototype = {
 
     if (payResponse.isFailure()) {
 
+      const payResponseData = payResponse.toHash();
+
       //Mark ST Prime balance is low for worker for future transactions.
-      if(payResponse.err.code.includes("l_ci_h_pse_gas_low")){
+      if(payResponseData.err.code.includes("l_ci_h_pse_gas_low")){
 
         // Mark ST Prime balance is low for worker for future transactions.
 
@@ -559,7 +561,7 @@ ExecuteTransactionKlass.prototype = {
 
       }
 
-      oThis.updateParentTransactionLog(transactionLogConst.failedStatus, payResponse.err);
+      oThis.updateParentTransactionLog(transactionLogConst.failedStatus, payResponseData.err);
       return Promise.resolve(payResponse);
 
     }

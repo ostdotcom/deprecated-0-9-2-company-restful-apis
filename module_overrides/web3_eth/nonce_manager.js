@@ -231,10 +231,11 @@ const NonceCacheKlassPrototype = {
             });
           })
           .then( function ( acquireLockResponse ) {
+            const acquireLockResponseData = acquireLockResponse.toHash();
             if ( acquireLockResponse.isSuccess() ) {
               //We got the lock.
               return onResolve( acquireLockResponse );
-            } else if ( acquireLockResponse.err && acquireLockResponse.err.code && String(acquireLockResponse.err.code).indexOf( "l_nm_aqLockCatch_1" ) >= 0 ) {
+            } else if ( acquireLockResponseData.err && acquireLockResponseData.err.code && String(acquireLockResponseData.err.code).indexOf( "l_nm_aqLockCatch_1" ) >= 0 ) {
               //Safety-Net. acquireLockAndReturn reject the Promise.
               return onResolve( acquireLockResponse );
             } else {
