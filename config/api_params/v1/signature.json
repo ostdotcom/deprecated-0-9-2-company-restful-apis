@@ -78,6 +78,15 @@
       "user_ids"
     ]
   },
+  "airdrop_status": {
+    "mandatory":[
+      {
+        "parameter": "airdrop_uuid",
+        "error_identifier": "airdrop_uuid_missing"
+      }
+    ],
+    "optional":[]
+  },
   "fetch_token_details": {
     "mandatory":[
       {

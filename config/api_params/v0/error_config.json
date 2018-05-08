@@ -136,5 +136,10 @@
   "invalid_to_user_uuid": {
     "parameter": "to_uuid",
     "message": "Invalid to_uuid"
+  },
+  "airdrop_uuid_missing": {
+    "parameter": "airdrop_uuid",
+    "code": "missing",
+    "message": "Airdrop UUID missing."
   }
 }

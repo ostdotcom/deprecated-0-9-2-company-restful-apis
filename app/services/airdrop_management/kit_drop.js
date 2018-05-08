@@ -33,7 +33,10 @@ const StartAirdropForKitKlass = function (params) {
   oThis.clientId = params.client_id;
   oThis.tokenSymbol = params.token_symbol;
   oThis.airdropAmount = params.amount;
-  oThis.airdropUserListType = params.list_type;
+  oThis.airdropped = params.airdropped;
+  oThis.userIds = params.user_ids;
+
+  oThis.airdropUserListType = null;
 
   oThis.clientTokenId = params.client_token_id;
 
@@ -86,7 +89,8 @@ StartAirdropForKitKlass.prototype = {
       client_token_id: oThis.clientTokenId,
       airdrop_params: {
         airdrop_amount: oThis.airdropAmount,
-        airdrop_user_list_type: oThis.airdropUserListType
+        airdrop_user_list_type: oThis.airdropUserListType,
+        user_ids: oThis.userIds
       }
     }).perform();
 
@@ -118,14 +122,12 @@ StartAirdropForKitKlass.prototype = {
       }));
     }
 
-    if (![clientAirdropConst.allAddressesAirdropListType,
-        clientAirdropConst.neverAirdroppedAddressesAirdropListType].includes(oThis.airdropUserListType)) {
-      return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_am_kd_4',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_airdrop_list_type'],
-        debug_options: {}
-      }));
+    if(oThis.airdropped == 'true'){
+      oThis.airdropUserListType = clientAirdropConst.everAirdroppedAddressesAirdropListType;
+    } else if (oThis.airdropped == 'false'){
+      oThis.airdropUserListType = clientAirdropConst.neverAirdroppedAddressesAirdropListType;
+    } else {
+      oThis.airdropUserListType = clientAirdropConst.allAddressesAirdropListType;
     }
 
     var btSecureCache = new BTSecureCacheKlass({tokenSymbol: oThis.tokenSymbol});
@@ -176,6 +178,11 @@ StartAirdropForKitKlass.prototype = {
     var params = {client_id: oThis.clientId};
     if (oThis.airdropUserListType == clientAirdropConst.neverAirdroppedAddressesAirdropListType) {
       params['property_unset_bit_value'] = new ManagedAddressModel().invertedProperties[managedAddressesConst.airdropGrantProperty]
+    } else if (oThis.airdropUserListType == clientAirdropConst.everAirdroppedAddressesAirdropListType){
+      params['property_set_bit_value'] = new ManagedAddressModel().invertedProperties[managedAddressesConst.airdropGrantProperty]
+    }
+    if(oThis.userIds){
+      params['uuids'] = oThis.userIds;
     }
     var response = await new ManagedAddressModel().getFilteredActiveUsersCount(params);
     if (!response[0] || response[0].total_count == 0) {

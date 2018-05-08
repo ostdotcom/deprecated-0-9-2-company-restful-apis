@@ -1,9 +1,14 @@
+
 "use strict";
 /**
  * Start All openST Platform Services
  *
  * @module tools/setup/start_services.js
  */
+
+const rootPrefix = ".";
+
+require(rootPrefix + '/module_overrides/index');
 
 const shellAsyncCmd = require('node-cmd')
   , Path = require('path')
@@ -14,8 +19,7 @@ const shellAsyncCmd = require('node-cmd')
 var shell = require('shelljs');
 shell.config.silent = true;
 
-const rootPrefix = "."
-  , platformStatus = require(rootPrefix + '/node_modules/@openstfoundation/openst-platform/services/utils/platform_status')
+const platformStatus = require(rootPrefix + '/node_modules/@openstfoundation/openst-platform/services/utils/platform_status')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger.js')
 ;
 
@@ -144,11 +148,11 @@ StartServicesKlass.prototype = {
     servicesList.push(cmd);
     oThis._asyncCommand(cmd);
 
-    logger.step("** Starting SAAS App");
-    var cmd = "node app.js"
-      + " >> " + homeAbsolutePath + "/openst-setup/logs/node_app.log";
-    servicesList.push(cmd);
-    oThis._asyncCommand(cmd);
+    // logger.step("** Starting SAAS App");
+    // var cmd = "node app.js"
+    //   + " >> " + homeAbsolutePath + "/openst-setup/logs/node_app.log";
+    // servicesList.push(cmd);
+    // oThis._asyncCommand(cmd);
 
     logger.win("\n** Congratulation! All services are up and running. \n" +
       "NOTE: We will keep monitoring the services, and notify you if any service stops.");

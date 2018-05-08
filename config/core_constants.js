@@ -80,7 +80,8 @@ define('GENERIC_SHA_KEY', process.env.CA_GENERIC_SHA_KEY);
 // Cache data key
 define('CACHE_SHA_KEY', process.env.CR_CACHE_DATA_SHA_KEY);
 
-define('DEBUG_ENABLED', process.env.OST_DEBUG_ENABLED);
+//define('DEBUG_ENABLED', process.env.OST_DEBUG_ENABLED);
+define('DEBUG_ENABLED', 1);
 
 // Price oracle details
 var accepted_margine = {};

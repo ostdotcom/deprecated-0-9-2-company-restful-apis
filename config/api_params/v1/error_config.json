@@ -86,5 +86,10 @@
     "parameter": "amount",
     "code": "invalid",
     "message": "Available token amount is insufficient. Please mint more tokens or reduce the amount to complete the process."
+  },
+  "airdrop_uuid_missing": {
+    "parameter": "airdrop_uuid",
+    "code": "missing",
+    "message": "Airdrop UUID missing."
   }
 }

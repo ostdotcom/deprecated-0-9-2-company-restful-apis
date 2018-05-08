@@ -4,8 +4,6 @@ const express = require('express')
 ;
 
 const rootPrefix = '../..'
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , routeHelper = require(rootPrefix + '/routes/helper')
 ;
 
@@ -31,5 +29,25 @@ router.post('/', function (req, res, next) {
   req.decodedParams.apiName = 'start_airdrop';
 
   Promise.resolve(routeHelper.performer(req, res, next, StartAirdropKlass, 'r_v0.1_a_1'));
+
+});
+
+/* Get status of Airdrop request */
+/**
+ * Get status of airdrop token request
+ *
+ * @name Airdrop Tokens Status
+ *
+ * @route {GET} {base_url}/users/airdrop/get-status
+ *
+ * @routeparam {Decimal} :airdrop_uuid - Token airdrop uuid
+ *
+ */
+router.get('/:airdrop_uuid', function (req, res, next) {
+
+  const getAirdropStatusKlass = require(rootPrefix + '/app/services/airdrop_management/get_airdrop_status');
+  req.decodedParams.apiName = 'airdrop_status';
+
+  Promise.resolve(routeHelper.performer(req, res, next, getAirdropStatusKlass, 'r_cu_7'));
 
 });
