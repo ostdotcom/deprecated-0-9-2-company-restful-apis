@@ -114,8 +114,6 @@ FetchBalances.prototype = {
 
     }
 
-    logger.log(JSON.stringify(responseData));
-
     return Promise.resolve(responseHelper.successWithData(responseData));
 
   }
