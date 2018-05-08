@@ -90,7 +90,7 @@ listUserKlass.prototype = {
       order_by: oThis.orderBy,
       order: oThis.order,
       offset: oThis.offset,
-      limit: oThis.limit,
+      limit: oThis.limit + 1,
       uuids: oThis.uuidsForFiltering
     });
 
@@ -101,14 +101,12 @@ listUserKlass.prototype = {
     for (var i = 0; i < queryResponse.length; i++) {
       const object = queryResponse[i];
 
-      if (!object['name']) {
-        continue;
-      }
+      if (!object['name']) {continue}
 
-      if (i === oThis.limit - 1) {
-        continue;
-      }
+      if (i === oThis.limit) {continue} // as we fetched limit + 1, ignore that extra one
+
       ethereumAddresses.push(object['ethereum_address']);
+
     }
 
     var balanceHashData = {};
@@ -136,7 +134,8 @@ listUserKlass.prototype = {
         continue;
       }
 
-      if (i === oThis.limit - 1) {
+      if (i === oThis.limit) {
+        // as we fetched limit + 1, if that was returned set hasMore to true and ignore this extra one
         hasMore = true;
         continue;
       }
