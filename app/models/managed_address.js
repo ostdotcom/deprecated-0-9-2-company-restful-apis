@@ -146,11 +146,12 @@ const ManagedAddressKlassPrototype = {
    *
    * @param {object} params - this is object with keys.
    * @param {integer} params.client_id - client_id for which users are to be fetched
-   * @param {boolean} params.airdropped - true / false to filter on users who have (or not) been airdropped
-   * @param {string} params.order_by - ordereing of results to be done by this column
-   * @param {string} params.order - ASC / DESC
-   * @param {string} params.limit - number of results to be returned on this page
-   * @param {string} params.offset - index to start fetching entries from
+   * @param {boolean} [params.airdropped] - true / false to filter on users who have (or not) been airdropped
+   * @param {string} [params.order_by] - ordereing of results to be done by this column
+   * @param {string} [params.order] - ASC / DESC
+   * @param {string} [params.limit] - number of results to be returned on this page
+   * @param {string} [params.offset] - index to start fetching entries from
+   * @param {array} [params.uuids] - index to start fetching entries from
    *
    */
   getByFilterAndPaginationParams: function (params) {
@@ -159,9 +160,14 @@ const ManagedAddressKlassPrototype = {
       , clientId = params.client_id
       , orderBy = params.order_by
       , orderType = params.order
+      , uuidsForFiltering = params.uuids || []
     ;
 
     let query = oThis.select(['id', 'name', 'uuid', 'ethereum_address']).where({client_id: clientId});
+
+    if (uuidsForFiltering.length > 0) {
+      query.where(['uuid IN (?)', uuidsForFiltering]);
+    }
 
     if (!commonValidator.isVarNull(params.airdropped)) {
 

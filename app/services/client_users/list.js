@@ -6,6 +6,7 @@ const rootPrefix = '../../..'
   , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
   , EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance')
   , UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/user')
+  , ClientUsersCntCacheKlass = require(rootPrefix + '/lib/cache_management/client_users_count')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , commonValidator = require(rootPrefix +  '/lib/validators/common')
 ;
@@ -16,11 +17,12 @@ const rootPrefix = '../../..'
  *
  * @param {object} params - this is object with keys.
  * @param {integer} params.client_id - client_id for which users are to be fetched
- * @param {integer} params.page_no - page no
- * @param {boolean} params.airdropped - true / false to filter on users who have (or not) been airdropped
- * @param {string} params.order_by - ordereing of results to be done by this column
- * @param {string} params.order - ASC / DESC
- * @param {string} params.limit - number of results to be returned on this page
+ * @param {integer} [params.page_no] - page no
+ * @param {boolean} [params.airdropped] - true / false to filter on users who have (or not) been airdropped
+ * @param {string} [params.id] - comma seperated list of uuids on which filter is to be applied
+ * @param {string} [params.order_by] - ordereing of results to be done by this column
+ * @param {integer} [params.order] - ASC / DESC
+ * @param {integer} [params.limit] - number of results to be returned on this page
  *
  */
 const listUserKlass = function (params) {
@@ -33,6 +35,8 @@ const listUserKlass = function (params) {
   oThis.orderBy = params.order_by;
   oThis.order = params.order;
   oThis.limit = params.limit;
+  oThis.uuidsString = params.id;
+  oThis.uuidsForFiltering = [];
 
 };
 
@@ -86,7 +90,8 @@ listUserKlass.prototype = {
       order_by: oThis.orderBy,
       order: oThis.order,
       offset: oThis.offset,
-      limit: oThis.limit
+      limit: oThis.limit,
+      uuids: oThis.uuidsForFiltering
     });
 
     var usersList = []
@@ -175,11 +180,15 @@ listUserKlass.prototype = {
 
     }
 
+    var usersCountCacheObj = new ClientUsersCntCacheKlass({client_id: oThis.clientId});
+    var usersCountCacheRsp = await usersCountCacheObj.fetch();
+
     return Promise.resolve(responseHelper.successWithData({
       result_type: 'users',
       'users': usersList,
       meta: {
-        next_page_payload: next_page_payload
+        next_page_payload: next_page_payload,
+        total_no: parseInt(usersCountCacheRsp.data)
       }
     }));
 
@@ -205,9 +214,12 @@ listUserKlass.prototype = {
 
     if (!oThis.limit) {
       oThis.limit = 25;
-    } else if (parseInt(oThis.limit) < 1) {
-      errors_object.push('invalid_pagination_limit');
-      oThis.limit = 25; // adding a dummy value here so that remaining validation run as expected
+    } else {
+      oThis.limit = parseInt(oThis.limit);
+      if (oThis.limit < 1 || oThis.limit > 100) {
+        errors_object.push('invalid_pagination_limit');
+        oThis.limit = 25; // adding a dummy value here so that remaining validation run as expected
+      }
     }
 
     if (!oThis.pageNo) {
@@ -230,6 +242,13 @@ listUserKlass.prototype = {
       oThis.order = 'desc';
     } else if (!commonValidator.isValidOrderingString(oThis.order)) {
       errors_object.push('invalid_order');
+    }
+
+    if (oThis.uuidsString) {
+      oThis.uuidsForFiltering = oThis.uuidsString.split(',');
+      if (oThis.uuidsForFiltering.length > 100) {
+        errors_object.push('invalid_id_user_list');
+      }
     }
 
     if (errors_object.length > 0) {

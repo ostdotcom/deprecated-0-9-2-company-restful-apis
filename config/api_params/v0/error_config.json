@@ -45,12 +45,12 @@
   "invalid_order_by_user_list": {
     "parameter": "order_by",
     "code": "invalid",
-    "message": "Invalid order_by"
+    "message": "order the list by 'created' (default) or 'name'"
   },
   "invalid_order": {
     "parameter": "order",
     "code": "invalid",
-    "message": "Invalid order"
+    "message": "order users in 'desc' (default) or 'asc' order."
   },
   "invalid_filter_user_list": {
     "parameter": "filter",
