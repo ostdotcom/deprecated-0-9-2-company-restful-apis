@@ -6,9 +6,9 @@ const basePackage = 'web3-eth-personal'
 const BasePackage = require(basePackage)
 ;
 
-const rootPrefix = '../..'
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-;
+const rootPrefix = '../..';
+
+var logger;
 
 var requireData
   , resolvedId
@@ -28,11 +28,15 @@ const Derived = function () {
   var oThis = this
   ;
 
+  defineGlobalNeeds();
+
   //Constructor sometimes return other instance of object.
   //Always have a safety-net
   const output = BasePackage.apply(oThis, arguments);
   //Safety Net
   oThis = output || oThis;
+
+
 
   const _unlockAccount = oThis.unlockAccount;
 
@@ -68,3 +72,9 @@ require.cache[resolvedId] = {
 };
 
 module.exports = Derived;
+
+// NOTE::THIS SHOULD NOT BE TAKEN AT THE TOP.
+function defineGlobalNeeds() {
+  logger = logger || require(rootPrefix + '/lib/logger/custom_console_logger');
+}
+

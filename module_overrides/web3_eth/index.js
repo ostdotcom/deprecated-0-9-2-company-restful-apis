@@ -32,6 +32,9 @@ for (var k in require.cache) {
 
 const Derived = function () {
   var oThis = this;
+
+  defineGlobalNeeds();
+
   logger.debug("Derived Constructor of ", basePackage, " invoked!");
 
   //Constructor sometimes return other instance of object.
@@ -270,10 +273,15 @@ require.cache[resolvedId] = {
   exports: Derived
 };
 
-// NOTE::THIS SHOULD NOT BE TAKEN AT THE TOP.
-nonceManagerKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_manager');
-responseHelper = require(rootPrefix + '/lib/formatter/response');
-logger = require(rootPrefix + '/lib/logger/custom_console_logger');
-chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants');
-
 module.exports = Derived;
+
+// NOTE::THIS SHOULD NOT BE TAKEN AT THE TOP.
+function defineGlobalNeeds() {
+  nonceManagerKlass = nonceManagerKlass || require(rootPrefix + '/module_overrides/web3_eth/nonce_manager');
+  responseHelper = responseHelper || require(rootPrefix + '/lib/formatter/response');
+  logger = logger || require(rootPrefix + '/lib/logger/custom_console_logger');
+  chainInteractionConstants = chainInteractionConstants || require(rootPrefix + '/config/chain_interaction_constants');
+}
+
+
+
