@@ -22,7 +22,7 @@ const List = function(params){
   var oThis = this;
 
   oThis.params = params;
-  oThis.clientId = params.client_id; // TODO: Check if this is required
+  oThis.clientId = params.client_id;
   oThis.transactionTypes = [];
 
 };
@@ -65,6 +65,8 @@ List.prototype = {
     var oThis = this;
 
     oThis.id = oThis.params.id;
+
+
   },
 
   getTransactionKind: async function () {
@@ -75,13 +77,15 @@ List.prototype = {
 
     oThis.result = result;
 
+    console.log("----result", result);
+
     if(result.currency_type == clientTxTypesConst.btCurrencyType){
       oThis.amount = basicHelper.formatWeiToString(basicHelper.convertToNormal(result.value_in_bt_wei));
     }else{
       oThis.amount = result.value_in_usd;
     }
 
-    oThis.arbitrary_amount = amount ? false : true;
+    oThis.arbitrary_amount = oThis.amount ? false : true;
     oThis.arbitrary_commission = result.arbitrary_commission ? false : true;
 
     return Promise.resolve({});
@@ -100,7 +104,7 @@ List.prototype = {
       arbitrary_amount: oThis.arbitrary_amount,
       amount: oThis.amount,
       arbitrary_commission: oThis.arbitrary_commission,
-      commission_percent: oThis.result.commission_percent.toString(10),
+      commission_percent: (oThis.result.commission_percent || '').toString(10),
       uts: Date.now()
     });
 

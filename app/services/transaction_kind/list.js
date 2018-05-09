@@ -186,7 +186,9 @@ List.prototype = {
 
     return new Promise(async function (onResolve, onReject) {
 
-      const result = await oThis.getAllFilteredActions();
+      const result = await oThis.getAllFilteredActions().catch(function(err){
+        onReject(err);
+      });
 
       let amount = null;
       let arbitrary_amount = null;
@@ -230,6 +232,7 @@ List.prototype = {
   },
 
   getAllFilteredActions: async function() {
+
     const oThis = this
       , return_result = []
     ;
@@ -240,14 +243,12 @@ List.prototype = {
 
     Object.assign(whereClause, oThis.where);
 
-    let query = await new ClientTransactionTypeModel().select('*');
-
-    query.where(whereClause);
+    let query = new ClientTransactionTypeModel().select('*').where(whereClause);
 
     if(oThis.arbitrary_amount) {
-      query.where('(value_in_usd is null or value_in_bt_wei is null)');
+      query.where('value_in_usd is null or value_in_bt_wei is null');
     } else {
-      query.where('(value_in_usd > 0 or value_in_bt_wei > 0)');
+      query.where('value_in_usd > 0 or value_in_bt_wei > 0');
     }
 
     if(oThis.arbitrary_commission) {
@@ -261,11 +262,13 @@ List.prototype = {
 
     const results = await query.fire();
 
+
     for (var i = 0; i < results.length; i++) {
-      return_result.push(oThis.convertEnumForResult(results[i]));
+      return_result.push(query.convertEnumForResult(results[i]));
     }
 
     return Promise.resolve(return_result);
+
   },
 
   /**
