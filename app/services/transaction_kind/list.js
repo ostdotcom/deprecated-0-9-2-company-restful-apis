@@ -283,8 +283,6 @@ List.prototype = {
 
       const clientBrandedTokenCacheResp = await clientBrandedTokenCacheObj.fetch();
 
-      console.log("clientBrandedTokenCacheResp", clientBrandedTokenCacheResp);
-
       oThis.clientTokens = clientBrandedTokenCacheResp.data;
 
       onResolve();
