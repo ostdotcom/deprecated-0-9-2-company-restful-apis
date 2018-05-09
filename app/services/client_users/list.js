@@ -244,7 +244,7 @@ listUserKlass.prototype = {
     }
 
     if (oThis.uuidsString) {
-      oThis.uuidsForFiltering = oThis.uuidsString.split(',');
+      oThis.uuidsForFiltering = basicHelper.commaSeperatedStrToArray(oThis.uuidsString);
       if (oThis.uuidsForFiltering.length > 100) {
         errors_object.push('invalid_id_user_list');
       }

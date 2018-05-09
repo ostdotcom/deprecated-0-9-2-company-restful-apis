@@ -272,6 +272,19 @@ BasicHelperKlass.prototype = {
       api_error_config: apiErrorConfig
     }
 
+  },
+
+  /**
+   * Convert a common seperated string to array
+   *
+   * @param {String} str
+   *
+   * @return {Array}
+   */
+  commaSeperatedStrToArray: function(str) {
+
+    return str.split(',').map(ele => ele.trim());
+
   }
 
 };
