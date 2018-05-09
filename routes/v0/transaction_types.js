@@ -19,7 +19,7 @@ router.get('/list', function (req, res, next) {
 
   const dataFormatterFunc = async function(response) {
 
-    let transactions = null;
+    let transactions = [];
 
     for (var i=0; i< response.data.actions.length; i++) {
       let actionEntityFormatterRsp = await new ActionEntityFormatterClass(response.data.actions[i]).perform();
@@ -30,8 +30,8 @@ router.get('/list', function (req, res, next) {
 
     response.data.result_type = 'transactions';
     response.data.transactions = transactions;
-    response.data.client_tokens = delete response.data.extra_entities.client_tokens;
-    response.data.price_points = delete response.data.extra_entities.price_points;
+    response.data.client_tokens = response.data.extra_entities.client_tokens;
+    response.data.price_points = response.data.extra_entities.price_points;
 
     delete response.data.extra_entities;
 

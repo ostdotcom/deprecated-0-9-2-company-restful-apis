@@ -17,6 +17,7 @@ var rootPrefix = '../../..'
   , ActionEntityFormatterKlass = require(rootPrefix +'/lib/formatter/entities/latest/action')
   , ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points')
   , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
+  , commonValidator = require(rootPrefix + '/lib/validators/common')
 ;
 
 /**
@@ -135,38 +136,50 @@ List.prototype = {
 
     oThis.offset = (oThis.page_no - 1) * oThis.limit;
 
-    oThis.where = null;
-    oThis.extraWhere = null;
+    oThis.where = {};
 
-    // TODO: use commaSeperatedStrToArray from basic.js
-    if(oThis.params.id) oThis.where.id = oThis.params.id.split(',');
-    if(oThis.params.name) oThis.where.name = oThis.params.name.split(',');
-    if(oThis.params.kind) oThis.where.kind = oThis.params.kind.split(',');
-    if(oThis.params.currency) oThis.where.currency_type = oThis.params.currency.split(',');
+    if(oThis.params.id) oThis.where.id = basicHelper.commaSeperatedStrToArray(oThis.params.id);
+    if(oThis.params.name) oThis.where.name = basicHelper.commaSeperatedStrToArray(oThis.params.name);
+    if(oThis.params.kind) oThis.where.kind = basicHelper.commaSeperatedStrToArray(oThis.params.kind);
 
-    let arbitrary_amount = (oThis.params.arbitrary_amount || '').split(',');
-    if(arbitrary_amount.length > 1) {
+    let currencies = basicHelper.commaSeperatedStrToArray((oThis.params.currency || ''));
+
+    if(currencies.length > 1) {
       Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_4',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_currency_filter'],
+        debug_options: {clientId: oThis.clientId}
+      }));
+    }
+
+    if(currencies[0] != '') oThis.where.currency_type = currencies[0];
+
+    let arbitrary_amount = basicHelper.commaSeperatedStrToArray((oThis.params.arbitrary_amount || ''));
+
+    if(arbitrary_amount.length > 1) {
+      Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_tk_l_5',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_arbitrary_amount_filter'],
         debug_options: {clientId: oThis.clientId}
       }));
     }
 
-    oThis.arbitrary_amount = arbitrary_amount[0];
+    if(oThis.arbitrary_amount != '') oThis.arbitrary_amount = arbitrary_amount[0];
 
-    let arbitrary_commission = (oThis.params.arbitrary_commission || '').split(',');
+    let arbitrary_commission = basicHelper.commaSeperatedStrToArray((oThis.params.arbitrary_commission || ''));
+
     if(arbitrary_commission.length > 1) {
       Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_tk_l_5',
+        internal_error_identifier: 's_tk_l_6',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_arbitrary_commission_filter'],
         debug_options: {clientId: oThis.clientId}
       }));
     }
 
-    oThis.arbitrary_commission = arbitrary_amount[0];
+    if (oThis.arbitrary_commission != '') oThis.arbitrary_commission = arbitrary_amount[0];
 
     if(oThis.arbitrary_amount) oThis.where.arbitrary_amount = oThis.arbitrary_amount;
     if(oThis.arbitrary_commission) oThis.where.arbitrary_commission = oThis.arbitrary_commission;
@@ -206,7 +219,7 @@ List.prototype = {
         }
 
         arbitrary_amount = amount ? false : true;
-        arbitrary_commission = res.arbitrary_commission ? false : true;
+        arbitrary_commission = res.commission_percent ? false : true;
 
         actionEntityFormatter = new ActionEntityFormatterKlass({
           id: res.id,
@@ -245,16 +258,20 @@ List.prototype = {
 
     let query = new ClientTransactionTypeModel().select('*').where(whereClause);
 
-    if(oThis.arbitrary_amount) {
+    if( commonValidator.isVarTrue(oThis.arbitrary_amount) ) {
       query.where('value_in_usd is null or value_in_bt_wei is null');
-    } else {
+    } else if( commonValidator.isVarFalse(oThis.arbitrary_amount) ) {
       query.where('value_in_usd > 0 or value_in_bt_wei > 0');
+    } else {
+
     }
 
-    if(oThis.arbitrary_commission) {
+    if( commonValidator.isVarTrue(oThis.arbitrary_commission) ) {
       query.where('commission_percent is null');
-    } else {
+    } else if( commonValidator.isVarFalse(oThis.arbitrary_commission) ){
       query.where('commission_percent > 0');
+    } else {
+
     }
 
     if(oThis.limit) query.limit(oThis.limit);

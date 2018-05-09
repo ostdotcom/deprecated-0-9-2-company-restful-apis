@@ -150,6 +150,10 @@
     "parameter": "arbitrary_commission",
     "message": "Filter on arbitrary_commission can have only one value"
   },
+  "invalid_currency_filter": {
+    "parameter": "currency",
+    "message": "Filter on currency can have only one value"
+  },
   "invalid_amount": {
     "parameter": "amount",
     "message": "Invalid amount."

@@ -159,6 +159,7 @@
     ],
     "optional":[
       "id",
+      "name",
       "kind",
       "currency",
       "arbitrary_amount",
