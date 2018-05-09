@@ -3,7 +3,7 @@
 const rootPrefix = '../../..'
     , responseHelper = require(rootPrefix + '/lib/formatter/response')
     , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-    , ClientTxKindCntCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type_count')
+    , ClientTxKindCntCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type/by_name')
 ;
 
 /**

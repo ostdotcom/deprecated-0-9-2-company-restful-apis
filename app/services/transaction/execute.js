@@ -13,7 +13,8 @@ const openSTNotification = require('@openstfoundation/openst-notification')
 const rootPrefix = '../../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , clientTransactionTypeCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type')
+  , ClientTransactionTypeFromNameCache = require(rootPrefix + '/lib/cache_management/client_transaction_type/by_name')
+  , ClientTransactionTypeFromIdCache = require(rootPrefix + '/lib/cache_management/client_transaction_type/by_id')
   , clientTransactionTypeConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
   , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
   , BTSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
@@ -30,9 +31,11 @@ const rootPrefix = '../../..'
  * @constructor
  *
  * @param {object} params - service params
+ * @param {number} params.client_id (mandatory) - client id
  * @param {string} params.from_user_id (mandatory) - from user uuid
  * @param {string} params.to_user_id (mandatory) - to user uuid
- * @param {string<number>} params.action_id (mandatory) - id of client_transaction_types table
+ * @param {string<number>} params.action_id (optional) - id of client_transaction_types table
+ * @param {string<number>} params.transaction_kind (optional) - name of the transaction kind
  * @param {string<float>} params.amount (optional) - amount to be sent in the transaction. Depending on the action setup, this is mandatory.
  * @param {string<float>} params.commission_percent (optional) - commission percent to be sent in the transaction. Depending on the action setup, this is mandatory.
  */
@@ -43,7 +46,8 @@ const ExecuteTransactionService = function (params) {
   oThis.clientId = params.client_id;
   oThis.fromUuid = params.from_user_id;
   oThis.toUuid = params.to_user_id;
-  oThis.transactionKind = params.action_id;
+  oThis.transactionKind = params.transaction_kind;
+  oThis.transactionKindId = params.action_id;
   oThis.amount = params.amount;
   oThis.commissionPercent = params.commission_percent;
 
@@ -111,7 +115,7 @@ ExecuteTransactionService.prototype = {
           from_user_id: oThis.fromUuid,
           to_user_id: oThis.toUuid,
           transaction_hash: '',
-          action_id: oThis.transactionKind
+          action_id: oThis.transactionKindId
         }
       }));
   },
@@ -190,13 +194,29 @@ ExecuteTransactionService.prototype = {
     const oThis = this
     ;
 
-    let clientTransactionTypeCacheFetchResponse = await (new clientTransactionTypeCacheKlass({
-      client_id: oThis.clientId,
-      transaction_kind: oThis.transactionKind
-    })).fetch();
-    if (clientTransactionTypeCacheFetchResponse.isFailure()) return Promise.reject(clientTransactionTypeCacheFetchResponse);
+    // fetch the transaction kind record
+    if (oThis.transactionKind) {
+      let clientTransactionTypeCacheFetchResponse = await (new ClientTransactionTypeFromNameCache({
+        client_id: oThis.clientId,
+        transaction_kind: oThis.transactionKind
+      })).fetch();
+      if (clientTransactionTypeCacheFetchResponse.isFailure()) return Promise.reject(clientTransactionTypeCacheFetchResponse);
 
-    oThis.transactionTypeRecord = clientTransactionTypeCacheFetchResponse.data;
+      oThis.transactionTypeRecord = clientTransactionTypeCacheFetchResponse.data;
+    } else if (oThis.transactionKindId) {
+      let clientTransactionTypeCacheFetchResponse = await (new ClientTransactionTypeFromIdCache(
+        {id: oThis.transactionKindId})).fetch();
+      if (clientTransactionTypeCacheFetchResponse.isFailure()) return Promise.reject(clientTransactionTypeCacheFetchResponse);
+
+      oThis.transactionTypeRecord = clientTransactionTypeCacheFetchResponse.data;
+    } else {
+      // following should never happen.
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_t_e_3',
+        api_error_identifier: 'invalid_api_params',
+        debug_options: {}
+      }));
+    }
 
     // check action status
     if (oThis.transactionTypeRecord.status != clientTransactionTypeConst.activeStatus) {
@@ -207,6 +227,9 @@ ExecuteTransactionService.prototype = {
         debug_options: {}
       }));
     }
+
+    oThis.transactionKindId = oThis.transactionTypeRecord.id;
+    oThis.transactionKind = oThis.transactionTypeRecord.name;
 
     return Promise.resolve(responseHelper.successWithData({}));
   },
@@ -341,7 +364,7 @@ ExecuteTransactionService.prototype = {
       to_uuid: oThis.toUuid,
       transaction_kind: oThis.transactionKind,
       token_symbol: oThis.tokenSymbol,
-      transaction_kind_id: oThis.transactionTypeRecord.id,
+      transaction_kind_id: oThis.transactionKindId,
       amount: oThis.amount,
       commission_percent: oThis.commissionPercent
     };

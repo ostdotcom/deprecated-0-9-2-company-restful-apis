@@ -223,13 +223,15 @@ const TransactionLogKlassPrototype = {
    * @return {Object}
    */
   _shortenInputParams: function (elongatedInputParams) {
-    var shortenedInputParams = {};
+    let shortenedInputParams = {};
     shortenedInputParams.fu = elongatedInputParams.from_uuid;
     shortenedInputParams.tu = elongatedInputParams.to_uuid;
     shortenedInputParams.tk = elongatedInputParams.transaction_kind;
     shortenedInputParams.tki = elongatedInputParams.transaction_kind_id;
     shortenedInputParams.ts = elongatedInputParams.token_symbol;
     shortenedInputParams.prpp = elongatedInputParams.postReceiptProcessParams;
+    shortenedInputParams.cp = elongatedInputParams.commission_percent;
+    shortenedInputParams.a = elongatedInputParams.amount;
     return shortenedInputParams;
   },
 
@@ -241,7 +243,7 @@ const TransactionLogKlassPrototype = {
    * @return {Object}
    */
   _elongateInputParams: function (shortInputParams) {
-    var elongatedInputParams = {};
+    let elongatedInputParams = {};
     // TODO: After migrating remove support for long keys
     elongatedInputParams.from_uuid = shortInputParams.from_uuid || shortInputParams.fu;
     elongatedInputParams.to_uuid = shortInputParams.to_uuid || shortInputParams.tu;
@@ -249,6 +251,8 @@ const TransactionLogKlassPrototype = {
     elongatedInputParams.transaction_kind_id = shortInputParams.transaction_kind_id || shortInputParams.tki;
     elongatedInputParams.token_symbol = shortInputParams.token_symbol || shortInputParams.ts;
     elongatedInputParams.postReceiptProcessParams = shortInputParams.prpp;
+    elongatedInputParams.commission_percent = shortInputParams.cp;
+    elongatedInputParams.amount = shortInputParams.a;
     return elongatedInputParams;
   },
 

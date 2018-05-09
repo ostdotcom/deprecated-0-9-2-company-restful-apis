@@ -11,7 +11,8 @@ var rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , util = require(rootPrefix + '/lib/util')
   , basicHelper = require(rootPrefix + '/helpers/basic')
-  , ClientTransactionTypeCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type')
+  , ClientTransactionTypeFromNameCache = require(rootPrefix + '/lib/cache_management/client_transaction_type/by_name')
+  , ClientTransactionTypeFromIdCache = require(rootPrefix + '/lib/cache_management/client_transaction_type/by_id')
   , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
   , ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
@@ -249,8 +250,9 @@ Edit.prototype = {
     ).where({id: oThis.clientTransactionId}).fire();
 
 
-    new ClientTransactionTypeCacheKlass({client_id: oThis.currentTransactionKind['client_id'],
+    new ClientTransactionTypeFromNameCache({client_id: oThis.currentTransactionKind['client_id'],
       transaction_kind: oThis.currentTransactionKind['name']}).clear();
+    new ClientTransactionTypeFromIdCache({id: oThis.clientTransactionId}).clear();
 
     return Promise.resolve(responseHelper.successWithData({}));
   },

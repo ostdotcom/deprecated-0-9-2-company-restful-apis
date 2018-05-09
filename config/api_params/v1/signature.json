@@ -215,6 +215,10 @@
       {
         "parameter": "action_id",
         "error_identifier": "missing_action_id"
+      },
+      {
+        "parameter": "client_id",
+        "error_identifier": "missing_client_id"
       }
     ],
     "optional":[
