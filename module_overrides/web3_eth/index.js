@@ -9,16 +9,28 @@ const BasePackage = require(basePackage)
   , BigNumber = require('bignumber.js')
 ;
 
-const rootPrefix = '../..'
-;
+const rootPrefix = '../..';
 
-var requireData
-  , resolvedId
-  , resolvedFileName
-  , nonceManagerKlass
+// Please declare your require variable here.
+let nonceManagerKlass
   , responseHelper
   , logger
   , chainInteractionConstants
+;
+
+// NOTE :: Please define all your requires inside the function
+function initRequires() {
+  nonceManagerKlass = nonceManagerKlass || require(rootPrefix + '/module_overrides/web3_eth/nonce_manager');
+  responseHelper = responseHelper || require(rootPrefix + '/lib/formatter/response');
+  logger = logger || require(rootPrefix + '/lib/logger/custom_console_logger');
+  chainInteractionConstants = chainInteractionConstants || require(rootPrefix + '/config/chain_interaction_constants');
+}
+
+
+// Module Override Code - Part 1
+var requireData
+  , resolvedId
+  , resolvedFileName
 ;
 
 for (var k in require.cache) {
@@ -30,10 +42,11 @@ for (var k in require.cache) {
   }
 }
 
+// Derived Class Definition/Implementation
 const Derived = function () {
   var oThis = this;
 
-  defineGlobalNeeds();
+  initRequires();
 
   logger.debug("Derived Constructor of ", basePackage, " invoked!");
 
@@ -266,6 +279,7 @@ const Derived = function () {
 
 Derived.isOSTVersion = true;
 
+// Module Override Code - Part 2
 require.cache[resolvedId] = {
   id: resolvedId,
   filename: resolvedFileName,
@@ -275,13 +289,6 @@ require.cache[resolvedId] = {
 
 module.exports = Derived;
 
-// NOTE::THIS SHOULD NOT BE TAKEN AT THE TOP.
-function defineGlobalNeeds() {
-  nonceManagerKlass = nonceManagerKlass || require(rootPrefix + '/module_overrides/web3_eth/nonce_manager');
-  responseHelper = responseHelper || require(rootPrefix + '/lib/formatter/response');
-  logger = logger || require(rootPrefix + '/lib/logger/custom_console_logger');
-  chainInteractionConstants = chainInteractionConstants || require(rootPrefix + '/config/chain_interaction_constants');
-}
 
 
 
