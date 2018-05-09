@@ -24,7 +24,7 @@ const router = express.Router()
 router.post('/:id', function (req, res, next) {
 
   req.decodedParams.apiName = 'edit_user';
-  Object.assign(req.decodedParams, req.params); // merge param in URL
+  req.decodedParams.id = req.params.id;
 
   const EditUserKlass = require(rootPrefix + '/app/services/client_users/edit_user');
 
@@ -87,7 +87,7 @@ router.get('/', function (req, res, next) {
 router.get('/:id', function (req, res, next) {
 
   req.decodedParams.apiName = 'fetch_user';
-  Object.assign(req.decodedParams, req.params); // merge param in URL
+  req.decodedParams.id = req.params.id;
 
   const FetchUserKlass = require(rootPrefix + '/app/services/client_users/fetch_user');
 

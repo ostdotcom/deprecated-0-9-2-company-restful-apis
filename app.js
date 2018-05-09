@@ -69,8 +69,6 @@ const assignParams = function (req) {
     req.decodedParams = req.query;
   }
 
-  Object.assign(req.decodedParams, req.params); // merge param in URL
-
 };
 
 const validateApiSignature = function (req, res, next){

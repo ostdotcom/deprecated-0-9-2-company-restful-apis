@@ -57,6 +57,11 @@
     "code": "invalid",
     "message": "id should have comma seperated values (max 100)"
   },
+  "invalid_id_user": {
+    "parameter": "id",
+    "code": "invalid",
+    "message": "invalid id passed"
+  },
   "missing_airdrop_amount": {
     "parameter": "amount",
     "code": "missing",

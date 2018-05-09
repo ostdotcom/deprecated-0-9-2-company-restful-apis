@@ -69,6 +69,15 @@ fetchUserKlass.prototype = {
 
     const oThis = this;
 
+    if (!basicHelper.isUuidValid(oThis.userUuid)) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_cu_fu_1',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_id_user'],
+        debug_options: {}
+      }));
+    }
+
     var managedAddressCache = new ManagedAddressCacheKlass({'uuids': [oThis.userUuid]});
 
     const cacheFetchResponse = await managedAddressCache.fetch();

@@ -81,10 +81,11 @@ EditUserKlass.prototype = {
 
     var name = oThis.name;
 
-    if (!clientId || !userUuid) {
-      return Promise.reject(responseHelper.error({
+    if (!basicHelper.isUuidValid(userUuid)) {
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_cu_eu_1',
         api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_id_user'],
         debug_options: {}
       }));
     }
