@@ -119,6 +119,11 @@
     "code": "insufficient_balance_for_airdrop",
     "message": "Insufficient Balance of Reserved Address for Airdrop"
   },
+  "invalid_airdrop_uuids":{
+    "http_code": "422",
+    "code": "invalid_airdrop_uuids",
+    "message": "Some of user ids passed for Airdrop are invalid."
+  },
   "unhandled_current_step": {
     "http_code": "422",
     "code": "unhandled_current_step",

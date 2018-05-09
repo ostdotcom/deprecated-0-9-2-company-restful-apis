@@ -11,6 +11,8 @@ const rootPrefix = '../../..'
   , AllocateAirdropKlass = require(rootPrefix + '/lib/allocate_airdrop/start_airdrop')
   , clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
+  , commonValidator = require(rootPrefix + '/lib/validators/common')
 ;
 
 /**
@@ -114,12 +116,16 @@ StartAirdropKlass.prototype = {
       }));
     }
 
-    if(oThis.airdropped == 'true'){
+    if(commonValidator.isVarTrue(oThis.airdropped)){
       oThis.airdropUserListType = clientAirdropConst.everAirdroppedAddressesAirdropListType;
-    } else if (oThis.airdropped == 'false'){
+    } else if (commonValidator.isVarFalse(oThis.airdropped)){
       oThis.airdropUserListType = clientAirdropConst.neverAirdroppedAddressesAirdropListType;
     } else {
       oThis.airdropUserListType = clientAirdropConst.allAddressesAirdropListType;
+    }
+
+    if(oThis.userIds){
+      oThis.userIds = basicHelper.commaSeperatedStrToArray(oThis.userIds);
     }
 
     return Promise.resolve(responseHelper.successWithData({}));

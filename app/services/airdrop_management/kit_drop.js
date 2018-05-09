@@ -80,6 +80,8 @@ StartAirdropForKitKlass.prototype = {
 
     await oThis.validateAndSanitize();
 
+    await oThis.validateUserIds();
+
     await oThis.validateReserveBalance();
 
     return new AirdropRouterKlass({
@@ -155,6 +157,39 @@ StartAirdropForKitKlass.prototype = {
       }));
     }
 
+    return Promise.resolve(responseHelper.successWithData({}))
+  },
+
+
+  /**
+   * Validate whether invalid user id is passed for airdrop.
+   *
+   * @return {Promise<any>}
+   */
+  validateUserIds: async function(){
+    const oThis = this;
+
+    if(oThis.userIds){
+      var invalidUuids = false;
+      const uuidsAddressInfo = await new ManagedAddressModel().select('*')
+        .where(['uuid in (?)', oThis.userIds]).fire();
+      if(uuidsAddressInfo.length < oThis.userIds.length){
+        invalidUuids = true;
+      }
+      for(var i=0; i < uuidsAddressInfo.length; i++){
+        if(uuidsAddressInfo[i].client_id !== oThis.clientId){
+          invalidUuids = true;
+        }
+      }
+      if(invalidUuids){
+        return Promise.reject(responseHelper.error({
+          internal_error_identifier: 'l_aa_sa_12',
+          api_error_identifier: 'invalid_airdrop_uuids',
+          params_error_identifiers: ['invalid_airdrop_uuids'],
+          error_config: errorConfig
+        }));
+      }
+    }
     return Promise.resolve(responseHelper.successWithData({}))
   },
 
