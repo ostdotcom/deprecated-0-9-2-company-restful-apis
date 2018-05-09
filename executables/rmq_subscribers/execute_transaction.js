@@ -34,7 +34,7 @@ const openSTNotification = require('@openstfoundation/openst-notification')
 
 //All Module Requires.
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , executeTransactionKlass = require(rootPrefix + '/app/services/transaction/execute_transaction')
+  , ExecuteTransferBt = require(rootPrefix + '/lib/transactions/transfer_bt')
 ;
 
 const promiseExecutor = function (onResolve, onReject, params ) {
@@ -47,12 +47,11 @@ const promiseExecutor = function (onResolve, onReject, params ) {
     , transactionLogId = payload.transactionLogId
     , transactionUuid = payload.transactionUuid
     , rateLimitCount = payload.rateLimitCount
-    , executeTransactionObj = new executeTransactionKlass(
+    , executeTransactionObj = new ExecuteTransferBt(
       {
         transactionLogId: transactionLogId,
         transactionUuid: transactionUuid,
-        rateLimitCount: rateLimitCount,
-        runInSync: 1
+        rateLimitCount: rateLimitCount
       })
   ;
 
