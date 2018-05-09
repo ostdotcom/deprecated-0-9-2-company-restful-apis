@@ -25,6 +25,7 @@ const rootPrefix = '../../..'
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , ClientTrxRateCacheKlass = require(rootPrefix + '/lib/cache_management/client_transactions_rate_limit')
+  , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/transaction')
 ;
 
 /**
@@ -107,17 +108,24 @@ ExecuteTransactionService.prototype = {
     // Transaction would be set in background & response would be returned with uuid.
     await oThis.enqueueTxForExecution();
 
-    return Promise.resolve(responseHelper.successWithData(
-      {
-        result_type: 'transaction',
-        transaction: {
-          id: oThis.transactionUuid,
-          from_user_id: oThis.fromUuid,
-          to_user_id: oThis.toUuid,
-          transaction_hash: '',
-          action_id: oThis.transactionKindId
-        }
-      }));
+
+    const transactionEntityFormatter = new TransactionEntityFormatterKlass({
+        id: oThis.transactionUuid,
+        from_user_id: oThis.fromUuid,
+        to_user_id: oThis.toUuid,
+        transaction_hash: '',
+        action_id: oThis.transactionKindId
+      })
+      , transactionEntityFormatterRsp = await transactionEntityFormatter.perform()
+    ;
+
+    const apiResponseData = {
+      result_type: 'transaction',
+      transaction: transactionEntityFormatterRsp.data
+    };
+
+    return Promise.resolve(responseHelper.successWithData(apiResponseData));
+
   },
 
   /**

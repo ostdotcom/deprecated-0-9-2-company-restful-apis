@@ -4,6 +4,7 @@ const express = require('express')
 const rootPrefix = '../..'
   , routeHelper = require(rootPrefix + '/routes/helper')
   , ActionEntityFormatterClass = require(rootPrefix + '/lib/formatter/entities/v0/action')
+  , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/v0/transaction')
   , util = require(rootPrefix + '/lib/util')
 ;
 
@@ -109,10 +110,29 @@ router.post('/edit', function (req, res, next) {
 });
 
 router.post('/execute', function (req, res, next) {
+  req.decodedParams.apiName = 'execute_transaction';
 
   const executeTransactionKlass = require(rootPrefix + '/app/services/transaction/execute_transaction');
 
-  Promise.resolve(routeHelper.performer(req, res, next, executeTransactionKlass, 'r_tk_4'));
+  const afterValidationFunc = async function(serviceParamsPerThisVersion) {
+    const serviceParamsPerLatestVersion = util.clone(serviceParamsPerThisVersion);
+
+    routeHelper.replaceKey(serviceParamsPerLatestVersion, 'from_uuid', 'from_user_id');
+    routeHelper.replaceKey(serviceParamsPerLatestVersion, 'to_uuid', 'to_user_id');
+
+    return serviceParamsPerLatestVersion;
+  };
+
+  const dataFormatterFunc = async function(response) {
+
+    const actionEntityFormatterRsp = await new TransactionEntityFormatterKlass(response.data.transaction).perform();
+
+    response.data = actionEntityFormatterRsp.data
+
+  };
+
+  Promise.resolve(routeHelper.performer(req, res, next, executeTransactionKlass, 'r_tk_4', afterValidationFunc,
+    dataFormatterFunc));
 });
 
 router.post('/status', function (req, res, next) {
