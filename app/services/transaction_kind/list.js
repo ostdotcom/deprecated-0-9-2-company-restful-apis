@@ -16,6 +16,7 @@ var rootPrefix = '../../..'
   , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
   , ActionEntityFormatterKlass = require(rootPrefix +'/lib/formatter/entities/latest/action')
   , ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points')
+  , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
 ;
 
 /**
@@ -78,7 +79,7 @@ List.prototype = {
 
     oThis.allPromises.push(oThis.getClientTokens());
 
-    return await oThis.prepareApiResponse();
+    return oThis.prepareApiResponse();
 
   },
 
@@ -103,7 +104,7 @@ List.prototype = {
 
     oThis.page_no = oThis.params.page_no || 1;
 
-    if ( oThis.params.order_by && (oThis.params.order_by != 'created' || oThis.params.order_by != 'name') ){
+    if ( oThis.params.order_by && (oThis.params.order_by != 'created' || oThis.params.order_by != 'name') ) {
       Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_2',
         api_error_identifier: 'invalid_api_params',
@@ -114,8 +115,8 @@ List.prototype = {
 
     oThis.order_by = oThis.params.order_by || 'created';
 
-    // use common.js methos
-    if (oThis.params.order && (oThis.params.order != 'desc' || oThis.params.order != 'asc' ){
+    // use common.js methods
+    if (oThis.params.order && (oThis.params.order != 'desc' || oThis.params.order != 'asc' )) {
       oThis.params.order = 'desc';
     }
 
@@ -143,7 +144,7 @@ List.prototype = {
     if(oThis.params.kind) oThis.where.kind = oThis.params.kind.split(',');
     if(oThis.params.currency) oThis.where.currency_type = oThis.params.currency.split(',');
 
-    let arbitrary_amount = oThis.params.arbitrary_amount.split(',');
+    let arbitrary_amount = (oThis.params.arbitrary_amount || '').split(',');
     if(arbitrary_amount.length > 1) {
       Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_4',
@@ -155,7 +156,7 @@ List.prototype = {
 
     oThis.arbitrary_amount = arbitrary_amount[0];
 
-    let arbitrary_commission = oThis.params.arbitrary_commission.split(',');
+    let arbitrary_commission = (oThis.params.arbitrary_commission || '').split(',');
     if(arbitrary_commission.length > 1) {
       Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_5',
@@ -169,6 +170,8 @@ List.prototype = {
 
     if(oThis.arbitrary_amount) oThis.where.arbitrary_amount = oThis.arbitrary_amount;
     if(oThis.arbitrary_commission) oThis.where.arbitrary_commission = oThis.arbitrary_commission;
+
+    return Promise.resolve({});
 
   },
 
@@ -232,9 +235,7 @@ List.prototype = {
     ;
 
     var whereClause = {
-      client_id: oThis.clientId,
-      offset: oThis.offset,
-      limit: oThis.limit
+      client_id: oThis.clientId
     };
 
     Object.assign(whereClause, oThis.where);
@@ -281,6 +282,8 @@ List.prototype = {
       const clientBrandedTokenCacheObj = new ClientBrandedTokenCacheKlass({clientId: oThis.clientId});
 
       const clientBrandedTokenCacheResp = await clientBrandedTokenCacheObj.fetch();
+
+      console.log("clientBrandedTokenCacheResp", clientBrandedTokenCacheResp);
 
       oThis.clientTokens = clientBrandedTokenCacheResp.data;
 
