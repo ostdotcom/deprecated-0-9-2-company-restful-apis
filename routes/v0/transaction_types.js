@@ -112,7 +112,7 @@ router.post('/edit', function (req, res, next) {
 router.post('/execute', function (req, res, next) {
   req.decodedParams.apiName = 'execute_transaction';
 
-  const executeTransactionKlass = require(rootPrefix + '/app/services/transaction/execute_transaction');
+  const executeTransactionKlass = require(rootPrefix + '/app/services/transaction/execute');
 
   const afterValidationFunc = async function(serviceParamsPerThisVersion) {
     const serviceParamsPerLatestVersion = util.clone(serviceParamsPerThisVersion);

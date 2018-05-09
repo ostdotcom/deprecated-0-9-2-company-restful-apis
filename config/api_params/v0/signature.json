@@ -117,5 +117,26 @@
         "error_identifier": "missing_client_id"
       }
     ]
+  },
+  "execute_transaction":{
+    "mandatory":[
+      {
+        "parameter": "from_uuid",
+        "error_identifier": "missing_from_uuid"
+      },
+      {
+        "parameter": "to_uuid",
+        "error_identifier": "missing_to_uuid"
+      },
+      {
+        "parameter": "transaction_kind",
+        "error_identifier": "missing_transaction_kind"
+      },
+      {
+        "parameter": "client_id",
+        "error_identifier": "missing_client_id"
+      }
+    ],
+    "optional":[]
   }
 }

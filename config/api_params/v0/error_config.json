@@ -155,5 +155,20 @@
     "parameter": "user_ids",
     "code": "invalid",
     "message": "Some of user ids passed for Airdrop are invalid."
+  },
+  "missing_from_uuid": {
+    "parameter": "from_uuid",
+    "code": "missing",
+    "message": "Missing from_uuid"
+  },
+  "missing_to_uuid": {
+    "parameter": "to_uuid",
+    "code": "missing",
+    "message": "Missing to_uuid"
+  },
+  "missing_transaction_kind": {
+    "parameter": "transaction_kind",
+    "code": "missing",
+    "message": "Missing transaction_kind"
   }
 }
