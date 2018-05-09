@@ -16,6 +16,7 @@ const rootPrefix = '../..'
   , util = require(rootPrefix + '/lib/util')
   , clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop')
   , UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/v0/user')
+  , AirdropEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/v0/airdrop')
   , errorConfig = basicHelper.fetchErrorConfig(apiVersions.v0)
 ;
 
@@ -48,7 +49,7 @@ router.post('/create', function (req, res, next) {
     response.data.result_type = 'economy_users';
     response.data.economy_users = [userEntityFormatterRsp.data]
 
-  }
+  };
 
   Promise.resolve(routeHelper.performer(
       req, res, next, CreateUserKlass, 'r_v0_u_1',
@@ -82,7 +83,7 @@ router.post('/edit', function (req, res, next) {
 
     return serviceParamsPerLatestVersion;
 
-  }
+  };
 
   const dataFormatterFunc = async function(response) {
 
@@ -93,7 +94,7 @@ router.post('/edit', function (req, res, next) {
     response.data.result_type = 'economy_users';
     response.data.economy_users = [userEntityFormatterRsp.data]
 
-  }
+  };
 
   Promise.resolve(routeHelper.performer(
       req, res, next,
@@ -141,7 +142,7 @@ router.get('/list', function (req, res, next) {
 
     return serviceParamsPerLatestVersion;
 
-  }
+  };
 
   const dataFormatterFunc = async function(serviceResponse) {
 
@@ -171,7 +172,7 @@ router.get('/list', function (req, res, next) {
     serviceResponse.data.result_type = 'economy_users';
     serviceResponse.data.economy_users = formattedusers
 
-  }
+  };
 
   Promise.resolve(routeHelper.performer(
       req, res, next,
@@ -194,9 +195,41 @@ router.get('/list', function (req, res, next) {
  */
 router.post('/airdrop/drop', function (req, res, next) {
 
+  req.decodedParams.apiName = 'start_airdrop';
+
   const StartAirdropKlass = require(rootPrefix + '/app/services/airdrop_management/start');
 
-  Promise.resolve(routeHelper.performer(req, res, next, StartAirdropKlass, 'r_su_3'));
+  const afterValidationFunc = async function(serviceParamsPerThisVersion) {
+
+    const serviceParamsPerLatestVersion = util.clone(serviceParamsPerThisVersion);
+
+    const list_type = serviceParamsPerLatestVersion.list_type;
+    delete serviceParamsPerLatestVersion['list_type'];
+
+    if(list_type === clientAirdropConst.neverAirdroppedAddressesAirdropListType) {
+      serviceParamsPerLatestVersion.airdropped = false;
+    }
+
+    return serviceParamsPerLatestVersion;
+
+  };
+
+  const dataFormatterFunc = async function(response) {
+
+    const airdropEntityFormatterRsp = await new AirdropEntityFormatterKlass(response.data.airdrop).perform();
+
+    delete response.data.airdrop;
+
+    response.data.result_type = 'airdrop';
+    response.data.airdrop = [airdropEntityFormatterRsp.data]
+
+  };
+
+  Promise.resolve(routeHelper.performer(
+    req, res, next,
+    StartAirdropKlass, 'r_su_3',
+    afterValidationFunc, dataFormatterFunc
+  ));
 
 });
 
@@ -213,7 +246,24 @@ router.post('/airdrop/drop', function (req, res, next) {
  */
 router.get('/airdrop/status', function (req, res, next) {
 
-  Promise.resolve(routeHelper.performer(req, res, next, getAirdropStatusKlass, 'r_cu_7'));
+  req.decodedParams.apiName = 'airdrop_status';
+
+  const dataFormatterFunc = async function(response) {
+
+    const airdropEntityFormatterRsp = await new AirdropEntityFormatterKlass(response.data.airdrop).perform();
+
+    delete response.data.airdrop;
+
+    response.data.result_type = 'airdrop';
+    response.data.airdrop = [airdropEntityFormatterRsp.data]
+
+  };
+
+  Promise.resolve(routeHelper.performer(
+    req, res, next,
+    getAirdropStatusKlass, 'r_cu_7',
+    null, dataFormatterFunc
+  ));
 
 });
 

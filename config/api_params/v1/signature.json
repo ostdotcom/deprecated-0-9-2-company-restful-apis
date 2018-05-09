@@ -81,11 +81,31 @@
   "airdrop_status": {
     "mandatory":[
       {
+        "parameter": "client_id",
+        "error_identifier": "missing_client_id"
+      },
+      {
         "parameter": "airdrop_uuid",
         "error_identifier": "airdrop_uuid_missing"
       }
     ],
     "optional":[]
+  },
+  "list_airdrop": {
+    "mandatory": [
+      {
+        "parameter": "client_id",
+        "error_identifier": "missing_client_id"
+      }
+    ],
+    "optional": [
+      "page_no",
+      "order_by",
+      "order",
+      "limit",
+      "id",
+      "current_status"
+    ]
   },
   "fetch_token_details": {
     "mandatory":[

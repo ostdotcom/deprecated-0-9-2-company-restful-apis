@@ -97,11 +97,6 @@
     "code": "invalid",
     "message": "Unauthorized access"
   },
-  "missing_client_id": {
-    "parameter": "client_id",
-    "code": "missing",
-    "message": "Unauthorized access"
-  },
   "airdropped_filter_empty_list": {
     "parameter": "airdropped",
     "code": "invalid",
@@ -133,6 +128,21 @@
     "parameter": "user_ids",
     "code": "invalid",
     "message": "Some of user ids passed for Airdrop are invalid."
+  },
+  "invalid_order_by_airdrop_list": {
+    "parameter": "order_by",
+    "code": "invalid",
+    "message": "order the list by 'created' (default) for Now."
+  },
+  "invalid_id_airdrop_list": {
+    "parameter": "id",
+    "code": "invalid",
+    "message": "id should have comma seperated airdrop ids (max 100)"
+  },
+  "invalid_current_status_airdrop_list": {
+    "parameter": "current_status",
+    "code": "invalid",
+    "message": "current status should have comma seperated status filters (eg: incomplete,processing,complete,failed)"
   },
   "invalid_order_by": {
     "parameter": "order_by",

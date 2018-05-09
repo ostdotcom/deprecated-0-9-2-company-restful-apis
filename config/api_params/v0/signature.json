@@ -47,6 +47,35 @@
       "order"
     ]
   },
+  "start_airdrop":{
+    "mandatory":[
+      {
+        "parameter": "client_id",
+        "error_identifier": "missing_client_id"
+      },
+      {
+        "parameter": "amount",
+        "error_identifier": "missing_airdrop_amount"
+      }
+    ],
+    "optional":[
+      "list_type",
+      "user_ids"
+    ]
+  },
+  "airdrop_status": {
+    "mandatory":[
+      {
+        "parameter": "client_id",
+        "error_identifier": "missing_client_id"
+      },
+      {
+        "parameter": "airdrop_uuid",
+        "error_identifier": "airdrop_uuid_missing"
+      }
+    ],
+    "optional":[]
+  },
   "create_new_action": {
     "mandatory": [
       {
@@ -80,15 +109,6 @@
       "currency_value",
       "commission_percent"
     ]
-  },
-  "airdrop_status": {
-    "mandatory":[
-      {
-        "parameter": "airdrop_uuid",
-        "error_identifier": "airdrop_uuid_missing"
-      }
-    ],
-    "optional":[]
   },
   "list_transactions": {
     "mandatory": [

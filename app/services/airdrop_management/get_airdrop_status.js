@@ -4,11 +4,16 @@ const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , ClientAirdropModel = require(rootPrefix + '/app/models/client_airdrop')
   , clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop')
+  , AirdropEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/airdrop')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
 /**
  * Fetch status of Airdrop initiated
+ *
+ * @param {object} params - external passed parameters
+ * @param {number} params.client_id (Mandatory) - client id
+ * @param {string} params.airdrop_uuid (Mandatory) - uuid of the airdrop for which status get.
  *
  * @module services/airdrop_management/get_airdrop_status
  */
@@ -71,8 +76,24 @@ GetAirdropStatusKlass.prototype = {
       } else if(record.status == new ClientAirdropModel().invertedStatuses[clientAirdropConst.failedStatus]){
         current_status = 'failed';
       }
-      return Promise.resolve(responseHelper.successWithData({airdrop_uuid: oThis.airdropUuid,
-        current_status: current_status, steps_complete: new ClientAirdropModel().getAllBits('steps_complete', record.steps_complete)}));
+
+      const airdropEntityData = {
+        id: oThis.airdropUuid,
+        current_status: current_status,
+        steps_complete: new ClientAirdropModel().getAllBits('steps_complete', record.steps_complete)
+      };
+
+      const airdropEntityFormatter = new AirdropEntityFormatterKlass(airdropEntityData)
+        , airdropEntityFormatterRsp = await airdropEntityFormatter.perform()
+      ;
+
+      const apiResponseData = {
+        result_type: 'airdrop',
+        airdrop: airdropEntityFormatterRsp.data
+      };
+
+      return Promise.resolve(responseHelper.successWithData(apiResponseData));
+
     } else {
       return Promise.resolve(responseHelper.paramValidationError({
         internal_error_identifier: 's_am_gas_2',

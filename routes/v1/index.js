@@ -22,11 +22,11 @@ router.use('/users', usersRoutes);
 
 router.use('/token', tokenRoutes);
 
+router.use('/airdrops', airdropsRoutes);
+
 router.use('/actions', actionRoutes);
 
 router.use('/transactions', transactionsRoutes);
-//
-// router.use('/airdrops', airdropsRoutes);
 //
 // router.use('/transfers', transfersRoutes);
 

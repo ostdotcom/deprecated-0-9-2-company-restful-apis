@@ -75,7 +75,52 @@ const ClientAirdropModelSpecificPrototype = {
     ;
 
     return oThis.select('*').where({client_id: clientId}).fire();
-  }
+  },
+
+  /**
+   *
+   * Get List by params
+   *
+   * @param {object} params - this is object with keys.
+   * @param {integer} params.client_id - client_id for which users are to be fetched
+   * @param {string} [params.order_by] - ordering of results to be done by this column
+   * @param {string} [params.order] - ASC / DESC
+   * @param {string} [params.limit] - number of results to be returned on this page
+   * @param {string} [params.offset] - index to start fetching entries from
+   * @param {array} [params.airdrop_uuids] - airdrop uuids from which result sets will be found
+   * @param {array} [params.current_statuses] - Filter of statuses to be fetched in result
+   *
+   */
+  getByFilterAndPaginationParams: function (params) {
+
+    const oThis = this
+      , clientId = params.client_id
+      , orderBy = params.order_by
+      , orderType = params.order
+      , airdropUuidsForFiltering = params.airdrop_uuids || []
+      , currentStatusesForFiltering = params.current_statuses
+    ;
+
+    let query = oThis.select(['id', 'airdrop_uuid', 'status', 'steps_complete']).where({client_id: clientId});
+
+    if (airdropUuidsForFiltering.length > 0) {
+      query.where(['airdrop_uuid IN (?)', airdropUuidsForFiltering]);
+    }
+
+    if (currentStatusesForFiltering.length > 0) {
+      var qryArr = [];
+      for(var i=0; i < currentStatusesForFiltering.length; i++){
+        qryArr.push(invertedStatuses[currentStatusesForFiltering[i]])
+      }
+      query.where(["status in (?)", qryArr]);
+    }
+
+    let orderByStr = 'id';
+    orderByStr += (orderType.toLowerCase() == 'asc') ? ' ASC' : ' DESC';
+
+    return query.order_by(orderByStr).limit(params.limit).offset(params.offset).fire();
+
+  },
 };
 
 /**
