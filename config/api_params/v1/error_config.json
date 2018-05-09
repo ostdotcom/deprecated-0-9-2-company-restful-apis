@@ -70,7 +70,7 @@
   "invalid_order": {
     "parameter": "order",
     "code": "invalid",
-    "message": "order users in 'desc' (default) or 'asc' order."
+    "message": "order in 'desc' (default) or 'asc' order."
   },
   "invalid_id_user_list": {
     "parameter": "id",
@@ -147,10 +147,6 @@
   "invalid_order_by": {
     "parameter": "order_by",
     "message": "Order by not valid on this field"
-  },
-  "invalid_limit": {
-    "parameter": "limit",
-    "message": "Limit is invalid"
   },
   "invalid_arbitrary_amount_filter": {
     "parameter": "arbitrary_amount",

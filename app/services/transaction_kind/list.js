@@ -95,7 +95,7 @@ List.prototype = {
     oThis.clientId = oThis.params.client_id;
 
     if( oThis.params.page_no && oThis.params.page_no < 1 ){
-      Promise.reject(responseHelper.paramValidationError({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_1',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_page_no'],
@@ -105,8 +105,8 @@ List.prototype = {
 
     oThis.page_no = oThis.params.page_no || 1;
 
-    if ( oThis.params.order_by && (oThis.params.order_by != 'created' || oThis.params.order_by != 'name') ) {
-      Promise.reject(responseHelper.paramValidationError({
+    if ( oThis.params.order_by && (oThis.params.order_by != 'created' && oThis.params.order_by != 'name') ) {
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_2',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_order_by'],
@@ -116,18 +116,22 @@ List.prototype = {
 
     oThis.order_by = oThis.params.order_by || 'created';
 
-    // use common.js methods
-    if (oThis.params.order && (oThis.params.order != 'desc' || oThis.params.order != 'asc' )) {
-      oThis.params.order = 'desc';
+    if (oThis.params.order && !commonValidator.isValidOrderingString(oThis.params.order)) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_tk_l_7',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_order'],
+        debug_options: {clientId: oThis.clientId}
+      }));
     }
 
     oThis.order = oThis.params.order || 'desc';
 
     if ( oThis.params.limit && (oThis.params.limit < 1 || oThis.params.limit > 100) ) {
-      Promise.reject(responseHelper.paramValidationError({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_3',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_limit'], // reuse exising config key
+        params_error_identifiers: ['invalid_pagination_limit'],
         debug_options: {clientId: oThis.clientId}
       }));
     }
@@ -140,12 +144,19 @@ List.prototype = {
 
     if(oThis.params.id) oThis.where.id = basicHelper.commaSeperatedStrToArray(oThis.params.id);
     if(oThis.params.name) oThis.where.name = basicHelper.commaSeperatedStrToArray(oThis.params.name);
-    if(oThis.params.kind) oThis.where.kind = basicHelper.commaSeperatedStrToArray(oThis.params.kind);
+    if(oThis.params.kind) {
+      let kinds = basicHelper.commaSeperatedStrToArray(oThis.params.kind);
+      kinds = kinds.map(function(kind){
+        let val = new ClientTransactionTypeModel().invertedKinds[kind];
+        return Number(val);
+      });
+      oThis.where.kind = kinds;
+    }
 
     let currencies = basicHelper.commaSeperatedStrToArray((oThis.params.currency || ''));
 
     if(currencies.length > 1) {
-      Promise.reject(responseHelper.paramValidationError({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_4',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_currency_filter'],
@@ -153,12 +164,12 @@ List.prototype = {
       }));
     }
 
-    if(currencies[0] != '') oThis.where.currency_type = currencies[0];
+    if(currencies[0] != '') oThis.where.currency_type = new ClientTransactionTypeModel().invertedCurrencyTypes[currencies[0]];
 
     let arbitrary_amount = basicHelper.commaSeperatedStrToArray((oThis.params.arbitrary_amount || ''));
 
     if(arbitrary_amount.length > 1) {
-      Promise.reject(responseHelper.paramValidationError({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_5',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_arbitrary_amount_filter'],
@@ -171,7 +182,7 @@ List.prototype = {
     let arbitrary_commission = basicHelper.commaSeperatedStrToArray((oThis.params.arbitrary_commission || ''));
 
     if(arbitrary_commission.length > 1) {
-      Promise.reject(responseHelper.paramValidationError({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_6',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_arbitrary_commission_filter'],
@@ -179,10 +190,7 @@ List.prototype = {
       }));
     }
 
-    if (oThis.arbitrary_commission != '') oThis.arbitrary_commission = arbitrary_amount[0];
-
-    if(oThis.arbitrary_amount) oThis.where.arbitrary_amount = oThis.arbitrary_amount;
-    if(oThis.arbitrary_commission) oThis.where.arbitrary_commission = oThis.arbitrary_commission;
+    if (oThis.arbitrary_commission != '') oThis.arbitrary_commission = arbitrary_commission[0];
 
     return Promise.resolve({});
 
@@ -259,7 +267,7 @@ List.prototype = {
     let query = new ClientTransactionTypeModel().select('*').where(whereClause);
 
     if( commonValidator.isVarTrue(oThis.arbitrary_amount) ) {
-      query.where('value_in_usd is null or value_in_bt_wei is null');
+      query.where('value_in_usd is null and value_in_bt_wei is null');
     } else if( commonValidator.isVarFalse(oThis.arbitrary_amount) ) {
       query.where('value_in_usd > 0 or value_in_bt_wei > 0');
     } else {
@@ -276,6 +284,11 @@ List.prototype = {
 
     if(oThis.limit) query.limit(oThis.limit);
     if(oThis.offset) query.offset(oThis.offset);
+
+    if(oThis.order_by) {
+      let order_by = (oThis.order_by == 'name' ? 'name' : 'id')
+      query.order_by(`${order_by} ${oThis.order}`);
+    }
 
     const results = await query.fire();
 

@@ -75,18 +75,16 @@ List.prototype = {
 
     const result = await new ClientTransactionTypeModel().getTransactionById({ clientTransactionId: oThis.id });
 
-    oThis.result = result;
-
-    console.log("----result", result);
+    oThis.result = result[0];
 
     if(result.currency_type == clientTxTypesConst.btCurrencyType){
-      oThis.amount = basicHelper.formatWeiToString(basicHelper.convertToNormal(result.value_in_bt_wei));
+      oThis.amount = basicHelper.formatWeiToString(basicHelper.convertToNormal(oThis.result.value_in_bt_wei));
     }else{
-      oThis.amount = result.value_in_usd;
+      oThis.amount = oThis.result.value_in_usd;
     }
 
     oThis.arbitrary_amount = oThis.amount ? false : true;
-    oThis.arbitrary_commission = result.arbitrary_commission ? false : true;
+    oThis.arbitrary_commission = oThis.result.commission_percent ? false : true;
 
     return Promise.resolve({});
   },
@@ -99,8 +97,8 @@ List.prototype = {
       id: oThis.result.id,
       client_id: oThis.clientId,
       name: oThis.result.name,
-      kind: oThis.result.kind,
-      currency: oThis.result.currency_type,
+      kind: new ClientTransactionTypeModel().kinds[oThis.result.kind],
+      currency: new ClientTransactionTypeModel().currencyTypes[oThis.result.currency_type],
       arbitrary_amount: oThis.arbitrary_amount,
       amount: oThis.amount,
       arbitrary_commission: oThis.arbitrary_commission,
