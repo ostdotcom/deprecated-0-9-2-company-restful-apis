@@ -4,6 +4,7 @@ const express = require('express')
 const rootPrefix = '../..'
   , routeHelper = require(rootPrefix + '/routes/helper')
   , ActionEntityFormatterClass = require(rootPrefix + '/lib/formatter/entities/v0/action')
+  , util = require(rootPrefix + '/lib/util')
 ;
 
 const router = express.Router()
@@ -12,9 +13,31 @@ const router = express.Router()
 /* Get transaction block info for a transaction hash */
 router.get('/list', function (req, res, next) {
 
+  req.decodedParams.apiName = 'list_transactions';
+
   const transactionListKlass = require(rootPrefix + '/app/services/transaction_kind/list');
 
-  Promise.resolve(routeHelper.performer(req, res, next, transactionListKlass, 'r_tk_1'));
+  const dataFormatterFunc = async function(response) {
+
+    let transactions = null;
+
+    for (var i=0; i< response.data.actions.length; i++) {
+      let actionEntityFormatterRsp = await new ActionEntityFormatterClass(response.data.actions[i]).perform();
+      transactions.push(actionEntityFormatterRsp.data);
+    }
+
+    delete response.data.actions;
+
+    response.data.result_type = 'transactions';
+    response.data.transactions = transactions;
+    response.data.client_tokens = delete response.data.extra_entities.client_tokens;
+    response.data.price_points = delete response.data.extra_entities.price_points;
+
+    delete response.data.extra_entities;
+
+  };
+
+  Promise.resolve(routeHelper.performer(req, res, next, transactionListKlass, 'r_tk_1', null, dataFormatterFunc));
 });
 
 router.post('/create', function (req, res, next) {
@@ -40,21 +63,49 @@ router.post('/create', function (req, res, next) {
 
     const actionEntityFormatterRsp = await new ActionEntityFormatterClass(response.data.action).perform();
 
-    delete response.data.user;
+    delete response.data.action;
 
     response.data.result_type = 'transactions';
     response.data.transactions = [actionEntityFormatterRsp.data]
 
   };
 
-  Promise.resolve(routeHelper.performer(req, res, next, newTransactionKlass, 'r_tk_2', null, dataFormatterFunc));
+  Promise.resolve(routeHelper.performer(req, res, next, newTransactionKlass, 'r_tk_2', afterValidationFunc, dataFormatterFunc));
 });
 
 router.post('/edit', function (req, res, next) {
 
+  req.decodedParams.apiName = 'update_action';
+
   const editTransactionKlass = require(rootPrefix + '/app/services/transaction_kind/edit');
 
-  Promise.resolve(routeHelper.performer(req, res, next, editTransactionKlass, 'r_tk_3'));
+  const afterValidationFunc = async function(serviceParamsPerThisVersion) {
+
+    const serviceParamsPerLatestVersion = util.clone(serviceParamsPerThisVersion);
+
+    routeHelper.replaceKey(serviceParamsPerLatestVersion, 'currency_type', 'currency');
+
+    routeHelper.replaceKey(serviceParamsPerLatestVersion, 'currency_value', 'amount');
+
+    routeHelper.replaceKey(serviceParamsPerLatestVersion, 'client_transaction_id', 'id');
+
+    return serviceParamsPerLatestVersion;
+
+  };
+
+  const dataFormatterFunc = async function(response) {
+
+    const actionEntityFormatterRsp = await new ActionEntityFormatterClass(response.data.action).perform();
+
+    delete response.data.action;
+
+    response.data.result_type = 'transactions';
+    response.data.transactions = [actionEntityFormatterRsp.data]
+
+  };
+
+
+  Promise.resolve(routeHelper.performer(req, res, next, editTransactionKlass, 'r_tk_3', afterValidationFunc, dataFormatterFunc));
 });
 
 router.post('/execute', function (req, res, next) {

@@ -107,8 +107,10 @@ AddNew.prototype = {
       , errors_object = []
     ;
 
+    console.log("params", oThis.params);
+
     if(!client_id || client_id==0){
-      return Promise.resolve(responseHelper.paramValidationError({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_an_1',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['missing_client_id'],
@@ -130,18 +132,18 @@ AddNew.prototype = {
       errors_object.push('invalid_transactionkind');
     }
 
-    if (currency == 'USD' ) {
-      if ( commonValidator.validateArbitraryAmount(amount, arbitrary_amount) ){
+    if (currency == clientTxTypesConst.usdCurrencyType ) {
+      if ( !commonValidator.validateArbitraryAmount(amount, arbitrary_amount) ){
         errors_object.push('invalid_amount_arbitrary_combination');
-      } else if( commonValidator.validateAmount(amount) ){
+      } else if( commonValidator.validateUsdAmount(amount) ){
         errors_object.push('out_of_bound_transaction_usd_value');
       }
       oThis.transactionKindObj.value_in_usd = amount;
-    } else if (currency == 'BT' ){
-      if ( commonValidator.validateArbitraryAmount(amount, arbitrary_amount) ){
+    } else if (currency == clientTxTypesConst.btCurrencyType ){
+      if ( !commonValidator.validateArbitraryAmount(amount, arbitrary_amount) ){
         errors_object.push('invalid_amount_arbitrary_combination');
       }
-      else if( commonValidator.validateAmount(amount) ){
+      else if( !commonValidator.validateBtAmount(amount) ){
         errors_object.push('out_of_bound_transaction_bt_value');
       }
 
@@ -156,15 +158,14 @@ AddNew.prototype = {
 
     var isValidCommissionPercent = true;
 
-    if( commonValidator.validateArbitraryCommissionPercent(commission_percent, arbitrary_commission)) {
+    if( !commonValidator.validateArbitraryCommissionPercent(commission_percent, arbitrary_commission)) {
       errors_object.push('invalid_commission_arbitrary_combination');
-    } else if(commonValidator.commissionPercentValid(commission_percent)) {
+    } else if(!commonValidator.commissionPercentValid(commission_percent)) {
 
       isValidCommissionPercent = false;
       errors_object.push('invalid_commission_percent');
     }
-
-    if(isValidCommissionPercent && kind != clientTxTypesConst.userToUserKind){
+    if(isValidCommissionPercent && kind != clientTxTypesConst.userToUserKind) {
       errors_object.push('invalid_commission_percent');
     }
 
@@ -173,8 +174,9 @@ AddNew.prototype = {
       errors_object.push('duplicate_transactionname');
     }
 
+    console.log("errors_object", errors_object);
     if(errors_object.length > 0){
-      return Promise.resolve(responseHelper.paramValidationError({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_an_2',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: errors_object,
@@ -185,8 +187,7 @@ AddNew.prototype = {
     oThis.transactionKindObj.client_id = client_id;
     oThis.transactionKindObj.name = name;
     oThis.transactionKindObj.kind = kind;
-    oThis.transactionKindObj.currency = currency;
-    oThis.transactionKindObj.amount = amount;
+    oThis.transactionKindObj.currency_type = currency;
     oThis.transactionKindObj.commission_percent = commission_percent;
     oThis.transactionKindObj.status = 'active';
 
@@ -207,7 +208,7 @@ AddNew.prototype = {
 
     const newObj = util.clone(oThis.transactionKindObj);
     newObj.kind = new ClientTransactionTypeModel().invertedKinds[newObj.kind];
-    newObj.currency = new ClientTransactionTypeModel().invertedCurrencyTypes[newObj.currency];
+    newObj.currency_type = new ClientTransactionTypeModel().invertedCurrencyTypes[newObj.currency_type];
     newObj.status = new ClientTransactionTypeModel().invertedStatuses[newObj.status];
 
     const clientTransactionKind = await new ClientTransactionTypeModel().insert(newObj).fire();
@@ -247,9 +248,10 @@ AddNew.prototype = {
       name: oThis.transactionKindObj.name,
       kind: oThis.transactionKindObj.kind,
       currency: oThis.params.currency,
+      arbitrary_amount: oThis.params.arbitrary_amount,
       amount: oThis.params.amount,
+      arbitrary_commission: oThis.params.arbitrary_commission,
       commission_percent: oThis.transactionKindObj.commission_percent,
-      status: oThis.transactionKindObj.status,
       uts: Date.now()
     });
 

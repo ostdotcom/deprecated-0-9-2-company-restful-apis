@@ -16,17 +16,20 @@ var rootPrefix = '../../..'
   , ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , commonValidator = require(rootPrefix + '/lib/validators/common')
+  , ActionEntityFormatterKlass = require(rootPrefix +'/lib/formatter/entities/latest/action')
 ;
 
 /**
  * Edit transaction kind constructor
  *
  * @param {object} params - external passed parameters
- * @param {number} params.client_id - client id for whom setup is to be made.
+ * @param {number} params.id - client id for whom setup is to be made.
+ * @param {boolean} params.arbitrary_amount - true/false
+ * @param {boolean} params.arbitrary_commission - true/false
  * @param {string} [params.name] - Name of the transaction kind eg. voteUp, voteDown, etc..
  * @param {string} [params.kind] - The kind of the kind, user_to_user, user_to_client, etc..
- * @param {string} [params.currency_type] - Type of currency. usd or bt
- * @param {decimal} [params.currency_value] - Value of currency with respect to currency_type
+ * @param {string} [params.currency] - Currency. usd or bt
+ * @param {decimal} [params.amount] - Value of currency with respect to currency
  * @param {decimal} [params.commission_percent] - commission in percentage.
  *
  * @constructor
@@ -36,6 +39,8 @@ const Edit = function(params){
 
   this.params = params || {};
   this.transactionKindObj = {};
+
+  console.log("params", params);
 
 };
 
@@ -91,54 +96,70 @@ Edit.prototype = {
    */
   validateParams: async function(){
     var oThis = this
-      , clientId = oThis.params.client_id
-      , name = oThis.params.name
-      , kind = oThis.params.kind
-      , currency_type = (oThis.params.currency_type || '').toUpperCase()
-      , currency_value = oThis.params.currency_value
-      , commission_percent = oThis.params.commission_percent
+      , id = oThis.params.id
+      , client_id = oThis.params.client_id
+    ;
+
+    oThis.clientTransactionId = id;
+
+    var qResult = await oThis.getCurrentTransactionKind();
+    oThis.currentTransactionKind = qResult[0];
+
+    console.log("currentTransactionKind", oThis.currentTransactionKind);
+
+    var name = oThis.params.name || oThis.currentTransactionKind.name
+      , kind = oThis.params.kind || new ClientTransactionTypeModel().kinds[oThis.currentTransactionKind.kind.toString()]
+      , currency = (oThis.params.currency
+          || new ClientTransactionTypeModel().currencyTypes[oThis.currentTransactionKind.currency_type]).toUpperCase()
+      , arbitrary_amount = oThis.params.arbitrary_amount
+      , amount = oThis.params.amount || oThis.currentTransactionKind.value_in_usd
+          || basicHelper.convertToNormal(oThis.currentTransactionKind.value_in_bt_wei)
+      , arbitrary_commission = oThis.params.arbitrary_commission
+      , commission_percent = oThis.params.commission_percent || oThis.currentTransactionKind.commission_percent
       , errors_object = []
     ;
 
-    oThis.clientTransactionId = oThis.params.client_transaction_id;
+    oThis.amount = amount;
 
-    if(!oThis.clientTransactionId){
-      return Promise.resolve(responseHelper.paramValidationError({
-        internal_error_identifier: 'tk_e_4',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_client_transaction_id'],
-        debug_options: {}
-      }));
-    }
+    if ( currency == clientTxTypesConst.usdCurrencyType) {
 
-    if(kind && !new ClientTransactionTypeModel().invertedKinds[kind]){
-      errors_object.push('invalid_transactionkind');
-    }
-
-    if (currency_type == 'USD') {
-      if(!currency_value || currency_value < 0.01 || currency_value > 100){
+      if( !commonValidator.validateArbitraryAmount(amount, arbitrary_amount) ){
+        errors_object.push('invalid_amount_arbitrary_combination');
+      } else if ( !commonValidator.validateUsdAmount(amount)){
         errors_object.push('out_of_bound_transaction_usd_value');
       }
-      oThis.transactionKindObj['currency_type'] = new ClientTransactionTypeModel().invertedCurrencyTypes[oThis.params.currency_type];
-      oThis.transactionKindObj['value_in_bt_wei'] = null;
-      oThis.transactionKindObj['value_in_usd'] = currency_value;
 
-    } else if (currency_type == 'BT'){
+      oThis.transactionKindObj['currency_type'] = new ClientTransactionTypeModel().invertedCurrencyTypes[currency];
+      oThis.transactionKindObj['value_in_bt_wei'] = null;
+      oThis.transactionKindObj['value_in_usd'] = amount;
+
+    } else if ( currency == clientTxTypesConst.btCurrencyType){
       oThis.params.value_in_usd = null;
-      if(!currency_value || currency_value < 0.00001 || currency_value>100){
-        errors_object.push('out_of_bound_transaction_bt_value');
-      }
-      var value_in_bt_wei = basicHelper.convertToWei(currency_value);
+
+      var value_in_bt_wei = basicHelper.convertToWei(amount);
+
       if(!basicHelper.isWeiValid(value_in_bt_wei)){
         errors_object.push('out_of_bound_transaction_bt_value');
       }
-      oThis.transactionKindObj['currency_type'] = new ClientTransactionTypeModel().invertedCurrencyTypes[oThis.params.currency_type];
+
+      if(!commonValidator.validateArbitraryAmount(amount, arbitrary_amount) ){
+        errors_object.push('invalid_amount_arbitrary_combination');
+      } else if ( !commonValidator.validateBtAmount(amount) ) {
+        errors_object.push('out_of_bound_transaction_bt_value');
+      }
+
+      oThis.transactionKindObj['currency_type'] = new ClientTransactionTypeModel().invertedCurrencyTypes[currency];
       oThis.transactionKindObj['value_in_bt_wei'] = basicHelper.formatWeiToString(value_in_bt_wei);
       oThis.transactionKindObj['value_in_usd'] = null;
 
+    } else {
+      errors_object.push('invalid_currency');
     }
 
-    if(commonValidator.commissionPercentValid(commission_percent)){
+    if( !commonValidator.validateArbitraryCommissionPercent(commission_percent, arbitrary_commission) ) {
+      errors_object.push('invalid_commission_arbitrary_combination');
+    }
+    else if( !commonValidator.commissionPercentValid(commission_percent)){
       errors_object.push('invalid_commission_percent');
     }
 
@@ -146,15 +167,12 @@ Edit.prototype = {
       errors_object.push('invalid_commission_percent');
     }
 
-    var qResult = await oThis.getCurrentTransactionKind();
-    oThis.currentTransactionKind = qResult[0];
-
     if(!oThis.currentTransactionKind || oThis.currentTransactionKind.length==0){
       errors_object.push('invalid_client_transaction_id');
     }
 
-    if(oThis.currentTransactionKind && oThis.currentTransactionKind['client_id'] != clientId){
-      return Promise.resolve(responseHelper.error({
+    if(oThis.currentTransactionKind && oThis.currentTransactionKind['client_id'] != client_id){
+      return Promise.reject(responseHelper.error({
         internal_error_identifier: 'tk_e_1',
         api_error_identifier: 'unauthorized_for_other_client',
         debug_options: {}
@@ -173,8 +191,8 @@ Edit.prototype = {
         errors_object.push('inappropriate_transactionname');
       }
       else {
-        var existingTKind = await new ClientTransactionTypeModel().getTransactionByName({clientId: clientId, name: name});
-        if(existingTKind.length > 0 && oThis.clientTransactionId != existingTKind.id){
+        var existingTKind = await new ClientTransactionTypeModel().getTransactionByName({client_id: oThis.currentTransactionKind[client_id], name: name});
+        if(existingTKind.length > 0 && oThis.params.id != existingTKind.id){
           errors_object['name'] = "Transaction kind name '"+ name +"' already present.";
         }
       }
@@ -182,7 +200,7 @@ Edit.prototype = {
     }
 
     if(errors_object.length > 0){
-      return Promise.resolve(responseHelper.paramValidationError({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 'tk_e_2',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: errors_object,
@@ -202,7 +220,7 @@ Edit.prototype = {
    */
   getCurrentTransactionKind: function(){
     var oThis = this;
-    return new ClientTransactionTypeModel().getTransactionById({clientTransactionId: oThis.clientTransactionId});
+    return new ClientTransactionTypeModel().getTransactionById({ clientTransactionId: oThis.params.id });
   },
 
   /**
@@ -216,14 +234,20 @@ Edit.prototype = {
     const oThis = this
     ;
 
-    if(oThis.params.client_id) oThis.transactionKindObj['client_id'] = oThis.params.client_id;
     if(oThis.params.name) oThis.transactionKindObj['name'] = oThis.params.name;
-    if(oThis.params.kind) oThis.transactionKindObj['kind'] = new ClientTransactionTypeModel().invertedKinds[oThis.params.kind];
+
     if(oThis.params.commission_percent) oThis.transactionKindObj['commission_percent'] = oThis.params.commission_percent;
+
+    if(oThis.params.kind) {
+      oThis.transactionKindObj['kind'] = oThis.params.kind;
+    }
+
+    console.log("transactionKindObj", oThis.transactionKindObj);
 
     await new ClientTransactionTypeModel().update(
       util.clone(oThis.transactionKindObj)
     ).where({id: oThis.clientTransactionId}).fire();
+
 
     new ClientTransactionTypeCacheKlass({client_id: oThis.currentTransactionKind['client_id'],
       transaction_kind: oThis.currentTransactionKind['name']}).clear();
@@ -237,24 +261,32 @@ Edit.prototype = {
    * @return {promise<result>} - returns a promise which resolves to an object of Result
    *
    */
-  returnResponse: function(){
+  returnResponse: async function(){
     const oThis = this
     ;
 
+    console.log("oThis.currentTransactionKind", oThis.currentTransactionKind);
+
+    var actionEntityFormatter = new ActionEntityFormatterKlass({
+      id: oThis.params.id,
+      client_id: oThis.currentTransactionKind.client_id,
+      name: oThis.params.name || oThis.currentTransactionKind.name,
+      kind: oThis.transactionKindObj['kind'] || new ClientTransactionTypeModel().kinds[oThis.currentTransactionKind.kind],
+      currency: new ClientTransactionTypeModel().currencyTypes[oThis.transactionKindObj['currency_type']]
+        || new ClientTransactionTypeModel().currencyTypes[oThis.currentTransactionKind.currency_type],
+      arbitrary_amount: oThis.params.arbitrary_amount,
+      amount: oThis.amount,
+      arbitrary_commission: oThis.params.arbitrary_commission,
+      commission_percent: oThis.params.commission_percent || oThis.currentTransactionKind.commission_percent,
+      uts: Date.now()
+    });
+
+    var actionEntityFormatterRsp = await actionEntityFormatter.perform();
+
     return Promise.resolve(responseHelper.successWithData(
       {
-        result_type: "transactions",
-        transactions: [{
-          id: oThis.clientTransactionId,
-          client_id: oThis.params.client_id,
-          name: oThis.params.name,
-          kind: oThis.params.kind,
-          currency_type: oThis.params.currency_type,
-          currency_value: oThis.params.currency_value,
-          device_id: oThis.params.device_id,
-          commission_percent: oThis.params.commission_percent,
-          uts: Date.now()
-        }]
+        result_type: "action",
+        action: actionEntityFormatterRsp.data
       }
     ));
   }

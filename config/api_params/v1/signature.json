@@ -113,12 +113,73 @@
       {
         "parameter": "arbitrary_amount",
         "error_identifier": "missing_arbitrary_amount"
+      },
+      {
+        "parameter": "client_id",
+        "error_identifier": "missing_client_id"
       }
     ],
     "optional":[
       "amount",
-      "arbitrary_commission",
+      "",
       "commission_percent"
+    ]
+  },
+  "update_action":{
+    "mandatory":[
+      {
+        "parameter": "arbitrary_amount",
+        "error_identifier": "missing_arbitrary_amount"
+      },
+      {
+        "parameter": "arbitrary_commission",
+        "error_identifier": "missing_arbitrary_commission"
+      },
+      {
+        "parameter": "client_id",
+        "error_identifier": "missing_client_id"
+      },
+      {
+        "parameter": "id",
+        "error_identifier": "missing_id"
+      }
+    ],
+    "optional":[
+      "name",
+      "currency",
+      "amount",
+      "commission_percent"
+    ]
+  },
+  "list_actions":{
+    "mandatory":[
+      {
+        "parameter": "client_id",
+        "error_identifier": "missing_client_id"
+      }
+    ],
+    "optional":[
+      "id",
+      "kind",
+      "currency",
+      "arbitrary_amount",
+      "arbitrary_commission",
+      "page_no",
+      "order_by",
+      "order",
+      "limit"
+    ]
+  },
+  "get_action": {
+    "mandatory":[
+      {
+        "parameter": "id",
+        "error_identifier": "missing_id"
+      },
+      {
+        "parameter": "client_id",
+        "error_identifier": "missing_client_id"
+      }
     ]
   }
 }

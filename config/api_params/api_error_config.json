@@ -159,6 +159,11 @@
     "code": "missing_client_id",
     "message": "Invalid client id"
   },
+  "missing_client_transaction_id": {
+    "http_code": "422",
+    "code": "missing_client_transaction_id",
+    "message": "Invalid client transaction id"
+  },
   "airdrop_requests_in_process": {
     "http_code": "422",
     "code": "airdrop_requests_in_process",

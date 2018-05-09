@@ -81,6 +81,44 @@ const ClientTransactionTypeModelSpecificPrototype = {
     return Promise.resolve(return_result);
   },
 
+  getAllExtended: async function (params) {
+    const oThis = this
+    ;
+
+    let limit = delete params.limit;
+    let offset = delete params.offset;
+
+    const query = oThis.select('*');
+
+    if(params.arbitrary_amount) {
+      query.where('(value_in_usd is null or value_in_bt_wei is null)');
+    } else {
+      query.where('(value_in_usd > 0 or value_in_bt_wei > 0)');
+    }
+
+    if(params.arbitrary_commission) {
+      query.where('commission_percent is null');
+    } else {
+      query.where('commission_percent > 0');
+    }
+
+    delete params.arbitrary_amount;
+    delete params.arbitrary_commission;
+
+    query.where(params);
+
+    if(limit) query.limit(limit);
+    if(offset) query.offset(offset);
+
+    const results = await query.fire();
+
+    for (var i = 0; i < results.length; i++) {
+      return_result.push(oThis.convertEnumForResult(results[i]));
+    }
+
+    return Promise.resolve(return_result);
+  },
+
   getTransactionById: function (params) {
     const oThis = this
     ;

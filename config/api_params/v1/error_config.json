@@ -19,6 +19,26 @@
     "code": "missing",
     "message": "missing name"
   },
+  "missing_kind": {
+    "parameter": "kind",
+    "code": "missing",
+    "message": "missing kind"
+  },
+  "missing_currency": {
+    "parameter": "currency",
+    "code": "missing",
+    "message": "missing currency"
+  },
+  "missing_arbitrary_amount": {
+    "parameter": "arbitrary_amount",
+    "code": "missing",
+    "message": "missing arbitrary amount"
+  },
+  "missing_arbitrary_commission": {
+    "parameter": "arbitrary_commission",
+    "code": "missing",
+    "message": "missing arbitrary commission"
+  },
   "invalid_username": {
     "parameter": "name",
     "message": "Must be a minimum of 3 characters, a maximum of 20 characters, and can contain only letters, numbers, and spaces, along with other common sense limitations."
@@ -113,5 +133,21 @@
     "parameter": "user_ids",
     "code": "invalid",
     "message": "Some of user ids passed for Airdrop are invalid."
+  },
+  "invalid_order_by": {
+    "parameter": "order_by",
+    "message": "Order by not valid on this field"
+  },
+  "invalid_limit": {
+    "parameter": "limit",
+    "message": "Limit is invalid"
+  },
+  "invalid_arbitrary_amount_filter": {
+    "parameter": "arbitrary_amount",
+    "message": "Filter on arbitrary_amount can have only one value"
+  },
+  "invalid_arbitrary_commission_filter": {
+    "parameter": "arbitrary_commission",
+    "message": "Filter on arbitrary_commission can have only one value"
   }
 }

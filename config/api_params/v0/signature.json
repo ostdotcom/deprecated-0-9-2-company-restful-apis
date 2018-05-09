@@ -48,7 +48,31 @@
     ]
   },
   "create_new_action": {
-    "mandatory": [],
+    "mandatory": [
+      {
+        "parameter": "client_id",
+        "error_identifier": "missing_client_id"
+      }
+    ],
+    "optional": [
+      "name",
+      "kind",
+      "currency_type",
+      "currency_value",
+      "commission_percent"
+    ]
+  },
+  "update_action": {
+    "mandatory": [
+      {
+        "parameter": "client_transaction_id",
+        "error_identifier": "missing_client_transaction_id"
+      },
+      {
+      "parameter": "client_id",
+      "error_identifier": "missing_client_id"
+      }
+    ],
     "optional": [
       "name",
       "kind",
@@ -65,5 +89,13 @@
       }
     ],
     "optional":[]
+  },
+  "list_transactions": {
+    "mandatory": [
+      {
+        "parameter": "client_id",
+        "error_identifier": "missing_client_id"
+      }
+    ]
   }
 }

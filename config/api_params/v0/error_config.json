@@ -134,6 +134,10 @@
     "parameter": "client_transaction_id",
     "message": "Invalid client_transaction_id"
   },
+  "transaction_kind_not_editable": {
+    "parameter": "kind",
+    "message": "Kind is not editable"
+  },
   "invalid_from_user_uuid": {
     "parameter": "from_uuid",
     "message": "Invalid from_uuid"
