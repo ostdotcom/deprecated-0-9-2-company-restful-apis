@@ -13,7 +13,7 @@ const rootPrefix = "../../.."
   , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , BTSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
-  , executeTransactionKlass = require(rootPrefix + '/app/services/transaction/execute_transaction')
+  , executeTransactionKlass = require(rootPrefix + '/app/services/transaction/execute')
   , EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points')
@@ -105,8 +105,7 @@ simulateRandomTransactionKlass.prototype = {
 
     var r = await oThis.sendTransaction(r.data);
 
-    return Promise.resolve(r);
-
+    return Promise.resolve(r.data.transaction);
   },
 
   /**
@@ -348,8 +347,8 @@ simulateRandomTransactionKlass.prototype = {
 
         // we could add a check here to fetch reserve balance
         txParams['transaction_kind'] = randomTrxType.name;
-        txParams['from_uuid'] = oThis.clientBrandedToken['reserve_address_uuid'];
-        txParams['to_uuid'] = oThis.randomUsers[0]['uuid'];
+        txParams['from_user_id'] = oThis.clientBrandedToken['reserve_address_uuid'];
+        txParams['to_user_id'] = oThis.randomUsers[0]['uuid'];
         break;
 
       } else {
@@ -361,16 +360,16 @@ simulateRandomTransactionKlass.prototype = {
         for(var j=0; j<oThis.randomUsers.length; j++) {
 
           randomFromUser = oThis.randomUsers[j];
-          txParams['from_uuid'] = randomFromUser['uuid'];
+          txParams['from_user_id'] = randomFromUser['uuid'];
 
           if (randomTrxType.kind === clientTxTypesConst.userToCompanyKind) {
-            txParams['to_uuid'] = oThis.clientBrandedToken['reserve_address_uuid'];
+            txParams['to_user_id'] = oThis.clientBrandedToken['reserve_address_uuid'];
           } else {
             randomToUser = oThis.randomUsers[j+1];
             if(!randomToUser) {
               randomToUser = oThis.randomUsers[0];
             }
-            txParams['to_uuid'] = randomToUser['uuid'];
+            txParams['to_user_id'] = randomToUser['uuid'];
           }
 
           breakOuterLoop = true;
