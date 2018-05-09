@@ -135,7 +135,7 @@ AddNew.prototype = {
     if (currency == clientTxTypesConst.usdCurrencyType ) {
       if ( !commonValidator.validateArbitraryAmount(amount, arbitrary_amount) ){
         errors_object.push('invalid_amount_arbitrary_combination');
-      } else if( commonValidator.validateUsdAmount(amount) ){
+      } else if( !commonValidator.validateUsdAmount(amount) ){
         errors_object.push('out_of_bound_transaction_usd_value');
       }
       oThis.transactionKindObj.value_in_usd = amount;
@@ -156,15 +156,20 @@ AddNew.prototype = {
       errors_object.push('invalid_currency');
     }
 
-    var isValidCommissionPercent = true;
+    var isValidCommissionPercent = false;
 
     if( !commonValidator.validateArbitraryCommissionPercent(commission_percent, arbitrary_commission)) {
       errors_object.push('invalid_commission_arbitrary_combination');
-    } else if(!commonValidator.commissionPercentValid(commission_percent)) {
-
-      isValidCommissionPercent = false;
-      errors_object.push('invalid_commission_percent');
     }
+
+    if (!commonValidator.isVarNull(commission_percent)) {
+      if(commonValidator.commissionPercentValid(commission_percent)) {
+        isValidCommissionPercent = true;
+      } else {
+        errors_object.push('invalid_commission_percent');
+      }
+    }
+
     if(isValidCommissionPercent && kind != clientTxTypesConst.userToUserKind) {
       errors_object.push('invalid_commission_percent');
     }
