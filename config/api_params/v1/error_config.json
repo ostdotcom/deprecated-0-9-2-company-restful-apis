@@ -165,5 +165,20 @@
   "invalid_to_user_id": {
     "parameter": "to_user_id",
     "message": "Invalid to user id."
+  },
+  "missing_from_user_id": {
+    "parameter": "from_user_id",
+    "code": "missing",
+    "message": "Missing from_user_id"
+  },
+  "missing_to_user_id": {
+    "parameter": "to_user_id",
+    "code": "missing",
+    "message": "Missing to_user_id"
+  },
+  "missing_action_id": {
+    "parameter": "action_id",
+    "code": "missing",
+    "message": "Missing action_id"
   }
 }

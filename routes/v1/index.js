@@ -24,7 +24,7 @@ router.use('/token', tokenRoutes);
 
 router.use('/actions', actionRoutes);
 
-// router.use('/transactions', transactionsRoutes);
+router.use('/transactions', transactionsRoutes);
 //
 // router.use('/airdrops', airdropsRoutes);
 //

@@ -121,7 +121,6 @@
     ],
     "optional":[
       "amount",
-      "",
       "commission_percent"
     ]
   },
@@ -180,6 +179,26 @@
         "parameter": "client_id",
         "error_identifier": "missing_client_id"
       }
+    ]
+  },
+  "execute_transaction":{
+    "mandatory":[
+      {
+        "parameter": "from_user_id",
+        "error_identifier": "missing_from_user_id"
+      },
+      {
+        "parameter": "to_user_id",
+        "error_identifier": "missing_to_user_id"
+      },
+      {
+        "parameter": "action_id",
+        "error_identifier": "missing_action_id"
+      }
+    ],
+    "optional":[
+      "amount",
+      "commission_percent"
     ]
   }
 }
