@@ -52,6 +52,11 @@
     "code": "invalid",
     "message": "order users in 'desc' (default) or 'asc' order."
   },
+  "invalid_id_user": {
+    "parameter": "uuid",
+    "code": "invalid",
+    "message": "invalid uuid passed"
+  },
   "invalid_filter_user_list": {
     "parameter": "filter",
     "code": "invalid",
