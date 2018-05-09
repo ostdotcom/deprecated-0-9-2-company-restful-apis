@@ -149,5 +149,21 @@
   "invalid_arbitrary_commission_filter": {
     "parameter": "arbitrary_commission",
     "message": "Filter on arbitrary_commission can have only one value"
+  },
+  "invalid_amount": {
+    "parameter": "amount",
+    "message": "Invalid amount."
+  },
+  "invalid_commission_percent": {
+    "parameter": "amount",
+    "message": "Invalid commision percent."
+  },
+  "invalid_from_user_id": {
+    "parameter": "from_user_id",
+    "message": "Invalid from user id."
+  },
+  "invalid_to_user_id": {
+    "parameter": "to_user_id",
+    "message": "Invalid to user id."
   }
 }
