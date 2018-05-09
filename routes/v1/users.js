@@ -4,9 +4,7 @@ const express = require('express')
 ;
 
 const rootPrefix = '../..'
-    , responseHelper = require(rootPrefix + '/lib/formatter/response')
     , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
-    , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
     , routeHelper = require(rootPrefix + '/routes/helper')
 ;
 
