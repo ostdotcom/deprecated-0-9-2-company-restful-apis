@@ -269,7 +269,7 @@ SetupToken.prototype = {
           var r = await generateEthAddress.perform();
           if (r.isFailure()) return onResolve(r);
           const resultData = r.data[r.data.result_type];
-          oThis.workerAddrUuids.push(resultData.uuid);
+          oThis.workerAddrUuids.push(resultData.id);
         }
 
         const manageAddrObjs = await new ManagedAddressModel().getByUuids(oThis.workerAddrUuids);
