@@ -6,7 +6,6 @@ const express = require('express')
 const rootPrefix = '../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , listAddressesKlass = require(rootPrefix + '/app/services/client_users/list')
   , getAirdropStatusKlass = require(rootPrefix + '/app/services/airdrop_management/get_airdrop_status')
   , ucBalanceFetcherKlass = require(rootPrefix + '/app/services/address/utilityChainBalancesFetcher')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
