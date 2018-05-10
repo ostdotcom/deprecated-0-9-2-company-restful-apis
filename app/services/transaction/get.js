@@ -65,30 +65,9 @@ GetTransactionsService.prototype = {
     const oThis = this
     ;
 
-    await oThis._validateAndSanitize();
-
     await oThis._fetchRecord();
 
     return oThis._formatApiResponse();
-  },
-
-  /**
-   * Validate and sanitize
-   *
-   * @return {promise<result>}
-   */
-  _validateAndSanitize: function () {
-    const oThis = this
-    ;
-
-    return basicHelper.isUuidValid(oThis.transactionUuid) ?
-      responseHelper.successWithData({}) :
-      Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 'xxxxx',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_id_transaction_get'],
-        debug_options: {clientId: oThis.clientId, id: oThis.transactionUuid}
-      }));
   },
 
   /**
@@ -107,7 +86,7 @@ GetTransactionsService.prototype = {
     // if no records found, return error.
     if (!records[0]) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 'xxxxx',
+        internal_error_identifier: 's_t_g_2',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_id_transaction_get'],
         debug_options: {clientId: oThis.clientId, id: oThis.transactionUuid}
@@ -117,7 +96,7 @@ GetTransactionsService.prototype = {
     // if the record if from another client_id, return error
     if (oThis.clientId != records[0].client_id) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 'xxxxx',
+        internal_error_identifier: 's_t_g_3',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_id_transaction_get'],
         debug_options: {clientId: oThis.clientId, id: oThis.transactionUuid}
@@ -148,7 +127,7 @@ GetTransactionsService.prototype = {
 
     if (transactionEntityFormatterRsp.isFailure()) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 'xxxxx',
+        internal_error_identifier: 's_t_g_4',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_id_transaction_get'],
         debug_options: {clientId: oThis.clientId, id: oThis.transactionUuid}
