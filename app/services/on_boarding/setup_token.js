@@ -264,7 +264,7 @@ SetupToken.prototype = {
         for(var i=0; i<oThis.allowedWorkersCnt; i++) {
           var generateEthAddress = new GenerateEthAddressKlass({
             addressType: managedAddressesConst.workerAddressType,
-            clientId: oThis.clientId
+            client_id: oThis.clientId
           });
           var r = await generateEthAddress.perform();
           if (r.isFailure()) return onResolve(r);
@@ -306,7 +306,7 @@ SetupToken.prototype = {
       } else {
         const generateEthAddress = new GenerateEthAddressKlass({
             addressType: managedAddressesConst.airdropHolderAddressType,
-            clientId: oThis.clientId
+            client_id: oThis.clientId
         });
         var r = await generateEthAddress.perform();
         if (r.isFailure()) return onResolve(r);
