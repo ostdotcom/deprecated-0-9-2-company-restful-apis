@@ -133,7 +133,6 @@ const TransactionLogKlassPrototype = {
   },
 
   /**
-   *
    * @param ids - Array of Ids
    * @return {Promise<>}
    */
@@ -141,6 +140,24 @@ const TransactionLogKlassPrototype = {
     const oThis = this;
     const dbRecords = await oThis.select('*').
               where(['id IN (?)', ids]).fire();
+    return oThis._formatDbRecords(dbRecords);
+  },
+
+  /**
+   * @param clientId - client id
+   * @param limit - limit
+   * @param offset - offset
+   * @param orderBy - order by
+   * @param order - order
+   *
+   * @return {promise}
+   */
+  getList: async function (clientId, limit, offset, orderBy, order) {
+    const oThis = this;
+
+    const dbRecords = await oThis.select('*').where(['client_id = ?', clientId])
+      .limit(limit).offset(offset).order_by(`${orderBy} ${order}`).fire();
+
     return oThis._formatDbRecords(dbRecords);
   },
 

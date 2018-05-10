@@ -108,14 +108,9 @@ ExecuteTransactionService.prototype = {
     // Transaction would be set in background & response would be returned with uuid.
     await oThis.enqueueTxForExecution();
 
+    let dbRecords = await new transactionLogModel().getById([oThis.transactionLogId]);
 
-    const transactionEntityFormatter = new TransactionEntityFormatterKlass({
-        id: oThis.transactionUuid,
-        from_user_id: oThis.fromUuid,
-        to_user_id: oThis.toUuid,
-        transaction_hash: '',
-        action_id: oThis.transactionKindId
-      })
+    const transactionEntityFormatter = new TransactionEntityFormatterKlass(dbRecords[0])
       , transactionEntityFormatterRsp = await transactionEntityFormatter.perform()
     ;
 
@@ -125,7 +120,6 @@ ExecuteTransactionService.prototype = {
     };
 
     return Promise.resolve(responseHelper.successWithData(apiResponseData));
-
   },
 
   /**

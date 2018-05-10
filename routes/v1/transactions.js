@@ -29,4 +29,23 @@ router.post('/', function (req, res, next) {
   Promise.resolve(routeHelper.performer(req, res, next, CreateUserKlass, 'r_v1_t_1'));
 });
 
+/**
+ * List transactions from a client
+ *
+ * @name List Transactions
+ *
+ * @route {GET} {base_url}/transactions
+ *
+ * @routeparam {number} :page_no (optional) - page number (starts from 1)
+ * @routeparam {string} :order_by (optional) - order the list by 'created' (default)
+ * @routeparam {string} :order (optional) - order list in 'desc' (default) or 'asc' order.
+ * @routeparam {number} :limit (optional) - Min 1, Max 100, Default 10.
+ */
+router.get('/', function (req, res, next) {
+  const GetTransactionListService = require(rootPrefix + '/app/services/transaction/list');
+  req.decodedParams.apiName = 'list_transactions';
+
+  Promise.resolve(routeHelper.performer(req, res, next, GetTransactionListService, 'r_v1_t_2'));
+});
+
 module.exports = router;
