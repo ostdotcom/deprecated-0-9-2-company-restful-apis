@@ -48,4 +48,21 @@ router.get('/', function (req, res, next) {
   Promise.resolve(routeHelper.performer(req, res, next, GetTransactionListService, 'r_v1_t_2'));
 });
 
+/**
+ * Get transaction by id
+ *
+ * @name Get Transaction
+ *
+ * @route {GET} {base_url}/transactions/:id
+ *
+ * @routeparam {number} :id (mandatory) - id of the transaction
+ */
+router.get('/:id', function (req, res, next) {
+  const GetTransactionService = require(rootPrefix + '/app/services/transaction/get');
+  req.decodedParams.apiName = 'get_transaction';
+  req.decodedParams.id = req.params.id;
+
+  Promise.resolve(routeHelper.performer(req, res, next, GetTransactionService, 'r_v1_t_3'));
+});
+
 module.exports = router;
