@@ -241,7 +241,8 @@
       "page_no",
       "order_by",
       "order",
-      "limit"
+      "limit",
+      "id"
     ]
   },
   "get_transaction":{

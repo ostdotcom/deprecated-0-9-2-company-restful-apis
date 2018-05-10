@@ -144,10 +144,10 @@
     "code": "invalid",
     "message": "order the list by 'created' (default) for Now."
   },
-  "invalid_id_airdrop_list": {
+  "invalid_id_filter": {
     "parameter": "id",
     "code": "invalid",
-    "message": "id should have comma seperated airdrop ids (max 100)"
+    "message": "id should have comma separated airdrop ids (max 100)"
   },
   "invalid_current_status_airdrop_list": {
     "parameter": "current_status",

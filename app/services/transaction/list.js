@@ -11,6 +11,7 @@ const rootPrefix = '../../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , commonValidator = require(rootPrefix + '/lib/validators/common')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
   , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/transaction')
 ;
 
@@ -23,6 +24,7 @@ const rootPrefix = '../../..'
  * @param {string} params.order_by (optional) - order the list by 'created' (default)
  * @param {string} params.order (optional) - order list in 'desc' (default) or 'asc' order.
  * @param {number} params.limit (optional) - Min 1, Max 100, Default 10.
+ * @param {string} params.id (optional) - comma separated ids to filter
  */
 const ListTransactionsService = function (params) {
   const oThis = this
@@ -33,7 +35,9 @@ const ListTransactionsService = function (params) {
   oThis.orderBy = params.order_by;
   oThis.order = params.order;
   oThis.limit = params.limit;
+  oThis.idsFilterStr = params.id;
 
+  oThis.idsFilterArr = [];
   oThis.offset = null;
   oThis.listRecords = null;
 };
@@ -90,7 +94,7 @@ ListTransactionsService.prototype = {
 
     if ((oThis.pageNo && oThis.pageNo < 1) || oThis.pageNo == 0) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 'xxxxx',
+        internal_error_identifier: 's_t_l_2',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_page_no'],
         debug_options: {clientId: oThis.clientId}
@@ -103,7 +107,7 @@ ListTransactionsService.prototype = {
     // only possible value for order by is created
     if (oThis.orderBy && (oThis.orderBy.toLowerCase() != 'created')) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 'xxxxx',
+        internal_error_identifier: 's_t_l_3',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_order_by'],
         debug_options: {clientId: oThis.clientId}
@@ -116,7 +120,7 @@ ListTransactionsService.prototype = {
 
     if (oThis.order && !commonValidator.isValidOrderingString(oThis.order)) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 'xxxxx',
+        internal_error_identifier: 's_t_l_4',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_order'],
         debug_options: {clientId: oThis.clientId}
@@ -128,7 +132,7 @@ ListTransactionsService.prototype = {
 
     if ((oThis.limit && (oThis.limit < 1 || oThis.limit > 100)) || oThis.limit == 0) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 'xxxxx',
+        internal_error_identifier: 's_t_l_5',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_pagination_limit'],
         debug_options: {clientId: oThis.clientId}
@@ -137,6 +141,20 @@ ListTransactionsService.prototype = {
 
     oThis.limit = oThis.limit || 10;
     oThis.offset = (oThis.pageNo - 1) * oThis.limit;
+
+    if (oThis.idsFilterStr && oThis.idsFilterStr.length > 0) {
+      oThis.idsFilterArr = basicHelper.commaSeperatedStrToArray(oThis.idsFilterStr);
+      if (oThis.idsFilterArr.length > 100) {
+        return Promise.reject(responseHelper.paramValidationError({
+          internal_error_identifier: 's_t_l_6',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: ['invalid_id_filter'],
+          debug_options: {clientId: oThis.clientId}
+        }));
+      }
+    }
+
+    return responseHelper.successWithData({});
   },
 
   /**
@@ -151,7 +169,7 @@ ListTransactionsService.prototype = {
     ;
 
     oThis.listRecords = await new transactionLogModel().getList(oThis.clientId,
-      oThis.limit, oThis.offset, oThis.orderBy, oThis.order);
+      oThis.limit, oThis.offset, oThis.orderBy, oThis.order, {id: oThis.idsFilterArr});
 
     return Promise.resolve(responseHelper.successWithData({}));
   },

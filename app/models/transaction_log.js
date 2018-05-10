@@ -152,11 +152,17 @@ const TransactionLogKlassPrototype = {
    *
    * @return {promise}
    */
-  getList: async function (clientId, limit, offset, orderBy, order) {
+  getList: async function (clientId, limit, offset, orderBy, order, filters) {
     const oThis = this;
 
-    const dbRecords = await oThis.select('*').where(['client_id = ?', clientId])
-      .limit(limit).offset(offset).order_by(`${orderBy} ${order}`).fire();
+    let query = oThis.select('*').where(['client_id = ?', clientId])
+      .limit(limit).offset(offset).order_by(`${orderBy} ${order}`);
+
+    if(filters.id && filters.id.length > 0) {
+      query.where(['id IN (?)', filters.id]);
+    }
+
+    const dbRecords = await query.fire();
 
     return oThis._formatDbRecords(dbRecords);
   },

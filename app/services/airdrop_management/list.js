@@ -196,7 +196,7 @@ ListAirdropsKlass.prototype = {
     if (oThis.airdropIdsString) {
       oThis.airdropIdsForFiltering = basicHelper.commaSeperatedStrToArray(oThis.airdropIdsString);
       if (oThis.airdropIdsForFiltering.length > 100) {
-        errors_object.push('invalid_id_airdrop_list');
+        errors_object.push('invalid_id_filter');
       }
     }
 
