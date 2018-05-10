@@ -39,7 +39,7 @@ router.post('/:id', function (req, res, next) {
   Promise.resolve(routeHelper.performer(req, res, next, editTransactionKlass, 'r_v1_a_2'));
 });
 
-/* Get list of transactions types */
+/* Get list of actions */
 router.get('/', function (req, res, next) {
 
   req.decodedParams.apiName = 'list_actions';

@@ -17,17 +17,17 @@ var rootPrefix = '../../..'
   , ActionEntityFormatterKlass = require(rootPrefix +'/lib/formatter/entities/latest/action')
 ;
 
-const List = function(params){
+const GetAction = function(params){
 
   var oThis = this;
 
-  oThis.params = params;
+  oThis.id = params.id;
   oThis.clientId = params.client_id;
   oThis.transactionTypes = [];
 
 };
 
-List.prototype = {
+GetAction.prototype = {
 
   perform: function(){
     const oThis = this;
@@ -64,9 +64,16 @@ List.prototype = {
 
     var oThis = this;
 
-    oThis.id = oThis.params.id;
+    if(isNaN(oThis.id)) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_tk_g_1',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_id'],
+        debug_options: {clientId: oThis.clientId}
+      }));
+    }
 
-
+    return Promise.resolve({});
   },
 
   getTransactionKind: async function () {
@@ -117,4 +124,4 @@ List.prototype = {
   }
 };
 
-module.exports = List;
+module.exports = GetAction;

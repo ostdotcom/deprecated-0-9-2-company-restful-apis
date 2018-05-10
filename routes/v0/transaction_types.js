@@ -16,6 +16,8 @@ router.get('/list', function (req, res, next) {
 
   req.decodedParams.apiName = 'list_transactions';
 
+  req.decodedParams.extra_entities = ['client_tokens', 'price_points'];
+
   const transactionListKlass = require(rootPrefix + '/app/services/transaction_kind/list');
 
   const dataFormatterFunc = async function(response) {
@@ -31,10 +33,6 @@ router.get('/list', function (req, res, next) {
 
     response.data.result_type = 'transactions';
     response.data.transactions = transactions;
-    response.data.client_tokens = response.data.extra_entities.client_tokens;
-    response.data.price_points = response.data.extra_entities.price_points;
-
-    delete response.data.extra_entities;
 
   };
 

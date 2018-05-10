@@ -116,6 +116,9 @@
         "parameter": "client_id",
         "error_identifier": "missing_client_id"
       }
+    ],
+    "optional": [
+      "extra_entities"
     ]
   },
   "execute_transaction":{

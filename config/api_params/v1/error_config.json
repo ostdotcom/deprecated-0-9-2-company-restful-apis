@@ -190,5 +190,9 @@
     "parameter": "action_id",
     "code": "missing",
     "message": "Missing action_id"
+  },
+  "invalid_id": {
+    "parameter": "action_id",
+    "message": "Missing id"
   }
 }

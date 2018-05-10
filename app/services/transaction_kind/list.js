@@ -26,13 +26,27 @@ var rootPrefix = '../../..'
  * @param params
  * @constructor
  */
-const List = function(params){
+const List = function(params) {
 
   const oThis = this;
 
-  oThis.params = params;
+  oThis.clientId = params.client_id;
+  oThis.page_no = params.page_no || 1;
+  oThis.order_by = (params.order_by || 'created').toLowerCase();
+  oThis.order = (params.order || 'desc').toLowerCase();
+  oThis.limit = params.limit || 10;
+  oThis.offset = (oThis.page_no - 1) * oThis.limit;
+  oThis.extra_entities = params.extra_entities || [];
+  oThis.where = {};
+
+  if(params.id) oThis.where.id = basicHelper.commaSeperatedStrToArray(params.id);
+  if(params.name) oThis.where.name = basicHelper.commaSeperatedStrToArray(params.name);
+  if(params.kind) oThis.kind = basicHelper.commaSeperatedStrToArray(params.kind);
+  oThis.currencies = basicHelper.commaSeperatedStrToArray((params.currency || ''));
+  oThis.arbitrary_amount = basicHelper.commaSeperatedStrToArray((params.arbitrary_amount || ''));
+  oThis.arbitrary_commission = basicHelper.commaSeperatedStrToArray((params.arbitrary_commission || ''));
+
   oThis.transactionTypes = [];
-  oThis.clientTokens = [];
 
   oThis.allPromises = [];
 
@@ -62,7 +76,7 @@ List.prototype = {
             debug_options: {}
           });
         }
-      })
+      });
   },
 
   /**
@@ -78,7 +92,7 @@ List.prototype = {
 
     oThis.allPromises.push(oThis.getTransactionKinds());
 
-    oThis.allPromises.push(oThis.getClientTokens());
+    oThis.allPromises.push(oThis.getExtraData());
 
     return oThis.prepareApiResponse();
 
@@ -92,9 +106,7 @@ List.prototype = {
 
     var oThis = this;
 
-    oThis.clientId = oThis.params.client_id;
-
-    if( oThis.params.page_no && oThis.params.page_no < 1 ){
+    if( oThis.page_no < 1 ){
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_1',
         api_error_identifier: 'invalid_api_params',
@@ -103,9 +115,7 @@ List.prototype = {
       }));
     }
 
-    oThis.page_no = oThis.params.page_no || 1;
-
-    if ( oThis.params.order_by && (oThis.params.order_by != 'created' && oThis.params.order_by != 'name') ) {
+    if ( oThis.order_by != 'created' && oThis.order_by != 'name' ) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_2',
         api_error_identifier: 'invalid_api_params',
@@ -114,9 +124,7 @@ List.prototype = {
       }));
     }
 
-    oThis.order_by = oThis.params.order_by || 'created';
-
-    if (oThis.params.order && !commonValidator.isValidOrderingString(oThis.params.order)) {
+    if ( !commonValidator.isValidOrderingString(oThis.order) ) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_7',
         api_error_identifier: 'invalid_api_params',
@@ -125,9 +133,7 @@ List.prototype = {
       }));
     }
 
-    oThis.order = oThis.params.order || 'desc';
-
-    if ( oThis.params.limit && (oThis.params.limit < 1 || oThis.params.limit > 100) ) {
+    if ( oThis.limit < 1 || oThis.limit > 100 ) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_3',
         api_error_identifier: 'invalid_api_params',
@@ -136,16 +142,8 @@ List.prototype = {
       }));
     }
 
-    oThis.limit = oThis.params.limit || 10;
-
-    oThis.offset = (oThis.page_no - 1) * oThis.limit;
-
-    oThis.where = {};
-
-    if(oThis.params.id) oThis.where.id = basicHelper.commaSeperatedStrToArray(oThis.params.id);
-    if(oThis.params.name) oThis.where.name = basicHelper.commaSeperatedStrToArray(oThis.params.name);
-    if(oThis.params.kind) {
-      let kinds = basicHelper.commaSeperatedStrToArray(oThis.params.kind);
+    if(oThis.kind) {
+      let kinds = basicHelper.commaSeperatedStrToArray(oThis.kind);
       kinds = kinds.map(function(kind){
         let val = new ClientTransactionTypeModel().invertedKinds[kind];
         return Number(val);
@@ -153,9 +151,7 @@ List.prototype = {
       oThis.where.kind = kinds;
     }
 
-    let currencies = basicHelper.commaSeperatedStrToArray((oThis.params.currency || ''));
-
-    if(currencies.length > 1) {
+    if(oThis.currencies.length > 1) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_4',
         api_error_identifier: 'invalid_api_params',
@@ -164,11 +160,9 @@ List.prototype = {
       }));
     }
 
-    if(currencies[0] != '') oThis.where.currency_type = new ClientTransactionTypeModel().invertedCurrencyTypes[currencies[0]];
+    if(oThis.currencies[0] != '') oThis.where.currency_type = new ClientTransactionTypeModel().invertedCurrencyTypes[oThis.currencies[0]];
 
-    let arbitrary_amount = basicHelper.commaSeperatedStrToArray((oThis.params.arbitrary_amount || ''));
-
-    if(arbitrary_amount.length > 1) {
+    if(oThis.arbitrary_amount.length > 1) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_5',
         api_error_identifier: 'invalid_api_params',
@@ -177,11 +171,9 @@ List.prototype = {
       }));
     }
 
-    if(oThis.arbitrary_amount != '') oThis.arbitrary_amount = arbitrary_amount[0];
+    if(oThis.arbitrary_amount != '') oThis.arbitrary_amount = oThis.arbitrary_amount[0];
 
-    let arbitrary_commission = basicHelper.commaSeperatedStrToArray((oThis.params.arbitrary_commission || ''));
-
-    if(arbitrary_commission.length > 1) {
+    if(oThis.arbitrary_commission.length > 1) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_6',
         api_error_identifier: 'invalid_api_params',
@@ -190,7 +182,7 @@ List.prototype = {
       }));
     }
 
-    if (oThis.arbitrary_commission != '') oThis.arbitrary_commission = arbitrary_commission[0];
+    if (oThis.arbitrary_commission != '') oThis.arbitrary_commission = oThis.arbitrary_commission[0];
 
     return Promise.resolve({});
 
@@ -210,6 +202,8 @@ List.prototype = {
       const result = await oThis.getAllFilteredActions().catch(function(err){
         onReject(err);
       });
+
+      oThis.total_no = result.length;
 
       let amount = null;
       let arbitrary_amount = null;
@@ -286,7 +280,7 @@ List.prototype = {
     if(oThis.offset) query.offset(oThis.offset);
 
     if(oThis.order_by) {
-      let order_by = (oThis.order_by == 'name' ? 'name' : 'id')
+      let order_by = (oThis.order_by == 'name' ? 'name' : 'id');
       query.order_by(`${order_by} ${oThis.order}`);
     }
 
@@ -302,21 +296,28 @@ List.prototype = {
   },
 
   /**
-   * getClientTokens - Get client token data
+   * getExtraData - Get client token data
    *
    * @returns {Promise}
    */
-  getClientTokens: function(){
+  getExtraData: function(){
 
     const oThis = this;
 
     return new Promise(async function (onResolve, onReject) {
 
-      const clientBrandedTokenCacheObj = new ClientBrandedTokenCacheKlass({clientId: oThis.clientId});
+      if (oThis.extra_entities.includes('client_tokens')) {
 
-      const clientBrandedTokenCacheResp = await clientBrandedTokenCacheObj.fetch();
+        const clientBrandedTokenCacheObj = new ClientBrandedTokenCacheKlass({clientId: oThis.clientId});
 
-      oThis.clientTokens = clientBrandedTokenCacheResp.data;
+        const clientBrandedTokenCacheResp = await clientBrandedTokenCacheObj.fetch();
+
+        oThis.clientTokens = clientBrandedTokenCacheResp.data;
+      }
+
+      if (oThis.extra_entities.includes('price_points')) {
+        oThis.ostPrices = await new ostPriceCacheKlass().fetch();
+      }
 
       onResolve();
 
@@ -335,17 +336,13 @@ List.prototype = {
 
     await Promise.all(oThis.allPromises);
 
-    const ostPrices = await new ostPriceCacheKlass().fetch();
-
     return Promise.resolve(responseHelper.successWithData(
       {
         result_type: 'actions',
         actions: oThis.transactionTypes,
         meta: {next_page_payload: {}},
-        extra_entities: {
-          client_tokens: oThis.clientTokens,
-          price_points: ostPrices
-        }
+        client_tokens: oThis.clientTokens,
+        price_points: oThis.ostPrices
       }
     ));
   }
