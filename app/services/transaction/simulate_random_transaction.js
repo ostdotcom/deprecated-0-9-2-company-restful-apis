@@ -103,9 +103,10 @@ simulateRandomTransactionKlass.prototype = {
       return Promise.resolve(r);
     }
 
+    console.log("-----------------r.data--", r.data);
     var r = await oThis.sendTransaction(r.data);
 
-    return Promise.resolve(r.data.transaction);
+    return Promise.resolve(r);
   },
 
   /**
@@ -457,7 +458,7 @@ simulateRandomTransactionKlass.prototype = {
 
     const oThis = this;
 
-    if(!txParams.from_uuid || !txParams.to_uuid){
+    if(!txParams.from_user_id || !txParams.to_user_id){
       return Promise.resolve(responseHelper.error({
         internal_error_identifier: 's_tr_srt_8',
         api_error_identifier: 'something_went_wrong',
@@ -465,7 +466,7 @@ simulateRandomTransactionKlass.prototype = {
       }));
     }
 
-    if(txParams.from_uuid === txParams.to_uuid){
+    if(txParams.from_user_id === txParams.to_user_id){
       return Promise.resolve(responseHelper.error({
         internal_error_identifier: 's_tr_srt_9',
         api_error_identifier: 'something_went_wrong',
