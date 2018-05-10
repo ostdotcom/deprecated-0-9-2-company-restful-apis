@@ -254,8 +254,8 @@ GetTransactionDetailKlass.prototype = {
 
     for (var i = 0; i < economyUsersRecords.length; i++) {
 
-      //TODO: We need to add a var for supported entities in this API. to return users only when passed.
-      //TODO: Fetch actual balances here. for now had to add 0 values for code to work.
+      //TODO:Kedar We need to add a var for supported entities in this API. to return users only when passed.
+      //TODO:Kedar Fetch actual balances here. for now had to add 0 values for code to work.
 
       const currRecord = economyUsersRecords[i]
           , userData = {
