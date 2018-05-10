@@ -169,7 +169,7 @@ ListTransactionsService.prototype = {
     ;
 
     oThis.listRecords = await new transactionLogModel().getList(oThis.clientId,
-      oThis.limit, oThis.offset, oThis.orderBy, oThis.order, {id: oThis.idsFilterArr});
+      oThis.limit + 1, oThis.offset, oThis.orderBy, oThis.order, {id: oThis.idsFilterArr});
 
     return Promise.resolve(responseHelper.successWithData({}));
   },
@@ -187,11 +187,22 @@ ListTransactionsService.prototype = {
 
     let apiResponseData = {
       result_type: 'transactions',
-      transactions: []
+      transactions: [],
+      meta: {
+        next_page_payload: {}
+      }
     };
 
-    for (var i = 0; i < oThis.listRecords.length; i++) {
+    let hasMore = false;
+
+    for (var i = 0; i < oThis.listRecords; i++) {
       let dbRecord = oThis.listRecords[i];
+
+      if (i == oThis.limit) {
+        // as we fetched limit + 1, ignore that extra one
+        hasMore = true;
+        continue
+      }
 
       let transactionEntityFormatter = new TransactionEntityFormatterKlass(dbRecord)
         , transactionEntityFormatterRsp = await transactionEntityFormatter.perform()
@@ -200,6 +211,21 @@ ListTransactionsService.prototype = {
       if (transactionEntityFormatterRsp.isFailure()) continue;
 
       apiResponseData.transactions.push(transactionEntityFormatterRsp.data);
+    }
+
+    if (hasMore) {
+      let nextPagePayload = {
+        order_by: oThis.orderBy,
+        order: oThis.order,
+        limit: oThis.limit,
+        page_no: oThis.pageNo + 1
+      };
+
+      if (oThis.idsFilterStr && oThis.idsFilterStr.length > 0) {
+        nextPagePayload.id = oThis.idsFilterStr;
+      }
+
+      apiResponseData.meta.next_page_payload = nextPagePayload;
     }
 
     return responseHelper.successWithData(apiResponseData);

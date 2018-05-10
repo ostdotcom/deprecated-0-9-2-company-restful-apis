@@ -93,14 +93,14 @@ ListAirdropsKlass.prototype = {
       current_statuses: oThis.currentStatusForFiltering
     });
 
-    var airdropsList = []
+    let airdropsList = []
       , hasMore = false
     ;
 
     for (var i = 0; i < queryResponse.length; i++) {
       const record = queryResponse[i];
 
-      if (i === oThis.limit) {
+      if (i == oThis.limit) {
         // as we fetched limit + 1, ignore that extra one
         hasMore = true;
         continue
@@ -127,8 +127,17 @@ ListAirdropsKlass.prototype = {
       next_page_payload = {
         order_by: oThis.orderBy,
         order: oThis.order,
-        page_no: oThis.pageNo + 1
+        page_no: oThis.pageNo + 1,
+        limit: oThis.limit
       };
+
+      if (oThis.airdropIdsString) {
+        next_page_payload.id = oThis.airdropIdsString;
+      }
+
+      if (oThis.currentStatusForFiltering) {
+        next_page_payload.current_status = oThis.currentStatusString;
+      }
 
       if (!commonValidator.isVarNull(oThis.airdropped)) {
         next_page_payload.airdropped = oThis.airdropped;
