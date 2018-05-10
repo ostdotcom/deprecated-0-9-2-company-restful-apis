@@ -147,11 +147,13 @@ AddNew.prototype = {
         errors_object.push('out_of_bound_transaction_bt_value');
       }
 
-      var value_in_bt_wei = basicHelper.convertToWei(amount);
-      if(!basicHelper.isWeiValid(value_in_bt_wei)){
-        errors_object.push('out_of_bound_transaction_bt_value');
+      if (!commonValidator.isVarNull(amount)) {
+        var value_in_bt_wei = basicHelper.convertToWei(amount);
+        if(!basicHelper.isWeiValid(value_in_bt_wei)){
+          errors_object.push('out_of_bound_transaction_bt_value');
+        }
+        oThis.transactionKindObj.value_in_bt_wei = basicHelper.formatWeiToString(value_in_bt_wei);
       }
-      oThis.transactionKindObj.value_in_bt_wei = basicHelper.formatWeiToString(value_in_bt_wei);
     } else {
       errors_object.push('invalid_currency');
     }

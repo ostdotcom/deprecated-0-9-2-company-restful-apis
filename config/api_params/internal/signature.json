@@ -51,13 +51,9 @@
       {
         "parameter": "client_token_id",
         "error_identifier": "missing_client_token_id"
-      },
-      {
-        "parameter": "list_type",
-        "error_identifier": "missing_list_type"
       }
     ],
-    "optional":[]
+    "optional":["list_type"]
   },
   "start_on_boarding": {
     "mandatory":[

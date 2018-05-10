@@ -135,6 +135,10 @@
         "error_identifier": "missing_arbitrary_amount"
       },
       {
+        "parameter": "arbitrary_commission",
+        "error_identifier": "missing_arbitrary_commission"
+      },
+      {
         "parameter": "client_id",
         "error_identifier": "missing_client_id"
       }

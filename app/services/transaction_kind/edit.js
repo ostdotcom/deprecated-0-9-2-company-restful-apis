@@ -135,13 +135,8 @@ Edit.prototype = {
       oThis.transactionKindObj['value_in_usd'] = amount;
 
     } else if ( currency == clientTxTypesConst.btCurrencyType){
+
       oThis.params.value_in_usd = null;
-
-      var value_in_bt_wei = basicHelper.convertToWei(amount);
-
-      if(!basicHelper.isWeiValid(value_in_bt_wei)){
-        errors_object.push('out_of_bound_transaction_bt_value');
-      }
 
       if(!commonValidator.validateArbitraryAmount(amount, arbitrary_amount) ){
         errors_object.push('invalid_amount_arbitrary_combination');
@@ -149,8 +144,15 @@ Edit.prototype = {
         errors_object.push('out_of_bound_transaction_bt_value');
       }
 
+      if (!commonValidator.isVarNull(amount)) {
+        var value_in_bt_wei = basicHelper.convertToWei(amount);
+        if(!basicHelper.isWeiValid(value_in_bt_wei)){
+          errors_object.push('out_of_bound_transaction_bt_value');
+        }
+        oThis.transactionKindObj['value_in_bt_wei'] = basicHelper.formatWeiToString(value_in_bt_wei);
+      }
+
       oThis.transactionKindObj['currency_type'] = new ClientTransactionTypeModel().invertedCurrencyTypes[currency];
-      oThis.transactionKindObj['value_in_bt_wei'] = basicHelper.formatWeiToString(value_in_bt_wei);
       oThis.transactionKindObj['value_in_usd'] = null;
 
     } else {

@@ -165,7 +165,7 @@
     "message": "Invalid amount."
   },
   "invalid_commission_percent": {
-    "parameter": "amount",
+    "parameter": "commission_percent",
     "message": "Invalid commision percent."
   },
   "invalid_from_user_id": {

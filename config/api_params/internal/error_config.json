@@ -9,6 +9,11 @@
     "code": "invalid",
     "message": "Invalid client id"
   },
+  "insufficient_airdrop_amount": {
+    "parameter": "amount",
+    "code": "invalid",
+    "message": "Available token amount is insufficient. Please mint more tokens or reduce the amount to complete the process."
+  },
   "missing_number_of_users": {
     "parameter": "number_of_users",
     "code": "missing",
