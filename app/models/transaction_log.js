@@ -139,7 +139,7 @@ const TransactionLogKlassPrototype = {
    */
   getById: async function (ids) {
     const oThis = this;
-    const dbRecords = await oThis.select(['id', 'client_id', 'transaction_uuid', 'status', 'input_params', 'gas_price']).
+    const dbRecords = await oThis.select('*').
               where(['id IN (?)', ids]).fire();
     return oThis._formatDbRecords(dbRecords);
   },
