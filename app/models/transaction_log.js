@@ -159,7 +159,7 @@ const TransactionLogKlassPrototype = {
       .limit(limit).offset(offset).order_by(`${orderBy} ${order}`);
 
     if(filters.id && filters.id.length > 0) {
-      query.where(['id IN (?)', filters.id]);
+      query.where(['transaction_uuid IN (?)', filters.id]);
     }
 
     const dbRecords = await query.fire();

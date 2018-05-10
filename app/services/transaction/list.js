@@ -195,9 +195,11 @@ ListTransactionsService.prototype = {
 
     let hasMore = false;
 
-    for (var i = 0; i < oThis.listRecords; i++) {
+    console.log("--------oThis.listRecords-", oThis.listRecords, '--oThis.limit=', oThis.limit);
+    for (var i = 0; i < oThis.listRecords.length; i++) {
       let dbRecord = oThis.listRecords[i];
 
+      console.log("----============----i-", i, '--oThis.limit=', oThis.limit);
       if (i == oThis.limit) {
         // as we fetched limit + 1, ignore that extra one
         hasMore = true;
@@ -208,6 +210,7 @@ ListTransactionsService.prototype = {
         , transactionEntityFormatterRsp = await transactionEntityFormatter.perform()
       ;
 
+      console.log("----============----transactionEntityFormatterRsp-", transactionEntityFormatterRsp);
       if (transactionEntityFormatterRsp.isFailure()) continue;
 
       apiResponseData.transactions.push(transactionEntityFormatterRsp.data);
