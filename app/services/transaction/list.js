@@ -112,7 +112,7 @@ ListTransactionsService.prototype = {
 
     oThis.orderBy = oThis.orderBy || 'created';
     oThis.orderBy = oThis.orderBy.toLowerCase();
-    if (oThis.orderBy == 'created') oThis.orderBy = 'created_by';
+    if (oThis.orderBy == 'created') oThis.orderBy = 'id';
 
     if (oThis.order && !commonValidator.isValidOrderingString(oThis.order)) {
       return Promise.reject(responseHelper.paramValidationError({
@@ -136,7 +136,7 @@ ListTransactionsService.prototype = {
     }
 
     oThis.limit = oThis.limit || 10;
-    oThis.offset = (oThis.page_no - 1) * oThis.limit;
+    oThis.offset = (oThis.pageNo - 1) * oThis.limit;
   },
 
   /**
