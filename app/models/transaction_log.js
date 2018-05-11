@@ -152,7 +152,7 @@ const TransactionLogKlassPrototype = {
    *
    * @return {promise}
    */
-  getList: async function (clientId, kind, paginationParams, filters) {
+  getList: async function (clientId, kind, paginationParams, filters, options) {
     const oThis = this
     ;
 
