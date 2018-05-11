@@ -192,6 +192,8 @@ BasicHelperKlass.prototype = {
     if (typeof uuid !== "string") {
       return false;
     }
+    return true;
+    // TODO: Below regex is not appropriate for UUID. please correct and reopen.
     return /^0x[0-9a-fA-F]{64}$/.test(uuid);
   },
 

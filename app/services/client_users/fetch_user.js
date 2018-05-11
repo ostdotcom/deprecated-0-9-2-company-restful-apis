@@ -48,7 +48,7 @@ fetchUserKlass.prototype = {
             logger.error(`${__filename}::perform::catch`);
             logger.error(error);
             return responseHelper.error({
-              internal_error_identifier: 's_cu_fu_1',
+              internal_error_identifier: 's_cu_fu_4',
               api_error_identifier: 'unhandled_catch_response',
               debug_options: {}
             });
