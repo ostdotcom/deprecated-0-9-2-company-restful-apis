@@ -209,5 +209,10 @@
     "parameter": "amount",
     "code": "missing",
     "message": "Missing amount"
+  },
+  "missing_to_address": {
+    "parameter": "to_address",
+    "code": "missing",
+    "message": "Missing to_address"
   }
 }

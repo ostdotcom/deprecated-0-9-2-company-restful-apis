@@ -137,7 +137,7 @@ StartServicesKlass.prototype = {
     oThis._asyncCommand(cmd);
 
     logger.step("** Starting worker to process events");
-    var cmd = "node executables/rmq_subscribers/factory.js 1 'temp' '[\"on_boarding.#\",\"airdrop_allocate_tokens\",\"stake_and_mint.#\",\"event.stake_and_mint_processor.#\",\"airdrop.approve.contract\"]'"
+    var cmd = "node executables/rmq_subscribers/factory.js 1 'temp' '[\"on_boarding.#\",\"airdrop_allocate_tokens\",\"stake_and_mint.#\",\"event.stake_and_mint_processor.#\",\"airdrop.approve.contract\", \"transaction.stp_transfer\"]'"
       + " >> " + homeAbsolutePath + "/openst-setup/logs/executables_rmq_subscribers_factory.log";
     // servicesList.push(cmd);
     oThis._asyncCommand(cmd);

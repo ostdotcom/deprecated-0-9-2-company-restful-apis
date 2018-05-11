@@ -20,7 +20,7 @@ const rootPrefix = '../../..'
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , STPTransferEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/stp_transfer')
-  , notificationTopics = require(rootPrefix + './lib/global_constant/notification_topics')
+  , notificationTopics = require(rootPrefix + '/lib/global_constant/notification_topics')
 ;
 
 /**
@@ -210,10 +210,10 @@ ExecuteSTPTransferService.prototype = {
         topics: [topicName],
         publisher: 'OST',
         message: {
-          kind: 'execute_stp_transfer',
+          kind: 'background_job',
           payload: {
-            transactionLogId: oThis.transactionLogId,
-            transactionUuid: oThis.transactionUuid
+            transaction_log_id: oThis.transactionLogId,
+            transaction_uuid: oThis.transactionUuid
           }
         }
       }

@@ -261,8 +261,8 @@
   "execute_stp_transfer": {
     "mandatory": [
       {
-        "parameter": "to_user_id",
-        "error_identifier": "missing_to_user_id"
+        "parameter": "to_address",
+        "error_identifier": "missing_to_address"
       },
       {
         "parameter": "amount",
