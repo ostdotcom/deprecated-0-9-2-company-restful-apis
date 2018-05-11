@@ -82,10 +82,10 @@
     "code": "invalid",
     "message": "invalid id passed."
   },
-  "missing_id_transaction_get": {
+  "missing_id_param": {
     "parameter": "id",
     "code": "missing",
-    "message": "missing id."
+    "message": "Missing id."
   },
   "invalid_id_user": {
     "parameter": "id",
@@ -204,5 +204,10 @@
   "invalid_id": {
     "parameter": "action_id",
     "message": "Missing id"
+  },
+  "missing_amount": {
+    "parameter": "amount",
+    "code": "missing",
+    "message": "Missing amount"
   }
 }

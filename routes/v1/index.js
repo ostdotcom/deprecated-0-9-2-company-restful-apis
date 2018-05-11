@@ -27,8 +27,8 @@ router.use('/airdrops', airdropsRoutes);
 router.use('/actions', actionRoutes);
 
 router.use('/transactions', transactionsRoutes);
-//
-// router.use('/transfers', transfersRoutes);
+
+router.use('/transfers', transfersRoutes);
 
 
 module.exports = router;

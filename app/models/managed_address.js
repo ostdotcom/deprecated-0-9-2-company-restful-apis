@@ -84,7 +84,7 @@ const ManagedAddressKlassPrototype = {
     const oThis = this
     ;
 
-    return oThis.select(['id', 'uuid', 'address_type', 'ethereum_address', 'properties'])
+    return oThis.select('*')
       .where(['id IN (?)', ids]).fire();
   },
 

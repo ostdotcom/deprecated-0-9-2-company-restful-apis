@@ -24,9 +24,9 @@ const router = express.Router()
 router.post('/', function (req, res, next) {
   req.decodedParams.apiName = 'execute_transaction';
 
-  const CreateUserKlass = require(rootPrefix + '/app/services/transaction/execute');
+  const ExecuteTransactionService = require(rootPrefix + '/app/services/transaction/execute');
 
-  Promise.resolve(routeHelper.performer(req, res, next, CreateUserKlass, 'r_v1_t_1'));
+  Promise.resolve(routeHelper.performer(req, res, next, ExecuteTransactionService, 'r_v1_t_1'));
 });
 
 /**
