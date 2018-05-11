@@ -98,6 +98,7 @@ topicPerformers[notificationTopics.processMintingOnUcDone] = require(rootPrefix 
 topicPerformers[notificationTopics.claimTokenOnUcStart] = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js');
 topicPerformers[notificationTopics.claimTokenOnUcDone] = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js');
 topicPerformers[notificationTopics.airdrop_approve_contract] = require(rootPrefix + '/lib/airdrop_management/distribute_tokens/user_airdrop_contract_approve');
+topicPerformers[notificationTopics.stpTransfer] = require(rootPrefix + '/');
 
 const promiseExecutor = function (onResolve, onReject, params ) {
   // factory logic for deciding what action to perform here.
