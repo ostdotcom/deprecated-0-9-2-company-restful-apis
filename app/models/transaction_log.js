@@ -146,17 +146,28 @@ const TransactionLogKlassPrototype = {
 
   /**
    * @param clientId - client id
-   * @param limit - limit
-   * @param offset - offset
-   * @param orderBy - order by
-   * @param order - order
+   * @param kind - kind
+   * @param paginationParams - pagination params
+   * @param filters - filters
    *
    * @return {promise}
    */
-  getList: async function (clientId, limit, offset, orderBy, order, filters) {
-    const oThis = this;
+  getList: async function (clientId, kind, paginationParams, filters) {
+    const oThis = this
+    ;
 
-    let query = oThis.select('*').where(['client_id = ?', clientId])
+    // following is to support both string and int values for kind
+    if (!(kind > 0)) {
+      kind = oThis.invertedTransactionTypes[kind]
+    }
+
+    let limit = paginationParams.limit
+      , offset = paginationParams.offset
+      , orderBy = paginationParams.orderBy
+      , order = paginationParams.order
+    ;
+
+    let query = oThis.select('*').where(['client_id = ? AND transaction_type = ?', clientId, kind])
       .limit(limit).offset(offset).order_by(`${orderBy} ${order}`);
 
     if(filters.id && filters.id.length > 0) {

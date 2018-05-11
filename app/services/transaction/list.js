@@ -13,6 +13,7 @@ const rootPrefix = '../../..'
   , commonValidator = require(rootPrefix + '/lib/validators/common')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/transaction')
+  , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
 ;
 
 /**
@@ -168,8 +169,12 @@ ListTransactionsService.prototype = {
     const oThis = this
     ;
 
-    oThis.listRecords = await new transactionLogModel().getList(oThis.clientId,
-      oThis.limit + 1, oThis.offset, oThis.orderBy, oThis.order, {id: oThis.idsFilterArr});
+    oThis.listRecords = await new transactionLogModel().getList(
+      oThis.clientId,
+      transactionLogConst.tokenTransferTransactionType,
+      {limit: oThis.limit + 1, offset: oThis.offset, orderBy: oThis.orderBy, order: oThis.order},
+      {id: oThis.idsFilterArr}
+    );
 
     return Promise.resolve(responseHelper.successWithData({}));
   },
@@ -195,11 +200,9 @@ ListTransactionsService.prototype = {
 
     let hasMore = false;
 
-    console.log("--------oThis.listRecords-", oThis.listRecords, '--oThis.limit=', oThis.limit);
     for (var i = 0; i < oThis.listRecords.length; i++) {
       let dbRecord = oThis.listRecords[i];
 
-      console.log("----============----i-", i, '--oThis.limit=', oThis.limit);
       if (i == oThis.limit) {
         // as we fetched limit + 1, ignore that extra one
         hasMore = true;
@@ -210,7 +213,6 @@ ListTransactionsService.prototype = {
         , transactionEntityFormatterRsp = await transactionEntityFormatter.perform()
       ;
 
-      console.log("----============----transactionEntityFormatterRsp-", transactionEntityFormatterRsp);
       if (transactionEntityFormatterRsp.isFailure()) continue;
 
       apiResponseData.transactions.push(transactionEntityFormatterRsp.data);
