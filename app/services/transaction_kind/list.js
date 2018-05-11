@@ -34,14 +34,22 @@ const List = function(params) {
   oThis.page_no = params.page_no || 1;
   oThis.order_by = (params.order_by || 'created').toLowerCase();
   oThis.order = (params.order || 'desc').toLowerCase();
-  oThis.limit = params.limit || 10;
+  oThis.limit = (params.limit || 10) + 1;
   oThis.offset = (oThis.page_no - 1) * oThis.limit;
   oThis.extra_entities = params.extra_entities || [];
   oThis.where = {};
 
-  if(params.id) oThis.where.id = basicHelper.commaSeperatedStrToArray(params.id);
-  if(params.name) oThis.where.name = basicHelper.commaSeperatedStrToArray(params.name);
-  if(params.kind) oThis.kind = basicHelper.commaSeperatedStrToArray(params.kind);
+  if(params.id) {
+    oThis.where.id = basicHelper.commaSeperatedStrToArray(params.id);
+    oThis.id = oThis.where.id;
+  }
+  if(params.name) {
+    oThis.where.name = basicHelper.commaSeperatedStrToArray(params.name);
+    oThis.name = oThis.where.name;
+  }
+  if(params.kind) {
+    oThis.kind = basicHelper.commaSeperatedStrToArray(params.kind);
+  }
   oThis.currencies = basicHelper.commaSeperatedStrToArray((params.currency || ''));
   oThis.arbitrary_amount = basicHelper.commaSeperatedStrToArray((params.arbitrary_amount || ''));
   oThis.arbitrary_commission = basicHelper.commaSeperatedStrToArray((params.arbitrary_commission || ''));
@@ -171,7 +179,7 @@ List.prototype = {
       }));
     }
 
-    if(oThis.arbitrary_amount != '') oThis.arbitrary_amount = oThis.arbitrary_amount[0];
+    if(oThis.arbitrary_amount[0] != '') oThis.arbitrary_amount = oThis.arbitrary_amount[0];
 
     if(oThis.arbitrary_commission.length > 1) {
       return Promise.reject(responseHelper.paramValidationError({
@@ -182,7 +190,7 @@ List.prototype = {
       }));
     }
 
-    if (oThis.arbitrary_commission != '') oThis.arbitrary_commission = oThis.arbitrary_commission[0];
+    if (oThis.arbitrary_commission[0] != '') oThis.arbitrary_commission = oThis.arbitrary_commission[0];
 
     return Promise.resolve({});
 
@@ -210,6 +218,7 @@ List.prototype = {
       let arbitrary_commission = null;
       let actionEntityFormatter = null;
       let actionEntityFormatterRsp = null;
+      let commission_percent = null;
       let uts = Date.now();
 
       for (var i = 0; i < result.length; i++) {
@@ -222,6 +231,7 @@ List.prototype = {
 
         arbitrary_amount = amount ? false : true;
         arbitrary_commission = res.commission_percent ? false : true;
+        commission_percent = res.commission_percent ? res.commission_percent.toString(10) : null;
 
         actionEntityFormatter = new ActionEntityFormatterKlass({
           id: res.id,
@@ -232,7 +242,7 @@ List.prototype = {
           arbitrary_amount: arbitrary_amount,
           amount: amount,
           arbitrary_commission: arbitrary_commission,
-          commission_percent: res.commission_percent.toString(10),
+          commission_percent: commission_percent,
           uts: uts
         });
 
@@ -286,8 +296,12 @@ List.prototype = {
 
     const results = await query.fire();
 
+    oThis.next_page_present = results.length > oThis.limit - 1 ? true : false;
 
-    for (var i = 0; i < results.length; i++) {
+    let result_count = results.length;
+    if (oThis.next_page_present) result_count--;
+
+    for (var i = 0; i < result_count; i++) {
       return_result.push(query.convertEnumForResult(results[i]));
     }
 
@@ -336,11 +350,44 @@ List.prototype = {
 
     await Promise.all(oThis.allPromises);
 
+    let arbitrary_amount;
+
+    if( oThis.arbitrary_amount instanceof Array || oThis.arbitrary_amount == '') {
+      delete oThis.arbitrary_amount;
+    }
+
+    if( oThis.arbitrary_commission instanceof Array || oThis.arbitrary_commission == '') {
+      delete oThis.arbitrary_commission;
+    }
+
+    let meta_data = {
+      next_page_payload: {
+        id: oThis.id,
+        name: oThis.name,
+        kind: oThis.kind,
+        currency: oThis.currencies[0] != '' ? oThis.currencies[0] : undefined,
+        arbitrary_amount: oThis.arbitrary_amount,
+        arbitrary_commission: oThis.arbitrary_commission,
+        order_by: oThis.order_by,
+        offset: oThis.offset + oThis.limit - 1,
+        limit: oThis.limit - 1
+      },
+      total_actions: oThis.total_no
+    };
+
+    if (oThis.next_page_present) {
+      delete meta_data.next_page_payload;
+
+      meta_data.next_page_payload.order_by = oThis.order_by;
+      meta_data.next_page_payload.offset = oThis.offset + oThis.limit - 1;
+      meta_data.next_page_payload.limit = oThis.limit - 1;
+    }
+
     return Promise.resolve(responseHelper.successWithData(
       {
         result_type: 'actions',
         actions: oThis.transactionTypes,
-        meta: {next_page_payload: {}},
+        meta: meta_data,
         client_tokens: oThis.clientTokens,
         price_points: oThis.ostPrices
       }

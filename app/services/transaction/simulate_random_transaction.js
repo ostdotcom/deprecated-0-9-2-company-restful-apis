@@ -18,6 +18,7 @@ const rootPrefix = "../../.."
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , commonHelper = require(rootPrefix + '/lib/validators/common')
   ;
 
 /**
@@ -28,7 +29,7 @@ const rootPrefix = "../../.."
  *
  * @Constructor
  */
-const simulateRandomTransactionKlass = function(params){
+const simulateRandomTransactionKlass = function(params) {
 
   const oThis = this;
 
@@ -103,10 +104,9 @@ simulateRandomTransactionKlass.prototype = {
       return Promise.resolve(r);
     }
 
-    console.log("-----------------r.data--", r.data);
     var r = await oThis.sendTransaction(r.data);
 
-    return Promise.resolve(r);
+    return Promise.resolve(r.data.transaction);
   },
 
   /**
@@ -192,36 +192,34 @@ simulateRandomTransactionKlass.prototype = {
       userEthAddresses.push(users[i].ethereum_address);
     }
 
-    /*********************** TODO: OPEN THIS RANDOM LOGIC ***************************
-    // const economyUserBalance = new EconomyUserBalanceKlass({client_id: oThis.clientId, ethereum_addresses: userEthAddresses})
-    //     , userBalancesResponse = await economyUserBalance.perform()
-    // ;
-    //
-    // var balanceHashData = null
-    //     , userBalance = null
-    //     , user = null;
-    //
-    // if (userBalancesResponse.isFailure()) {
-    //   return Promise.resolve(responseHelper.error('s_tr_srt_3', 'could not fetch balances', {},
-    //      {sendErrorEmail: false}));
-    // } else {
-    //   balanceHashData = userBalancesResponse.data;
-    // }
-    //
-    // for(var i=0; i<usersCount; i++) {
-    //   user = users[i];
-    //   userBalance = balanceHashData[user.ethereum_address];
-    //   if (userBalance) {
-    //     userBalance = basicHelper.convertToNormal(userBalance.tokenBalance)
-    //   } else {
-    //     userBalance = 0
-    //   }
-    //   if (userBalance.gt(oThis.maxUserBtBalance)) {
-    //     oThis.maxUserBtBalance = userBalance;
-    //   }
-    //   user['bt_balance'] = userBalance;
-    // }
-     ************************ TODO: OPEN THIS RANDOM LOGIC ***************************************************/
+    const economyUserBalance = new EconomyUserBalanceKlass({client_id: oThis.clientId, ethereum_addresses: userEthAddresses})
+        , userBalancesResponse = await economyUserBalance.perform()
+    ;
+
+    var balanceHashData = null
+        , userBalance = null
+        , user = null;
+
+    if (userBalancesResponse.isFailure()) {
+      return Promise.resolve(responseHelper.error('s_tr_srt_3', 'could not fetch balances', {},
+         {sendErrorEmail: false}));
+    } else {
+      balanceHashData = userBalancesResponse.data;
+    }
+
+    for(var i=0; i<usersCount; i++) {
+      user = users[i];
+      userBalance = balanceHashData[user.ethereum_address];
+      if (userBalance) {
+        userBalance = basicHelper.convertToNormal(userBalance.tokenBalance)
+      } else {
+        userBalance = 0
+      }
+      if (userBalance.gt(oThis.maxUserBtBalance)) {
+        oThis.maxUserBtBalance = userBalance;
+      }
+      user['bt_balance'] = userBalance;
+    }
 
     oThis.randomUsers = basicHelper.shuffleArray(users); // shuffle is important
 
@@ -234,7 +232,7 @@ simulateRandomTransactionKlass.prototype = {
    *
    * @return {Promise<any>}
    */
-  fetchRandomTransactionTypes: async function(){
+  fetchRandomTransactionTypes: async function() {
 
     const oThis = this;
     var countCacheObj = new ClientTrxTypeCntCacheKlass({clientId: oThis.clientId});
@@ -327,7 +325,7 @@ simulateRandomTransactionKlass.prototype = {
    *
    * @return {Promise<any>}
    */
-  fetchTxParams: async function(){
+  fetchTxParams: async function() {
 
     const oThis = this;
 
@@ -340,9 +338,7 @@ simulateRandomTransactionKlass.prototype = {
     for(var i=0; i<oThis.randomTrxTypes.length; i++) {
 
       randomTrxType = oThis.randomTrxTypes[i];
-      /*********************** TODO: OPEN THIS RANDOM LOGIC ***************************
-      // txBtValue = oThis.getTxBtValue(randomTrxType);
-     *********************** TODO: OPEN THIS RANDOM LOGIC ***************************/
+      txBtValue = oThis.getTxBtValue(randomTrxType);
 
       if (randomTrxType.kind === clientTxTypesConst.companyToUserKind) {
 
@@ -371,24 +367,27 @@ simulateRandomTransactionKlass.prototype = {
               randomToUser = oThis.randomUsers[0];
             }
             txParams['to_user_id'] = randomToUser['uuid'];
+
+            if ( commonHelper.isVarNull(randomTrxType.commission_percent) ) {
+              txParams['commission_percent'] = 10;
+            }
           }
 
-          breakOuterLoop = true;
-
-          /*********************** TODO: OPEN THIS RANDOM LOGIC ***************************
-          // if (randomFromUser['bt_balance'] && randomFromUser['bt_balance'].gt(txBtValue)) {
-          //   breakOuterLoop = true;
-          //   break;
-          // }
-           *********************** TODO: OPEN THIS RANDOM LOGIC ***************************/
-
+          if (randomFromUser['bt_balance'] && randomFromUser['bt_balance'].gt(txBtValue)) {
+             breakOuterLoop = true;
+             break;
+           }
         }
 
         if (breakOuterLoop) {
+          if ( commonHelper.isVarNull(randomTrxType['value_in_bt_wei']) && commonHelper.isVarNull(randomTrxType['value_in_usd'])) {
+            txParams['amount'] = 0.01;
+          }
           break;
         }
 
       }
+
 
     }
 
@@ -403,15 +402,9 @@ simulateRandomTransactionKlass.prototype = {
    */
   canExecuteTxKind: function(tx) {
 
-    return true;
+    const oThis = this;
 
-    /*********************** TODO: OPEN THIS RANDOM LOGIC ***************************
-    // const oThis = this;
-    //
-    // return basicHelper.convertToBigNumber(oThis.getTxBtValue(tx)).lte(oThis.maxUserBtBalance);
-
-     /*********************** TODO: OPEN THIS RANDOM LOGIC ***************************/
-
+    return basicHelper.convertToBigNumber(oThis.getTxBtValue(tx)).lte(oThis.maxUserBtBalance);
   },
 
   /**
@@ -439,10 +432,18 @@ simulateRandomTransactionKlass.prototype = {
     ;
 
     if (tx.currency_type === clientTxTypesConst.btCurrencyType) {
-      txBtValue = basicHelper.convertToNormal(tx.value_in_bt_wei);
+      if (commonHelper.isVarNull(tx.value_in_bt_wei)) {
+        txBtValue = 0.01;
+      } else {
+        txBtValue = basicHelper.convertToNormal(tx.value_in_bt_wei);
+      }
     } else {
-      txFiatValue = basicHelper.convertToBigNumber(tx.value_in_usd);
-      txBtValue = oThis.convertBtToFiat(txFiatValue);
+      if (commonHelper.isVarNull(tx.value_in_usd)) {
+        txBtValue = 0.01;
+      } else {
+        txFiatValue = basicHelper.convertToBigNumber(tx.value_in_usd);
+        txBtValue = oThis.convertBtToFiat(txFiatValue);
+      }
     }
 
     return txBtValue;
@@ -457,6 +458,7 @@ simulateRandomTransactionKlass.prototype = {
   sendTransaction: async function(txParams){
 
     const oThis = this;
+
 
     if(!txParams.from_user_id || !txParams.to_user_id){
       return Promise.resolve(responseHelper.error({
