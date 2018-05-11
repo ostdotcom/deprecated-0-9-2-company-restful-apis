@@ -328,6 +328,11 @@
     "http_code": "422",
     "code": "callback_function_is_mandatory",
     "message": "callback function is mandatory"
+  },
+  "transaction_log_invalid": {
+    "http_code": "422",
+    "code": "transaction_log_invalid",
+    "message": "invalid transaction log id."
   }
 
 }
