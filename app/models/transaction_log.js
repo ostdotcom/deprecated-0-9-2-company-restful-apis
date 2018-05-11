@@ -267,6 +267,9 @@ const TransactionLogKlassPrototype = {
     shortenedInputParams.prpp = elongatedInputParams.postReceiptProcessParams;
     shortenedInputParams.cp = elongatedInputParams.commission_percent;
     shortenedInputParams.a = elongatedInputParams.amount;
+    shortenedInputParams.aiw = elongatedInputParams.amount_in_wei;
+    shortenedInputParams.ta = elongatedInputParams.to_address;
+    shortenedInputParams.fa = elongatedInputParams.from_address;
     return shortenedInputParams;
   },
 
@@ -288,6 +291,9 @@ const TransactionLogKlassPrototype = {
     elongatedInputParams.postReceiptProcessParams = shortInputParams.prpp;
     elongatedInputParams.commission_percent = shortInputParams.cp;
     elongatedInputParams.amount = shortInputParams.a;
+    elongatedInputParams.amount_in_wei = shortInputParams.aiw;
+    elongatedInputParams.to_address = shortInputParams.ta;
+    elongatedInputParams.from_address = shortInputParams.fa;
     return elongatedInputParams;
   },
 
