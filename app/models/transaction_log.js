@@ -20,7 +20,8 @@ const dbName = "saas_transaction_" + coreConstants.SUB_ENVIRONMENT + "_" + coreC
     '2': transactionLogConst.utilityChainType
   }
   , transactionTypes = {
-    '1': transactionLogConst.tokenTransferTransactionType
+    '1': transactionLogConst.tokenTransferTransactionType,
+    '2': transactionLogConst.stpTransferTransactionType
   }
   , invertedStatuses = util.invert(statuses)
   , invertedChainTypes = util.invert(chainTypes)
