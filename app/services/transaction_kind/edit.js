@@ -28,7 +28,6 @@ var rootPrefix = '../../..'
  * @param {boolean} params.arbitrary_amount - true/false
  * @param {boolean} params.arbitrary_commission - true/false
  * @param {string} [params.name] - Name of the transaction kind eg. voteUp, voteDown, etc..
- * @param {string} [params.kind] - The kind of the kind, user_to_user, user_to_client, etc..
  * @param {string} [params.currency] - Currency. usd or bt
  * @param {decimal} [params.amount] - Value of currency with respect to currency
  * @param {decimal} [params.commission_percent] - commission in percentage.
@@ -109,7 +108,7 @@ Edit.prototype = {
     console.log("currentTransactionKind", oThis.currentTransactionKind);
 
     var name = oThis.params.name || oThis.currentTransactionKind.name
-      , kind = oThis.params.kind || new ClientTransactionTypeModel().kinds[oThis.currentTransactionKind.kind.toString()]
+      , kind = new ClientTransactionTypeModel().kinds[oThis.currentTransactionKind.kind.toString()]
       , currency = (oThis.params.currency
           || new ClientTransactionTypeModel().currencyTypes[oThis.currentTransactionKind.currency_type]).toUpperCase()
       , arbitrary_amount = oThis.params.arbitrary_amount
@@ -241,10 +240,6 @@ Edit.prototype = {
 
     if(oThis.params.commission_percent) oThis.transactionKindObj['commission_percent'] = oThis.params.commission_percent;
 
-    if(oThis.params.kind) {
-      oThis.transactionKindObj['kind'] = oThis.params.kind;
-    }
-
     console.log("transactionKindObj", oThis.transactionKindObj);
 
     await new ClientTransactionTypeModel().update(
@@ -275,7 +270,6 @@ Edit.prototype = {
       id: oThis.params.id,
       client_id: oThis.currentTransactionKind.client_id,
       name: oThis.params.name || oThis.currentTransactionKind.name,
-      kind: oThis.transactionKindObj['kind'] || new ClientTransactionTypeModel().kinds[oThis.currentTransactionKind.kind],
       currency: new ClientTransactionTypeModel().currencyTypes[oThis.transactionKindObj['currency_type']]
         || new ClientTransactionTypeModel().currencyTypes[oThis.currentTransactionKind.currency_type],
       arbitrary_amount: oThis.params.arbitrary_amount,
