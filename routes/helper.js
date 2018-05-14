@@ -31,6 +31,7 @@ const routeMethods = {
   },
   
   asyncPerform: async function(req, res, next, CallerKlass, afterValidationFunc, dataFormatterFunc) {
+    req.decodedParams = req.decodedParams || {};
 
     const oThis = this
         , errorConfig = basicHelper.fetchErrorConfig(req.decodedParams.apiVersion);
