@@ -74,7 +74,7 @@ GetStPTransferService.prototype = {
     const oThis = this
     ;
 
-    let transactionLogs = await new TransactionLogModel().getById([oThis.transactionUuid]);
+    let transactionLogs = await new TransactionLogModel().getByTransactionUuid([oThis.transactionUuid]);
     let transactionLog = transactionLogs[0];
     if (!transactionLog) {
       return Promise.reject(responseHelper.error({

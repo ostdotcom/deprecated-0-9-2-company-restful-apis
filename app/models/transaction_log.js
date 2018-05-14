@@ -117,7 +117,7 @@ const TransactionLogKlassPrototype = {
    */
   getByTransactionUuid: async function (uuids) {
     const oThis = this;
-    const dbRecords = await oThis.select().where(['transaction_uuid IN (?)', uuids]).fire();
+    const dbRecords = await oThis.select('*').where(['transaction_uuid IN (?)', uuids]).fire();
     return oThis._formatDbRecords(dbRecords);
   },
 
