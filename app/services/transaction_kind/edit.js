@@ -198,9 +198,9 @@ EditAction.prototype = {
     if(oThis.name && oThis.currentTransactionKind && oThis.currentTransactionKind['name'].toLowerCase() != oThis.name.toLowerCase()) {
 
       if(!basicHelper.isTxKindNameValid(oThis.name)){
-        errors_object.push('invalid_transactionname');
+        errors_object.push('invalid_transaction_name');
       } else if (basicHelper.hasStopWords(oThis.name)) {
-        errors_object.push('inappropriate_transactionname');
+        errors_object.push('inappropriate_transaction_name');
       } else {
         let existingTKind = await new ClientTransactionTypeModel()
             .getTransactionByName({
@@ -208,8 +208,8 @@ EditAction.prototype = {
               name: oThis.name
             });
 
-        if(existingTKind.length > 0 && oThis.id != existingTKind.id){
-          errors_object['name'] = "Transaction kind name '"+ oThis.name +"' already present.";
+        if(existingTKind.length > 0 && oThis.id != existingTKind.id) {
+          errors_object.push('duplicate_transaction_name');
         }
       }
     }

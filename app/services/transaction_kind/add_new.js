@@ -111,9 +111,9 @@ AddNewAction.prototype = {
     oThis.name = oThis.name.trim();
 
     if (!basicHelper.isTxKindNameValid(oThis.name)) {
-      errors_object.push('invalid_transactionname');
+      errors_object.push('invalid_transaction_name');
     } else if (basicHelper.hasStopWords(oThis.name)) {
-      errors_object.push('inappropriate_transactionname');
+      errors_object.push('inappropriate_transaction_name');
     }
 
     if (!new ClientTransactionTypeModel().invertedKinds[oThis.kind]) {
@@ -166,8 +166,9 @@ AddNewAction.prototype = {
     }
 
     let existingTKind = await new ClientTransactionTypeModel().getTransactionByName({clientId: oThis.clientId, name: oThis.name});
+
     if (existingTKind.length > 0) {
-      errors_object.push('duplicate_transactionname');
+      errors_object.push('duplicate_transaction_name');
     }
 
     console.log("-------errors_object---", errors_object);

@@ -113,11 +113,11 @@
     "parameter": "token_symbol",
     "message": "Invalid Token Symbol"
   },
-  "invalid_transactionname": {
+  "invalid_transaction_name": {
     "parameter": "name",
     "message": "Only letters, numbers and spaces allowed. (3 to 20 characters)."
   },
-  "inappropriate_transactionname": {
+  "inappropriate_transaction_name": {
     "parameter": "name",
     "message": "Must be a minimum of 3 characters, a maximum of 20 characters, and can contain only numbers, letters, and spaces, along with other common sense limitations."
   },
@@ -125,7 +125,7 @@
     "parameter": "kind",
     "message": "Invalid transaction kind."
   },
-  "duplicate_transactionname": {
+  "duplicate_transaction_name": {
     "parameter": "name",
     "message": "An action with that name already exists."
   },

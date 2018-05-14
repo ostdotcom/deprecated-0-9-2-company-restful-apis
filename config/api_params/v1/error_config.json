@@ -47,6 +47,30 @@
     "parameter": "name",
     "message": "Come on, the name you entered is inappropriate. Please choose a nicer word."
   },
+  "invalid_transaction_name": {
+    "parameter": "name",
+    "message": "Only letters, numbers and spaces allowed. (3 to 20 characters)."
+  },
+  "invalid_transactionkind": {
+    "parameter": "kind",
+    "message": "Invalid transaction kind."
+  },
+  "inappropriate_transaction_name": {
+    "parameter": "name",
+    "message": "Must be a minimum of 3 characters, a maximum of 20 characters, and can contain only numbers, letters, and spaces, along with other common sense limitations."
+  },
+  "duplicate_transaction_name": {
+    "parameter": "name",
+    "message": "An action with that name already exists."
+  },
+  "out_of_bound_transaction_usd_value": {
+    "parameter": "currency_value",
+    "message": "Can be 0.01 to 100"
+  },
+  "out_of_bound_transaction_bt_value": {
+    "parameter": "currency_value",
+    "message": "Can be 0.00001 to 100"
+  },
   "invalid_filter_user_list": {
     "parameter": "airdropped",
     "code": "invalid",

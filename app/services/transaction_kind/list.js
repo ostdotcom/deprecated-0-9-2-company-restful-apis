@@ -93,7 +93,7 @@ ListActions.prototype = {
           logger.error(error);
 
           return responseHelper.error({
-            internal_error_identifier: 's_tk_l_1',
+            internal_error_identifier: 's_tk_l_0',
             api_error_identifier: 'unhandled_catch_response',
             debug_options: {}
           });
@@ -187,7 +187,7 @@ ListActions.prototype = {
     oThis.limit = oThis.limit || 10;
 
     if(oThis.kind) {
-      let kinds = basicHelper.commaSeperatedStrToArray(oThis.kind);
+      let kinds = oThis.kind;
       kinds = kinds.map(function(kind){
         let val = new ClientTransactionTypeModel().invertedKinds[kind];
         return Number(val);
