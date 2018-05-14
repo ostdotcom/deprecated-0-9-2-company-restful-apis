@@ -31,8 +31,8 @@ router.get('/list', function (req, res, next) {
 
     delete response.data.actions;
 
-    response.data.result_type = 'transactions';
-    response.data.transactions = transactions;
+    response.data.result_type = 'transaction_types';
+    response.data.transaction_types = transactions;
 
   };
 
@@ -99,8 +99,8 @@ router.post('/edit', function (req, res, next) {
 
     delete response.data.action;
 
-    response.data.result_type = 'transaction_types';
-    response.data.transaction_types = [actionEntityFormatterRsp.data]
+    response.data.result_type = 'transactions';
+    response.data.transactions = [actionEntityFormatterRsp.data]
 
   };
 
