@@ -131,10 +131,6 @@
         "error_identifier": "missing_currency"
       },
       {
-        "parameter": "arbitrary_amount",
-        "error_identifier": "missing_arbitrary_amount"
-      },
-      {
         "parameter": "arbitrary_commission",
         "error_identifier": "missing_arbitrary_commission"
       },
@@ -144,6 +140,7 @@
       }
     ],
     "optional": [
+      "arbitrary_commission",
       "amount",
       "commission_percent"
     ]
