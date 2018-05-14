@@ -64,8 +64,8 @@ router.post('/create', function (req, res, next) {
 
     delete response.data.action;
 
-    response.data.result_type = 'transaction_types';
-    response.data.transaction_types = [actionEntityFormatterRsp.data]
+    response.data.result_type = 'transactions';
+    response.data.transactions = [actionEntityFormatterRsp.data]
 
   };
 
