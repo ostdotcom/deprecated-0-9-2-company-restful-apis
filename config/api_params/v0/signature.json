@@ -81,13 +81,25 @@
       {
         "parameter": "client_id",
         "error_identifier": "missing_client_id"
+      },
+      {
+        "parameter": "kind",
+        "error_identifier": "missing_kind"
+      },
+      {
+        "parameter": "name",
+        "error_identifier": "missing_name"
+      },
+      {
+        "parameter": "currency_type",
+        "error_identifier": "missing_currency_type"
+      },
+      {
+        "parameter": "currency_value",
+        "error_identifier": "missing_currency_value"
       }
     ],
     "optional": [
-      "name",
-      "kind",
-      "currency_type",
-      "currency_value",
       "commission_percent"
     ]
   },

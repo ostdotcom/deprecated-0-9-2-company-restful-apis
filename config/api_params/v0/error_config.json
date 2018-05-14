@@ -24,6 +24,21 @@
     "code": "missing",
     "message": "missing name"
   },
+  "missing_kind": {
+    "parameter": "kind",
+    "code": "missing",
+    "message": "missing kind"
+  },
+  "missing_currency_type": {
+    "parameter": "currency_type",
+    "code": "missing",
+    "message": "Missing currency type"
+  },
+  "missing_currency_value": {
+    "parameter": "currency_value",
+    "code": "missing",
+    "message": "Missing currency value"
+  },
   "invalid_username": {
     "parameter": "name",
     "message": "Must be a minimum of 3 characters, a maximum of 20 characters, and can contain only letters, numbers, and spaces, along with other common sense limitations."
