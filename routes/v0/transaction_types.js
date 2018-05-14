@@ -54,6 +54,8 @@ router.post('/create', function (req, res, next) {
 
     routeHelper.replaceKey(serviceParamsPerLatestVersion, 'currency_value', 'amount');
 
+    serviceParamsPerLatestVersion.arbitrary_amount = 'false';
+
     return serviceParamsPerLatestVersion;
 
   };
