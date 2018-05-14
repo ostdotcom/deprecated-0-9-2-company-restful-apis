@@ -2,7 +2,7 @@
 
 /**
  *
- * Return existing transaction kind
+ * Return existing action
  *
  * @module app/services/transaction_kind/get
  */
@@ -17,9 +17,19 @@ var rootPrefix = '../../..'
   , ActionEntityFormatterKlass = require(rootPrefix +'/lib/formatter/entities/latest/action')
 ;
 
+/**
+ * Get an action
+ *
+ * @param params
+ * @param {number} - params.client_id - client_id for action fetch
+ * @param {number} - params.id - id of the action to fetch
+ *
+ * @constructor
+ */
 const GetAction = function(params){
 
-  var oThis = this;
+  const oThis = this
+  ;
 
   oThis.id = params.id;
   oThis.clientId = params.client_id;
@@ -29,8 +39,14 @@ const GetAction = function(params){
 
 GetAction.prototype = {
 
-  perform: function(){
-    const oThis = this;
+  /**
+   * perform
+   *
+   * @returns {promise}
+   */
+  perform: function() {
+    const oThis = this
+    ;
 
     return oThis.asyncPerform()
       .catch(function(error) {
@@ -49,8 +65,14 @@ GetAction.prototype = {
       })
   },
 
+  /**
+   * asyncPerform
+   *
+   * @returns {promise}
+   */
   asyncPerform: async function() {
-    var oThis = this;
+    const oThis = this
+    ;
 
     await oThis.validateAssignParams();
 
@@ -60,9 +82,14 @@ GetAction.prototype = {
 
   },
 
-  validateAssignParams: function(){
-
-    var oThis = this;
+  /**
+   * validateAssignParams - Perform validations on input params and assign for use
+   *
+   * @returns {promise}
+   */
+  validateAssignParams: async function() {
+    const oThis = this
+    ;
 
     if(isNaN(oThis.id)) {
       return Promise.reject(responseHelper.paramValidationError({
@@ -76,15 +103,28 @@ GetAction.prototype = {
     return Promise.resolve({});
   },
 
+  /**
+   * getTransactionKind - Get the transaction kind record from DB
+   *
+   * @returns {promise}
+   */
   getTransactionKind: async function () {
-
-    var oThis = this;
+    const oThis = this
+    ;
 
     const result = await new ClientTransactionTypeModel().getTransactionById({ clientTransactionId: oThis.id });
 
+    if (!result.isFailure()) {
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_tk_g_2',
+        api_error_identifier: 'data_not_found',
+        debug_options: {clientId: oThis.clientId}
+      }));
+    }
+
     oThis.result = result[0];
 
-    if(result.currency_type == clientTxTypesConst.btCurrencyType){
+    if(result.currency_type == clientTxTypesConst.btCurrencyType) {
       oThis.amount = basicHelper.formatWeiToString(basicHelper.convertToNormal(oThis.result.value_in_bt_wei));
     }else{
       oThis.amount = oThis.result.value_in_usd;
@@ -96,6 +136,11 @@ GetAction.prototype = {
     return Promise.resolve({});
   },
 
+  /**
+   * returnResponse - format and return the response
+   *
+   * @returns {promise}
+   */
   returnResponse: async function () {
 
     const oThis = this;
