@@ -184,7 +184,7 @@ ListActions.prototype = {
       }));
     }
 
-    oThis.limit = (oThis.limit || 10) + 1;
+    oThis.limit = oThis.limit || 10;
 
     if(oThis.kind) {
       let kinds = basicHelper.commaSeperatedStrToArray(oThis.kind);
@@ -335,7 +335,7 @@ ListActions.prototype = {
 
     }
 
-    if(oThis.limit) query.limit(oThis.limit);
+    if(oThis.limit) query.limit(oThis.limit + 1);
     if(oThis.offset) query.offset(oThis.offset);
 
     if(oThis.order_by) {
@@ -345,7 +345,7 @@ ListActions.prototype = {
 
     const results = await query.fire();
 
-    oThis.next_page_present = results.length > oThis.limit - 1 ? true : false;
+    oThis.next_page_present = results.length > oThis.limit ? true : false;
 
     let result_count = results.length;
     if (oThis.next_page_present) result_count--;
@@ -399,8 +399,6 @@ ListActions.prototype = {
 
     await Promise.all(oThis.allPromises);
 
-    let offset = (oThis.page_no - 1) * oThis.limit;
-
     let meta_data = {
       next_page_payload: {},
     };
@@ -414,8 +412,7 @@ ListActions.prototype = {
         arbitrary_amount: oThis.arbitrary_amount,
         arbitrary_commission: oThis.arbitrary_commission,
         order_by: oThis.order_by,
-        offset: offset + oThis.limit - 1,
-        limit: oThis.limit - 1,
+        limit: oThis.limit,
         page_no: oThis.page_no + 1
       }
     }
