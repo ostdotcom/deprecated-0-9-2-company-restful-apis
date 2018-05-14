@@ -26,6 +26,7 @@ const rootPrefix = '../../..'
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , ClientTrxRateCacheKlass = require(rootPrefix + '/lib/cache_management/client_transactions_rate_limit')
   , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/transaction')
+  , commonValidator = require(rootPrefix + '/lib/validators/common')
 ;
 
 /**
@@ -248,7 +249,7 @@ ExecuteTransactionService.prototype = {
     ;
 
     // in case of arbitrary amount, amount should be passed in the params.
-    if (oThis.transactionTypeRecord.arbitrary_amount && !(oThis.amount >= 0)) {
+    if (commonValidator.isVarTrue(oThis.transactionTypeRecord.arbitrary_amount) && commonValidator.isVarNull(oThis.amount)) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_t_e_6',
         api_error_identifier: 'invalid_api_params',
@@ -257,18 +258,8 @@ ExecuteTransactionService.prototype = {
       }));
     }
 
-    // in case of arbitrary commission percent, commission percent should be passed in the params.
-    if (oThis.transactionTypeRecord.arbitrary_commission_percent && !(oThis.commissionPercent >= 0)) {
-      return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_t_e_7',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_commission_percent'],
-        debug_options: {}
-      }));
-    }
-
-    // in case of non arbitrary amount, amount should NOT be passed in the params.
-    if (!oThis.transactionTypeRecord.arbitrary_amount && (oThis.amount >= 0)) {
+    //in case of non arbitrary amount, amount should NOT be passed in the params.
+    if (commonValidator.isVarFalse(oThis.transactionTypeRecord.arbitrary_amount) && !commonValidator.isVarNull(oThis.amount)) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_t_e_8',
         api_error_identifier: 'invalid_api_params',
@@ -277,14 +268,26 @@ ExecuteTransactionService.prototype = {
       }));
     }
 
-    // in case of arbitrary commission percent, commission percent should be passed in the params.
-    if (!oThis.transactionTypeRecord.arbitrary_commission_percent && (oThis.commissionPercent >= 0)) {
-      return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_t_e_9',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_commission_percent'],
-        debug_options: {}
-      }));
+    if(oThis.transactionTypeRecord.kind == clientTransactionTypeConst.userToUserKind){
+      // in case of arbitrary commission percent, commission percent should be passed in the params.
+      if (commonValidator.isVarTrue(oThis.transactionTypeRecord.arbitrary_commission_percent) && commonValidator.isVarNull(oThis.commissionPercent )) {
+        return Promise.reject(responseHelper.paramValidationError({
+          internal_error_identifier: 's_t_e_7',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: ['invalid_commission_percent'],
+          debug_options: {}
+        }));
+      }
+
+      // in case of arbitrary commission percent, commission percent should be passed in the params.
+      if (commonValidator.isVarFalse(oThis.transactionTypeRecord.arbitrary_commission_percent) && !commonValidator.isVarNull(oThis.commissionPercent)) {
+        return Promise.reject(responseHelper.paramValidationError({
+          internal_error_identifier: 's_t_e_9',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: ['invalid_commission_percent'],
+          debug_options: {}
+        }));
+      }
     }
 
     return responseHelper.successWithData({});

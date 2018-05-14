@@ -86,16 +86,14 @@ EditAction.prototype = {
    */
   asyncPerform: async function () {
 
-    var oThis = this
-      , r = null;
+    const oThis = this
+    ;
 
-    r = await oThis.validateParams();
-    if (r.isFailure()) return Promise.resolve(r);
+    await oThis._validateParams();
 
-    r = await oThis.editTransactionKind();
-    if (r.isFailure()) return Promise.resolve(r);
+    await oThis._editTransactionKind();
 
-    return await oThis.returnResponse();
+    return oThis._returnResponse();
   },
 
   /**
@@ -105,7 +103,7 @@ EditAction.prototype = {
    * @return {promise<result>} - returns a promise which resolves to an object of Result
    *
    */
-  validateParams: async function () {
+  _validateParams: async function () {
     const oThis = this
     ;
 
@@ -127,13 +125,14 @@ EditAction.prototype = {
       }));
     }
 
-    let bt_amount = oThis.currentTransactionKind.value_in_bt_wei ? basicHelper.convertToNormal(oThis.currentTransactionKind.value_in_bt_wei) : null;
+    let bt_amount = oThis.currentTransactionKind.value_in_bt_wei ?
+      basicHelper.convertToNormal(oThis.currentTransactionKind.value_in_bt_wei) :
+      null;
 
     let kind = new ClientTransactionTypeModel().kinds[oThis.currentTransactionKind.kind.toString()]
       , currency = (oThis.currency
       || new ClientTransactionTypeModel().currencyTypes[oThis.currentTransactionKind.currency_type]).toUpperCase()
-      , amount = oThis.amount || oThis.currentTransactionKind.value_in_usd
-      || bt_amount
+      , amount = oThis.amount || oThis.currentTransactionKind.value_in_usd || bt_amount
       , commission_percent = oThis.commission_percent || oThis.currentTransactionKind.commission_percent
       , errors_object = []
     ;
@@ -234,8 +233,8 @@ EditAction.prototype = {
    * @return {promise<result>} - returns a promise which resolves to an object of Result
    *
    */
-  getCurrentTransactionKind: function () {
-    var oThis = this;
+  _getCurrentTransactionKind: function () {
+    const oThis = this;
     return new ClientTransactionTypeModel().getTransactionById({clientTransactionId: oThis.id});
   },
 
@@ -246,7 +245,7 @@ EditAction.prototype = {
    * @return {promise<result>} - returns a promise which resolves to an object of Result
    *
    */
-  editTransactionKind: async function () {
+  _editTransactionKind: async function () {
     const oThis = this
     ;
 
@@ -275,7 +274,7 @@ EditAction.prototype = {
    * @return {promise<result>} - returns a promise which resolves to an object of Result
    *
    */
-  returnResponse: async function () {
+  _returnResponse: async function () {
     const oThis = this
     ;
 

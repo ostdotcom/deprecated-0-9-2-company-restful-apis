@@ -75,38 +75,22 @@ simulateRandomTransactionKlass.prototype = {
     const oThis = this;
 
     // Fetch client branded token
-    var r = await oThis.fetchClientBrandedToken();
-    if(r.isFailure()){
-      return Promise.resolve(r);
-    }
+    await oThis.fetchClientBrandedToken();
 
     // Fetch client branded token
-    var r = await oThis.fetchConversionFactors();
-    if(r.isFailure()){
-      return Promise.resolve(r);
-    }
+    await oThis.fetchConversionFactors();
 
     // Fetch Random users
-    var r = await oThis.fetchRandomUsers();
-    if(r.isFailure()){
-      return Promise.resolve(r);
-    }
+    await oThis.fetchRandomUsers();
 
     // Fetch Txs and Filter out some transaction kinds (if needed)
-    var r = await oThis.fetchRandomTransactionTypes();
-    if(r.isFailure()){
-      return Promise.resolve(r);
-    }
+    await oThis.fetchRandomTransactionTypes();
 
     // Fetch tx params
     var r = await oThis.fetchTxParams();
-    if(r.isFailure()){
-      return Promise.resolve(r);
-    }
 
-    var r = await oThis.sendTransaction(r.data);
+    return await oThis.sendTransaction(r.data);
 
-    return Promise.resolve(r.data.transaction);
   },
 
   /**
