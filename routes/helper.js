@@ -67,16 +67,16 @@ const routeMethods = {
 
   },
 
-  replaceKey: function (inObj, existingKey, newKey) {
-    const keyValue = inObj[existingKey];
-    if (!inObj.hasOwnProperty(keyValue)) {
-      return inObj;
+  replaceKey: function (data, oldKey, newKey) {
+    if (!data.hasOwnProperty(oldKey)) {
+      return data;
     }
 
-    delete inObj[existingKey];
-    inObj[newKey] = keyValue;
+    const keyValue = data[oldKey];
+    delete data[oldKey];
+    data[newKey] = keyValue;
 
-    return inObj;
+    return data;
   }
 
 };
