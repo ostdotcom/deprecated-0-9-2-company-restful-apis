@@ -2,7 +2,7 @@
 
 /**
  *
- * Return transaction kind list.
+ * Return action list.
  *
  * @module app/services/transaction_kind/list
  */
@@ -21,21 +21,32 @@ const rootPrefix = '../../..'
 ;
 
 /**
- * List - Service for getting the list of transaction kinds
+ * List - Service for getting the list of actions
  *
- * @param params
+ * @param {object} params - external passed parameters
+ * @param {number} params.client_id (mandatory)- client id for whom setup is to be made.
+ * @param {string} params.page_no (optional)- Page for which results have to be fetched
+ * @param {string} params.order_by - (optional) Order results, by created/name
+ * @param {string} params.order - (optional) Order results, in desc/asc
+ * @param {number} params.limit - (optional) results in page, can be 0 to 100
+ *
+ * @param {string} params.id - (optional filter) - Comma separated list of ids to get in result
+ * @param {string} params.name - (optional filter) - Comma separated list of names to get in result
+ * @param {string} params.kind - (optional filter) - Comma separated list of action kinds to get in result
+ * @param {string} params.currency - (optional filter) - Currency to get in result, 'USD'/'BT'
+ * @param {string} params.arbitrary_amount - (optional filter) - Results matching this flag, true/false
+ * @param {string} params.arbitrary_commission - (optional filter) - Results matching this flag, true/false
  * @constructor
  */
-const List = function(params) {
+const ListActions = function(params) {
   const oThis = this
   ;
 
   oThis.clientId = params.client_id;
-  oThis.page_no = params.page_no || 1;
-  oThis.order_by = (params.order_by || 'created').toLowerCase();
-  oThis.order = (params.order || 'desc').toLowerCase();
-  oThis.limit = (params.limit || 10) + 1;
-  oThis.offset = (oThis.page_no - 1) * oThis.limit;
+  oThis.page_no = params.page_no;
+  oThis.order_by = params.order_by;
+  oThis.order = params.order;
+  oThis.limit = params.limit;
   oThis.extra_entities = params.extra_entities || [];
   oThis.where = {};
 
@@ -43,13 +54,16 @@ const List = function(params) {
     oThis.where.id = basicHelper.commaSeperatedStrToArray(params.id);
     oThis.id = oThis.where.id;
   }
+
   if(params.name) {
     oThis.where.name = basicHelper.commaSeperatedStrToArray(params.name);
     oThis.name = oThis.where.name;
   }
+
   if(params.kind) {
     oThis.kind = basicHelper.commaSeperatedStrToArray(params.kind);
   }
+
   oThis.currencies = basicHelper.commaSeperatedStrToArray((params.currency || ''));
   oThis.arbitrary_amount_str = params.arbitrary_amount;
   oThis.arbitrary_commission_str = params.arbitrary_commission;
@@ -60,7 +74,7 @@ const List = function(params) {
 
 };
 
-List.prototype = {
+ListActions.prototype = {
 
   /**
    * perform
@@ -94,7 +108,8 @@ List.prototype = {
    */
   asyncPerform: async function() {
 
-    const oThis = this;
+    const oThis = this
+    ;
 
     await oThis.validateAssignParams();
 
@@ -112,9 +127,10 @@ List.prototype = {
    */
   validateAssignParams: function() {
 
-    var oThis = this;
+    const oThis = this
+    ;
 
-    if( oThis.page_no < 1 ){
+    if( oThis.page_no < 1 ) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_1',
         api_error_identifier: 'invalid_api_params',
@@ -123,7 +139,15 @@ List.prototype = {
       }));
     }
 
-    if ( oThis.order_by != 'created' && oThis.order_by != 'name' ) {
+    oThis.page_no = oThis.page_no || 1;
+
+    let order_by = null;
+
+    if (oThis.order_by) {
+      order_by = oThis.order_by.toLowerCase();
+    }
+
+    if ( oThis.order_by &&  order_by != 'created' && order_by != 'name' ) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_2',
         api_error_identifier: 'invalid_api_params',
@@ -132,7 +156,15 @@ List.prototype = {
       }));
     }
 
-    if ( !commonValidator.isValidOrderingString(oThis.order) ) {
+    oThis.order_by = order_by || 'created';
+
+    let order = null;
+
+    if (oThis.order) {
+      order = oThis.order.toLowerCase();
+    }
+
+    if ( oThis.order && !commonValidator.isValidOrderingString(order) ) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_7',
         api_error_identifier: 'invalid_api_params',
@@ -141,7 +173,9 @@ List.prototype = {
       }));
     }
 
-    if ( isNaN(oThis.limit) || oThis.limit < 1 || oThis.limit > 100 ) {
+    oThis.order = order || 'desc';
+
+    if ( !commonValidator.isVarNull(oThis.limit) && (isNaN(oThis.limit) || oThis.limit < 1 || oThis.limit > 100) ) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_3',
         api_error_identifier: 'invalid_api_params',
@@ -149,6 +183,8 @@ List.prototype = {
         debug_options: {clientId: oThis.clientId}
       }));
     }
+
+    oThis.limit = (oThis.limit || 10) + 1;
 
     if(oThis.kind) {
       let kinds = basicHelper.commaSeperatedStrToArray(oThis.kind);
@@ -189,7 +225,7 @@ List.prototype = {
 
 
     if (!commonValidator.isVarNull(oThis.arbitrary_commission_str)) {
-      oThis.arbitrary_commission_arr = basicHelper.commaSeperatedStrToArray((params.arbitrary_commission || ''));
+      oThis.arbitrary_commission_arr = basicHelper.commaSeperatedStrToArray(oThis.arbitrary_commission_str);
     }
 
     if(!commonValidator.isVarNull(oThis.arbitrary_commission_arr) && oThis.arbitrary_commission_arr.length > 1) {
@@ -216,15 +252,14 @@ List.prototype = {
    */
   getTransactionKinds: function () {
 
-    var oThis = this;
+    const oThis = this
+    ;
 
     return new Promise(async function (onResolve, onReject) {
 
       const result = await oThis.getAllFilteredActions().catch(function(err){
         onReject(err);
       });
-
-      oThis.total_no = result.length;
 
       let amount = null;
       let arbitrary_amount = null;
@@ -236,7 +271,8 @@ List.prototype = {
 
       for (var i = 0; i < result.length; i++) {
         var res = result[i];
-        if(res.currency_type == clientTxTypesConst.btCurrencyType){
+
+        if(res.currency_type == clientTxTypesConst.btCurrencyType) {
           amount = basicHelper.formatWeiToString(basicHelper.convertToNormal(res.value_in_bt_wei));
         }else{
           amount = res.value_in_usd;
@@ -363,10 +399,10 @@ List.prototype = {
 
     await Promise.all(oThis.allPromises);
 
+    let offset = (oThis.page_no - 1) * oThis.limit;
 
     let meta_data = {
       next_page_payload: {},
-      total_actions: oThis.total_no
     };
 
     if (oThis.next_page_present) {
@@ -378,7 +414,7 @@ List.prototype = {
         arbitrary_amount: oThis.arbitrary_amount,
         arbitrary_commission: oThis.arbitrary_commission,
         order_by: oThis.order_by,
-        offset: oThis.offset + oThis.limit - 1,
+        offset: offset + oThis.limit - 1,
         limit: oThis.limit - 1
       }
     }
@@ -395,4 +431,4 @@ List.prototype = {
   }
 };
 
-module.exports = List;
+module.exports = ListActions;
