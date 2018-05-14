@@ -9,32 +9,32 @@ const rootPrefix = '..'
 
 const routeMethods = {
 
-  performer: async function(req, res, next, CallerKlass, errorCode, afterValidationFunc, dataFormatterFunc) {
+  performer: async function (req, res, next, CallerKlass, errorCode, afterValidationFunc, dataFormatterFunc) {
 
     const oThis = this
       , errorConfig = basicHelper.fetchErrorConfig(req.decodedParams.apiVersion)
     ;
 
     return oThis.asyncPerform(req, res, next, CallerKlass, afterValidationFunc, dataFormatterFunc)
-        .catch(function(error) {
-          if (responseHelper.isCustomResult(error)) {
-            error.renderResponse(res, errorConfig);
-          } else {
-            logger.notify(errorCode, 'Something went wrong', error);
-            responseHelper.error({
-              internal_error_identifier: errorCode,
-              api_error_identifier: 'unhandled_catch_response',
-              debug_options: {}
-            }).renderResponse(res, errorConfig);
-          }
-        });
+      .catch(function (error) {
+        if (responseHelper.isCustomResult(error)) {
+          error.renderResponse(res, errorConfig);
+        } else {
+          logger.notify(errorCode, 'Something went wrong', error);
+          responseHelper.error({
+            internal_error_identifier: errorCode,
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          }).renderResponse(res, errorConfig);
+        }
+      });
   },
-  
-  asyncPerform: async function(req, res, next, CallerKlass, afterValidationFunc, dataFormatterFunc) {
+
+  asyncPerform: async function (req, res, next, CallerKlass, afterValidationFunc, dataFormatterFunc) {
     req.decodedParams = req.decodedParams || {};
 
     const oThis = this
-        , errorConfig = basicHelper.fetchErrorConfig(req.decodedParams.apiVersion);
+      , errorConfig = basicHelper.fetchErrorConfig(req.decodedParams.apiVersion);
 
     const apiParamsValidatorRsp = await new apiParamsValidator({
       api_name: req.decodedParams.apiName,
@@ -44,7 +44,7 @@ const routeMethods = {
 
     req.serviceParams = apiParamsValidatorRsp.data.sanitisedApiParams;
 
-    if(afterValidationFunc){
+    if (afterValidationFunc) {
       req.serviceParams = await afterValidationFunc(req.serviceParams);
     }
 
@@ -66,9 +66,13 @@ const routeMethods = {
     return new CallerKlass(req.serviceParams).perform().then(handleResponse);
 
   },
-  
+
   replaceKey: function (inObj, existingKey, newKey) {
     const keyValue = inObj[existingKey];
+    if (!inObj.hasOwnProperty(keyValue)) {
+      return inObj;
+    }
+
     delete inObj[existingKey];
     inObj[newKey] = keyValue;
 
