@@ -175,7 +175,7 @@ EditAction.prototype = {
       oThis.transactionKindObj['value_in_usd'] = null;
 
     } else {
-      errors_object.push('invalid_currency');
+      errors_object.push('invalid_currency_type');
     }
 
     /* Validate commission percent */
