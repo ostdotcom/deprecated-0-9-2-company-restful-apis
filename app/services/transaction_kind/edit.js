@@ -94,7 +94,7 @@ Edit.prototype = {
    * @return {promise<result>} - returns a promise which resolves to an object of Result
    *
    */
-  validateParams: async function(){
+  validateParams: async function() {
     var oThis = this
       , id = oThis.params.id
       , client_id = oThis.params.client_id
@@ -104,8 +104,6 @@ Edit.prototype = {
 
     var qResult = await oThis.getCurrentTransactionKind();
     oThis.currentTransactionKind = qResult[0];
-
-    console.log("currentTransactionKind", oThis.currentTransactionKind);
 
     var name = oThis.params.name || oThis.currentTransactionKind.name
       , kind = new ClientTransactionTypeModel().kinds[oThis.currentTransactionKind.kind.toString()]

@@ -8,7 +8,7 @@
  */
 
 
-var rootPrefix = '../../..'
+const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
@@ -27,8 +27,8 @@ var rootPrefix = '../../..'
  * @constructor
  */
 const List = function(params) {
-
-  const oThis = this;
+  const oThis = this
+  ;
 
   oThis.clientId = params.client_id;
   oThis.page_no = params.page_no || 1;
@@ -51,8 +51,8 @@ const List = function(params) {
     oThis.kind = basicHelper.commaSeperatedStrToArray(params.kind);
   }
   oThis.currencies = basicHelper.commaSeperatedStrToArray((params.currency || ''));
-  oThis.arbitrary_amount = basicHelper.commaSeperatedStrToArray((params.arbitrary_amount || ''));
-  oThis.arbitrary_commission = basicHelper.commaSeperatedStrToArray((params.arbitrary_commission || ''));
+  oThis.arbitrary_amount_str = params.arbitrary_amount;
+  oThis.arbitrary_commission_str = params.arbitrary_commission;
 
   oThis.transactionTypes = [];
 
@@ -141,7 +141,7 @@ List.prototype = {
       }));
     }
 
-    if ( oThis.limit < 1 || oThis.limit > 100 ) {
+    if ( isNaN(oThis.limit) || oThis.limit < 1 || oThis.limit > 100 ) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_3',
         api_error_identifier: 'invalid_api_params',
@@ -170,7 +170,11 @@ List.prototype = {
 
     if(oThis.currencies[0] != '') oThis.where.currency_type = new ClientTransactionTypeModel().invertedCurrencyTypes[oThis.currencies[0]];
 
-    if(oThis.arbitrary_amount.length > 1) {
+    if (!commonValidator.isVarNull(oThis.arbitrary_amount_str)) {
+      oThis.arbitrary_amount_arr = basicHelper.commaSeperatedStrToArray(oThis.arbitrary_amount_str);
+    }
+
+    if(!commonValidator.isVarNull(oThis.arbitrary_amount_arr) && oThis.arbitrary_amount_arr.length > 1) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_5',
         api_error_identifier: 'invalid_api_params',
@@ -179,9 +183,16 @@ List.prototype = {
       }));
     }
 
-    if(oThis.arbitrary_amount[0] != '') oThis.arbitrary_amount = oThis.arbitrary_amount[0];
+    if(!commonValidator.isVarNull(oThis.arbitrary_amount_arr)) {
+      oThis.arbitrary_amount = oThis.arbitrary_amount_arr[0];
+    }
 
-    if(oThis.arbitrary_commission.length > 1) {
+
+    if (!commonValidator.isVarNull(oThis.arbitrary_commission_str)) {
+      oThis.arbitrary_commission_arr = basicHelper.commaSeperatedStrToArray((params.arbitrary_commission || ''));
+    }
+
+    if(!commonValidator.isVarNull(oThis.arbitrary_commission_arr) && oThis.arbitrary_commission_arr.length > 1) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_6',
         api_error_identifier: 'invalid_api_params',
@@ -190,7 +201,9 @@ List.prototype = {
       }));
     }
 
-    if (oThis.arbitrary_commission[0] != '') oThis.arbitrary_commission = oThis.arbitrary_commission[0];
+    if(!commonValidator.isVarNull(oThis.arbitrary_commission_arr)){
+      oThis.arbitrary_commission = oThis.arbitrary_commission_arr[0];
+    }
 
     return Promise.resolve({});
 
@@ -314,7 +327,7 @@ List.prototype = {
    *
    * @returns {Promise}
    */
-  getExtraData: function(){
+  getExtraData: function() {
 
     const oThis = this;
 
@@ -350,37 +363,24 @@ List.prototype = {
 
     await Promise.all(oThis.allPromises);
 
-    let arbitrary_amount;
-
-    if( oThis.arbitrary_amount instanceof Array || oThis.arbitrary_amount == '') {
-      delete oThis.arbitrary_amount;
-    }
-
-    if( oThis.arbitrary_commission instanceof Array || oThis.arbitrary_commission == '') {
-      delete oThis.arbitrary_commission;
-    }
 
     let meta_data = {
-      next_page_payload: {
+      next_page_payload: {},
+      total_actions: oThis.total_no
+    };
+
+    if (oThis.next_page_present) {
+      meta_data.next_page_payload = {
         id: oThis.id,
         name: oThis.name,
         kind: oThis.kind,
-        currency: oThis.currencies[0] != '' ? oThis.currencies[0] : undefined,
+        currency: (oThis.currencies[0] != '') ? oThis.currencies[0] : undefined,
         arbitrary_amount: oThis.arbitrary_amount,
         arbitrary_commission: oThis.arbitrary_commission,
         order_by: oThis.order_by,
         offset: oThis.offset + oThis.limit - 1,
         limit: oThis.limit - 1
-      },
-      total_actions: oThis.total_no
-    };
-
-    if (oThis.next_page_present) {
-      delete meta_data.next_page_payload;
-
-      meta_data.next_page_payload.order_by = oThis.order_by;
-      meta_data.next_page_payload.offset = oThis.offset + oThis.limit - 1;
-      meta_data.next_page_payload.limit = oThis.limit - 1;
+      }
     }
 
     return Promise.resolve(responseHelper.successWithData(

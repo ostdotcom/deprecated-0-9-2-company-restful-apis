@@ -214,5 +214,9 @@
     "parameter": "to_address",
     "code": "missing",
     "message": "Missing to_address"
+  },
+  "invalid_transaction_get": {
+    "parameter": "transaction_type",
+    "message": "Requested transfer data for invalid transaction type"
   }
 }
