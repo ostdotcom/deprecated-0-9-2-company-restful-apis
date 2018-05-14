@@ -114,15 +114,15 @@ GetAction.prototype = {
 
     const result = await new ClientTransactionTypeModel().getTransactionById({ clientTransactionId: oThis.id });
 
-    if (!result.isFailure()) {
+    oThis.result = result[0];
+
+    if (!oThis.result) {
       return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_tk_g_2',
         api_error_identifier: 'data_not_found',
         debug_options: {clientId: oThis.clientId}
       }));
     }
-
-    oThis.result = result[0];
 
     if(result.currency_type == clientTxTypesConst.btCurrencyType) {
       oThis.amount = basicHelper.formatWeiToString(basicHelper.convertToNormal(oThis.result.value_in_bt_wei));
