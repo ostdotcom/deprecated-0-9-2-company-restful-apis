@@ -115,7 +115,7 @@ EditAction.prototype = {
 
     oThis.currentTransactionKind = qResult[0];
 
-    if(!oThis.currentTransactionKind || oThis.currentTransactionKind.length==0){
+    if(!oThis.currentTransactionKind || oThis.currentTransactionKind.length==0) {
       errors_object.push('invalid_client_transaction_id');
     }
 
@@ -127,11 +127,13 @@ EditAction.prototype = {
       }));
     }
 
+    let bt_amount = oThis.currentTransactionKind.value_in_bt_wei ? basicHelper.convertToNormal(oThis.currentTransactionKind.value_in_bt_wei) : null;
+
     let kind = new ClientTransactionTypeModel().kinds[oThis.currentTransactionKind.kind.toString()]
       , currency = (oThis.currency
           || new ClientTransactionTypeModel().currencyTypes[oThis.currentTransactionKind.currency_type]).toUpperCase()
       , amount = oThis.amount || oThis.currentTransactionKind.value_in_usd
-          || basicHelper.convertToNormal(oThis.currentTransactionKind.value_in_bt_wei)
+          || bt_amount
       , commission_percent = oThis.commission_percent || oThis.currentTransactionKind.commission_percent
       , errors_object = []
     ;
