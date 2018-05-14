@@ -1,9 +1,9 @@
 "use strict";
 
 /**
- * Service to List Transactions
+ * Service to List STP Transfers
  *
- * @module app/services/transaction/list
+ * @module app/services/stp_transfer/list
  */
 
 const rootPrefix = '../../..'
