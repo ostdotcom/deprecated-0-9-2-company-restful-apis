@@ -17,17 +17,17 @@
   "missing_uuid": {
     "parameter": "uuid",
     "code": "missing",
-    "message": "missing uuid"
+    "message": "Missing uuid"
   },
   "missing_name": {
     "parameter": "name",
     "code": "missing",
-    "message": "missing name"
+    "message": "Missing name"
   },
   "missing_kind": {
     "parameter": "kind",
     "code": "missing",
-    "message": "missing kind"
+    "message": "Missing kind"
   },
   "missing_currency_type": {
     "parameter": "currency_type",
@@ -65,12 +65,12 @@
   "invalid_order": {
     "parameter": "order",
     "code": "invalid",
-    "message": "order users in 'desc' (default) or 'asc' order."
+    "message": "Order users in 'desc' (default) or 'asc' order."
   },
   "invalid_id_user": {
     "parameter": "uuid",
     "code": "invalid",
-    "message": "invalid uuid passed"
+    "message": "Invalid uuid passed"
   },
   "invalid_filter_user_list": {
     "parameter": "filter",
@@ -138,7 +138,7 @@
     "message": "Can be 0.00001 to 100"
   },
   "invalid_currency_type": {
-    "parameter": "currency",
+    "parameter": "currency_type",
     "code": "invalid",
     "message": "Must be either 'USD' (fixed) or 'BT' (floating)."
   },
