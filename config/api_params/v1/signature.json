@@ -131,8 +131,8 @@
         "error_identifier": "missing_currency"
       },
       {
-        "parameter": "arbitrary_commission",
-        "error_identifier": "missing_arbitrary_commission"
+        "parameter": "arbitrary_amount",
+        "error_identifier": "missing_arbitrary_amount"
       },
       {
         "parameter": "client_id",
