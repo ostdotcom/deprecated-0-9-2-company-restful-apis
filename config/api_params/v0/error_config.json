@@ -150,6 +150,16 @@
     "parameter": "client_transaction_id",
     "message": "Invalid client_transaction_id"
   },
+  "invalid_amount_arbitrary_combination": {
+    "parameter": "amount",
+    "code": "invalid",
+    "message": "Amount is not valid"
+  },
+  "invalid_commission_arbitrary_combination": {
+    "parameter": "commission_percent",
+    "code": "invalid",
+    "message": "Commission percent is not valid"
+  },
   "transaction_kind_not_editable": {
     "parameter": "kind",
     "message": "Kind is not editable"

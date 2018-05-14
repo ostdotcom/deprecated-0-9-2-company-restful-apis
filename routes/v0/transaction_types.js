@@ -76,6 +76,7 @@ router.post('/edit', function (req, res, next) {
 
   req.decodedParams.apiName = 'update_action';
 
+  req.decodedParams.arbitrary_amount = false;
   const editTransactionKlass = require(rootPrefix + '/app/services/transaction_kind/edit');
 
   const afterValidationFunc = async function(serviceParamsPerThisVersion) {

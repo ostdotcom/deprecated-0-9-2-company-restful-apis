@@ -63,14 +63,6 @@
     "parameter": "name",
     "message": "An action with that name already exists."
   },
-  "out_of_bound_transaction_usd_value": {
-    "parameter": "currency_value",
-    "message": "Can be 0.01 to 100"
-  },
-  "out_of_bound_transaction_bt_value": {
-    "parameter": "currency_value",
-    "message": "Can be 0.00001 to 100"
-  },
   "invalid_filter_user_list": {
     "parameter": "airdropped",
     "code": "invalid",
@@ -107,6 +99,11 @@
     "message": "invalid id passed."
   },
   "invalid_id_transfer_get": {
+    "parameter": "id",
+    "code": "invalid",
+    "message": "invalid id passed."
+  },
+  "invalid_client_transaction_id": {
     "parameter": "id",
     "code": "invalid",
     "message": "invalid id passed."
@@ -227,10 +224,6 @@
     "parameter": "amount",
     "code": "invalid",
     "message": "Invalid amount."
-  },
-  "invalid_transactionkind": {
-    "parameter": "kind",
-    "message": "Invalid transaction kind."
   },
   "duplicate_transactionname": {
     "parameter": "name",
