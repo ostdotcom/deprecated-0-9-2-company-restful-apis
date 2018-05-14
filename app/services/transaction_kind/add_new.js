@@ -120,48 +120,49 @@ AddNewAction.prototype = {
       errors_object.push('invalid_transactionkind');
     }
 
-    if (oThis.currency == clientTxTypesConst.usdCurrencyType) {
-      if (!commonValidator.validateArbitraryAmount(oThis.amount, oThis.arbitraryAmount)) {
-        errors_object.push('invalid_amount_arbitrary_combination');
-      } else if (!commonValidator.validateUsdAmount(oThis.amount)) {
-        errors_object.push('out_of_bound_transaction_usd_value');
-      }
-      oThis.transactionKindObj.value_in_usd = oThis.amount;
-    } else if (oThis.currency == clientTxTypesConst.btCurrencyType) {
-      if (!commonValidator.validateArbitraryAmount(oThis.amount, oThis.arbitraryAmount)) {
-        errors_object.push('invalid_amount_arbitrary_combination');
-      }
-      else if (!commonValidator.validateBtAmount(oThis.amount)) {
-        errors_object.push('out_of_bound_transaction_bt_value');
-      }
+    if(!commonValidator.isVarNull(oThis.amount) && !(oThis.amount >= 0)){
+      errors_object.push('invalid_amount');
+    } else {
 
-      if (!commonValidator.isVarNull(oThis.amount)) {
-        let value_in_bt_wei = basicHelper.convertToWei(oThis.amount);
-        if (!basicHelper.isWeiValid(value_in_bt_wei)) {
+      if (oThis.currency == clientTxTypesConst.usdCurrencyType) {
+        if (!commonValidator.validateArbitraryAmount(oThis.amount, oThis.arbitraryAmount)) {
+          errors_object.push('invalid_amount_arbitrary_combination');
+        } else if (!commonValidator.validateUsdAmount(oThis.amount)) {
+          errors_object.push('out_of_bound_transaction_usd_value');
+        }
+        oThis.transactionKindObj.value_in_usd = oThis.amount;
+      } else if (oThis.currency == clientTxTypesConst.btCurrencyType) {
+        if (!commonValidator.validateArbitraryAmount(oThis.amount, oThis.arbitraryAmount)) {
+          errors_object.push('invalid_amount_arbitrary_combination');
+        } else if (!commonValidator.validateBtAmount(oThis.amount)) {
           errors_object.push('out_of_bound_transaction_bt_value');
         }
-        oThis.transactionKindObj.value_in_bt_wei = basicHelper.formatWeiToString(value_in_bt_wei);
-      }
-    } else {
-      errors_object.push('invalid_currency');
-    }
 
-    let isValidCommissionPercent = false;
-
-    if (!commonValidator.validateArbitraryCommissionPercent(oThis.commissionPercent, oThis.arbitraryCommission)) {
-      errors_object.push('invalid_commission_arbitrary_combination');
-    }
-
-    if (!commonValidator.isVarNull(oThis.commissionPercent)) {
-      if (commonValidator.commissionPercentValid(oThis.commissionPercent)) {
-        isValidCommissionPercent = true;
+        if (!commonValidator.isVarNull(oThis.amount)) {
+          let value_in_bt_wei = basicHelper.convertToWei(oThis.amount);
+          if (!basicHelper.isWeiValid(value_in_bt_wei)) {
+            errors_object.push('out_of_bound_transaction_bt_value');
+          }
+          oThis.transactionKindObj.value_in_bt_wei = basicHelper.formatWeiToString(value_in_bt_wei);
+        }
       } else {
+        errors_object.push('invalid_currency');
+      }
+    }
+
+    if(oThis.kind != clientTxTypesConst.userToUserKind) {
+      if (!commonValidator.isVarNull(oThis.commissionPercent)) {
         errors_object.push('invalid_commission_percent');
       }
-    }
-
-    if (isValidCommissionPercent && oThis.kind != clientTxTypesConst.userToUserKind) {
-      errors_object.push('invalid_commission_percent');
+      if (!commonValidator.isVarNull(oThis.arbitraryCommission)) {
+        errors_object.push('invalid_arbitrary_commission');
+      }
+    } else {
+      if (!commonValidator.commissionPercentValid(oThis.commissionPercent)) {
+        errors_object.push('invalid_commission_percent');
+      } else if (!commonValidator.validateArbitraryCommissionPercent(oThis.commissionPercent, oThis.arbitraryCommission)) {
+        errors_object.push('invalid_commission_arbitrary_combination');
+      }
     }
 
     let existingTKind = await new ClientTransactionTypeModel().getTransactionByName({clientId: oThis.clientId, name: oThis.name});
@@ -169,6 +170,7 @@ AddNewAction.prototype = {
       errors_object.push('duplicate_transactionname');
     }
 
+    console.log("-------errors_object---", errors_object);
     if (errors_object.length > 0) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_an_2',

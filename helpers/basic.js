@@ -131,7 +131,6 @@ BasicHelperKlass.prototype = {
    * @return {boolean}
    */
   isTxKindNameValid: function (name) {
-    const oThis = this;
     if (typeof name !== "string") {
       return false;
     }
