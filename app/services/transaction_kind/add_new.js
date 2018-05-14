@@ -171,7 +171,6 @@ AddNewAction.prototype = {
       errors_object.push('duplicate_transaction_name');
     }
 
-    console.log("-------errors_object---", errors_object);
     if (errors_object.length > 0) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_an_2',

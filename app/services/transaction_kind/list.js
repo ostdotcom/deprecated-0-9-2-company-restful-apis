@@ -130,7 +130,7 @@ ListActions.prototype = {
     const oThis = this
     ;
 
-    if( oThis.page_no < 1 ) {
+    if( Number(oThis.page_no) < 1 ) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_1',
         api_error_identifier: 'invalid_api_params',
@@ -139,7 +139,7 @@ ListActions.prototype = {
       }));
     }
 
-    oThis.page_no = oThis.page_no || 1;
+    oThis.page_no = Number(oThis.page_no || 1);
 
     let order_by = null;
 
@@ -174,6 +174,10 @@ ListActions.prototype = {
     }
 
     oThis.order = order || 'desc';
+
+    if(!commonValidator.isVarNull(oThis.limit)) {
+      oThis.limit = Number(oThis.limit);
+    }
 
     if ( !commonValidator.isVarNull(oThis.limit) && (isNaN(oThis.limit) || oThis.limit < 1 || oThis.limit > 100) ) {
       return Promise.reject(responseHelper.paramValidationError({
@@ -273,7 +277,7 @@ ListActions.prototype = {
         var res = result[i];
 
         if(res.currency_type == clientTxTypesConst.btCurrencyType) {
-          amount = basicHelper.formatWeiToString(basicHelper.convertToNormal(res.value_in_bt_wei));
+          amount = res.value_in_bt_wei ? basicHelper.formatWeiToString(basicHelper.convertToNormal(res.value_in_bt_wei)) : null;
         }else{
           amount = res.value_in_usd;
         }
