@@ -146,6 +146,10 @@
     "parameter": "commission_percent",
     "message": "Can only be set for 'user_to_user' actions and can be 0 to 100."
   },
+  "missing_client_transaction_id": {
+    "parameter": "client_transaction_id",
+    "message": "Missing client_transaction_id"
+  },
   "invalid_client_transaction_id": {
     "parameter": "client_transaction_id",
     "message": "Invalid client_transaction_id"
