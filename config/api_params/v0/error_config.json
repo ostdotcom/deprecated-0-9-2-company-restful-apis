@@ -139,6 +139,7 @@
   },
   "invalid_currency_type": {
     "parameter": "currency",
+    "code": "invalid",
     "message": "Must be either 'USD' (fixed) or 'BT' (floating)."
   },
   "invalid_commission_percent": {

@@ -214,6 +214,11 @@
     "code": "invalid",
     "message": "Invalid arbitrary_commission"
   },
+  "invalid_currency_type": {
+    "parameter": "currency",
+    "code": "invalid",
+    "message": "Must be either 'USD' (fixed) or 'BT' (floating)."
+  },
   "invalid_currency_filter": {
     "parameter": "currency",
     "message": "Filter on currency can have only one value"
