@@ -76,7 +76,6 @@ router.post('/edit', function (req, res, next) {
 
   req.decodedParams.apiName = 'update_action';
 
-  req.decodedParams.arbitrary_amount = false;
   const editTransactionKlass = require(rootPrefix + '/app/services/transaction_kind/edit');
 
   const afterValidationFunc = async function(serviceParamsPerThisVersion) {
@@ -88,6 +87,8 @@ router.post('/edit', function (req, res, next) {
     routeHelper.replaceKey(serviceParamsPerLatestVersion, 'currency_value', 'amount');
 
     routeHelper.replaceKey(serviceParamsPerLatestVersion, 'client_transaction_id', 'id');
+
+    serviceParamsPerLatestVersion.arbitrary_amount = 'false';
 
     return serviceParamsPerLatestVersion;
 
