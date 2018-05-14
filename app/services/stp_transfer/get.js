@@ -8,29 +8,33 @@ const rootPrefix = '../../..'
   , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
 ;
 
-
 /**
- *
  * @constructor
+ *
+ * @param {object} params - service params
+ * @param {number} params.client_id (mandatory) - client id
+ * @param {string} params.id (mandatory) - uuid of the transfer to fetch info for
  */
-const GetStPrime = function(params) {
-  const oThis = this;
-  oThis.id = params.id;
+const GetStPTransferService = function (params) {
+  const oThis = this
+  ;
+
+  oThis.transactionUuid = params.id;
   oThis.client_id = params.client_id;
 };
 
-GetStPrime.prototype = {
+GetStPTransferService.prototype = {
   /**
-   * perform
+   * Perform
    *
-   * @returns {Promise}
+   * @return {promise<result>}
    */
-  perform: function(){
+  perform: function () {
     const oThis = this;
 
     return oThis.asyncPerform()
-      .catch(function(error) {
-        if (responseHelper.isCustomResult(error)){
+      .catch(function (error) {
+        if (responseHelper.isCustomResult(error)) {
           return error;
         } else {
           logger.error(`${__filename}::perform::catch`);
@@ -45,67 +49,96 @@ GetStPrime.prototype = {
       });
   },
 
-  asyncPerform: async function(){
-    const oThis = this;
-
-    await oThis.getStPrimeData();
-
-    let formattedResponse = await oThis.formatResponse();
-
-    return Promise.resolve(formattedResponse);
-  },
-
-  getStPrimeData: async function() {
+  /**
+   * Async perform
+   *
+   * @return {promise<result>}
+   */
+  asyncPerform: async function () {
     const oThis = this
     ;
 
-    let transactionLogs = await new TransactionLogModel().getById([oThis.id]);
+    await oThis._fetchRecord();
+
+    return oThis._formatApiResponse();
+  },
+
+  /**
+   * Async perform
+   *
+   * Sets oThis.record
+   *
+   * @return {promise<result>}
+   */
+  _fetchRecord: async function () {
+    const oThis = this
+    ;
+
+    let transactionLogs = await new TransactionLogModel().getById([oThis.transactionUuid]);
     let transactionLog = transactionLogs[0];
-    if(!transactionLog) {
+    if (!transactionLog) {
       return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_stpt_g_2',
-        api_error_identifier: 'transaction_log_invalid',
+        api_error_identifier: 'invalid_id_transfer_get',
         debug_options: {}
       }));
     }
 
-    oThis.transactionLog = transactionLog;
-
     if (oThis.client_id != transactionLog.client_id) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_stpt_g_3',
-        api_error_identifier: 'unauthorized_api_request',
-        debug_options: {clientId: oThis.clientId, id: transactionLog.transaction_uuid }
+        api_error_identifier: 'invalid_id_transfer_get',
+        debug_options: {}
       }));
     }
 
     let transactionLogType = new TransactionLogModel().transactionTypes[transactionLog.transaction_type];
 
-    if( transactionLogType != transactionLogConst.stpTransferTransactionType) {
+    if (transactionLogType != transactionLogConst.stpTransferTransactionType) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_stpt_g_4',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_transaction_get'],
-        debug_options: {clientId: oThis.client_id, id: transactionLog.transaction_uuid }
+        debug_options: {}
       }));
     }
+
+    oThis.record = transactionLog;
 
     return Promise.resolve({});
   },
 
-  formatResponse: async function () {
-    const oThis = this;
+  /**
+   * Format api response
+   *
+   * @return {promise<result>}
+   */
+  _formatApiResponse: async function () {
+    const oThis = this
+    ;
 
-    let stPrimeTransferFormatter = new StPrimeTransferFormatter(oThis.transactionLog);
+    let apiResponseData = {
+      result_type: 'transaction'
+    };
 
-    let stPrimeTransferFormatterResponse = await stPrimeTransferFormatter.perform();
+    let stPrimeTransferFormatter = new StPrimeTransferFormatter(oThis.record)
+      , stPrimeTransferFormatterResponse = await stPrimeTransferFormatter.perform()
+    ;
 
-    return Promise.resolve(responseHelper.successWithData({
-      result_type: "transfer",
-      "transfer": stPrimeTransferFormatterResponse.data
-    }));
+    if (stPrimeTransferFormatterResponse.isFailure()) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_stpt_g_5',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_id_transfer_get'],
+        debug_options: {}
+      }));
+    }
+
+    apiResponseData.transaction = stPrimeTransferFormatterResponse.data;
+
+    return responseHelper.successWithData(apiResponseData);
   }
 
 };
 
-module.exports = GetStPrime;
+module.exports = GetStPTransferService;

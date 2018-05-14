@@ -82,6 +82,11 @@
     "code": "invalid",
     "message": "invalid id passed."
   },
+  "invalid_id_transfer_get": {
+    "parameter": "id",
+    "code": "invalid",
+    "message": "invalid id passed."
+  },
   "missing_id_param": {
     "parameter": "id",
     "code": "missing",

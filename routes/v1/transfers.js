@@ -47,7 +47,7 @@ router.get('/', function (req, res, next) {
 });
 
 /**
- * Get transaction by id
+ * Get STP transfer by id
  *
  * @name Get Transfer
  *
@@ -57,6 +57,7 @@ router.get('/', function (req, res, next) {
  */
 router.get('/:id', function (req, res, next) {
   const GetSTPTransferService = require(rootPrefix + '/app/services/stp_transfer/get');
+
   req.decodedParams.apiName = 'get_stp_transfer';
   req.decodedParams.id = req.params.id;
 

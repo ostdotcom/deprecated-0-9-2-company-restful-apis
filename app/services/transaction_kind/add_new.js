@@ -93,7 +93,6 @@ AddNewAction.prototype = {
     await oThis.clearCache();
 
     return oThis.returnResponse();
-
   },
 
   /**
