@@ -138,7 +138,6 @@ EditAction.prototype = {
     ;
 
     amount = parseFloat(amount);
-    commission_percent = parseFloat(commission_percent);
 
     /* Keep amount and currency type aligned in DB */
     if (currency == clientTxTypesConst.usdCurrencyType) {
@@ -178,14 +177,16 @@ EditAction.prototype = {
     }
 
     /* Validate commission percent */
-    if (!commonValidator.validateArbitraryCommissionPercent(commission_percent, oThis.arbitrary_commission)) {
-      errors_object.push('invalid_commission_arbitrary_combination');
-    }
-    else if (!commonValidator.commissionPercentValid(commission_percent)) {
-      errors_object.push('invalid_commission_percent');
+    commission_percent = parseFloat(commission_percent);
+    if (kind == clientTxTypesConst.userToUserKind) {
+      if (!commonValidator.validateArbitraryCommissionPercent(commission_percent, oThis.arbitrary_commission)) {
+        errors_object.push('invalid_commission_arbitrary_combination');
+      } else if (!commonValidator.commissionPercentValid(commission_percent)) {
+        errors_object.push('invalid_commission_percent');
+      }
     }
 
-    if (commission_percent > 0 && kind != clientTxTypesConst.userToUserKind) {
+    if (!isNaN(commission_percent) && commission_percent > 0 && kind != clientTxTypesConst.userToUserKind) {
       errors_object.push('invalid_commission_percent');
     }
 
@@ -203,7 +204,7 @@ EditAction.prototype = {
       } else {
         let existingTKind = await new ClientTransactionTypeModel()
           .getTransactionByName({
-            client_id: oThis.currentTransactionKind['client_id'],
+            clientId: oThis.client_id,
             name: oThis.name
           });
 
@@ -289,6 +290,7 @@ EditAction.prototype = {
       amount: oThis.amount,
       arbitrary_commission: oThis.arbitrary_commission,
       commission_percent: oThis.commission_percent || oThis.currentTransactionKind.commission_percent,
+      kind: new ClientTransactionTypeModel().kinds[oThis.currentTransactionKind.kind],
       uts: Date.now()
     });
 
