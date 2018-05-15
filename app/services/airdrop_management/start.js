@@ -116,12 +116,21 @@ StartAirdropKlass.prototype = {
       }));
     }
 
-    if(commonValidator.isVarTrue(oThis.airdropped)){
-      oThis.airdropUserListType = clientAirdropConst.everAirdroppedAddressesAirdropListType;
-    } else if (commonValidator.isVarFalse(oThis.airdropped)){
-      oThis.airdropUserListType = clientAirdropConst.neverAirdroppedAddressesAirdropListType;
-    } else {
+    if(commonValidator.isVarNull(oThis.airdropped)){
       oThis.airdropUserListType = clientAirdropConst.allAddressesAirdropListType;
+    } else {
+      if(commonValidator.isVarTrue(oThis.airdropped)){
+        oThis.airdropUserListType = clientAirdropConst.everAirdroppedAddressesAirdropListType;
+      } else if (commonValidator.isVarFalse(oThis.airdropped)){
+        oThis.airdropUserListType = clientAirdropConst.neverAirdroppedAddressesAirdropListType;
+      } else {
+        return Promise.reject(responseHelper.paramValidationError({
+          internal_error_identifier: 's_am_s_4',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: ['invalid_airdropped_filter'],
+          debug_options: {}
+        }));
+      }
     }
 
     if(oThis.userIds){

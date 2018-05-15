@@ -128,6 +128,11 @@
     "code": "invalid",
     "message": "Invalid airdrop amount"
   },
+  "invalid_airdropped_filter": {
+    "parameter": "airdropped",
+    "code": "invalid",
+    "message": "airdropped can be True of False"
+  },
   "invalid_client_id": {
     "parameter": "client_id",
     "code": "invalid",
@@ -233,6 +238,11 @@
   "duplicate_transactionname": {
     "parameter": "name",
     "message": "An action with that name already exists."
+  },
+  "invalid_arbitrary_commission": {
+    "parameter": "arbitrary_percent",
+    "code": "invalid",
+    "message": "Invalid arbitrary commision."
   },
   "invalid_commission_percent": {
     "parameter": "commission_percent",
