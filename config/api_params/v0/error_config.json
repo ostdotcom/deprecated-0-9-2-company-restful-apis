@@ -52,6 +52,11 @@
     "code": "invalid",
     "message": "Invalid page_no"
   },
+  "invalid_limit": {
+    "parameter": "limit",
+    "code": "invalid",
+    "message": "Invalid limit"
+  },
   "invalid_pagination_limit": {
     "parameter": "limit",
     "code": "invalid",

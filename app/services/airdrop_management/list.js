@@ -60,7 +60,7 @@ ListAirdropsKlass.prototype = {
           return error;
         } else {
           return responseHelper.error({
-            internal_error_identifier: 's_am_l_3',
+            internal_error_identifier: 's_am_l_1',
             api_error_identifier: 'unhandled_catch_response',
             debug_options: {}
           });
@@ -169,6 +169,25 @@ ListAirdropsKlass.prototype = {
     const oThis = this
       , errors_object = [];
 
+    // data type checks
+    if (!commonValidator.isVarNull(oThis.pageNo) && !(oThis.pageNo > 0)) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_am_l_2',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_page_no'],
+        debug_options: {}
+      }));
+    }
+
+    if (!commonValidator.isVarNull(oThis.limit) && !(oThis.limit > 0)) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_am_l_3',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_limit'],
+        debug_options: {}
+      }));
+    }
+
     if (!oThis.limit) {
       oThis.limit = 10;
     } else {
@@ -220,7 +239,7 @@ ListAirdropsKlass.prototype = {
 
     if (errors_object.length > 0) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_cu_l_3',
+        internal_error_identifier: 's_am_l_4',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: errors_object,
         debug_options: {}
