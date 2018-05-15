@@ -93,11 +93,8 @@ GetStPTransferService.prototype = {
       }));
     }
 
-    console.log("----------transactionLog-", transactionLog);
-
     let transactionLogType = new TransactionLogModel().transactionTypes[transactionLog.transaction_type];
 
-    console.log("----------transactionLogType-", transactionLogType);
     if (transactionLogType != transactionLogConst.stpTransferTransactionType) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_stpt_g_4',
