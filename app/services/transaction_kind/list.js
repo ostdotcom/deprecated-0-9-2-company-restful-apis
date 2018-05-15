@@ -271,7 +271,6 @@ ListActions.prototype = {
       for (var i = 0; i < result.length; i++) {
         var res = result[i];
 
-        console.log('---res--', res);
         actionEntityFormatter = new ActionEntityFormatterKlass(res);
 
         actionEntityFormatterRsp = await actionEntityFormatter.perform();
