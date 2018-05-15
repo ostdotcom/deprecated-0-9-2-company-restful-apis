@@ -6,6 +6,7 @@ const rootPrefix = '../..'
   , ModelBaseKlass = require(rootPrefix + '/app/models/base')
   , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
   , basicHelper = require(rootPrefix + '/helpers/basic')
+  , commonValidator = require(rootPrefix +  '/lib/validators/common')
 ;
 
 const dbName = "saas_client_economy_" + coreConstants.SUB_ENVIRONMENT + "_" + coreConstants.ENVIRONMENT
@@ -141,7 +142,13 @@ const ClientTransactionTypeModelSpecificPrototype = {
   },
 
   getValue: function (record) {
-    const oThis = this;
+    const oThis = this
+    ;
+
+    if(commonValidator.isVarNull(record.value_in_usd) && commonValidator.isVarNull(record.value_in_bt_wei)) {
+      return null;
+    }
+
     if (oThis.currencyTypes[record.currency_type] == clientTxTypesConst.usdCurrencyType) {
       return record.value_in_usd;
     } else {
