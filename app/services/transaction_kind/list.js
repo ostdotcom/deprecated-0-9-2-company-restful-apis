@@ -191,11 +191,11 @@ ListActions.prototype = {
     oThis.limit = oThis.limit || 10;
 
     if(oThis.kind) {
-      let kinds = oThis.kind;
-      kinds = kinds.map(function(kind){
-        let val = new ClientTransactionTypeModel().invertedKinds[kind];
-        return Number(val);
-      });
+      let kinds = [];
+      for(var i=0; i < oThis.kind.length; i++){
+        let val = new ClientTransactionTypeModel().invertedKinds[oThis.kind[i]];
+        if(!isNaN(Number(val))) kinds.push(Number(val));
+      }
       oThis.where.kind = kinds;
     }
 
