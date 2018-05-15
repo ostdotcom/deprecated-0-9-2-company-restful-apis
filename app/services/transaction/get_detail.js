@@ -18,6 +18,7 @@ const rootPrefix = '../../..'
   , UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/user')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/transaction')
 ;
 
 const GetTransactionDetailKlass = function (params) {
@@ -120,41 +121,22 @@ GetTransactionDetailKlass.prototype = {
         , gasPriceBig = basicHelper.convertToBigNumber(transactionLogRecord.gas_price)
       ;
 
-      oThis.chainMaps[transactionLogRecord.transaction_uuid] = new TransactionLogModel().chainTypes[transactionLogRecord.chain_type];
+      let transactionEntityFormatter = new TransactionEntityFormatterKlass(transactionLogRecord)
+        , transactionEntityFormatterRsp = await transactionEntityFormatter.perform()
+      ;
 
+      if (transactionEntityFormatterRsp.isFailure()) {
+        continue;
+      }
+
+      oThis.chainMaps[transactionLogRecord.transaction_uuid] = new TransactionLogModel().chainTypes[transactionLogRecord.chain_type];
       oThis.transactionTypeMap[inputParams.transaction_kind_id] = {};
       oThis.clientTokenMap[transactionLogRecord.client_token_id] = {};
 
       oThis.economyUserMap[inputParams.from_uuid] = {};
       oThis.economyUserMap[inputParams.to_uuid] = {};
 
-      const transactionMapObj = {
-        id: transactionLogRecord.transaction_uuid,
-        transaction_uuid: transactionLogRecord.transaction_uuid,
-        from_user_id: inputParams.from_uuid,
-        to_user_id: inputParams.to_uuid,
-        transaction_type_id: inputParams.transaction_kind_id,
-        client_token_id: transactionLogRecord.client_token_id,
-        transaction_hash: transactionLogRecord.transaction_hash,
-        status: new TransactionLogModel().statuses[transactionLogRecord.status],
-        gas_price: transactionLogRecord.gas_price,
-        transaction_timestamp: Math.floor(new Date(transactionLogRecord.created_at).getTime() / 1000),
-        uts: Date.now()
-      };
-
-      if (transactionLogRecord.gas_used) {
-        const gasUsedBig = basicHelper.convertToBigNumber(transactionLogRecord.gas_used)
-          , gasValue = gasUsedBig.mul(gasPriceBig)
-        ;
-
-        transactionMapObj.gas_used = gasUsedBig.toString(10);
-        transactionMapObj.transaction_fee = basicHelper.convertToNormal(gasValue).toString(10);
-        transactionMapObj.block_number = transactionLogRecord.block_number;
-        transactionMapObj.bt_transfer_value = basicHelper.convertToNormal(formattedReceipt.bt_transfer_in_wei);
-        transactionMapObj.bt_commission_amount = basicHelper.convertToNormal(formattedReceipt.commission_amount_in_wei);
-      }
-
-      oThis.transactionUuidToDataMap[transactionLogRecord.transaction_uuid] = transactionMapObj;
+      oThis.transactionUuidToDataMap[transactionLogRecord.transaction_uuid] =  transactionEntityFormatterRsp.data;
     }
 
     return Promise.resolve();
