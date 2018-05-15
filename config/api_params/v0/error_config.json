@@ -177,6 +177,11 @@
     "parameter": "to_uuid",
     "message": "Invalid to_uuid"
   },
+  "invalid_action_id": {
+    "parameter": "transaction_kind",
+    "code": "invalid",
+    "message": "Invalid transaction_kind"
+  },
   "airdrop_uuid_missing": {
     "parameter": "airdrop_uuid",
     "code": "missing",

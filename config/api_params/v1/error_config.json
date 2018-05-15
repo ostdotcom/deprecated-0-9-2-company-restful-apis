@@ -262,6 +262,11 @@
     "code": "missing",
     "message": "Missing action_id"
   },
+  "invalid_action_id": {
+    "parameter": "action_id",
+    "code": "invalid",
+    "message": "Invalid action_id"
+  },
   "invalid_id": {
     "parameter": "action_id",
     "message": "Missing id"

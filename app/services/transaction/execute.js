@@ -214,9 +214,10 @@ ExecuteTransactionService.prototype = {
       oThis.transactionTypeRecord = clientTransactionTypeCacheFetchResponse.data;
     } else {
       // following should never happen.
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_t_e_3',
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_t_e_19',
         api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_action_id'],
         debug_options: {}
       }));
     }
