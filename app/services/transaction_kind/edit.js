@@ -33,13 +33,12 @@ const rootPrefix = '../../..'
  * @param {string<float>} params.commission_percent - (optional) Only for "user_to_user" kind. (min 0%, max 100%).
  *
  * @constructor
- *
  */
 const EditAction = function (params) {
   const oThis = this
   ;
 
-  oThis.id = params.id;
+  oThis.clientTransactionId = params.id;
   oThis.client_id = params.client_id;
   oThis.name = params.name;
   oThis.currency = params.currency;
@@ -48,8 +47,7 @@ const EditAction = function (params) {
   oThis.arbitrary_commission = params.arbitrary_commission;
   oThis.commission_percent = params.commission_percent;
 
-  this.transactionKindObj = {};
-
+  oThis.transactionKindObj = {};
 };
 
 EditAction.prototype = {
@@ -70,7 +68,7 @@ EditAction.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
           return responseHelper.error({
-            internal_error_identifier: 'tk_e_1',
+            internal_error_identifier: 's_tk_e_1',
             api_error_identifier: 'unhandled_catch_response',
             debug_options: {}
           });
@@ -100,14 +98,13 @@ EditAction.prototype = {
    * Validate params
    *
    * @sets transactionKindObj
+   *
    * @return {promise<result>} - returns a promise which resolves to an object of Result
    *
    */
   _validateParams: async function () {
     const oThis = this
     ;
-
-    oThis.clientTransactionId = oThis.id;
 
     let qResult = await oThis._getCurrentTransactionKind();
 
@@ -119,7 +116,7 @@ EditAction.prototype = {
 
     if (oThis.currentTransactionKind && oThis.currentTransactionKind['client_id'] != oThis.client_id) {
       return Promise.reject(responseHelper.error({
-        internal_error_identifier: 'tk_e_1',
+        internal_error_identifier: 's_tk_e_2',
         api_error_identifier: 'invalid_client_transaction_id',
         debug_options: {}
       }));
@@ -208,7 +205,7 @@ EditAction.prototype = {
             name: oThis.name
           });
 
-        if (existingTKind.length > 0 && oThis.id != existingTKind.id) {
+        if (existingTKind.length > 0 && oThis.clientTransactionId != existingTKind.id) {
           errors_object.push('duplicate_transaction_name');
         }
       }
@@ -217,7 +214,7 @@ EditAction.prototype = {
     /* Return all the validation errors */
     if (errors_object.length > 0) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 'tk_e_2',
+        internal_error_identifier: 's_tk_e_3',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: errors_object,
         debug_options: {}
@@ -236,15 +233,13 @@ EditAction.prototype = {
    */
   _getCurrentTransactionKind: function () {
     const oThis = this;
-    return new ClientTransactionTypeModel().getTransactionById({clientTransactionId: oThis.id});
+    return new ClientTransactionTypeModel().getTransactionById({clientTransactionId: oThis.clientTransactionId});
   },
 
   /**
    * edit action in DB.<br><br>
    *
-   * @set transactionKindObj
-   * @return {promise<result>} - returns a promise which resolves to an object of Result
-   *
+   * @return {promise<result>}
    */
   _editTransactionKind: async function () {
     const oThis = this
@@ -272,8 +267,7 @@ EditAction.prototype = {
   /**
    * Return response.<br><br>
    *
-   * @return {promise<result>} - returns a promise which resolves to an object of Result
-   *
+   * @return {promise<result>}
    */
   _returnResponse: async function () {
     const oThis = this
@@ -282,7 +276,7 @@ EditAction.prototype = {
     let currency_type = oThis.transactionKindObj.currency_type || oThis.currentTransactionKind.currency_type;
 
     let actionEntityFormatter = new ActionEntityFormatterKlass({
-      id: oThis.id,
+      id: oThis.clientTransactionId,
       client_id: oThis.currentTransactionKind.client_id,
       name: oThis.name || oThis.currentTransactionKind.name,
       currency: new ClientTransactionTypeModel().currencyTypes[currency_type],
