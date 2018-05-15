@@ -249,11 +249,6 @@
     "parameter": "name",
     "message": "An action with that name already exists."
   },
-  "invalid_arbitrary_commission": {
-    "parameter": "arbitrary_percent",
-    "code": "invalid",
-    "message": "Invalid arbitrary commision."
-  },
   "invalid_commission_percent": {
     "parameter": "commission_percent",
     "code": "invalid",

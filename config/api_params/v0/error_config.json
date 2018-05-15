@@ -166,6 +166,11 @@
     "code": "invalid",
     "message": "Amount is not valid"
   },
+  "invalid_amount": {
+    "parameter": "amount",
+    "code": "invalid",
+    "message": "Invalid amount."
+  },
   "invalid_commission_arbitrary_combination": {
     "parameter": "commission_percent",
     "code": "invalid",
