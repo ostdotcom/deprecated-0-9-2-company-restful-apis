@@ -54,8 +54,8 @@ morgan.token('endTime', function getendTime (req) {
   return (hrTime[0] * 1000 + hrTime[1] / 1000000);
 });
 morgan.token('endDateTime', function getEndDateTime (req) {
-  const d = new Date()
-    return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate() + " " + d.getHours() + ":" +
+  const d = new Date();
+  return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate() + " " + d.getHours() + ":" +
     d.getMinutes() + ":" + d.getSeconds() + "." + d.getMilliseconds();
 });
 
@@ -80,7 +80,7 @@ const validateApiSignature = function (req, res, next){
       next();
     } else {
       return responseHelper.error({
-        internal_error_identifier: 'vas_401',
+        internal_error_identifier: 'a_1',
         api_error_identifier: 'unauthorized_api_request',
         debug_options: {}
       }).renderResponse(res, errorConfig);
@@ -112,7 +112,7 @@ const decodeJwt = function(req, res, next) {
   // send error, if token is invalid
   const jwtOnReject = function (err) {
     return responseHelper.error({
-      internal_error_identifier: 'a_1',
+      internal_error_identifier: 'a_2',
       api_error_identifier: 'invalid_or_expired_token',
       debug_options: {}
     }).renderResponse(res, errorConfig);
@@ -128,7 +128,7 @@ const decodeJwt = function(req, res, next) {
   ).catch(function (err) {
     logger.notify('a_2', 'JWT Decide Failed', {token: token});
     return responseHelper.error({
-      internal_error_identifier: 'a_2',
+      internal_error_identifier: 'a_3',
       api_error_identifier: 'something_went_wrong',
       debug_options: {}
     }).renderResponse(res, errorConfig);
@@ -162,7 +162,7 @@ const checkSystemServiceStatuses = async function(req, res, next) {
   const statusRsp = await systemServiceStatusesCache.fetch();
   if (statusRsp.isSuccess && statusRsp.data && statusRsp.data['saas_api_available'] != 1) {
     return responseHelper.error({
-      internal_error_identifier: 'a_5',
+      internal_error_identifier: 'a_4',
       api_error_identifier: 'api_under_maintenance',
       debug_options: {}
     }).renderResponse(res, errorConfig);
@@ -278,7 +278,7 @@ if (cluster.isMaster) {
   app.use(function (req, res, next) {
     logger.requestStartLog(customUrlParser.parse(req.originalUrl).pathname, req.method);
     return responseHelper.error({
-      internal_error_identifier: 'a_3',
+      internal_error_identifier: 'a_5',
       api_error_identifier: 'resource_not_found',
       debug_options: {}
     }).renderResponse(res, errorConfig);
@@ -289,7 +289,7 @@ if (cluster.isMaster) {
     // set locals, only providing error in development
     logger.notify('a_5', 'Something went wrong', err);
     return responseHelper.error({
-      internal_error_identifier: 'a_4',
+      internal_error_identifier: 'a_6',
       api_error_identifier: 'something_went_wrong',
       debug_options: {}
     }).renderResponse(res, errorConfig);
