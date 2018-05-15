@@ -56,10 +56,13 @@
       {
         "parameter": "amount",
         "error_identifier": "missing_airdrop_amount"
+      },
+      {
+        "parameter": "list_type",
+        "error_identifier": "invalid_airdrop_list_type"
       }
     ],
     "optional":[
-      "list_type",
       "user_ids"
     ]
   },
