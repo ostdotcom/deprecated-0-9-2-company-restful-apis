@@ -213,7 +213,7 @@ listUserKlass.prototype = {
     }
 
     if (!oThis.limit) {
-      oThis.limit = 25;
+      oThis.limit = 10;
     } else {
       oThis.limit = parseInt(oThis.limit);
       if (oThis.limit < 1 || oThis.limit > 100) {
