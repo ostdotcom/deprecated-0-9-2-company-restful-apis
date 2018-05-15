@@ -269,6 +269,15 @@ ExecuteTransactionService.prototype = {
       }));
     }
 
+    if(!commonValidator.isVarNull(oThis.amount) && !commonValidator.validateAmount(oThis.amount)){
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_t_e_21',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_amount'],
+        debug_options: {}
+      }));
+    }
+
     if(oThis.transactionTypeRecord.kind == clientTransactionTypeConst.userToUserKind){
       // in case of arbitrary commission percent, commission percent should be passed in the params.
       if (commonValidator.isVarTrue(oThis.transactionTypeRecord.arbitrary_commission_percent) && commonValidator.isVarNull(oThis.commissionPercent )) {

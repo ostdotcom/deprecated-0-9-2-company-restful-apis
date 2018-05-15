@@ -77,9 +77,10 @@ GetStPTransferService.prototype = {
     let transactionLogs = await new TransactionLogModel().getByTransactionUuid([oThis.transactionUuid]);
     let transactionLog = transactionLogs[0];
     if (!transactionLog) {
-      return Promise.reject(responseHelper.error({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_stpt_g_2',
-        api_error_identifier: 'invalid_id_transfer_get',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_id_transaction_get'],
         debug_options: {}
       }));
     }
@@ -92,8 +93,11 @@ GetStPTransferService.prototype = {
       }));
     }
 
+    console.log("----------transactionLog-", transactionLog);
+
     let transactionLogType = new TransactionLogModel().transactionTypes[transactionLog.transaction_type];
 
+    console.log("----------transactionLogType-", transactionLogType);
     if (transactionLogType != transactionLogConst.stpTransferTransactionType) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_stpt_g_4',
