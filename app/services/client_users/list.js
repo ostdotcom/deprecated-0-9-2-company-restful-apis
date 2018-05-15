@@ -180,15 +180,11 @@ listUserKlass.prototype = {
 
     }
 
-    var usersCountCacheObj = new ClientUsersCntCacheKlass({client_id: oThis.clientId});
-    var usersCountCacheRsp = await usersCountCacheObj.fetch();
-
     return Promise.resolve(responseHelper.successWithData({
       result_type: 'users',
-      'users': usersList,
+      users: usersList,
       meta: {
-        next_page_payload: next_page_payload,
-        total_no: parseInt(usersCountCacheRsp.data)
+        next_page_payload: next_page_payload
       }
     }));
 
