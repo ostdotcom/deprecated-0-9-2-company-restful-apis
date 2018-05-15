@@ -217,12 +217,9 @@ router.post('/airdrop/drop', function (req, res, next) {
 
     const airdropEntityFormatterRsp = await new AirdropEntityFormatterKlass(response.data.airdrop).perform();
 
-    delete response.data.airdrop;
-
-    response.data.result_type = 'airdrop';
-    response.data.airdrop = airdropEntityFormatterRsp.data;
-    response.data.airdrop_uuid = airdropEntityFormatterRsp.data.airdrop.airdrop_uuid;
-
+    response.data = {
+      airdrop_uuid: airdropEntityFormatterRsp.data.airdrop_uuid
+    };
   };
 
   Promise.resolve(routeHelper.performer(
@@ -254,9 +251,7 @@ router.get('/airdrop/status', function (req, res, next) {
 
     delete response.data.airdrop;
 
-    response.data.result_type = 'airdrop';
-    response.data.airdrop = [airdropEntityFormatterRsp.data]
-
+    response.data = airdropEntityFormatterRsp.data;
   };
 
   Promise.resolve(routeHelper.performer(

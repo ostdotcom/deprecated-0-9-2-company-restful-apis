@@ -108,7 +108,7 @@
     "message": "No users found to airdrop for the filters selected"
   },
   "invalid_airdrop_list_type": {
-    "parameter": "airdrop_list_type",
+    "parameter": "list_type",
     "message": "Invalid List type to airdrop users."
   },
   "no_users_for_airdrop_list_type": {
