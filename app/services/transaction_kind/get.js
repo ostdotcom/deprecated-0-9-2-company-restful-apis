@@ -15,6 +15,7 @@ var rootPrefix = '../../..'
   , ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type')
   , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
   , ActionEntityFormatterKlass = require(rootPrefix +'/lib/formatter/entities/latest/action')
+  , commonValidator = require(rootPrefix + '/lib/validators/common')
 ;
 
 /**
@@ -130,8 +131,8 @@ GetAction.prototype = {
       oThis.amount = oThis.result.value_in_usd;
     }
 
-    oThis.arbitrary_amount = oThis.amount ? false : true;
-    oThis.arbitrary_commission = oThis.result.commission_percent ? false : true;
+    oThis.arbitrary_amount = commonValidator.isVarNull(oThis.amount);
+    oThis.arbitrary_commission = commonValidator.isVarNull(oThis.result.commission_percent);
 
     return Promise.resolve({});
   },
