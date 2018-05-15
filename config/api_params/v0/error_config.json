@@ -79,6 +79,7 @@
   },
   "invalid_airdrop_uuid": {
     "parameter": "airdrop_uuid",
+    "code": "invalid",
     "message": "Invalid airdrop uuid"
   },
   "missing_airdrop_amount": {

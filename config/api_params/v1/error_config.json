@@ -173,6 +173,11 @@
     "code": "missing",
     "message": "Airdrop UUID missing."
   },
+  "invalid_airdrop_uuid": {
+    "parameter": "id",
+    "code": "invalid",
+    "message": "Invalid airdrop uuid"
+  },
   "invalid_airdrop_uuids":{
     "parameter": "user_ids",
     "code": "invalid",
