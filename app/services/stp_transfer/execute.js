@@ -86,7 +86,7 @@ ExecuteSTPTransferService.prototype = {
 
     await oThis._fetchFromBtSecureCache();
 
-    await oThis._validateUsers();
+    await oThis._validateParams();
 
     await oThis._createTransactionLog();
 
@@ -106,9 +106,37 @@ ExecuteSTPTransferService.prototype = {
     return Promise.resolve(responseHelper.successWithData(apiResponseData));
   },
 
-  _validateUsers: async function () {
+  _validateParams: async function () {
     const oThis = this
     ;
+
+    let isValidationFailed = false;
+
+    let amount_in_ost = null;
+
+    if (!commonValidator.isVarNull(oThis.amountInWei)) {
+
+      amount_in_ost = basicHelper.convertToNormal(oThis.amountInWei);
+
+      amount_in_ost = parseFloat(amount_in_ost);
+    } else {
+
+      isValidationFailed = true;
+    }
+
+    if ( amount_in_ost <= 0 || amount_in_ost >= 100 ) {
+      isValidationFailed = true;
+    }
+
+    if (isValidationFailed) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_stp_e_6',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_transfer_amount'],
+        debug_options: {client_id: oThis.clientId}
+      }));
+    }
+
 
     // check if the sender same as recipient
     if (oThis.fromAddress == oThis.toAddress) {

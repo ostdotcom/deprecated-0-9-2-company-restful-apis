@@ -294,5 +294,9 @@
   "invalid_transaction_get": {
     "parameter": "transaction_type",
     "message": "Requested transfer data for invalid transaction type"
+  },
+  "invalid_transfer_amount": {
+    "parameter": "amountInWei",
+    "message": "Transfer amount should be between 0 and 10^20 exclusive"
   }
 }
