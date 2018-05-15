@@ -19,6 +19,8 @@ const rootPrefix = '../../..'
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/transaction')
+  , ActionEntityFormatterKlass = require(rootPrefix +'/lib/formatter/entities/latest/action')
+  , commonValidator = require(rootPrefix + '/lib/validators/common')
 ;
 
 const GetTransactionDetailKlass = function (params) {
@@ -203,16 +205,22 @@ GetTransactionDetailKlass.prototype = {
       const currRecord = transactionTypeRecords[i]
       ;
 
-      oThis.transactionTypeMap[currRecord.id] = {
+      let actionEntityFormatter = new ActionEntityFormatterKlass({
         id: currRecord.id,
-        name: currRecord.name || '',
+        client_id: currRecord.client_id,
+        name: currRecord.name,
         kind: new ClientTransactionTypeModel().kinds[currRecord.kind],
-        currency_type: new ClientTransactionTypeModel().currencyTypes[currRecord.currency_type],
-        currency_value: new ClientTransactionTypeModel().getValue(currRecord),
-        commission_percent: currRecord.commission_percent,
-        status: new ClientTransactionTypeModel().statuses[currRecord.status],
+        currency: new ClientTransactionTypeModel().currencyTypes[currRecord.currency_type],
+        arbitrary_amount: commonValidator.isVarNull(currRecord.amount),
+        amount: currRecord.amount,
+        arbitrary_commission: commonValidator.isVarNull(currRecord.commission_percent),
+        commission_percent: (currRecord.commission_percent || '').toString(10),
         uts: Date.now()
-      };
+      });
+
+      let actionEntityFormatterRsp = await actionEntityFormatter.perform();
+
+      oThis.transactionTypeMap[currRecord.id] = actionEntityFormatterRsp.data;
     }
 
     oThis.response.transaction_types = oThis.transactionTypeMap;
