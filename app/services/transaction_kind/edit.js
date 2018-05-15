@@ -240,15 +240,15 @@ EditAction.prototype = {
 
     //If trying to edit currency type, its mandatory to mention amount parameters.
     if(!commonValidator.isVarNull(oThis.currency)){
-      oThis.currency = oThis.currency.toUpperCase();
-      currency = oThis.currency;
-      if (commonValidator.isVarNull(currency)) {
-        oThis.errors_object.push('invalid_currency_type');
-      }
+      currency = oThis.currency.toUpperCase().trim();
       if(commonValidator.isVarNull(oThis.amount) && commonValidator.isVarNull(oThis.arbitraryAmount)){
         oThis.errors_object.push('invalid_amount');
       }
       oThis.updatedValues.currency_type = new ClientTransactionTypeModel().invertedCurrencyTypes[currency];
+
+      if (commonValidator.isVarNull(oThis.updatedValues.currency_type)) {
+        oThis.errors_object.push('invalid_currency_type');
+      }
     } else {
       currency = new ClientTransactionTypeModel().currencyTypes[oThis.dbRecord.currency_type].toUpperCase();
     }

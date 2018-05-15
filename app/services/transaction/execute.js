@@ -27,6 +27,7 @@ const rootPrefix = '../../..'
   , ClientTrxRateCacheKlass = require(rootPrefix + '/lib/cache_management/client_transactions_rate_limit')
   , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/transaction')
   , commonValidator = require(rootPrefix + '/lib/validators/common')
+  , ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type')
 ;
 
 /**
@@ -249,6 +250,32 @@ ExecuteTransactionService.prototype = {
     const oThis = this
     ;
 
+    oThis.amount = oThis.amount ? parseFloat(oThis.amount) : null;
+
+    if (oThis.transactionTypeRecord.currency_type ==
+      new ClientTransactionTypeModel().invertedCurrencyTypes[clientTransactionTypeConst.btCurrencyType]) {
+      if (!commonValidator.isVarNull(oThis.amount) && !commonValidator.validateBtAmount(oThis.amount)) {
+        return Promise.reject(responseHelper.paramValidationError({
+          internal_error_identifier: 's_t_e_22',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: ['out_of_bound_transaction_bt_value'],
+          debug_options: {}
+        }));
+      }
+    }
+
+    if (oThis.transactionTypeRecord.currency_type ==
+      new ClientTransactionTypeModel().invertedCurrencyTypes[clientTransactionTypeConst.usdCurrencyType]) {
+      if (!commonValidator.isVarNull(oThis.amount) && !commonValidator.validateUsdAmount(oThis.amount)) {
+        return Promise.reject(responseHelper.paramValidationError({
+          internal_error_identifier: 's_t_e_23',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: ['out_of_bound_transaction_usd_value'],
+          debug_options: {}
+        }));
+      }
+    }
+
     // in case of arbitrary amount, amount should be passed in the params.
     if (commonValidator.isVarTrue(oThis.transactionTypeRecord.arbitrary_amount) && commonValidator.isVarNull(oThis.amount)) {
       return Promise.reject(responseHelper.paramValidationError({
@@ -269,7 +296,7 @@ ExecuteTransactionService.prototype = {
       }));
     }
 
-    if(!commonValidator.isVarNull(oThis.amount) && !commonValidator.validateAmount(oThis.amount)){
+    if(!commonValidator.isVarNull(oThis.amount) && !commonValidator.validateAmount(oThis.amount)) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_t_e_21',
         api_error_identifier: 'invalid_api_params',
@@ -277,6 +304,16 @@ ExecuteTransactionService.prototype = {
         debug_options: {}
       }));
     }
+
+    /* Do amount validations only above this code */
+
+    if (!commonValidator.isVarNull(oThis.amount) && oThis.transactionTypeRecord.currency_type ==
+      new ClientTransactionTypeModel().invertedCurrencyTypes[clientTransactionTypeConst.btCurrencyType]) {
+
+      oThis.amount = basicHelper.convertToWei(oThis.amount);
+      oThis.amount = basicHelper.formatWeiToString(oThis.amount);
+    }
+
 
     if(oThis.transactionTypeRecord.kind == clientTransactionTypeConst.userToUserKind){
       // in case of arbitrary commission percent, commission percent should be passed in the params.
