@@ -133,6 +133,8 @@ EditAction.prototype = {
    * @return {promise<result>}
    */
   _validatePrivilege: async function () {
+    const oThis = this;
+
     // check if the action is from the same client id to which it belongs
     if (oThis.dbRecord['client_id'] != oThis.clientId) {
       return Promise.reject(responseHelper.error({
@@ -214,8 +216,9 @@ EditAction.prototype = {
       console.log('-------------------', 'commission_percent', commission_percent, 'oThis.arbitraryCommission', oThis.arbitraryCommission);
       if (!commonValidator.validateArbitraryCommissionPercent(commission_percent, oThis.arbitraryCommission)) {
         errors_object.push('invalid_commission_arbitrary_combination');
-      } else if (!commonValidator.commissionPercentValid(commission_percent)) {
+      } else if (!isNaN(commission_percent) && !commonValidator.commissionPercentValid(commission_percent)) {
         errors_object.push('invalid_commission_percent');
+        console.log('-------2');
       }
     }
 
