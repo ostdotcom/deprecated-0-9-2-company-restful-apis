@@ -240,6 +240,11 @@
     "code": "invalid",
     "message": "Invalid amount."
   },
+  "invalid_arbitrary_amount": {
+    "parameter": "arbitrary_amount",
+    "code": "invalid",
+    "message": "Invalid arbitrary_amount."
+  },
   "duplicate_transactionname": {
     "parameter": "name",
     "message": "An action with that name already exists."
