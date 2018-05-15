@@ -267,11 +267,10 @@ EditAction.prototype = {
       oThis._validateAmount('value_in_bt_wei');
 
       if (!commonValidator.isVarNull(oThis.updatedValues.value_in_bt_wei)) {
-        var value_in_bt_wei = basicHelper.convertToWei(oThis.updatedValues.value_in_bt_wei);
-
-        if (!basicHelper.isWeiValid(value_in_bt_wei)) {
+        if (!commonValidator.validateBtAmount(oThis.updatedValues.value_in_bt_wei)) {
           oThis.errors_object.push('out_of_bound_transaction_bt_value');
         }
+        var value_in_bt_wei = basicHelper.convertToWei(oThis.updatedValues.value_in_bt_wei);
         oThis.updatedValues.value_in_bt_wei = basicHelper.formatWeiToString(value_in_bt_wei);
       }
 

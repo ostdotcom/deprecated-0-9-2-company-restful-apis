@@ -141,6 +141,7 @@
   },
   "out_of_bound_transaction_bt_value": {
     "parameter": "currency_value",
+    "code": "invalid",
     "message": "Can be 0.00001 to 100"
   },
   "invalid_currency_type": {

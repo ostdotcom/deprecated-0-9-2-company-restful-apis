@@ -169,12 +169,12 @@
     "message": "Commission percent and arbitrary commission combination is not valid"
   },
   "out_of_bound_transaction_usd_value": {
-    "parameter": "currency_value",
+    "parameter": "amount",
     "code": "invalid",
     "message": "Can be 0.01 to 100"
   },
   "out_of_bound_transaction_bt_value": {
-    "parameter": "currency_value",
+    "parameter": "amount",
     "code": "invalid",
     "message": "Can be 0.00001 to 100"
   },
