@@ -170,7 +170,8 @@ listUserKlass.prototype = {
       next_page_payload = {
         order_by: oThis.orderBy,
         order: oThis.order,
-        page_no: oThis.pageNo + 1
+        page_no: oThis.pageNo + 1,
+        limit: oThis.limit
       };
 
       if (!commonValidator.isVarNull(oThis.airdropped)) {
