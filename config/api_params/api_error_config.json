@@ -10,9 +10,9 @@
     "message": "We could not authenticate the request. Please review your credentials and authentication method."
   },
   "unauthorized_for_other_client": {
-    "http_code": "401",
-    "code": "UNAUTHORIZED",
-    "message": "We could not authenticate the request. Please review your credentials and authentication method."
+    "http_code": "400",
+    "code": "BAD_REQUEST",
+    "message": "At least one parameter is invalid or missing. See \"err.error_data\" array for more details."
   },
   "invalid_or_expired_token": {
     "http_code": "401",

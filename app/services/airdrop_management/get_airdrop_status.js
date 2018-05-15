@@ -48,7 +48,7 @@ GetAirdropStatusKlass.prototype = {
           logger.error(error);
 
           return responseHelper.error({
-            internal_error_identifier: 's_am_gas_3',
+            internal_error_identifier: 's_am_gas_1',
             api_error_identifier: 'unhandled_catch_response',
             debug_options: {}
           });
@@ -64,9 +64,10 @@ GetAirdropStatusKlass.prototype = {
     if(response[0]){
       var record = response[0];
       if(record.client_id != oThis.clientId){
-        return Promise.resolve(responseHelper.error({
+        return Promise.resolve(responseHelper.paramValidationError({
           internal_error_identifier: 's_am_gas_2',
-          api_error_identifier: 'unauthorized_for_other_client',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: ['invalid_airdrop_uuid'],
           debug_options: {}
         }));
       }
@@ -96,7 +97,7 @@ GetAirdropStatusKlass.prototype = {
 
     } else {
       return Promise.resolve(responseHelper.paramValidationError({
-        internal_error_identifier: 's_am_gas_2',
+        internal_error_identifier: 's_am_gas_3',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_airdrop_uuid'],
         debug_options: {}
