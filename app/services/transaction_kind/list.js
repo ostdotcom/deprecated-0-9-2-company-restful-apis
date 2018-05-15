@@ -265,39 +265,14 @@ ListActions.prototype = {
         onReject(err);
       });
 
-      let amount = null;
-      let arbitrary_amount = null;
-      let arbitrary_commission = null;
       let actionEntityFormatter = null;
       let actionEntityFormatterRsp = null;
-      let commission_percent = null;
-      let uts = Date.now();
 
       for (var i = 0; i < result.length; i++) {
         var res = result[i];
 
-        if(res.currency_type == clientTxTypesConst.btCurrencyType) {
-          amount = res.value_in_bt_wei ? basicHelper.formatWeiToString(basicHelper.convertToNormal(res.value_in_bt_wei)) : null;
-        }else{
-          amount = res.value_in_usd;
-        }
-
-        arbitrary_amount = amount ? false : true;
-        arbitrary_commission = res.commission_percent ? false : true;
-        commission_percent = res.commission_percent ? res.commission_percent.toString(10) : null;
-
-        actionEntityFormatter = new ActionEntityFormatterKlass({
-          id: res.id,
-          client_id: oThis.clientId,
-          name: res.name,
-          kind: res.kind,
-          currency: res.currency_type,
-          arbitrary_amount: arbitrary_amount,
-          amount: amount,
-          arbitrary_commission: arbitrary_commission,
-          commission_percent: commission_percent,
-          uts: uts
-        });
+        console.log('---res--', res);
+        actionEntityFormatter = new ActionEntityFormatterKlass(res);
 
         actionEntityFormatterRsp = await actionEntityFormatter.perform();
 
@@ -354,11 +329,7 @@ ListActions.prototype = {
     let result_count = results.length;
     if (oThis.next_page_present) result_count--;
 
-    for (var i = 0; i < result_count; i++) {
-      return_result.push(query.convertEnumForResult(results[i]));
-    }
-
-    return Promise.resolve(return_result);
+    return Promise.resolve(results);
 
   },
 

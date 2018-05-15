@@ -146,18 +146,7 @@ GetAction.prototype = {
 
     const oThis = this;
 
-    let actionEntityFormatter = new ActionEntityFormatterKlass({
-      id: oThis.result.id,
-      client_id: oThis.clientId,
-      name: oThis.result.name,
-      kind: new ClientTransactionTypeModel().kinds[oThis.result.kind],
-      currency: new ClientTransactionTypeModel().currencyTypes[oThis.result.currency_type],
-      arbitrary_amount: oThis.arbitrary_amount,
-      amount: oThis.amount,
-      arbitrary_commission: oThis.arbitrary_commission,
-      commission_percent: (oThis.result.commission_percent || '').toString(10),
-      uts: Date.now()
-    });
+    let actionEntityFormatter = new ActionEntityFormatterKlass(oThis.result);
 
     let actionEntityFormatterRsp = await actionEntityFormatter.perform();
 

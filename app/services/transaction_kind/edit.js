@@ -364,7 +364,8 @@ EditAction.prototype = {
     const oThis = this
     ;
 
-    if(oThis.updatedValues.length > 0){
+    logger.debug("-----------oThis.updatedValues-", Object.keys(oThis.updatedValues));
+    if(Object.keys(oThis.updatedValues).length > 0){
       Object.assign(oThis.dbRecord, oThis.updatedValues);
 
       await new ClientTransactionTypeModel().update(
@@ -392,18 +393,7 @@ EditAction.prototype = {
     const oThis = this
     ;
 
-    let actionEntityFormatter = new ActionEntityFormatterKlass({
-      id: oThis.clientTransactionId,
-      client_id: oThis.dbRecord.client_id,
-      name: oThis.name || oThis.dbRecord.name,
-      currency: new ClientTransactionTypeModel().currencyTypes[oThis.dbRecord.currency_type],
-      arbitrary_amount: oThis.arbitraryAmount,
-      amount: oThis.amount,
-      arbitrary_commission: oThis.arbitraryCommission,
-      commission_percent: oThis.dbRecord.commission_percent,
-      kind: new ClientTransactionTypeModel().kinds[oThis.dbRecord.kind],
-      uts: Date.now()
-    });
+    let actionEntityFormatter = new ActionEntityFormatterKlass(oThis.dbRecord);
 
     let actionEntityFormatterRsp = await actionEntityFormatter.perform();
 

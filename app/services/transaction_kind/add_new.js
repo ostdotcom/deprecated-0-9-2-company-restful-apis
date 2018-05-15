@@ -234,18 +234,8 @@ AddNewAction.prototype = {
     const oThis = this
     ;
 
-    let actionEntityFormatter = new ActionEntityFormatterKlass({
-      id: oThis.transactionKindObj.id,
-      client_id: oThis.transactionKindObj.client_id,
-      name: oThis.transactionKindObj.name,
-      kind: oThis.transactionKindObj.kind,
-      currency: oThis.currency,
-      arbitrary_amount: oThis.arbitraryAmount,
-      amount: oThis.amount,
-      arbitrary_commission: oThis.arbitraryCommission,
-      commission_percent: oThis.transactionKindObj.commission_percent,
-      uts: Date.now()
-    });
+    const transactionTypeObj = await new ClientTransactionTypeModel().select('*').where({id: oThis.transactionKindObj.id}).fire();
+    let actionEntityFormatter = new ActionEntityFormatterKlass(transactionTypeObj[0]);
 
     let actionEntityFormatterRsp = await actionEntityFormatter.perform();
 
