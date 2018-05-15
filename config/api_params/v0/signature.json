@@ -116,7 +116,6 @@
     ],
     "optional": [
       "name",
-      "kind",
       "currency_type",
       "currency_value",
       "commission_percent"
