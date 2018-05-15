@@ -109,7 +109,7 @@ EditAction.prototype = {
 
     oThis.clientTransactionId = oThis.id;
 
-    let qResult = await oThis.getCurrentTransactionKind();
+    let qResult = await oThis._getCurrentTransactionKind();
 
     oThis.currentTransactionKind = qResult[0];
 
