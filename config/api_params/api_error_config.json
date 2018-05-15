@@ -1,6 +1,6 @@
 {
   "invalid_api_params": {
-    "http_code": "422",
+    "http_code": "400",
     "code": "invalid_request",
     "message": "At least one parameter is invalid or missing. See err.error_data for more details."
   },
@@ -105,7 +105,7 @@
     "message": "client branded token not found"
   },
   "reserveAddressUuid_not_found": {
-    "http_code": "422",
+    "http_code": "400",
     "code": "reserveAddressUuid_not_found",
     "message": "reserveAddressUuid not found"
   },
@@ -120,7 +120,7 @@
     "message": "Insufficient Balance of Reserved Address for Airdrop"
   },
   "invalid_airdrop_uuids":{
-    "http_code": "422",
+    "http_code": "400",
     "code": "invalid_airdrop_uuids",
     "message": "Some of user ids passed for Airdrop are invalid."
   },
@@ -130,7 +130,7 @@
     "message": "Unhandled current step"
   },
   "invalid_branded_token": {
-    "http_code": "422",
+    "http_code": "400",
     "code": "invalid_branded_token",
     "message": "no client branded token found"
   },
@@ -145,7 +145,7 @@
     "message": "criticalChainInteractionLog not found"
   },
   "invalid_List_type_to_airdrop": {
-    "http_code": "422",
+    "http_code": "400",
     "code": "invalid_List_type_to_airdrop",
     "message": "Invalid List type to airdrop users"
   },
@@ -155,12 +155,12 @@
     "message": "Token setup not complete"
   },
   "missing_client_id": {
-    "http_code": "422",
+    "http_code": "400",
     "code": "missing_client_id",
     "message": "Invalid client id"
   },
   "missing_client_transaction_id": {
-    "http_code": "422",
+    "http_code": "400",
     "code": "missing_client_transaction_id",
     "message": "Invalid client transaction id"
   },
@@ -175,7 +175,7 @@
     "message": "No users found to airdrop for this list type"
   },
   "address_invalid": {
-    "http_code": "422",
+    "http_code": "400",
     "code": "address_invalid",
     "message": "Address invalid"
   },
@@ -195,7 +195,7 @@
     "message": "OST_MEMCACHE_SERVERS not available"
   },
   "invalid_transaction_type": {
-    "http_code": "422",
+    "http_code": "400",
     "code": "invalid_transaction_type",
     "message": "Invalid transaction type"
   },
@@ -210,12 +210,12 @@
     "message": "No actions found to execute transaction"
   },
   "invalid_api_name": {
-    "http_code": "422",
+    "http_code": "400",
     "code": "UNPROCESSABLE_ENTITY",
     "message": "Invalid API Name."
   },
   "invalid_api_version": {
-    "http_code": "422",
+    "http_code": "400",
     "code": "UNPROCESSABLE_ENTITY",
     "message": "Invalid API Version."
   },
@@ -225,7 +225,7 @@
     "message": "Entity could not be formatted."
   },
   "blank_uuids": {
-    "http_code": "422",
+    "http_code": "400",
     "code": "blank_uuids",
     "message": "blank uuids."
   },
@@ -300,7 +300,7 @@
     "message": "Receipt not successful after maximum retries"
   },
   "invalid_address": {
-    "http_code": "422",
+    "http_code": "400",
     "code": "invalid_address",
     "message": "Invalid Address"
   },
@@ -325,12 +325,12 @@
     "message": "Something went wrong while clearing missing nonce"
   },
   "callback_function_is_mandatory": {
-    "http_code": "422",
+    "http_code": "400",
     "code": "callback_function_is_mandatory",
     "message": "callback function is mandatory"
   },
   "transaction_log_invalid": {
-    "http_code": "422",
+    "http_code": "400",
     "code": "transaction_log_invalid",
     "message": "invalid transaction log id."
   }
