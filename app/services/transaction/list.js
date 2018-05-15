@@ -93,6 +93,8 @@ ListTransactionsService.prototype = {
     const oThis = this
     ;
 
+    oThis.pageNo = oThis.pageNo ? parseInt(oThis.pageNo) : null;
+
     if ((oThis.pageNo && oThis.pageNo < 1) || oThis.pageNo == 0) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_t_l_2',
@@ -130,6 +132,8 @@ ListTransactionsService.prototype = {
 
     oThis.order = oThis.order || 'desc';
     oThis.order = oThis.order.toLowerCase();
+
+    oThis.limit = oThis.limit ? parseInt(oThis.limit) : null;
 
     if ((oThis.limit && (oThis.limit < 1 || oThis.limit > 100)) || oThis.limit == 0) {
       return Promise.reject(responseHelper.paramValidationError({
