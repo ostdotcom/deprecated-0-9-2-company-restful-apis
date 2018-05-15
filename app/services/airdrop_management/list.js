@@ -147,10 +147,9 @@ ListAirdropsKlass.prototype = {
 
     return Promise.resolve(responseHelper.successWithData({
       result_type: 'airdrops',
-      'airdrops': airdropsList,
+      airdrops: airdropsList,
       meta: {
-        next_page_payload: next_page_payload,
-        total_no: 0
+        next_page_payload: next_page_payload
       }
     }));
 
