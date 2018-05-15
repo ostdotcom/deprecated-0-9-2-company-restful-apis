@@ -220,7 +220,8 @@ router.post('/airdrop/drop', function (req, res, next) {
     delete response.data.airdrop;
 
     response.data.result_type = 'airdrop';
-    response.data.airdrop = [airdropEntityFormatterRsp.data]
+    response.data.airdrop = airdropEntityFormatterRsp.data;
+    response.data.airdrop_uuid = airdropEntityFormatterRsp.data.airdrop.airdrop_uuid;
 
   };
 
