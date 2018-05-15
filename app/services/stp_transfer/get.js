@@ -122,7 +122,7 @@ GetStPTransferService.prototype = {
     ;
 
     let apiResponseData = {
-      result_type: 'transaction'
+      result_type: 'transfer'
     };
 
     let stPrimeTransferFormatter = new StPrimeTransferFormatter(oThis.record)
@@ -138,7 +138,7 @@ GetStPTransferService.prototype = {
       }));
     }
 
-    apiResponseData.transaction = stPrimeTransferFormatterResponse.data;
+    apiResponseData.transfer = stPrimeTransferFormatterResponse.data;
 
     return responseHelper.successWithData(apiResponseData);
   }

@@ -100,7 +100,7 @@ ExecuteSTPTransferService.prototype = {
 
     const apiResponseData = {
       result_type: 'transfer',
-      transaction: stpTransferEntityFormatterRsp.data
+      transfer: stpTransferEntityFormatterRsp.data
     };
 
     return Promise.resolve(responseHelper.successWithData(apiResponseData));
