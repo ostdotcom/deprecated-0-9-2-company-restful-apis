@@ -21,6 +21,7 @@ const rootPrefix = '../../..'
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , STPTransferEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/stp_transfer')
   , notificationTopics = require(rootPrefix + '/lib/global_constant/notification_topics')
+  , commonValidator = require(rootPrefix + '/lib/validators/common')
 ;
 
 /**
@@ -85,6 +86,8 @@ ExecuteSTPTransferService.prototype = {
 
     await oThis._fetchFromBtSecureCache();
 
+    await oThis._validateUsers();
+
     await oThis._createTransactionLog();
 
     // Transaction would be set in background & response would be returned with uuid.
@@ -101,6 +104,34 @@ ExecuteSTPTransferService.prototype = {
     };
 
     return Promise.resolve(responseHelper.successWithData(apiResponseData));
+  },
+
+  _validateUsers: async function () {
+    const oThis = this
+    ;
+
+    // check if the sender same as recipient
+    if (oThis.fromAddress == oThis.toAddress) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_stp_e_1',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_to_user_id', 'invalid_from_user_id'],
+        debug_options: {client_id: oThis.clientId}
+      }));
+    }
+
+    oThis.toAddress = oThis.toAddress.trim();
+
+    if (oThis.toAddress == '' || commonValidator.isVarNull(oThis.toAddress)) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_stp_e_5',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_to_user_id'],
+        debug_options: {client_id: oThis.clientId}
+      }));
+    }
+
+    return Promise.resolve({});
   },
 
   /**
