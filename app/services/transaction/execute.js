@@ -335,6 +335,15 @@ ExecuteTransactionService.prototype = {
           debug_options: {}
         }));
       }
+    } else {
+      if(!commonValidator.isVarNull(oThis.commissionPercent)){
+        return Promise.reject(responseHelper.paramValidationError({
+          internal_error_identifier: 's_t_e_23',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: ['invalid_commission_percent'],
+          debug_options: {}
+        }));
+      }
     }
 
     return responseHelper.successWithData({});
