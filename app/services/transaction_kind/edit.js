@@ -50,7 +50,7 @@ const EditAction = function (params) {
   oThis.transactionKindObj = {};
   oThis.dbRecord = null;
   oThis.updatedValues = {};
-  oThis.errors_object = [];
+  oThis.paramsErrorIdentifiersMap = {};
 };
 
 EditAction.prototype = {
@@ -115,7 +115,7 @@ EditAction.prototype = {
     let dbRecords = await new ClientTransactionTypeModel()
       .getTransactionById({clientTransactionId: oThis.clientTransactionId});
 
-    if(!dbRecords[0]) {
+    if (!dbRecords[0]) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_e_6',
         api_error_identifier: 'invalid_api_params',
@@ -165,12 +165,14 @@ EditAction.prototype = {
 
     await oThis._validateName();
 
+    let paramsErrorIdentifiers = Object.keys(oThis.paramsErrorIdentifiersMap);
+
     /* Return all the validation errors */
-    if (oThis.errors_object.length > 0) {
+    if (paramsErrorIdentifiers.length > 0) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_e_3',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: oThis.errors_object,
+        params_error_identifiers: paramsErrorIdentifiers,
         debug_options: {}
       }));
     }
@@ -194,12 +196,12 @@ EditAction.prototype = {
       // validate commission params if present in request.
       if (!commonValidator.isVarNull(oThis.commissionPercent) && !commonValidator.isVarNull(oThis.arbitraryCommission)) {
         if (!commonValidator.validateArbitraryCommissionPercent(oThis.commissionPercent, oThis.arbitraryCommission)) {
-          oThis.errors_object.push('invalid_commission_arbitrary_combination');
+          oThis.paramsErrorIdentifiersMap['invalid_commission_arbitrary_combination'] = 1;
         }
         oThis.updatedValues.commission_percent = oThis.commissionPercent
       } else if (!commonValidator.isVarNull(oThis.commissionPercent)) {
         if (commonValidator.isVarNull(oThis.dbRecord.commission_percent)) {
-          oThis.errors_object.push('invalid_commission_percent');
+          oThis.paramsErrorIdentifiersMap['invalid_commission_percent'] = 1;
         }
         oThis.updatedValues.commission_percent = oThis.commissionPercent
       } else if (!commonValidator.isVarNull(oThis.arbitraryCommission)) {
@@ -208,19 +210,19 @@ EditAction.prototype = {
         } else if (commonValidator.isVarFalse(oThis.arbitraryCommission)) {
           if (commonValidator.isVarNull(oThis.dbRecord.commission_percent)) {
             // Error case, as commission_percent is mandatory in case of arbitraryCommission is false.
-            oThis.errors_object.push('invalid_arbitrary_commission');
+            oThis.paramsErrorIdentifiersMap['invalid_arbitrary_commission'] = 1;
           }
         } else {
-          oThis.errors_object.push('invalid_arbitrary_commission');
+          oThis.paramsErrorIdentifiersMap['invalid_arbitrary_commission'] = 1;
         }
       }
     } else {
       // error if commission params are present in request.
       if (!commonValidator.isVarNull(oThis.commissionPercent)) {
-        oThis.errors_object.push('invalid_commission_percent');
+        oThis.paramsErrorIdentifiersMap['invalid_commission_percent'] = 1;
       }
       if (!commonValidator.isVarNull(oThis.arbitraryCommission)) {
-        oThis.errors_object.push('invalid_arbitrary_commission');
+        oThis.paramsErrorIdentifiersMap['invalid_arbitrary_commission'] = 1;
       }
     }
 
@@ -239,15 +241,15 @@ EditAction.prototype = {
     var currency = null;
 
     //If trying to edit currency type, its mandatory to mention amount parameters.
-    if(!commonValidator.isVarNull(oThis.currency)){
+    if (!commonValidator.isVarNull(oThis.currency)) {
       currency = oThis.currency.toUpperCase().trim();
-      if(commonValidator.isVarNull(oThis.amount) && commonValidator.isVarNull(oThis.arbitraryAmount)){
-        oThis.errors_object.push('invalid_amount');
+      if (commonValidator.isVarNull(oThis.amount) && commonValidator.isVarNull(oThis.arbitraryAmount)) {
+        oThis.paramsErrorIdentifiersMap['invalid_amount'] = 1;
       }
       oThis.updatedValues.currency_type = new ClientTransactionTypeModel().invertedCurrencyTypes[currency];
 
       if (commonValidator.isVarNull(oThis.updatedValues.currency_type)) {
-        oThis.errors_object.push('invalid_currency_type');
+        oThis.paramsErrorIdentifiersMap['invalid_currency_type'] = 1;
       }
     } else {
       currency = new ClientTransactionTypeModel().currencyTypes[oThis.dbRecord.currency_type].toUpperCase();
@@ -258,7 +260,7 @@ EditAction.prototype = {
 
       oThis._validateAmount('value_in_usd');
       if (!commonValidator.isVarNull(oThis.updatedValues.value_in_usd) && !commonValidator.validateUsdAmount(oThis.updatedValues.value_in_usd)) {
-        oThis.errors_object.push('out_of_bound_transaction_usd_value');
+        oThis.paramsErrorIdentifiersMap['out_of_bound_transaction_usd_value'] = 1;
       }
       oThis.updatedValues.value_in_bt_wei = null;
 
@@ -268,7 +270,7 @@ EditAction.prototype = {
 
       if (!commonValidator.isVarNull(oThis.updatedValues.value_in_bt_wei)) {
         if (!commonValidator.validateBtAmount(oThis.updatedValues.value_in_bt_wei)) {
-          oThis.errors_object.push('out_of_bound_transaction_bt_value');
+          oThis.paramsErrorIdentifiersMap['out_of_bound_transaction_bt_value'] = 1;
         }
         var value_in_bt_wei = basicHelper.convertToWei(oThis.updatedValues.value_in_bt_wei);
         oThis.updatedValues.value_in_bt_wei = basicHelper.formatWeiToString(value_in_bt_wei);
@@ -277,7 +279,7 @@ EditAction.prototype = {
       oThis.updatedValues.value_in_usd = null;
 
     } else if (!commonValidator.isVarNull(currency)) {
-      oThis.errors_object.push('invalid_currency_type');
+      oThis.paramsErrorIdentifiersMap['invalid_currency_type'] = 1;
     }
 
   },
@@ -301,9 +303,9 @@ EditAction.prototype = {
     if (oThis.name && oThis.dbRecord.name.toLowerCase() != oThis.name.toLowerCase()) {
 
       if (!basicHelper.isTxKindNameValid(oThis.name)) {
-        oThis.errors_object.push('invalid_transaction_name');
+        oThis.paramsErrorIdentifiersMap['invalid_transaction_name'] = 1;
       } else if (basicHelper.hasStopWords(oThis.name)) {
-        oThis.errors_object.push('inappropriate_transaction_name');
+        oThis.paramsErrorIdentifiersMap['inappropriate_transaction_name'] = 1;
       } else {
         let existingTKind = await new ClientTransactionTypeModel()
           .getTransactionByName({
@@ -312,7 +314,7 @@ EditAction.prototype = {
           });
 
         if (existingTKind.length > 0 && oThis.clientTransactionId != existingTKind.id) {
-          oThis.errors_object.push('duplicate_transaction_name');
+          oThis.paramsErrorIdentifiersMap['duplicate_transaction_name'] = 1;
         }
       }
       oThis.updatedValues.name = oThis.name;
@@ -331,25 +333,25 @@ EditAction.prototype = {
   _validateAmount: function (editCurrType) {
     const oThis = this;
 
-    if(!commonValidator.isVarNull(oThis.amount) && !commonValidator.isVarNull(oThis.arbitraryAmount)){
+    if (!commonValidator.isVarNull(oThis.amount) && !commonValidator.isVarNull(oThis.arbitraryAmount)) {
       if (!commonValidator.validateArbitraryAmount(oThis.amount, oThis.arbitraryAmount)) {
-        oThis.errors_object.push('invalid_amount_arbitrary_combination');
+        oThis.paramsErrorIdentifiersMap['invalid_amount_arbitrary_combination'] = 1;
       }
       oThis.updatedValues[editCurrType] = oThis.amount;
 
-    } else if(!commonValidator.isVarNull(oThis.amount)){
-      if(commonValidator.isVarNull(oThis.dbRecord[editCurrType])){
-        oThis.errors_object.push('invalid_amount_arbitrary_combination');
+    } else if (!commonValidator.isVarNull(oThis.amount)) {
+      if (commonValidator.isVarNull(oThis.dbRecord[editCurrType])) {
+        oThis.paramsErrorIdentifiersMap['invalid_amount_arbitrary_combination'] = 1;
       }
       oThis.updatedValues[editCurrType] = oThis.amount;
 
-    } else if(!commonValidator.isVarNull(oThis.arbitraryAmount)){
-      if(commonValidator.isVarTrue(oThis.arbitraryAmount)){
+    } else if (!commonValidator.isVarNull(oThis.arbitraryAmount)) {
+      if (commonValidator.isVarTrue(oThis.arbitraryAmount)) {
         oThis.updatedValues[editCurrType] = null;
-      } else if(commonValidator.isVarFalse(oThis.arbitraryAmount)){
-        oThis.errors_object.push('invalid_amount');
+      } else if (commonValidator.isVarFalse(oThis.arbitraryAmount)) {
+        oThis.paramsErrorIdentifiersMap['invalid_amount'] = 1;
       } else {
-        oThis.errors_object.push('invalid_arbitrary_amount');
+        oThis.paramsErrorIdentifiersMap['invalid_arbitrary_amount'] = 1;
       }
     }
 
@@ -366,7 +368,7 @@ EditAction.prototype = {
 
     logger.debug("-----------oThis.updatedValues-", oThis.updatedValues);
 
-    if(Object.keys(oThis.updatedValues).length > 0){
+    if (Object.keys(oThis.updatedValues).length > 0) {
       Object.assign(oThis.dbRecord, oThis.updatedValues);
 
       await new ClientTransactionTypeModel().update(
