@@ -47,6 +47,7 @@ const ListActions = function(params) {
   oThis.order = params.order;
   oThis.limit = params.limit;
   oThis.extra_entities = params.extra_entities || [];
+  oThis.offset = null;
   oThis.where = {};
 
   if(params.id) {
@@ -189,6 +190,8 @@ ListActions.prototype = {
 
     oThis.limit = oThis.limit || 10;
 
+    oThis.offset = (oThis.page_no - 1) * oThis.limit;
+
     if(oThis.kind) {
       let kinds = [];
       for(var i=0; i < oThis.kind.length; i++){
@@ -291,6 +294,7 @@ ListActions.prototype = {
     var whereClause = {
       client_id: oThis.clientId
     };
+
 
     Object.assign(whereClause, oThis.where);
 
