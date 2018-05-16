@@ -92,10 +92,9 @@ GetAction.prototype = {
     ;
 
     if(isNaN(oThis.id)) {
-      return Promise.reject(responseHelper.paramValidationError({
+      return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_tk_g_2',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_id'],
+        api_error_identifier: 'data_not_found',
         debug_options: {clientId: oThis.clientId}
       }));
     }
@@ -119,8 +118,7 @@ GetAction.prototype = {
     if (!oThis.result) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_g_3',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_id'],
+        api_error_identifier: 'data_not_found',
         debug_options: {clientId: oThis.clientId}
       }));
     }
@@ -128,8 +126,7 @@ GetAction.prototype = {
     if (oThis.result.client_id != oThis.clientId) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_g_4',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_id'],
+        api_error_identifier: 'data_not_found',
         debug_options: {clientId: oThis.clientId}
       }));
     }
