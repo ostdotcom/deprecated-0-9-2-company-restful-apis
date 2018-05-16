@@ -29,7 +29,7 @@ const GetBrandedTokenKlass = function (params) {
 
   oThis.clientId = params.client_id;
 
-}
+};
 
 GetBrandedTokenKlass.prototype = {
 
@@ -104,13 +104,13 @@ GetBrandedTokenKlass.prototype = {
       symbol_icon: tokenData.symbol_icon,
       conversion_factor: tokenData.conversion_factor,
       token_erc20_address: tokenSecureData.token_erc20_address,
-      airdrop_contract_address: tokenSecureData.airdrop_contract_addr,
+      airdrop_contract_address: tokenSecureData.airdrop_contract_address,
       simple_stake_contract_address: tokenSecureData.simple_stake_contract_addr,
       total_supply: fetchBTMintedAmountRsp.data.allTimeBTMintedAmount,
       ost_utility_balance: [
         [chainIntConstants.UTILITY_CHAIN_ID , fetchSTPrimeBalanceRsp.data.ostPrimeBalance]
       ]
-    }
+    };
 
     responseData.price_points = ostPrices.data;
 
