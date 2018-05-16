@@ -144,12 +144,12 @@ router.post('/status', function (req, res, next) {
 
   const getDetailTransactionKlass = require(rootPrefix + '/app/services/transaction/get_detail');
 
-  const dataFormatterFunc = async function(response) {
+  const dataFormatterFunc = async function(serviceResponse) {
 
     const transactionTypes = serviceResponse.data.transaction_types
-        , formattedTransactionTypes = []
+        , formattedTransactionTypes = {}
         , users = serviceResponse.data.users
-        , formattedUsers = []
+        , formattedUsers = {}
         , transactions = serviceResponse.data.transactions
         , formattedTransactions = []
     ;
@@ -165,24 +165,30 @@ router.post('/status', function (req, res, next) {
 
     }
 
-    for(var i=0; i<transactionTypes.length; i++) {
+    for (var transactionTypeId in transactionTypes) {
 
-      const actionEntityFormatterRsp = await new ActionEntityFormatterClass(transactionTypes[i]).perform();
-      formattedTransactionTypes.push(actionEntityFormatterRsp.data);
+      const actionEntityFormatterRsp = await new ActionEntityFormatterClass(transactionTypes[transactionTypeId]).perform()
+          , data = actionEntityFormatterRsp.data
+      ;
 
-    }
-
-    for(var i=0; i<users.length; i++) {
-
-      const userEntityFormatterRsp = await new UserEntityFormatterKlass(users[i]).perform();
-      formattedUsers.push(userEntityFormatterRsp.data);
+      formattedTransactionTypes[data.id] = data;
 
     }
 
-    response.result_type = 'transactions';
-    response.economy_users = actionEntityFormatterRsp.formattedUsers;
-    response.transactions = actionEntityFormatterRsp.formattedTransactions;
-    response.transaction_types = actionEntityFormatterRsp.formattedTransactionTypes;
+    for (var userId in users) {
+
+      const userEntityFormatterRsp = await new UserEntityFormatterKlass(users[userId]).perform()
+          , data = userEntityFormatterRsp.data
+      ;
+
+      formattedUsers[data.id] = data;
+
+    }
+
+    serviceResponse.data.result_type = 'transactions';
+    serviceResponse.data.economy_users = formattedUsers;
+    serviceResponse.data.transactions = formattedTransactions;
+    serviceResponse.data.transaction_types = formattedTransactionTypes;
 
   };
 
