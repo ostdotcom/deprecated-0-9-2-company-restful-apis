@@ -76,7 +76,7 @@ GetStPTransferService.prototype = {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_stpt_g_2',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_id_transaction_get'],
+        params_error_identifiers: ['invalid_id_transfer_get'],
         debug_options: {}
       }));
     }
@@ -101,7 +101,7 @@ GetStPTransferService.prototype = {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_stpt_g_3',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_id_transaction_get'],
+        params_error_identifiers: ['invalid_id_transfer_get'],
         debug_options: {}
       }));
     }
@@ -110,7 +110,7 @@ GetStPTransferService.prototype = {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_stpt_g_4',
         api_error_identifier: 'invalid_id_transfer_get',
-        params_error_identifiers: ['invalid_id_transaction_get'],
+        params_error_identifiers: ['invalid_id_transfer_get'],
         debug_options: {}
       }));
     }
@@ -121,7 +121,7 @@ GetStPTransferService.prototype = {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_stpt_g_5',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_transaction_get'],
+        params_error_identifiers: ['invalid_id_transfer_get'],
         debug_options: {}
       }));
     }
