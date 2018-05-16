@@ -21,6 +21,10 @@ const rootPrefix = '../../..'
  *
  * @param {object} params - external passed parameters
  * @param {number} params.client_id (Mandatory) - client id
+ * @param {number} params.page_no (optional) - page no
+ * @param {number} params.order_by (optional) - order by
+ * @param {number} params.order (optional) - order
+ * @param {number} params.limit (optional) - limit
  *
  * @module app/services/airdrop_management/list
  */
@@ -170,7 +174,8 @@ ListAirdropsKlass.prototype = {
       , errors_object = [];
 
     // data type checks
-    if (!commonValidator.isVarNull(oThis.pageNo) && !(oThis.pageNo > 0)) {
+    oThis.pageNo = Number(oThis.pageNo || 1);
+    if(isNaN(oThis.pageNo) || !commonValidator.validatePageNo(oThis.pageNo)){
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_am_l_2',
         api_error_identifier: 'invalid_api_params',
