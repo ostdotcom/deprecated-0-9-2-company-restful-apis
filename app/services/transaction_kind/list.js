@@ -42,8 +42,8 @@ const ListActions = function(params) {
   ;
 
   oThis.clientId = params.client_id;
-  oThis.page_no = params.page_no;
-  oThis.order_by = params.order_by;
+  oThis.pageNo = params.page_no;
+  oThis.orderBy = params.order_by;
   oThis.order = params.order;
   oThis.limit = params.limit;
   oThis.extra_entities = params.extra_entities || [];
@@ -159,11 +159,11 @@ ListActions.prototype = {
 
     let order_by = null;
 
-    if (oThis.order_by) {
-      order_by = oThis.order_by.toLowerCase();
+    if (oThis.orderBy) {
+      order_by = oThis.orderBy.toLowerCase();
     }
 
-    if ( oThis.order_by &&  order_by != 'created' && order_by != 'name' ) {
+    if ( oThis.orderBy &&  order_by != 'created' && order_by != 'name' ) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_4',
         api_error_identifier: 'invalid_api_params',
@@ -172,7 +172,7 @@ ListActions.prototype = {
       }));
     }
 
-    oThis.order_by = order_by || 'created';
+    oThis.orderBy = order_by || 'created';
 
     let order = null;
 
@@ -318,8 +318,8 @@ ListActions.prototype = {
     if(oThis.limit) query.limit(oThis.limit + 1);
     if(oThis.offset) query.offset(oThis.offset);
 
-    if(oThis.order_by) {
-      let order_by = (oThis.order_by == 'name' ? 'name' : 'id');
+    if(oThis.orderBy) {
+      let order_by = (oThis.orderBy == 'name' ? 'name' : 'id');
       query.order_by(`${order_by} ${oThis.order}`);
     }
 
@@ -387,9 +387,9 @@ ListActions.prototype = {
         currency: (oThis.currencies[0] != '') ? oThis.currencies[0] : undefined,
         arbitrary_amount: oThis.arbitrary_amount,
         arbitrary_commission: oThis.arbitrary_commission,
-        order_by: oThis.order_by,
+        order_by: oThis.orderBy,
         limit: oThis.limit,
-        page_no: oThis.page_no + 1
+        page_no: oThis.pageNo + 1
       }
     }
 
