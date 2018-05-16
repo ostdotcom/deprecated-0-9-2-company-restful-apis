@@ -76,10 +76,9 @@ GetStPTransferService.prototype = {
     ;
 
     if (!basicHelper.isUuidValid(oThis.transactionUuid)) {
-      return Promise.reject(responseHelper.paramValidationError({
+      return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_stpt_g_2',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_id_transfer_get'],
+        api_error_identifier: 'data_not_found',
         debug_options: {}
       }));
     }
@@ -101,19 +100,17 @@ GetStPTransferService.prototype = {
     let transactionLogs = await new TransactionLogModel().getByTransactionUuid([oThis.transactionUuid]);
     let transactionLog = transactionLogs[0];
     if (!transactionLog) {
-      return Promise.reject(responseHelper.paramValidationError({
+      return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_stpt_g_3',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_id_transfer_get'],
+        api_error_identifier: 'data_not_found',
         debug_options: {}
       }));
     }
 
     if (oThis.client_id != transactionLog.client_id) {
-      return Promise.reject(responseHelper.paramValidationError({
+      return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_stpt_g_4',
-        api_error_identifier: 'invalid_id_transfer_get',
-        params_error_identifiers: ['invalid_id_transfer_get'],
+        api_error_identifier: 'data_not_found',
         debug_options: {}
       }));
     }
@@ -121,10 +118,9 @@ GetStPTransferService.prototype = {
     let transactionLogType = new TransactionLogModel().transactionTypes[transactionLog.transaction_type];
 
     if (transactionLogType != transactionLogConst.stpTransferTransactionType) {
-      return Promise.reject(responseHelper.paramValidationError({
+      return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_stpt_g_5',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_id_transfer_get'],
+        api_error_identifier: 'data_not_found',
         debug_options: {}
       }));
     }
@@ -152,10 +148,9 @@ GetStPTransferService.prototype = {
     ;
 
     if (stPrimeTransferFormatterResponse.isFailure()) {
-      return Promise.reject(responseHelper.paramValidationError({
+      return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_stpt_g_6',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_id_transfer_get'],
+        api_error_identifier: 'data_not_found',
         debug_options: {}
       }));
     }
