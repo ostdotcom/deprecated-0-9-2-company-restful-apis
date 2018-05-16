@@ -48,7 +48,7 @@ fetchUserKlass.prototype = {
             logger.error(`${__filename}::perform::catch`);
             logger.error(error);
             return responseHelper.error({
-              internal_error_identifier: 's_cu_fu_4',
+              internal_error_identifier: 's_cu_fu_1',
               api_error_identifier: 'unhandled_catch_response',
               debug_options: {}
             });
@@ -71,7 +71,7 @@ fetchUserKlass.prototype = {
 
     if (!basicHelper.isUuidValid(oThis.userUuid)) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_cu_fu_1',
+        internal_error_identifier: 's_cu_fu_2',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_id_user'],
         debug_options: {}
@@ -84,7 +84,7 @@ fetchUserKlass.prototype = {
 
     if (cacheFetchResponse.isFailure()) {
       return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_cu_fu_2',
+        internal_error_identifier: 's_cu_fu_3',
         api_error_identifier: 'something_went_wrong',
         debug_options: {}
       }));
@@ -93,16 +93,17 @@ fetchUserKlass.prototype = {
     const response = cacheFetchResponse.data[oThis.userUuid];
 
     if (!response) {
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_cu_fu_3',
-        api_error_identifier: 'resource_not_found',
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_cu_fu_4',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_id_user'],
         debug_options: {}
       }));
     }
 
     if (response['client_id'] != oThis.clientId) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_cu_eu_3',
+        internal_error_identifier: 's_cu_fu_5',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_id_user'],
         debug_options: {}
