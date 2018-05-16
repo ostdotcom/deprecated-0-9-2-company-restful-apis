@@ -133,9 +133,16 @@ router.post('/execute', function (req, res, next) {
 
   const dataFormatterFunc = async function(response) {
 
-    const actionEntityFormatterRsp = await new TransactionEntityFormatterKlass(response.data.transaction).perform();
+    const rawData = response.data.transaction
+        , formattedData = {
+      'transaction_uuid': rawData['transaction_uuid'],
+      'transaction_hash': rawData['transaction_hash'],
+      'from_uuid': rawData['from_user_id'],
+      'to_uuid': rawData['to_user_id'],
+      'action_id': rawData['transaction_type_id']
+    };
 
-    response.data = actionEntityFormatterRsp.data
+    response.data = formattedData;
 
   };
 
