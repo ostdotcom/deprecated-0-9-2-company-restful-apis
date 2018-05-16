@@ -64,7 +64,12 @@ const ListActions = function(params) {
     oThis.kind = basicHelper.commaSeperatedStrToArray(params.kind);
   }
 
-  oThis.currencies = basicHelper.commaSeperatedStrToArray((params.currency || ''));
+  if(params.currency) {
+    oThis.currencies = basicHelper.commaSeperatedStrToArray(params.currency);
+  } else {
+    oThis.currencies = [];
+  }
+
   oThis.arbitrary_amount_str = params.arbitrary_amount;
   oThis.arbitrary_commission_str = params.arbitrary_commission;
 
@@ -195,21 +200,37 @@ ListActions.prototype = {
       let kinds = [];
       for(var i=0; i < oThis.kind.length; i++){
         let val = new ClientTransactionTypeModel().invertedKinds[oThis.kind[i]];
-        if(!isNaN(Number(val))) kinds.push(Number(val));
+        if (isNaN(Number(val))){
+          return Promise.reject(responseHelper.paramValidationError({
+            internal_error_identifier: 's_tk_l_9',
+            api_error_identifier: 'invalid_api_params',
+            params_error_identifiers: ['invalid_transactionkind'],
+            debug_options: {clientId: oThis.clientId}
+          }));
+        } else {
+          kinds.push(Number(val))
+        }
       }
       oThis.where.kind = kinds;
     }
 
-    if(oThis.currencies.length > 1) {
-      return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_tk_l_6',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_currency_filter'],
-        debug_options: {clientId: oThis.clientId}
-      }));
+    if(oThis.currencies.length > 0) {
+      let currencyTypes = [];
+      for(var i=0; i < oThis.currencies.length; i++){
+        let val = new ClientTransactionTypeModel().invertedCurrencyTypes[oThis.currencies[i]];
+        if (isNaN(Number(val))){
+          return Promise.reject(responseHelper.paramValidationError({
+            internal_error_identifier: 's_tk_l_10',
+            api_error_identifier: 'invalid_api_params',
+            params_error_identifiers: ['invalid_currency_filter'],
+            debug_options: {clientId: oThis.clientId}
+          }));
+        } else {
+          currencyTypes.push(Number(val))
+        }
+      }
+      oThis.where.currency_type = currencyTypes;
     }
-
-    if(oThis.currencies[0] != '') oThis.where.currency_type = new ClientTransactionTypeModel().invertedCurrencyTypes[oThis.currencies[0]];
 
     if (!commonValidator.isVarNull(oThis.arbitrary_amount_str)) {
       oThis.arbitrary_amount_arr = basicHelper.commaSeperatedStrToArray(oThis.arbitrary_amount_str);
@@ -228,6 +249,15 @@ ListActions.prototype = {
       oThis.arbitrary_amount = oThis.arbitrary_amount_arr[0];
     }
 
+    if (!commonValidator.isVarNull(oThis.arbitrary_amount) && !commonValidator.isValidBoolean(oThis.arbitrary_amount)) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_tk_l_8',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_arbitrary_amount_filter'],
+        debug_options: {clientId: oThis.clientId}
+      }));
+    }
+
 
     if (!commonValidator.isVarNull(oThis.arbitrary_commission_str)) {
       oThis.arbitrary_commission_arr = basicHelper.commaSeperatedStrToArray(oThis.arbitrary_commission_str);
@@ -235,7 +265,7 @@ ListActions.prototype = {
 
     if(!commonValidator.isVarNull(oThis.arbitrary_commission_arr) && oThis.arbitrary_commission_arr.length > 1) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_tk_l_8',
+        internal_error_identifier: 's_tk_l_9',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_arbitrary_commission_filter'],
         debug_options: {clientId: oThis.clientId}
@@ -244,6 +274,15 @@ ListActions.prototype = {
 
     if(!commonValidator.isVarNull(oThis.arbitrary_commission_arr)){
       oThis.arbitrary_commission = oThis.arbitrary_commission_arr[0];
+    }
+
+    if (!commonValidator.isVarNull(oThis.arbitrary_commission) && !commonValidator.isValidBoolean(oThis.arbitrary_commission)) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_tk_l_10',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_arbitrary_commission_filter'],
+        debug_options: {clientId: oThis.clientId}
+      }));
     }
 
     return Promise.resolve({});

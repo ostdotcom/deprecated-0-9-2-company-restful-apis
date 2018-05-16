@@ -218,7 +218,7 @@
   "invalid_arbitrary_commission_filter": {
     "parameter": "arbitrary_commission",
     "code": "invalid",
-    "message": "Filter on arbitrary_commission can have only one value"
+    "message": "Filter on arbitrary_commission can have only one value and should be a valid boolean"
   },
   "invalid_arbitrary_commission": {
     "parameter": "arbitrary_commission",
