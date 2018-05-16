@@ -159,11 +159,11 @@ EditAction.prototype = {
 
     const oThis = this;
 
-    oThis._validateCommissionParams();
+    await oThis._validateCommissionParams();
 
-    oThis._validateCurrencyType();
+    await oThis._validateCurrencyType();
 
-    oThis._validateName();
+    await oThis._validateName();
 
     /* Return all the validation errors */
     if (oThis.errors_object.length > 0) {
@@ -185,7 +185,7 @@ EditAction.prototype = {
    * @return {promise<result>} - returns a promise which resolves to an object of Result
    *
    */
-  _validateCommissionParams: function () {
+  _validateCommissionParams: async function () {
     const oThis = this
       , kind = new ClientTransactionTypeModel().kinds[oThis.dbRecord.kind.toString()];
 
@@ -234,7 +234,7 @@ EditAction.prototype = {
    * @return {}
    *
    */
-  _validateCurrencyType: function () {
+  _validateCurrencyType: async function () {
     const oThis = this;
     var currency = null;
 
@@ -315,6 +315,7 @@ EditAction.prototype = {
           oThis.errors_object.push('duplicate_transaction_name');
         }
       }
+      oThis.updatedValues.name = oThis.name;
     }
 
   },
@@ -363,7 +364,8 @@ EditAction.prototype = {
     const oThis = this
     ;
 
-    logger.debug("-----------oThis.updatedValues-", Object.keys(oThis.updatedValues));
+    logger.debug("-----------oThis.updatedValues-", oThis.updatedValues);
+
     if(Object.keys(oThis.updatedValues).length > 0){
       Object.assign(oThis.dbRecord, oThis.updatedValues);
 
