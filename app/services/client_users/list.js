@@ -195,8 +195,9 @@ listUserKlass.prototype = {
     const oThis = this
         , errors_object = [];
 
-    // validate and sanitize page_no
-    if ((oThis.pageNo && oThis.pageNo < 1) || oThis.pageNo == 0) {
+    let pageNoVas = commonValidator.validateAndSanitizePageNo(oThis.pageNo);
+
+    if(!pageNoVas[0]) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_cu_l_2',
         api_error_identifier: 'invalid_api_params',
@@ -204,9 +205,7 @@ listUserKlass.prototype = {
         debug_options: {}
       }));
     }
-
-    // default page is 1
-    oThis.pageNo = oThis.pageNo || 1;
+    oThis.pageNo = pageNoVas[1];
 
     // validate and sanitize limit
     if ((oThis.limit && (oThis.limit < 1 || oThis.limit > 100)) || oThis.limit == 0) {

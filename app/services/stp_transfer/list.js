@@ -93,17 +93,17 @@ ListStpTransfersService.prototype = {
     const oThis = this
     ;
 
-    if ((oThis.pageNo && oThis.pageNo < 1) || oThis.pageNo == 0) {
+    let pageNoVas = commonValidator.validateAndSanitizePageNo(oThis.pageNo);
+
+    if(!pageNoVas[0]) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_stp_l_2',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_page_no'],
-        debug_options: {clientId: oThis.clientId}
+        debug_options: {}
       }));
     }
-
-    // default page is 1
-    oThis.pageNo = oThis.pageNo || 1;
+    oThis.pageNo = pageNoVas[1];
 
     // only possible value for order by is created
     if (oThis.orderBy && (oThis.orderBy.toLowerCase() != 'created')) {

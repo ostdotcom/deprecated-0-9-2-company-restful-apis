@@ -173,9 +173,9 @@ ListAirdropsKlass.prototype = {
     const oThis = this
       , errors_object = [];
 
-    // data type checks
-    oThis.pageNo = Number(oThis.pageNo || 1);
-    if(isNaN(oThis.pageNo) || !commonValidator.validatePageNo(oThis.pageNo)){
+    let pageNoVas = commonValidator.validateAndSanitizePageNo(oThis.pageNo);
+
+    if(!pageNoVas[0]) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_am_l_2',
         api_error_identifier: 'invalid_api_params',
@@ -183,6 +183,7 @@ ListAirdropsKlass.prototype = {
         debug_options: {}
       }));
     }
+    oThis.pageNo = pageNoVas[1];
 
     if (!commonValidator.isVarNull(oThis.limit) && !(oThis.limit > 0)) {
       return Promise.reject(responseHelper.paramValidationError({

@@ -130,16 +130,18 @@ ListActions.prototype = {
     const oThis = this
     ;
 
-    oThis.page_no = Number(oThis.page_no || 1);
 
-    if(isNaN(oThis.page_no) || !commonValidator.validatePageNo(oThis.page_no)){
+    let pageNoVas = commonValidator.validateAndSanitizePageNo(oThis.pageNo);
+
+    if(!pageNoVas[0]) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_1',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_page_no'],
-        debug_options: {clientId: oThis.clientId}
+        debug_options: {}
       }));
     }
+    oThis.pageNo = pageNoVas[1];
 
     let order_by = null;
 
