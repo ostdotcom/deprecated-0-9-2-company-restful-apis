@@ -222,5 +222,15 @@
     "parameter": "transaction_uuids",
     "code": "missing",
     "message": "Missing transaction_uuids"
+  },
+  "invalid_from_user_id": {
+    "parameter": "from_uuid",
+    "code": "invalid",
+    "message": "Invalid from_uuid"
+  },
+  "invalid_to_user_id": {
+    "parameter": "to_uuid",
+    "code": "invalid",
+    "message": "Invalid to_uuid"
   }
 }
