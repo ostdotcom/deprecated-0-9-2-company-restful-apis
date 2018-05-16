@@ -153,10 +153,9 @@
     "code": "invalid",
     "message": "Available token amount is insufficient. Please mint more tokens or reduce the amount to complete the process."
   },
-  "user_name_inappropriate": {
-    "parameter": "Username",
-    "code": "invalid",
-    "message": "Commom dusre ds dksjdks"
+  "invalid_token_symbol": {
+    "parameter": "token_symbol",
+    "message": "Invalid Token Symbol"
   },
   "invalid_amount_arbitrary_combination": {
     "parameter": "amount",
@@ -244,10 +243,6 @@
     "parameter": "arbitrary_amount",
     "code": "invalid",
     "message": "Invalid arbitrary_amount."
-  },
-  "duplicate_transactionname": {
-    "parameter": "name",
-    "message": "An action with that name already exists."
   },
   "invalid_commission_percent": {
     "parameter": "commission_percent",
