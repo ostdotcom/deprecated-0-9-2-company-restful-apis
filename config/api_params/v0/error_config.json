@@ -217,5 +217,10 @@
     "parameter": "transaction_kind",
     "code": "missing",
     "message": "Missing transaction_kind"
+  },
+  "missing_transaction_uuids": {
+    "parameter": "transaction_uuids",
+    "code": "missing",
+    "message": "Missing transaction_uuids"
   }
 }

@@ -142,7 +142,7 @@ listUserKlass.prototype = {
 
       var userData = {
         id: object['uuid'],
-        name: object['name'],
+        name: object['name'] || '',
         uuid: object['uuid'],
         address: object['ethereum_address'],
         total_airdropped_tokens: basicHelper.convertToNormal((balanceData || {}).totalAirdroppedTokens).toString(10),

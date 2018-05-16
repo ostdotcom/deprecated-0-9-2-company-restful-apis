@@ -5,6 +5,7 @@ const rootPrefix = '../..'
   , routeHelper = require(rootPrefix + '/routes/helper')
   , ActionEntityFormatterClass = require(rootPrefix + '/lib/formatter/entities/v0/action')
   , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/v0/transaction')
+  , UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/v0/user')
   , util = require(rootPrefix + '/lib/util')
 ;
 
@@ -139,9 +140,58 @@ router.post('/execute', function (req, res, next) {
 
 router.post('/status', function (req, res, next) {
 
+  req.decodedParams.apiName = 'get_transaction_detail';
+
   const getDetailTransactionKlass = require(rootPrefix + '/app/services/transaction/get_detail');
 
-  Promise.resolve(routeHelper.performer(req, res, next, getDetailTransactionKlass, 'r_tk_5'));
+  const dataFormatterFunc = async function(response) {
+
+    const transactionTypes = serviceResponse.data.transaction_types
+        , formattedTransactionTypes = []
+        , users = serviceResponse.data.users
+        , formattedUsers = []
+        , transactions = serviceResponse.data.transactions
+        , formattedTransactions = []
+    ;
+
+    delete serviceResponse.data.transaction_types;
+    delete serviceResponse.data.users;
+    delete serviceResponse.data.transactions;
+
+    for(var i=0; i<transactions.length; i++) {
+
+      const transactionEntityFormatterRsp = await new TransactionEntityFormatterKlass(transactions[i]).perform();
+      formattedTransactions.push(transactionEntityFormatterRsp.data);
+
+    }
+
+    for(var i=0; i<transactionTypes.length; i++) {
+
+      const actionEntityFormatterRsp = await new ActionEntityFormatterClass(transactionTypes[i]).perform();
+      formattedTransactionTypes.push(actionEntityFormatterRsp.data);
+
+    }
+
+    for(var i=0; i<users.length; i++) {
+
+      const userEntityFormatterRsp = await new UserEntityFormatterKlass(users[i]).perform();
+      formattedUsers.push(userEntityFormatterRsp.data);
+
+    }
+
+    response.result_type = 'transactions';
+    response.economy_users = actionEntityFormatterRsp.formattedUsers;
+    response.transactions = actionEntityFormatterRsp.formattedTransactions;
+    response.transaction_types = actionEntityFormatterRsp.formattedTransactionTypes;
+
+  };
+
+  Promise.resolve(routeHelper.performer(
+      req, res, next,
+      getDetailTransactionKlass, 'r_tk_5',
+      null, dataFormatterFunc
+  ));
+
 });
 
 module.exports = router;
