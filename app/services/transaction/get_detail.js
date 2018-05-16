@@ -20,7 +20,6 @@ const rootPrefix = '../../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/transaction')
   , ActionEntityFormatterKlass = require(rootPrefix +'/lib/formatter/entities/latest/action')
-  , commonValidator = require(rootPrefix + '/lib/validators/common')
 ;
 
 const GetTransactionDetailKlass = function (params) {
@@ -205,18 +204,7 @@ GetTransactionDetailKlass.prototype = {
       const currRecord = transactionTypeRecords[i]
       ;
 
-      let actionEntityFormatter = new ActionEntityFormatterKlass({
-        id: currRecord.id,
-        client_id: currRecord.client_id,
-        name: currRecord.name,
-        kind: new ClientTransactionTypeModel().kinds[currRecord.kind],
-        currency: new ClientTransactionTypeModel().currencyTypes[currRecord.currency_type],
-        arbitrary_amount: commonValidator.isVarNull(currRecord.amount),
-        amount: currRecord.amount,
-        arbitrary_commission: commonValidator.isVarNull(currRecord.commission_percent),
-        commission_percent: (currRecord.commission_percent || '').toString(10),
-        uts: Date.now()
-      });
+      let actionEntityFormatter = new ActionEntityFormatterKlass(currRecord);
 
       let actionEntityFormatterRsp = await actionEntityFormatter.perform();
 
@@ -243,9 +231,6 @@ GetTransactionDetailKlass.prototype = {
     ;
 
     for (var i = 0; i < economyUsersRecords.length; i++) {
-
-      //TODO:Kedar We need to add a var for supported entities in this API. to return users only when passed.
-      //TODO:Kedar Fetch actual balances here. for now had to add 0 values for code to work.
 
       const currRecord = economyUsersRecords[i]
           , userData = {
