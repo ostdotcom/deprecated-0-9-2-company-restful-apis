@@ -211,7 +211,7 @@ ExecuteSTPTransferService.prototype = {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_stp_e_4',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_to_user_id', 'invalid_from_user_id'],
+        params_error_identifiers: ['invalid_to_address'],
         debug_options: {client_id: oThis.clientId}
       }));
     }
@@ -222,7 +222,7 @@ ExecuteSTPTransferService.prototype = {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_stp_e_5',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_to_user_id'],
+        params_error_identifiers: ['invalid_to_address'],
         debug_options: {client_id: oThis.clientId}
       }));
     }
