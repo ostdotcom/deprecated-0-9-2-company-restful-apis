@@ -64,10 +64,9 @@ GetAirdropStatusKlass.prototype = {
     if(response[0]){
       var record = response[0];
       if(record.client_id != oThis.clientId){
-        return Promise.resolve(responseHelper.paramValidationError({
+        return Promise.reject(responseHelper.error({
           internal_error_identifier: 's_am_gas_2',
-          api_error_identifier: 'invalid_api_params',
-          params_error_identifiers: ['invalid_airdrop_uuid'],
+          api_error_identifier: 'data_not_found',
           debug_options: {}
         }));
       }
@@ -96,10 +95,9 @@ GetAirdropStatusKlass.prototype = {
       return Promise.resolve(responseHelper.successWithData(apiResponseData));
 
     } else {
-      return Promise.resolve(responseHelper.paramValidationError({
+      return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_am_gas_3',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_airdrop_uuid'],
+        api_error_identifier: 'data_not_found',
         debug_options: {}
       }));
     }
