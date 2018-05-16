@@ -353,7 +353,7 @@ ListActions.prototype = {
       }
 
       if (oThis.extra_entities.includes('price_points')) {
-        oThis.ostPrices = await new ostPriceCacheKlass().fetch();
+        oThis.ostPrices = (await new ostPriceCacheKlass().fetch()).data;
       }
 
       onResolve();

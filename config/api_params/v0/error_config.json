@@ -162,14 +162,14 @@
     "message": "Invalid client_transaction_id"
   },
   "invalid_amount_arbitrary_combination": {
-    "parameter": "amount",
+    "parameter": "currency_value",
     "code": "invalid",
-    "message": "Amount is not valid"
+    "message": "Currency value is not valid"
   },
   "invalid_amount": {
-    "parameter": "amount",
+    "parameter": "currency_value",
     "code": "invalid",
-    "message": "Invalid amount."
+    "message": "Invalid currency value."
   },
   "invalid_commission_arbitrary_combination": {
     "parameter": "commission_percent",
