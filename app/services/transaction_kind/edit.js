@@ -202,7 +202,7 @@ EditAction.prototype = {
         oThis.updatedValues.commission_percent = oThis.commissionPercent
       } else if (!commonValidator.isVarNull(oThis.commissionPercent)) {
         if (commonValidator.isVarNull(oThis.dbRecord.commission_percent)) {
-          oThis.paramsErrorIdentifiersMap['invalid_commission_percent'] = 1;
+          oThis.paramsErrorIdentifiersMap['arbitrary_commission_already_set_to_true'] = 1;
         }
         oThis.updatedValues.commission_percent = oThis.commissionPercent
       } else if (!commonValidator.isVarNull(oThis.arbitraryCommission)) {

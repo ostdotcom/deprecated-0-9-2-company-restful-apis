@@ -249,6 +249,11 @@
     "code": "invalid",
     "message": "Invalid commision percent."
   },
+  "arbitrary_commission_already_set_to_true": {
+    "parameter": "commission_percent",
+    "code": "invalid",
+    "message": "Arbitrary commission is already set to True. To make commission_percent non arbritrary, please send arbitrary_commission as false."
+  },
   "invalid_from_user_id": {
     "parameter": "from_user_id",
     "message": "Invalid from user id."

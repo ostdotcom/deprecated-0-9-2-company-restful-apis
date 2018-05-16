@@ -324,7 +324,7 @@ ExecuteTransactionService.prototype = {
 
     if(oThis.transactionTypeRecord.kind == clientTransactionTypeConst.userToUserKind){
       // in case of arbitrary commission percent, commission percent should be passed in the params.
-      if (commonValidator.isVarTrue(oThis.transactionTypeRecord.arbitrary_commission_percent) && commonValidator.isVarNull(oThis.commissionPercent )) {
+      if (commonValidator.isVarTrue(oThis.transactionTypeRecord.arbitrary_commission_percent) && commonValidator.isVarNull(oThis.commissionPercent)) {
         return Promise.reject(responseHelper.paramValidationError({
           internal_error_identifier: 's_t_e_7',
           api_error_identifier: 'invalid_api_params',
@@ -342,6 +342,16 @@ ExecuteTransactionService.prototype = {
           debug_options: {}
         }));
       }
+
+      if(!commonValidator.commissionPercentValid(oThis.commissionPercent)) {
+        return Promise.reject(responseHelper.paramValidationError({
+          internal_error_identifier: 's_t_e_24',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: ['invalid_commission_percent'],
+          debug_options: {}
+        }));
+      }
+
     } else {
       if(!commonValidator.isVarNull(oThis.commissionPercent)){
         return Promise.reject(responseHelper.paramValidationError({
