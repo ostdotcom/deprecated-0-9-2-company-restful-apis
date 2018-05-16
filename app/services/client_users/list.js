@@ -6,7 +6,6 @@ const rootPrefix = '../../..'
   , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
   , EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance')
   , UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/user')
-  , ClientUsersCntCacheKlass = require(rootPrefix + '/lib/cache_management/client_users_count')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , commonValidator = require(rootPrefix +  '/lib/validators/common')
 ;
@@ -26,8 +25,8 @@ const rootPrefix = '../../..'
  *
  */
 const listUserKlass = function (params) {
-
-  const oThis = this;
+  const oThis = this
+  ;
 
   oThis.clientId = params.client_id;
   oThis.pageNo = params.page_no;
@@ -37,7 +36,6 @@ const listUserKlass = function (params) {
   oThis.limit = params.limit;
   oThis.uuidsString = params.id;
   oThis.uuidsForFiltering = [];
-
 };
 
 listUserKlass.prototype = {
@@ -61,7 +59,7 @@ listUserKlass.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
           return responseHelper.error({
-            internal_error_identifier: 's_cu_l_2',
+            internal_error_identifier: 's_cu_l_1',
             api_error_identifier: 'unhandled_catch_response',
             debug_options: {}
           });
@@ -157,7 +155,7 @@ listUserKlass.prototype = {
 
     }
 
-    var next_page_payload = {};
+    let next_page_payload = {};
 
     if (hasMore) {
 
@@ -194,32 +192,37 @@ listUserKlass.prototype = {
    *
    */
   validateAndSanitize: async function () {
-
     const oThis = this
         , errors_object = [];
 
+    // validate and sanitize page_no
+    if ((oThis.pageNo && oThis.pageNo < 1) || oThis.pageNo == 0) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_cu_l_2',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_page_no'],
+        debug_options: {}
+      }));
+    }
+
+    // default page is 1
+    oThis.pageNo = oThis.pageNo || 1;
+
+    // validate and sanitize limit
+    if ((oThis.limit && (oThis.limit < 1 || oThis.limit > 100)) || oThis.limit == 0) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_cu_l_3',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_pagination_limit'],
+        debug_options: {clientId: oThis.clientId}
+      }));
+    }
+
+    oThis.limit = oThis.limit || 10;
+    oThis.offset = (oThis.pageNo - 1) * oThis.limit;
+
     if (!commonValidator.isVarNull(oThis.airdropped) && !commonValidator.isValidBoolean(oThis.airdropped)) {
       errors_object.push('invalid_filter_user_list');
-    }
-
-    if (!oThis.limit) {
-      oThis.limit = 10;
-    } else {
-      oThis.limit = parseInt(oThis.limit);
-      if (oThis.limit < 1 || oThis.limit > 100) {
-        errors_object.push('invalid_pagination_limit');
-        oThis.limit = 25; // adding a dummy value here so that remaining validation run as expected
-      }
-    }
-
-    if (!oThis.pageNo) {
-      oThis.pageNo = 1;
-      oThis.offset = 0
-    } else if (parseInt(oThis.pageNo) < 1) {
-      errors_object.push('invalid_page_no');
-    } else {
-      oThis.pageNo = parseInt(oThis.pageNo);
-      oThis.offset = oThis.limit * (oThis.pageNo - 1)
     }
 
     if (!oThis.orderBy) {
@@ -247,7 +250,7 @@ listUserKlass.prototype = {
 
     if (errors_object.length > 0) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_cu_l_3',
+        internal_error_identifier: 's_cu_l_4',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: errors_object,
         debug_options: {}
