@@ -135,11 +135,11 @@ router.post('/execute', function (req, res, next) {
 
     const rawData = response.data.transaction
         , formattedData = {
-      'transaction_uuid': rawData['transaction_uuid'],
+      'transaction_uuid': rawData['id'],
       'transaction_hash': rawData['transaction_hash'],
       'from_uuid': rawData['from_user_id'],
       'to_uuid': rawData['to_user_id'],
-      'action_id': rawData['transaction_type_id']
+      'action_id': rawData['action_id']
     };
 
     response.data = formattedData;
