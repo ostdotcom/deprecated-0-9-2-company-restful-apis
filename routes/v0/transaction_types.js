@@ -44,7 +44,8 @@ router.post('/create', function (req, res, next) {
 
   req.decodedParams.apiName = 'create_new_action';
 
-  const newTransactionKlass = require(rootPrefix + '/app/services/transaction_kind/add_new');
+  const newTransactionKlass = require(rootPrefix + '/app/services/transaction_kind/add_new')
+    , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types');
 
 
   const afterValidationFunc = async function(serviceParamsPerThisVersion) {
@@ -56,6 +57,10 @@ router.post('/create', function (req, res, next) {
     routeHelper.replaceKey(serviceParamsPerLatestVersion, 'currency_value', 'amount');
 
     serviceParamsPerLatestVersion.arbitrary_amount = 'false';
+
+    if(!serviceParamsPerLatestVersion.commission_percent && serviceParamsPerLatestVersion.kind == clientTxTypesConst.userToUserKind){
+      serviceParamsPerLatestVersion.commission_percent = '0';
+    }
 
     return serviceParamsPerLatestVersion;
 
