@@ -257,8 +257,6 @@ ExecuteTransactionService.prototype = {
     const oThis = this
     ;
 
-    oThis.amount = oThis.amount ? parseFloat(oThis.amount) : null;
-
     if (oThis.transactionTypeRecord.currency_type ==
       new ClientTransactionTypeModel().invertedCurrencyTypes[clientTransactionTypeConst.btCurrencyType]) {
       if (!commonValidator.isVarNull(oThis.amount) && !commonValidator.validateBtAmount(oThis.amount)) {
@@ -321,6 +319,7 @@ ExecuteTransactionService.prototype = {
       oThis.amount = basicHelper.formatWeiToString(oThis.amount);
     }
 
+    oThis.amount = !commonValidator.isVarNull(oThis.amount) ? parseFloat(oThis.amount) : null;
 
     if(oThis.transactionTypeRecord.kind == clientTransactionTypeConst.userToUserKind){
       // in case of arbitrary commission percent, commission percent should be passed in the params.
