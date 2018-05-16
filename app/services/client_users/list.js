@@ -238,6 +238,10 @@ listUserKlass.prototype = {
       oThis.uuidsForFiltering = basicHelper.commaSeperatedStrToArray(oThis.uuidsString);
       if (oThis.uuidsForFiltering.length > 100) {
         errors_object.push('invalid_id_user_list');
+      } else {
+        if (!basicHelper.isValidUuidArray(oThis.uuidsForFiltering)) {
+          errors_object.push('invalid_id_user_list');
+        }
       }
     }
 
