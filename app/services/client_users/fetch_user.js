@@ -101,9 +101,10 @@ fetchUserKlass.prototype = {
     }
 
     if (response['client_id'] != oThis.clientId) {
-      return Promise.reject(responseHelper.error({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_cu_eu_3',
-        api_error_identifier: 'unauthorized_for_other_client',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_id_user'],
         debug_options: {}
       }));
     }
