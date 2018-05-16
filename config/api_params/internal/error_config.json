@@ -88,5 +88,10 @@
     "parameter": "transaction_uuids",
     "code": "missing",
     "message": "Missing transaction_uuids"
+  },
+  "invalid_airdropped_filter": {
+    "parameter": "airdropped",
+    "code": "invalid",
+    "message": "airdropped can be True of False"
   }
 }

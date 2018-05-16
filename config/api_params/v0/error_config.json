@@ -232,5 +232,10 @@
     "parameter": "to_uuid",
     "code": "invalid",
     "message": "Invalid to_uuid"
+  },
+  "invalid_airdropped_filter": {
+    "parameter": "airdropped",
+    "code": "invalid",
+    "message": "airdropped can be True of False"
   }
 }

@@ -11,6 +11,7 @@ const rootPrefix = '../../..'
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , BTSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
+  , commonValidator = require(rootPrefix + '/lib/validators/common')
 ;
 
 /**
@@ -18,10 +19,10 @@ const rootPrefix = '../../..'
  *
  * @param {object} params - external passed parameters
  * @param {number} params.client_id - client id
- * @param {number} params.client_token_id - client token id (optional)
  * @param {number} params.token_symbol - token symbol
- * @param {object} params.list_type -
+ * @param {Boolean} params.airdropped (optional) - true: already airdropped, false: never airdropped
  * @param {object} params.amount -
+ * @param {string} params.user_ids (optional) - specific set of users can get shortlisted for airdrop.
  *
  * @constructor
  *
@@ -124,12 +125,22 @@ StartAirdropForKitKlass.prototype = {
       }));
     }
 
-    if(oThis.airdropped == 'true'){
-      oThis.airdropUserListType = clientAirdropConst.everAirdroppedAddressesAirdropListType;
-    } else if (oThis.airdropped == 'false'){
-      oThis.airdropUserListType = clientAirdropConst.neverAirdroppedAddressesAirdropListType;
-    } else {
+
+    if(commonValidator.isVarNull(oThis.airdropped)){
       oThis.airdropUserListType = clientAirdropConst.allAddressesAirdropListType;
+    } else {
+      if(commonValidator.isVarTrue(oThis.airdropped)){
+        oThis.airdropUserListType = clientAirdropConst.everAirdroppedAddressesAirdropListType;
+      } else if (commonValidator.isVarFalse(oThis.airdropped)){
+        oThis.airdropUserListType = clientAirdropConst.neverAirdroppedAddressesAirdropListType;
+      } else {
+        return Promise.reject(responseHelper.paramValidationError({
+          internal_error_identifier: 's_am_s_4',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: ['invalid_airdropped_filter'],
+          debug_options: {}
+        }));
+      }
     }
 
     var btSecureCache = new BTSecureCacheKlass({tokenSymbol: oThis.tokenSymbol});
