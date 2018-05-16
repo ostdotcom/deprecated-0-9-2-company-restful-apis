@@ -15,11 +15,20 @@ const router = express.Router()
 /* Get transaction block info for a transaction hash */
 router.get('/list', function (req, res, next) {
 
-  req.decodedParams.apiName = 'list_transactions';
+  req.decodedParams.apiName = 'list_actions';
 
   req.decodedParams.extra_entities = ['client_tokens', 'price_points'];
 
   const transactionListKlass = require(rootPrefix + '/app/services/transaction_kind/list');
+
+  const afterValidationFunc = async function(serviceParamsPerThisVersion) {
+
+    const serviceParamsPerLatestVersion = util.clone(serviceParamsPerThisVersion);
+
+    serviceParamsPerLatestVersion.limit = 50;
+
+    return serviceParamsPerLatestVersion;
+  };
 
   const dataFormatterFunc = async function(response) {
 
@@ -37,7 +46,7 @@ router.get('/list', function (req, res, next) {
 
   };
 
-  Promise.resolve(routeHelper.performer(req, res, next, transactionListKlass, 'r_tk_1', null, dataFormatterFunc));
+  Promise.resolve(routeHelper.performer(req, res, next, transactionListKlass, 'r_tk_1', afterValidationFunc, dataFormatterFunc));
 });
 
 router.post('/create', function (req, res, next) {

@@ -389,7 +389,8 @@ ListActions.prototype = {
         arbitrary_commission: oThis.arbitrary_commission,
         order_by: oThis.orderBy,
         limit: oThis.limit,
-        page_no: oThis.pageNo + 1
+        page_no: oThis.pageNo + 1,
+        order: oThis.order
       }
     }
 

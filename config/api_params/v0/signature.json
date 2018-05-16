@@ -124,7 +124,7 @@
       "commission_percent"
     ]
   },
-  "list_transactions": {
+  "list_actions": {
     "mandatory": [
       {
         "parameter": "client_id",
