@@ -134,8 +134,10 @@ AddNewAction.prototype = {
       } else if (oThis.currency == clientTxTypesConst.btCurrencyType) {
         if (!commonValidator.validateArbitraryAmount(oThis.amount, oThis.arbitraryAmount)) {
           errors_object.push('invalid_amount_arbitrary_combination');
+          oThis.amount = null;
         } else if (!commonValidator.validateBtAmount(oThis.amount)) {
           errors_object.push('out_of_bound_transaction_bt_value');
+          oThis.amount = null;
         }
 
         if (!commonValidator.isVarNull(oThis.amount)) {
