@@ -278,7 +278,8 @@
     "message": "Invalid action_id"
   },
   "invalid_id": {
-    "parameter": "action_id",
+    "parameter": "id",
+    "code": "invalid",
     "message": "Missing id"
   },
   "missing_amount": {
