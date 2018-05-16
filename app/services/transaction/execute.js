@@ -210,7 +210,14 @@ ExecuteTransactionService.prototype = {
     } else if (oThis.transactionKindId) {
       let clientTransactionTypeCacheFetchResponse = await (new ClientTransactionTypeFromIdCache(
         {id: oThis.transactionKindId})).fetch();
-      if (clientTransactionTypeCacheFetchResponse.isFailure()) return Promise.reject(clientTransactionTypeCacheFetchResponse);
+      if (clientTransactionTypeCacheFetchResponse.isFailure()) {
+        return Promise.reject(responseHelper.paramValidationError({
+          internal_error_identifier: 's_t_e_24',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: ['invalid_action_id'],
+          debug_options: {}
+        }));
+      }
 
       oThis.transactionTypeRecord = clientTransactionTypeCacheFetchResponse.data;
     } else {
