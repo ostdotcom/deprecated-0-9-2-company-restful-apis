@@ -93,7 +93,7 @@ ListActions.prototype = {
           logger.error(error);
 
           return responseHelper.error({
-            internal_error_identifier: 's_tk_l_0',
+            internal_error_identifier: 's_tk_l_1',
             api_error_identifier: 'unhandled_catch_response',
             debug_options: {}
           });
@@ -130,18 +130,32 @@ ListActions.prototype = {
     const oThis = this
     ;
 
-
     let pageNoVas = commonValidator.validateAndSanitizePageNo(oThis.pageNo);
 
     if(!pageNoVas[0]) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_tk_l_1',
+        internal_error_identifier: 's_tk_l_2',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_page_no'],
         debug_options: {}
       }));
     }
     oThis.pageNo = pageNoVas[1];
+
+    let limitVas = commonValidator.validateAndSanitizeLimit(oThis.limit);
+
+    if(!limitVas[0]) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_tk_l_3',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_pagination_limit'],
+        debug_options: {}
+      }));
+    }
+    oThis.limit = limitVas[1];
+
+    oThis.offset = (oThis.pageNo - 1) * oThis.limit;
+
 
     let order_by = null;
 
@@ -151,7 +165,7 @@ ListActions.prototype = {
 
     if ( oThis.order_by &&  order_by != 'created' && order_by != 'name' ) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_tk_l_2',
+        internal_error_identifier: 's_tk_l_4',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_order_by'],
         debug_options: {clientId: oThis.clientId}
@@ -168,7 +182,7 @@ ListActions.prototype = {
 
     if ( oThis.order && !commonValidator.isValidOrderingString(order) ) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_tk_l_7',
+        internal_error_identifier: 's_tk_l_5',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_order'],
         debug_options: {clientId: oThis.clientId}
@@ -176,23 +190,6 @@ ListActions.prototype = {
     }
 
     oThis.order = order || 'desc';
-
-    if(!commonValidator.isVarNull(oThis.limit)) {
-      oThis.limit = Number(oThis.limit);
-    }
-
-    if ( !commonValidator.isVarNull(oThis.limit) && (isNaN(oThis.limit) || oThis.limit < 1 || oThis.limit > 100) ) {
-      return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_tk_l_3',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_pagination_limit'],
-        debug_options: {clientId: oThis.clientId}
-      }));
-    }
-
-    oThis.limit = oThis.limit || 10;
-
-    oThis.offset = (oThis.page_no - 1) * oThis.limit;
 
     if(oThis.kind) {
       let kinds = [];
@@ -205,7 +202,7 @@ ListActions.prototype = {
 
     if(oThis.currencies.length > 1) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_tk_l_4',
+        internal_error_identifier: 's_tk_l_6',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_currency_filter'],
         debug_options: {clientId: oThis.clientId}
@@ -220,7 +217,7 @@ ListActions.prototype = {
 
     if(!commonValidator.isVarNull(oThis.arbitrary_amount_arr) && oThis.arbitrary_amount_arr.length > 1) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_tk_l_5',
+        internal_error_identifier: 's_tk_l_7',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_arbitrary_amount_filter'],
         debug_options: {clientId: oThis.clientId}
@@ -238,7 +235,7 @@ ListActions.prototype = {
 
     if(!commonValidator.isVarNull(oThis.arbitrary_commission_arr) && oThis.arbitrary_commission_arr.length > 1) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_tk_l_6',
+        internal_error_identifier: 's_tk_l_8',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_arbitrary_commission_filter'],
         debug_options: {clientId: oThis.clientId}

@@ -185,34 +185,19 @@ ListAirdropsKlass.prototype = {
     }
     oThis.pageNo = pageNoVas[1];
 
-    if (!commonValidator.isVarNull(oThis.limit) && !(oThis.limit > 0)) {
+    let limitVas = commonValidator.validateAndSanitizeLimit(oThis.limit);
+
+    if(!limitVas[0]) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_am_l_3',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_limit'],
+        params_error_identifiers: ['invalid_pagination_limit'],
         debug_options: {}
       }));
     }
+    oThis.limit = limitVas[1];
 
-    if (!oThis.limit) {
-      oThis.limit = 10;
-    } else {
-      oThis.limit = parseInt(oThis.limit);
-      if (oThis.limit < 1 || oThis.limit > 100) {
-        errors_object.push('invalid_pagination_limit');
-        oThis.limit = 10; // adding a dummy value here so that remaining validation run as expected
-      }
-    }
-
-    if (!oThis.pageNo) {
-      oThis.pageNo = 1;
-      oThis.offset = 0
-    } else if (parseInt(oThis.pageNo) < 1) {
-      errors_object.push('invalid_page_no');
-    } else {
-      oThis.pageNo = parseInt(oThis.pageNo);
-      oThis.offset = oThis.limit * (oThis.pageNo - 1)
-    }
+    oThis.offset = (oThis.pageNo - 1) * oThis.limit;
 
     if (!oThis.orderBy) {
       oThis.orderBy = 'created';

@@ -105,10 +105,24 @@ ListStpTransfersService.prototype = {
     }
     oThis.pageNo = pageNoVas[1];
 
+    let limitVas = commonValidator.validateAndSanitizeLimit(oThis.limit);
+
+    if(!limitVas[0]) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_stp_l_3',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_pagination_limit'],
+        debug_options: {}
+      }));
+    }
+    oThis.limit = limitVas[1];
+
+    oThis.offset = (oThis.pageNo - 1) * oThis.limit;
+
     // only possible value for order by is created
     if (oThis.orderBy && (oThis.orderBy.toLowerCase() != 'created')) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_stp_l_3',
+        internal_error_identifier: 's_stp_l_4',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_order_by'],
         debug_options: {clientId: oThis.clientId}
@@ -121,7 +135,7 @@ ListStpTransfersService.prototype = {
 
     if (oThis.order && !commonValidator.isValidOrderingString(oThis.order)) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_stp_l_4',
+        internal_error_identifier: 's_stp_l_5',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_order'],
         debug_options: {clientId: oThis.clientId}
@@ -130,18 +144,6 @@ ListStpTransfersService.prototype = {
 
     oThis.order = oThis.order || 'desc';
     oThis.order = oThis.order.toLowerCase();
-
-    if ((oThis.limit && (oThis.limit < 1 || oThis.limit > 100)) || oThis.limit == 0) {
-      return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_stp_l_5',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_pagination_limit'],
-        debug_options: {clientId: oThis.clientId}
-      }));
-    }
-
-    oThis.limit = oThis.limit || 10;
-    oThis.offset = (oThis.pageNo - 1) * oThis.limit;
 
     if (oThis.idsFilterStr && oThis.idsFilterStr.length > 0) {
       oThis.idsFilterArr = basicHelper.commaSeperatedStrToArray(oThis.idsFilterStr);

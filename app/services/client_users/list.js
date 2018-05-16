@@ -207,17 +207,18 @@ listUserKlass.prototype = {
     }
     oThis.pageNo = pageNoVas[1];
 
-    // validate and sanitize limit
-    if ((oThis.limit && (oThis.limit < 1 || oThis.limit > 100)) || oThis.limit == 0) {
+    let limitVas = commonValidator.validateAndSanitizeLimit(oThis.limit);
+
+    if(!limitVas[0]) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_cu_l_3',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_pagination_limit'],
-        debug_options: {clientId: oThis.clientId}
+        debug_options: {}
       }));
     }
+    oThis.limit = limitVas[1];
 
-    oThis.limit = oThis.limit || 10;
     oThis.offset = (oThis.pageNo - 1) * oThis.limit;
 
     if (!commonValidator.isVarNull(oThis.airdropped) && !commonValidator.isValidBoolean(oThis.airdropped)) {
