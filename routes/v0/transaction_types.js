@@ -60,6 +60,7 @@ router.post('/create', function (req, res, next) {
 
     if(!serviceParamsPerLatestVersion.commission_percent && serviceParamsPerLatestVersion.kind == clientTxTypesConst.userToUserKind){
       serviceParamsPerLatestVersion.commission_percent = '0';
+      serviceParamsPerLatestVersion.arbitrary_commission = 'false'
     }
 
     return serviceParamsPerLatestVersion;
@@ -96,7 +97,9 @@ router.post('/edit', function (req, res, next) {
 
     routeHelper.replaceKey(serviceParamsPerLatestVersion, 'client_transaction_id', 'id');
 
-    serviceParamsPerLatestVersion.arbitrary_amount = 'false';
+    if(serviceParamsPerLatestVersion.amount){
+      serviceParamsPerLatestVersion.arbitrary_amount = 'false';
+    }
 
     return serviceParamsPerLatestVersion;
 
