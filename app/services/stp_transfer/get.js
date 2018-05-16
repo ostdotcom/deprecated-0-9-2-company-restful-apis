@@ -72,6 +72,9 @@ GetStPTransferService.prototype = {
    * @return {promise<result>}
    */
   _validateId: async function() {
+    const oThis = this
+    ;
+
     if (!basicHelper.isUuidValid(oThis.transactionUuid)) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_stpt_g_2',
