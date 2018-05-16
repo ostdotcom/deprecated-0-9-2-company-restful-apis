@@ -124,7 +124,7 @@ ExecuteSTPTransferService.prototype = {
 
     if (!oThis.tokenSymbol) {
       return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_stp_e_6',
+        internal_error_identifier: 's_stp_e_2',
         api_error_identifier: 'missing_token_symbol',
         debug_options: {client_id: oThis.clientId}
       }));
@@ -150,7 +150,7 @@ ExecuteSTPTransferService.prototype = {
     // Client Token has not been set if worker uuid or token address or airdrop address not present.
     if (!btSecureCacheFetchResponse.data.token_erc20_address || !btSecureCacheFetchResponse.data.airdrop_contract_address) {
       return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_stp_e_7',
+        internal_error_identifier: 's_stp_e_3',
         api_error_identifier: 'token_not_setup',
         debug_options: {}
       }));
@@ -178,7 +178,17 @@ ExecuteSTPTransferService.prototype = {
     if (!commonValidator.isVarNull(oThis.amountInWei)) {
       if (!(oThis.amountInWei > 0)) {
         return Promise.reject(responseHelper.paramValidationError({
-          internal_error_identifier: 's_stp_e_2',
+          internal_error_identifier: 's_stp_e_4',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: ['invalid_amount'],
+          debug_options: {}
+        }));
+      }
+
+      // only non decimal amount is possible.
+      if ((basicHelper.convertToBigNumber(oThis.amountInWei).modulo(basicHelper.convertToBigNumber(1))).gt(basicHelper.convertToBigNumber(0))) {
+        return Promise.reject(responseHelper.paramValidationError({
+          internal_error_identifier: 's_stp_e_5',
           api_error_identifier: 'invalid_api_params',
           params_error_identifiers: ['invalid_amount'],
           debug_options: {}
@@ -198,7 +208,7 @@ ExecuteSTPTransferService.prototype = {
 
     if (isValidationFailed) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_stp_e_3',
+        internal_error_identifier: 's_stp_e_6',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_transfer_amount'],
         debug_options: {client_id: oThis.clientId}
@@ -209,7 +219,7 @@ ExecuteSTPTransferService.prototype = {
     // check if the sender same as recipient
     if (oThis.fromAddress == oThis.toAddress) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_stp_e_4',
+        internal_error_identifier: 's_stp_e_7',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_to_address'],
         debug_options: {client_id: oThis.clientId}
@@ -220,7 +230,7 @@ ExecuteSTPTransferService.prototype = {
 
     if (oThis.toAddress == '' || commonValidator.isVarNull(oThis.toAddress)) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_stp_e_5',
+        internal_error_identifier: 's_stp_e_8',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_to_address'],
         debug_options: {client_id: oThis.clientId}
@@ -293,7 +303,7 @@ ExecuteSTPTransferService.prototype = {
     //if could not set to RMQ run in async.
     if (setToRMQ.isFailure() || setToRMQ.data.publishedToRmq == 0) {
       return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_stp_e_8',
+        internal_error_identifier: 's_stp_e_9',
         api_error_identifier: 'something_went_wrong',
         debug_options: {}
       }));
