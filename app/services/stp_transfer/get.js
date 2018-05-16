@@ -6,6 +6,7 @@ const rootPrefix = '../../..'
   , StPrimeTransferFormatter = require(rootPrefix + '/lib/formatter/entities/latest/stp_transfer')
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
   , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
 
 /**
@@ -58,9 +59,29 @@ GetStPTransferService.prototype = {
     const oThis = this
     ;
 
+    await oThis._validateId();
+
     await oThis._fetchRecord();
 
     return oThis._formatApiResponse();
+  },
+
+  /**
+   * validate id
+   *
+   * @return {promise<result>}
+   */
+  _validateId: async function() {
+    if (!basicHelper.isUuidValid(oThis.transactionUuid)) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_stpt_g_2',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_id_transaction_get'],
+        debug_options: {}
+      }));
+    }
+
+    return responseHelper.successWithData({});
   },
 
   /**
@@ -78,7 +99,7 @@ GetStPTransferService.prototype = {
     let transactionLog = transactionLogs[0];
     if (!transactionLog) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_stpt_g_2',
+        internal_error_identifier: 's_stpt_g_3',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_id_transaction_get'],
         debug_options: {}
@@ -87,8 +108,9 @@ GetStPTransferService.prototype = {
 
     if (oThis.client_id != transactionLog.client_id) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_stpt_g_3',
+        internal_error_identifier: 's_stpt_g_4',
         api_error_identifier: 'invalid_id_transfer_get',
+        params_error_identifiers: ['invalid_id_transaction_get'],
         debug_options: {}
       }));
     }
@@ -97,7 +119,7 @@ GetStPTransferService.prototype = {
 
     if (transactionLogType != transactionLogConst.stpTransferTransactionType) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_stpt_g_4',
+        internal_error_identifier: 's_stpt_g_5',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_transaction_get'],
         debug_options: {}
@@ -128,7 +150,7 @@ GetStPTransferService.prototype = {
 
     if (stPrimeTransferFormatterResponse.isFailure()) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_stpt_g_5',
+        internal_error_identifier: 's_stpt_g_6',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_id_transfer_get'],
         debug_options: {}
