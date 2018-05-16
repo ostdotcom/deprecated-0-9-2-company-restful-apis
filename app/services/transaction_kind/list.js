@@ -130,7 +130,9 @@ ListActions.prototype = {
     const oThis = this
     ;
 
-    if( Number(oThis.page_no) < 1 ) {
+    oThis.page_no = Number(oThis.page_no || 1);
+
+    if(isNaN(oThis.page_no) || !commonValidator.validatePageNo(oThis.page_no)){
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_l_1',
         api_error_identifier: 'invalid_api_params',
@@ -138,8 +140,6 @@ ListActions.prototype = {
         debug_options: {clientId: oThis.clientId}
       }));
     }
-
-    oThis.page_no = Number(oThis.page_no || 1);
 
     let order_by = null;
 
