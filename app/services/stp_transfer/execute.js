@@ -226,9 +226,7 @@ ExecuteSTPTransferService.prototype = {
       }));
     }
 
-    oThis.toAddress = oThis.toAddress.trim();
-
-    if (oThis.toAddress == '' || commonValidator.isVarNull(oThis.toAddress)) {
+    if (!commonValidator.validateEthAddress(oThis.toAddress)) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_stp_e_8',
         api_error_identifier: 'invalid_api_params',
@@ -236,6 +234,7 @@ ExecuteSTPTransferService.prototype = {
         debug_options: {client_id: oThis.clientId}
       }));
     }
+    oThis.toAddress = oThis.toAddress.trim().toLowerCase();
 
     return Promise.resolve({});
   },
