@@ -7,8 +7,7 @@
  * @module app/services/transaction_kind/get
  */
 
-
-var rootPrefix = '../../..'
+const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
@@ -22,8 +21,8 @@ var rootPrefix = '../../..'
  * Get an action
  *
  * @param params
- * @param {number} - params.client_id - client_id for action fetch
- * @param {number} - params.id - id of the action to fetch
+ * @param {number} params.client_id - client_id for action fetch
+ * @param {number} params.id - id of the action to fetch
  *
  * @constructor
  */
@@ -118,9 +117,19 @@ GetAction.prototype = {
     oThis.result = result[0];
 
     if (!oThis.result) {
-      return Promise.reject(responseHelper.error({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_tk_g_2',
-        api_error_identifier: 'data_not_found',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_id'],
+        debug_options: {clientId: oThis.clientId}
+      }));
+    }
+
+    if (oThis.result.client_id != oThis.clientId) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_tk_g_3',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_id'],
         debug_options: {clientId: oThis.clientId}
       }));
     }
