@@ -101,8 +101,6 @@ listUserKlass.prototype = {
     for (var i = 0; i < queryResponse.length; i++) {
       const object = queryResponse[i];
 
-      if (!object['name']) {continue}
-
       if (i === oThis.limit) {continue} // as we fetched limit + 1, ignore that extra one
 
       ethereumAddresses.push(object['ethereum_address']);
@@ -129,10 +127,6 @@ listUserKlass.prototype = {
     for (var i = 0; i < queryResponse.length; i++) {
 
       const object = queryResponse[i];
-
-      if (!object['name']) {
-        continue;
-      }
 
       if (i === oThis.limit) {
         // as we fetched limit + 1, if that was returned set hasMore to true and ignore this extra one

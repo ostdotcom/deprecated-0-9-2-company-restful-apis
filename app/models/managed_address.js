@@ -163,7 +163,10 @@ const ManagedAddressKlassPrototype = {
       , uuidsForFiltering = params.uuids || []
     ;
 
-    let query = oThis.select(['id', 'name', 'uuid', 'ethereum_address']).where({client_id: clientId});
+    let query = oThis.select(['id', 'name', 'uuid', 'ethereum_address']).where({
+      client_id: clientId,
+      address_type: invertedAddressTypes[managedAddressesConst.userAddressType]
+    });
 
     if (uuidsForFiltering.length > 0) {
       query.where(['uuid IN (?)', uuidsForFiltering]);
