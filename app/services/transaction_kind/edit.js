@@ -117,7 +117,7 @@ EditAction.prototype = {
 
     if (!dbRecords[0]) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_tk_e_6',
+        internal_error_identifier: 's_tk_e_2',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_client_transaction_id'],
         debug_options: {}
@@ -139,9 +139,10 @@ EditAction.prototype = {
 
     // check if the action is from the same client id to which it belongs
     if (oThis.dbRecord['client_id'] != oThis.clientId) {
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_tk_e_2',
-        api_error_identifier: 'invalid_client_transaction_id',
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_tk_e_3',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_client_transaction_id'],
         debug_options: {}
       }));
     }
@@ -170,7 +171,7 @@ EditAction.prototype = {
     /* Return all the validation errors */
     if (paramsErrorIdentifiers.length > 0) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_tk_e_3',
+        internal_error_identifier: 's_tk_e_4',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: paramsErrorIdentifiers,
         debug_options: {}
