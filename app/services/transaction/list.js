@@ -39,6 +39,7 @@ const ListTransactionsService = function (params) {
   oThis.idsFilterStr = params.id;
 
   oThis.idsFilterArr = [];
+  oThis.orderByForQuery = null;
   oThis.offset = null;
   oThis.listRecords = null;
 };
@@ -131,7 +132,7 @@ ListTransactionsService.prototype = {
 
     oThis.orderBy = oThis.orderBy || 'created';
     oThis.orderBy = oThis.orderBy.toLowerCase();
-    if (oThis.orderBy == 'created') oThis.orderBy = 'id';
+    if (oThis.orderBy == 'created') oThis.orderByForQuery = 'id';
 
     if (oThis.order && !commonValidator.isValidOrderingString(oThis.order)) {
       return Promise.reject(responseHelper.paramValidationError({
@@ -174,7 +175,7 @@ ListTransactionsService.prototype = {
     oThis.listRecords = await new transactionLogModel().getList(
       oThis.clientId,
       transactionLogConst.tokenTransferTransactionType,
-      {limit: oThis.limit + 1, offset: oThis.offset, orderBy: oThis.orderBy, order: oThis.order},
+      {limit: oThis.limit + 1, offset: oThis.offset, orderBy: oThis.orderByForQuery, order: oThis.order},
       {id: oThis.idsFilterArr}
     );
 
