@@ -128,7 +128,7 @@ EditBrandedTokenKlass.prototype = {
       oThis.brandedTokenRecordObject.airdrop_contract_addr = oThis.airdrop_contract_addr;
     }
 
-    if((oThis.token_uuid && basicHelper.isUuidValid(oThis.token_uuid)) &&
+    if((oThis.token_uuid && basicHelper.isTokenUuidValid(oThis.token_uuid)) &&
         (oThis.token_uuid != oThis.brandedTokenRecordObject.token_uuid)
     ){
       oThis.brandedTokenRecordObject.token_uuid = oThis.token_uuid;

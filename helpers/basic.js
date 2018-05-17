@@ -183,7 +183,7 @@ BasicHelperKlass.prototype = {
   /**
    * Check if uuid is valid or not
    *
-   * @param {string} uuid - Branded Token UUID
+   * @param {string} uuid - UUID of user, branded token etc.
    *
    * @return {boolean}
    */
@@ -193,6 +193,20 @@ BasicHelperKlass.prototype = {
     }
 
     return /^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-4[0-9A-Fa-f]{3}-[89ABab][0-9A-Fa-f]{3}-[0-9A-Fa-f]{12}$/.test(uuid);
+  },
+
+  /**
+   * Check if Token UUID is valid or not (hex format)
+   *
+   * @param {string} uuid - Branded Token UUID
+   *
+   * @return {boolean}
+   */
+  isTokenUuidValid: function (uuid) {
+    if (typeof uuid !== "string") {
+      return false;
+    }
+    return /^0x[0-9a-fA-F]{64}$/.test(uuid);
   },
 
   /**
