@@ -99,7 +99,12 @@ UtilityChainBalancesFetcherKlass.prototype = {
         , balance = null;
 
       if (response.isFailure()) {
-        logger.notify('ub_bf_1', 'Something Went Wrong', response, {clientId: oThis.clientId});
+        logger.notify(
+          'ub_bf_1',
+          'Something Went Wrong',
+          response,
+          {clientId: oThis.clientId}
+        );
       } else {
         var data = response.data;
         if (data && data.balance) {

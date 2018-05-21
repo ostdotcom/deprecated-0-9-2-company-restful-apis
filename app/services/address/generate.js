@@ -180,7 +180,11 @@ GenerateAddressKlass.prototype = {
           , generateAddrRsp = addrGenerator.perform();
 
       if (generateAddrRsp.isFailure()) {
-        logger.notify('s_a_g_3', 'generate address failure', {rsp: generateAddrRsp.toHash(), clientId: clientId});
+        logger.notify(
+          's_a_g_3',
+          'generate address failure',
+          generateAddrRsp,
+          {clientId: clientId, address_type: oThis.addressType});
         return Promise.reject(responseHelper.error({
           internal_error_identifier: 's_a_g_3',
           api_error_identifier: 'something_went_wrong',
@@ -200,7 +204,11 @@ GenerateAddressKlass.prototype = {
 
     var generateSaltRsp = await oThis._generateManagedAddressSalt(clientId);
     if (generateSaltRsp.isFailure()) {
-      logger.notify('s_a_g_4', 'generate salt failure', {rsp: generateSaltRsp.toHash(), clientId: clientId});
+      logger.notify(
+        's_a_g_4',
+        'generate salt failure',
+        generateSaltRsp,
+        {clientId: clientId});
       return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_a_g_4',
         api_error_identifier: 'something_went_wrong',
@@ -267,7 +275,13 @@ GenerateAddressKlass.prototype = {
       }
 
     } catch (err) {
-      logger.notify('s_a_g_6', 'address salt generation failed', err);
+      logger.notify(
+        's_a_g_6',
+        'address salt generation failed',
+        err,
+        {clientId: clientId}
+      );
+
       return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_a_g_6',
         api_error_identifier: 'something_went_wrong',

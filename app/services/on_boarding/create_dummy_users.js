@@ -155,7 +155,12 @@ CreateDummyUsers.prototype = {
     for (var i = 0; i < resolversData.length; i++) {
 
       if (resolversData[i].isFailure()) {
-        logger.notify('c_d_u_1', 'Something Went Wrong', resolversData[i], {clientId: oThis.clientId});
+        logger.notify(
+          'c_d_u_1',
+          'Something Went Wrong',
+          resolversData[i],
+          {clientId: oThis.clientId}
+        );
       }
 
     }

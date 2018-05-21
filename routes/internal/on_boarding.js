@@ -50,7 +50,12 @@ router.post('/grant-test-ost', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_ob_3', 'Something went wrong', err);
+    logger.notify(
+      'r_ob_3',
+      'Something went wrong',
+      err
+    );
+
     responseHelper.error('r_ob_3', 'Something went wrong').renderResponse(res, errorConfig)
   });
 });
@@ -81,7 +86,12 @@ router.post('/grant-eth', function (req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function (err) {
-    logger.notify('r_ob_4', 'Something went wrong', err);
+    logger.notify(
+      'r_ob_4',
+      'Something went wrong',
+      err
+    );
+
     responseHelper.error('r_ob_4', 'Something went wrong').renderResponse(res, errorConfig)
   });
 });

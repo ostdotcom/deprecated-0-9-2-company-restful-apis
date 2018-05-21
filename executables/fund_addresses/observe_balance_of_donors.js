@@ -36,7 +36,11 @@ balanceObserververKlass.prototype = {
 
     if (Object.keys(oThis.notifyLogs) > 0) {
 
-      logger.notify('e_fa_1', 'Critical: Balances Too Low For Critical Addresses', oThis.notifyLogs);
+      logger.notify(
+        'e_fa_1',
+        'Critical: Balances Too Low For Critical Addresses',
+        oThis.notifyLogs
+      );
 
     }
 

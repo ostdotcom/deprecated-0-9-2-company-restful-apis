@@ -88,7 +88,12 @@ valueChainBalancesFetcherKlass.prototype = {
         , balance = null;
 
       if (response.isFailure()) {
-        logger.notify('b_f1_2', 'Something Went Wrong', response, {clientId: oThis.clientId});
+        logger.notify(
+          'b_f1_2',
+          'Something Went Wrong',
+          response,
+          {clientId: oThis.clientId}
+        );
       } else {
         var data = response.data;
         if (data && data.balance) {

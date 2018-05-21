@@ -126,7 +126,11 @@ const decodeJwt = function(req, res, next) {
         jwtOnReject
       )
   ).catch(function (err) {
-    logger.notify('a_2', 'JWT Decide Failed', {token: token});
+    logger.notify(
+      'a_3',
+      'JWT Decide Failed',
+      {token: token}
+    );
     return responseHelper.error({
       internal_error_identifier: 'a_3',
       api_error_identifier: 'something_went_wrong',

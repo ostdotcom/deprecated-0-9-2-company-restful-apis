@@ -56,13 +56,24 @@ openSTNotification.subscribeEvent.rabbit(["airdrop.start.#"],
 
       startAirdrop.perform().then(function (response) {
         if (!response.isSuccess()) {
-          logger.notify('e_rmqs_sa_1', 'Something went wrong in airdrop distribution', response, params);
+          logger.notify(
+            'e_rmqs_sa_1',
+            'Something went wrong in airdrop distribution',
+            response,
+            params
+          );
         }
         unAckCount--;
         // ack RMQ
         return onResolve();
       }).catch(function (err) {
-        logger.notify('e_rmqs_sa_2', 'Something went wrong in airdrop distribution', err, params);
+        logger.notify(
+          'e_rmqs_sa_2',
+          'Something went wrong in airdrop distribution',
+          err,
+          params
+        );
+
         unAckCount--;
         // ack RMQ
         return onResolve();

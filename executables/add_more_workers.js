@@ -287,7 +287,12 @@ addMoreWorkersKlass.prototype = {
       for(var i=0; i<promiseResolvers.length; i++) {
         var r = promiseResponses[i];
         if (r.isFailure()) {
-          logger.notify('l_sw_2', 'Set Worker Failed', r.toHash(), {clientId: clientId});
+          logger.notify(
+            'l_sw_2',
+            'Set Worker Failed',
+            r,
+            {clientId: clientId}
+          );
         } else {
           formattedPromiseResponses[workerAddressesIdToUpdateMap[workerAddrs[i]]] = r.data;
           successWorkerAddrIds.push(workerAddressesIdToUpdateMap[workerAddrs[i]]);

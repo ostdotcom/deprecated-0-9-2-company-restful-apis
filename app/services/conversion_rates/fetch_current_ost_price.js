@@ -79,7 +79,11 @@ FetchCurrentOSTPriceKlass.prototype = {
     oThis.parseResponse(response);
 
     if (!oThis.currentOstValue) {
-      logger.notify('f_c_o_p_1', "Invalid Response from CoinMarket", response);
+      logger.notify(
+        'f_c_o_p_1',
+        'Invalid Response from CoinMarket',
+        response
+      );
       return;
     }
 
@@ -97,7 +101,12 @@ FetchCurrentOSTPriceKlass.prototype = {
     // Set current price in contract
     var contractResponse = await oThis.setPriceInContract();
     if (contractResponse.isFailure()) {
-      logger.notify('f_c_o_p_2', "Error while setting price in contract.", response);
+      logger.notify(
+        'f_c_o_p_2',
+        'Error while setting price in contract.',
+        response
+      );
+
       return;
     }
     var transactionHash = contractResponse.data.transactionHash;
@@ -122,12 +131,22 @@ FetchCurrentOSTPriceKlass.prototype = {
       var ostValue = JSON.parse(response)[0];
       logger.debug("OST Value From CoinMarketCap:", ostValue);
       if (!ostValue || ostValue.symbol != conversionRateConstants.ost_currency()) {
-        logger.notify('f_c_o_p_3', "Invalid OST Value", response);
+        logger.notify(
+          'f_c_o_p_3',
+          'Invalid OST Value',
+          response
+        );
+
         return;
       }
       var pricePoint = ostValue["price_" + oThis.quoteCurrency.toLowerCase()];
       if (!pricePoint || pricePoint < 0) {
-        logger.notify('f_c_o_p_4', "Invalid OST Price", response);
+        logger.notify(
+          'f_c_o_p_4',
+          'Invalid OST Price',
+          response
+        );
+
         return;
       }
       oThis.currentOstValue = {
@@ -137,10 +156,16 @@ FetchCurrentOSTPriceKlass.prototype = {
         timestamp: oThis.currentTime,
         status: conversionRateConstants.inprocess_status()
       };
+
       return;
     }
     catch (err) {
-      logger.notify('f_c_o_p_5', "Invalid Response from CoinMarket", response);
+      logger.notify(
+        'f_c_o_p_5',
+        'Invalid Response from CoinMarket',
+        response
+      );
+
       return;
     }
   },
@@ -184,7 +209,12 @@ FetchCurrentOSTPriceKlass.prototype = {
         var priceInDecimal = await priceOracle.decimalPrice(chainId, conversionRateConstants.ost_currency(), quoteCurrency);
         logger.debug(priceInDecimal);
         if (priceInDecimal.isFailure()) {
-          logger.notify('f_c_o_p_6', "Error while getting price from contract." + JSON.stringify(priceInDecimal));
+          logger.notify(
+            'f_c_o_p_6',
+            'Error while getting price from contract.',
+            priceInDecimal
+          );
+
           return onResolve('error');
         } else if (priceInDecimal.isSuccess() && priceInDecimal.data.price == conversionRate) {
           await new CurrencyConversionRateModel().updateStatus(dbRowId, conversionRateConstants.active_status());

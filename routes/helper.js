@@ -20,7 +20,12 @@ const routeMethods = {
         if (responseHelper.isCustomResult(error)) {
           error.renderResponse(res, errorConfig);
         } else {
-          logger.notify(errorCode, 'Something went wrong', error);
+          logger.notify(
+            errorCode,
+            'Something went wrong',
+            error
+          );
+
           responseHelper.error({
             internal_error_identifier: errorCode,
             api_error_identifier: 'unhandled_catch_response',

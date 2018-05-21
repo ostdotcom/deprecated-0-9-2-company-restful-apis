@@ -95,8 +95,11 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
     const ucOwnerBalanceBigNumberInWei = ucOwnerBalanceResponse.data.balance;
 
     if (ucOwnerBalanceBigNumberInWei.lessThan(minUCOBalanceInWei)) {
-      logger.notify('e_fa_e_cboco_1', 'ETHER Balance Of Utility Chain Owner is LOW - ' + oThis._valueChainAddressFor('utilityChainOwner'),
+      logger.notify(
+        'e_fa_e_cboco_1',
+        'ETHER Balance Of Utility Chain Owner is LOW',
         {
+          utiltiy_chain_owner_value_chain_address: oThis._valueChainAddressFor('utilityChainOwner'),
           utility_chain_owner_balance_eth: basicHelper.convertToNormal(ucOwnerBalanceBigNumberInWei),
           min_required_balance: oThis._valueChainMinBalanceFor('utilityChainOwner')
         }
@@ -122,7 +125,12 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
     ;
 
     if (balanceResponse.isFailure()) {
-      logger.notify('e_fa_e_ceb_1', "Error in fetching balance of Address - " + ethereumAddress, balanceResponse);
+      logger.notify(
+        'e_fa_e_ceb_1',
+        'Error in fetching balance of Address',
+        balanceResponse,
+        {ethereum_address: ethereumAddress}
+      );
       return Promise.resolve(balanceResponse);
     }
 
@@ -154,7 +162,11 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
     const transferResponse = await transferEthBalanceObj.perform();
 
     if (transferResponse.isFailure()) {
-      logger.notify('e_fa_e_teb_1', "Error in transfer of " + transferAmountInWei + "Wei Eth to Address - " + ethereumAddress, transferResponse);
+      logger.notify(
+        'e_fa_e_teb_1',
+        "Error in transfer of " + transferAmountInWei + "Wei Eth to Address - " + ethereumAddress,
+        transferResponse
+      );
       return Promise.resolve(transferResponse);
     }
 
@@ -175,7 +187,11 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
     ;
 
     if (!nameData) {
-      logger.notify('e_fa_e_vcbb_1', "Invalid user name passed for getting data - " + name);
+      logger.notify(
+        'e_fa_e_vcbb_1',
+        'Invalid user name passed for getting data - ' + name
+      );
+
       throw "Invalid user name passed for getting data - " + name;
     }
 
@@ -196,7 +212,11 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
     ;
 
     if (!nameData) {
-      logger.notify('e_fa_e_vcaf_1', "Invalid user name passed for getting data - " + name);
+      logger.notify(
+        'e_fa_e_vcaf_1',
+        'Invalid user name passed for getting data - ' + name
+      );
+
       throw "Invalid user name passed for getting data - " + name;
     }
 
