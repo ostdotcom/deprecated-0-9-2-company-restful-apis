@@ -287,7 +287,7 @@ if (cluster.isMaster) {
 // error handler
   app.use(function (err, req, res, next) {
     // set locals, only providing error in development
-    logger.notify('a_5', 'Something went wrong', err);
+    logger.notify('a_6', 'Something went wrong', err);
     return responseHelper.error({
       internal_error_identifier: 'a_6',
       api_error_identifier: 'something_went_wrong',
