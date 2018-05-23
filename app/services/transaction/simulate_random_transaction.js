@@ -314,10 +314,12 @@ simulateRandomTransactionKlass.prototype = {
     const oThis = this;
 
     var randomTrxType = null
-        , txBtValue = null
-        , txParams = {client_id: oThis.clientId, token_symbol: oThis.tokenSymbol}
-        , randomFromUser = null
-        , randomToUser = null;
+      , txBtValue = null
+      , txParams = {client_id: oThis.clientId, token_symbol: oThis.tokenSymbol}
+      , randomFromUser = null
+      , randomToUser = null
+      , dummyAmount = 0.01
+    ;
 
     for(var i=0; i<oThis.randomTrxTypes.length; i++) {
 
@@ -330,6 +332,10 @@ simulateRandomTransactionKlass.prototype = {
         txParams['transaction_kind'] = randomTrxType.name;
         txParams['from_user_id'] = oThis.clientBrandedToken['reserve_address_uuid'];
         txParams['to_user_id'] = oThis.randomUsers[0]['uuid'];
+
+        if ( commonHelper.isVarNull(randomTrxType['value_in_bt_wei']) && commonHelper.isVarNull(randomTrxType['value_in_usd'])) {
+          txParams['amount'] = dummyAmount;
+        }
         break;
 
       } else {
@@ -365,7 +371,7 @@ simulateRandomTransactionKlass.prototype = {
 
         if (breakOuterLoop) {
           if ( commonHelper.isVarNull(randomTrxType['value_in_bt_wei']) && commonHelper.isVarNull(randomTrxType['value_in_usd'])) {
-            txParams['amount'] = 0.01;
+            txParams['amount'] = dummyAmount;
           }
           break;
         }
