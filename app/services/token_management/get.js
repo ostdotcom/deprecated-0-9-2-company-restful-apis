@@ -98,7 +98,7 @@ GetBrandedTokenKlass.prototype = {
     const fetchSTPrimeBalanceRsp = await oThis.fetchSTPrimeBalance(tokenSecureData.reserve_address_uuid);
 
     responseData[responseData.result_type] = {
-      company_uuid: tokenData.client_id,
+      company_uuid: tokenData.token_uuid,
       name: tokenData.name,
       symbol: tokenData.symbol,
       symbol_icon: tokenData.symbol_icon,
@@ -183,7 +183,7 @@ GetBrandedTokenKlass.prototype = {
 
   }
 
-}
+};
 
 
 module.exports = GetBrandedTokenKlass;
