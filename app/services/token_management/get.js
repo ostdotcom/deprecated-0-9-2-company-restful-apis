@@ -4,15 +4,16 @@ const BigNumber = require('bignumber.js')
 ;
 
 const rootPrefix = '../../..'
-    , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
-    , ClientSecuredBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
-    , ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points')
-    , ucBalanceFetcherKlass = require(rootPrefix + '/app/services/address/utilityChainBalancesFetcher')
-    , chainIntConstants = require(rootPrefix + '/config/chain_interaction_constants')
-    , GetStakedAmountKlass = require(rootPrefix + '/app/services/stake_and_mint/get_staked_amount')
-    , responseHelper = require(rootPrefix + '/lib/formatter/response')
-    , basicHelper = require(rootPrefix + '/helpers/basic')
-    , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
+  , ClientSecuredBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
+  , ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points')
+  , ucBalanceFetcherKlass = require(rootPrefix + '/app/services/address/utilityChainBalancesFetcher')
+  , chainIntConstants = require(rootPrefix + '/config/chain_interaction_constants')
+  , GetStakedAmountKlass = require(rootPrefix + '/app/services/stake_and_mint/get_staked_amount')
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
 ;
 
 /**
@@ -40,24 +41,24 @@ GetBrandedTokenKlass.prototype = {
    * @return {Promise<result>}
    *
    */
-  perform: function(){
+  perform: function () {
 
     const oThis = this;
 
     return oThis.asyncPerform()
-        .catch(function(error) {
-          if (responseHelper.isCustomResult(error)){
-            return error;
-          } else {
-            logger.error(`${__filename}::perform::catch`);
-            logger.error(error);
-            return responseHelper.error({
-              internal_error_identifier: 's_tm_g_1',
-              api_error_identifier: 'unhandled_catch_response',
-              debug_options: {}
-            });
-          }
-        });
+      .catch(function (error) {
+        if (responseHelper.isCustomResult(error)) {
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+          return responseHelper.error({
+            internal_error_identifier: 's_tm_g_1',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
+        }
+      });
   },
 
   /**
@@ -72,10 +73,10 @@ GetBrandedTokenKlass.prototype = {
   asyncPerform: async function () {
 
     const oThis = this
-        , clientBrandedTokenCache = new ClientBrandedTokenCacheKlass({clientId: oThis.clientId})
-        , clientBrandedTokenResponse = await clientBrandedTokenCache.fetch()
-        , ostPrices = await new ostPriceCacheKlass().fetch()
-        , responseData = {result_type: 'token'}
+      , clientBrandedTokenCache = new ClientBrandedTokenCacheKlass({clientId: oThis.clientId})
+      , clientBrandedTokenResponse = await clientBrandedTokenCache.fetch()
+      , ostPrices = await new ostPriceCacheKlass().fetch()
+      , responseData = {result_type: 'token'}
     ;
 
     if (clientBrandedTokenResponse.isFailure()) {
@@ -92,13 +93,18 @@ GetBrandedTokenKlass.prototype = {
     const fetchBTMintedAmountRsp = await oThis.fetchBTMintedAmount(tokenData.symbol, tokenData.conversion_factor);
 
     const tokenSecureDataRsp = await new ClientSecuredBrandedTokenCacheKlass({tokenSymbol: tokenData.symbol}).fetch()
-        , tokenSecureData = tokenSecureDataRsp.data
+      , tokenSecureData = tokenSecureDataRsp.data
     ;
 
     const fetchSTPrimeBalanceRsp = await oThis.fetchSTPrimeBalance(tokenSecureData.reserve_address_uuid);
 
+    const reserveManagedAddressId = tokenData.reserve_managed_address_id;
+    const managedAddressSqlResponse = await new ManagedAddressModel().select('*')
+      .where(['id=?', reserveManagedAddressId]).fire();
+    const managedAddressObj = managedAddressSqlResponse[0];
+
     responseData[responseData.result_type] = {
-      company_uuid: tokenData.token_uuid,
+      company_uuid: managedAddressObj.uuid,
       name: tokenData.name,
       symbol: tokenData.symbol,
       symbol_icon: tokenData.symbol_icon,
@@ -108,7 +114,7 @@ GetBrandedTokenKlass.prototype = {
       simple_stake_contract_address: tokenSecureData.simple_stake_contract_addr,
       total_supply: fetchBTMintedAmountRsp.data.allTimeBTMintedAmount,
       ost_utility_balance: [
-        [chainIntConstants.UTILITY_CHAIN_ID , fetchSTPrimeBalanceRsp.data.ostPrimeBalance]
+        [chainIntConstants.UTILITY_CHAIN_ID, fetchSTPrimeBalanceRsp.data.ostPrimeBalance]
       ]
     };
 
