@@ -80,25 +80,31 @@ const queueName = 'executables_rmq_subscribers_factory_' + queueSuffix;
 
 ProcessLocker.canStartProcess({process_title: 'executables_rmq_subscribers_factory' + processLockId});
 
-const topicPerformers = {};
-topicPerformers[notificationTopics.onBoardingPropose] = require(rootPrefix + '/lib/on_boarding/propose.js');
-topicPerformers[notificationTopics.onBoardingDeployAirdrop] = require(rootPrefix + '/lib/on_boarding/deploy_airdrop.js');
-topicPerformers[notificationTopics.onBoardingSetWorkers] = require(rootPrefix + '/lib/on_boarding/set_workers.js');
-topicPerformers[notificationTopics.onBoardingSetPriceOracle] = require(rootPrefix + '/lib/on_boarding/set_price_oracle.js');
-topicPerformers[notificationTopics.onBoardingSetAcceptedMargin] = require(rootPrefix + '/lib/on_boarding/set_accepted_margin.js');
-topicPerformers[notificationTopics.airdropAllocateTokens] = require(rootPrefix + '/lib/allocate_airdrop/start_airdrop.js');
-topicPerformers[notificationTopics.stakeAndMintInitTransfer] = require(rootPrefix + '/lib/stake_and_mint/verify_transfer_to_staker.js');
-topicPerformers[notificationTopics.stakeAndMintApprove] = require(rootPrefix + '/lib/stake_and_mint/approve.js');
-topicPerformers[notificationTopics.stakeAndMintForSTPrime] = require(rootPrefix + '/lib/stake_and_mint/start/st_prime.js');
-topicPerformers[notificationTopics.stakeAndMintForBT] = require(rootPrefix + '/lib/stake_and_mint/start/branded_token.js');
-topicPerformers[notificationTopics.processStakingOnVcStart] = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js');
-topicPerformers[notificationTopics.processStakingOnVcDone] = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js');
-topicPerformers[notificationTopics.processMintingOnUcStart] = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js');
-topicPerformers[notificationTopics.processMintingOnUcDone] = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js');
-topicPerformers[notificationTopics.claimTokenOnUcStart] = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js');
-topicPerformers[notificationTopics.claimTokenOnUcDone] = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js');
-topicPerformers[notificationTopics.airdrop_approve_contract] = require(rootPrefix + '/lib/airdrop_management/distribute_tokens/user_airdrop_contract_approve');
-topicPerformers[notificationTopics.stpTransfer] = require(rootPrefix + '/lib/transactions/stPrime_transfer');
+const topicToFilenameMap = {};
+topicToFilenameMap[notificationTopics.onBoardingPropose] = rootPrefix + '/lib/on_boarding/propose.js';
+topicToFilenameMap[notificationTopics.onBoardingDeployAirdrop] = rootPrefix + '/lib/on_boarding/deploy_airdrop.js';
+topicToFilenameMap[notificationTopics.onBoardingSetWorkers] = rootPrefix + '/lib/on_boarding/set_workers.js';
+topicToFilenameMap[notificationTopics.onBoardingSetPriceOracle] = rootPrefix + '/lib/on_boarding/set_price_oracle.js';
+topicToFilenameMap[notificationTopics.onBoardingSetAcceptedMargin] = rootPrefix + '/lib/on_boarding/set_accepted_margin.js';
+topicToFilenameMap[notificationTopics.airdropAllocateTokens] = rootPrefix + '/lib/allocate_airdrop/start_airdrop.js';
+topicToFilenameMap[notificationTopics.stakeAndMintInitTransfer] = rootPrefix + '/lib/stake_and_mint/verify_transfer_to_staker.js';
+topicToFilenameMap[notificationTopics.stakeAndMintApprove] = rootPrefix + '/lib/stake_and_mint/approve.js';
+topicToFilenameMap[notificationTopics.stakeAndMintForSTPrime] = rootPrefix + '/lib/stake_and_mint/start/st_prime.js';
+topicToFilenameMap[notificationTopics.stakeAndMintForBT] = rootPrefix + '/lib/stake_and_mint/start/branded_token.js';
+topicToFilenameMap[notificationTopics.processStakingOnVcStart] = rootPrefix + '/lib/stake_and_mint/intercomm_status.js';
+topicToFilenameMap[notificationTopics.processStakingOnVcDone] = rootPrefix + '/lib/stake_and_mint/intercomm_status.js';
+topicToFilenameMap[notificationTopics.processMintingOnUcStart] = rootPrefix + '/lib/stake_and_mint/intercomm_status.js';
+topicToFilenameMap[notificationTopics.processMintingOnUcDone] = rootPrefix + '/lib/stake_and_mint/intercomm_status.js';
+topicToFilenameMap[notificationTopics.claimTokenOnUcStart] = rootPrefix + '/lib/stake_and_mint/intercomm_status.js';
+topicToFilenameMap[notificationTopics.claimTokenOnUcDone] = rootPrefix + '/lib/stake_and_mint/intercomm_status.js';
+topicToFilenameMap[notificationTopics.airdrop_approve_contract] = rootPrefix + '/lib/airdrop_management/distribute_tokens/user_airdrop_contract_approve';
+topicToFilenameMap[notificationTopics.stpTransfer] = rootPrefix + '/lib/transactions/stPrime_transfer';
+
+const topicPerformers = {}
+
+for(var topic in topicToFilenameMap) {
+  topicPerformers[topic] = require(topicToFilenameMap[topic]);
+}
 
 const promiseExecutor = function (onResolve, onReject, params ) {
   // factory logic for deciding what action to perform here.
