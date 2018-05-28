@@ -323,7 +323,7 @@ FundClientAddressKlass.prototype = {
         'e_fa_e_teb_1',
         'Error in transfer of ' + transferAmountInWei + ' Wei Eth to Address - ' + recipientAddress,
         transferResponse,
-        {clientId: oThis.clientId, ethereum_address:: recipientAddress, amount_in_wei: transferAmountInWei}
+        {clientId: oThis.clientId, ethereum_address: recipientAddress, amount_in_wei: transferAmountInWei}
       );
       return Promise.resolve(transferResponse);
     }
