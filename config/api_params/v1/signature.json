@@ -200,14 +200,6 @@
   "execute_transaction": {
     "mandatory": [
       {
-        "parameter": "from_user_id",
-        "error_identifier": "missing_from_user_id"
-      },
-      {
-        "parameter": "to_user_id",
-        "error_identifier": "missing_to_user_id"
-      },
-      {
         "parameter": "action_id",
         "error_identifier": "missing_action_id"
       },
@@ -217,6 +209,8 @@
       }
     ],
     "optional": [
+      "from_user_id",
+      "to_user_id",
       "amount",
       "commission_percent"
     ]
