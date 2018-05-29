@@ -34,11 +34,6 @@
     "code": "missing",
     "message": "missing arbitrary amount"
   },
-  "missing_start_client_id": {
-    "parameter": "start_client_id",
-    "code": "missing",
-    "message": "Missing start client id"
-  },
   "missing_arbitrary_commission": {
     "parameter": "arbitrary_commission",
     "code": "missing",

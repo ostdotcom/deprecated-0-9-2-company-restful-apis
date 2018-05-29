@@ -1,20 +1,26 @@
 'use strict';
 
-const rootPrefix = '..'
+const rootPrefix = '../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , AssignShardsForClient = require(rootPrefix + '/lib/on_boarding/assign_shards')
   , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
   , commonValidator = require(rootPrefix +  '/lib/validators/common')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
+  , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
+  , errorConfig = basicHelper.fetchErrorConfig(apiVersions.internal)
 ;
 
 /**
  *
  * @param params
  * @param<Integer> start_client_id
+ *
  * @constructor
+ *
  */
 const AssignShards = function (params) {
+
   const oThis = this
   ;
 
@@ -73,14 +79,16 @@ AssignShards.prototype = {
    */
 
   validateAndSanitize: function () {
+
     const oThis = this
     ;
 
-    if (commonValidator.isVarNull(oThis.startClientId)) {
+    if (!commonValidator.isVarInteger(oThis.startClientId)) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 'e_ads_2',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['missing_start_client_id'],
+        params_error_identifiers: ['invalid_start_client_id'],
+        error_config: errorConfig,
         debug_options: {}
       }));
     }
@@ -100,7 +108,8 @@ AssignShards.prototype = {
     let query = await (new ClientBrandedTokenModel())
       .select(['client_id'])
       .where('client_id >= ?', parseInt(oThis.startClientId))
-      .order_by('client_id DESC');
+      .limit(1)
+      .order_by('id DESC');
 
     let results = await query.fire();
 
@@ -137,3 +146,6 @@ AssignShards.prototype = {
   }
 
 };
+
+const object = new AssignShards({start_client_id: 1});
+object.perform().then(console.log);
