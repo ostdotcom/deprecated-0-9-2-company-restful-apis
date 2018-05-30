@@ -26,6 +26,7 @@ const AssignShards = function (params) {
 
   oThis.startClientId = params.start_client_id;
   oThis.endClientId = null;
+
 };
 
 AssignShards.prototype = {
@@ -47,7 +48,7 @@ AssignShards.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
           return responseHelper.error({
-            internal_error_identifier: 'e_ads_1',
+            internal_error_identifier: 'e_drdm_ads_1',
             api_error_identifier: 'unhandled_catch_response',
             debug_options: {}
           });
@@ -64,11 +65,11 @@ AssignShards.prototype = {
     const oThis = this
     ;
 
-    await oThis.validateAndSanitize();
+    await oThis._validateAndSanitize();
 
-    await oThis.fetchMaxClientId();
+    await oThis._fetchMaxClientId();
 
-    await oThis.assignShards();
+    await oThis._assignShards();
 
   },
 
@@ -78,14 +79,14 @@ AssignShards.prototype = {
    * @returns {promise}
    */
 
-  validateAndSanitize: function () {
+  _validateAndSanitize: function () {
 
     const oThis = this
     ;
 
     if (!commonValidator.isVarInteger(oThis.startClientId)) {
       return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 'e_ads_2',
+        internal_error_identifier: 'e_drdm_ads_2',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_start_client_id'],
         error_config: errorConfig,
@@ -94,6 +95,7 @@ AssignShards.prototype = {
     }
 
     return Promise.resolve({});
+
   },
 
   /**
@@ -101,19 +103,19 @@ AssignShards.prototype = {
    *
    * @returns {promise}
    */
-  fetchMaxClientId: async function() {
+  _fetchMaxClientId: async function() {
     const oThis = this
     ;
 
     let query = await (new ClientBrandedTokenModel())
       .select(['client_id'])
-      .where('client_id >= ?', parseInt(oThis.startClientId))
+      .where(['client_id >= ?', parseInt(oThis.startClientId)])
       .limit(1)
       .order_by('id DESC');
 
     let results = await query.fire();
 
-    oThis.endClientId = results[0];
+    oThis.endClientId = results[0]['client_id'];
 
   },
 
@@ -122,30 +124,78 @@ AssignShards.prototype = {
    *
    * @returns {promise}
    */
-  assignShards: async function () {
+  _assignShards: async function () {
     const oThis = this
     ;
 
     let promiseArray = [];
 
+    logger.info('oThis.startClientId', oThis.startClientId);
+    logger.info('oThis.endClientId', oThis.endClientId);
+
     for (let id = oThis.startClientId; id <= oThis.endClientId; id = id + 10) {
-      let endId = id + 10;
+
+      let endId = id + 10
+          , index = 0
+          , indexToClientIdMap = {}
+      ;
+
+      logger.info('starting for ids >= ', id , ' and < ', endId);
 
       for (let client_id = id; client_id < endId && client_id < oThis.endClientId; client_id++ ) {
-        promiseArray.push(new AssignShardsForClient({
+
+        let promise = new AssignShardsForClient({
           client_id: client_id
-        }).perform());
+        }).perform().catch(oThis.catchHandlingFunction);
+
+        promiseArray.push(promise);
+
+        indexToClientIdMap[index] = client_id;
+        index += 1;
+
       }
 
-      await Promise.all(promiseArray);
+      logger.info('waiting for completion for ids between ', id , ' and ', endId);
+
+      let promiseResponses = await Promise.all(promiseArray);
+
+      for (let i = 0; i < promiseResponses.length; i++ ) {
+
+        if(promiseResponses[i].isFailure()) {
+          logger.info('client_id failed: ', indexToClientIdMap[i], promiseResponses[i].toHash());
+        }
+
+      }
 
       promiseArray = [];
+
     }
 
     return Promise.resolve({});
+
+  },
+
+  /**
+   * generic function to handle catch blocks
+   *
+   * @returns {object}
+   */
+  catchHandlingFunction: async function (error) {
+    if (responseHelper.isCustomResult(error)) {
+      return error;
+    } else {
+      logger.error(`${__filename}::perform::catch`);
+      logger.error(error);
+      return responseHelper.error({
+        internal_error_identifier: 'e_drdm_ads_1',
+        api_error_identifier: 'something_went_wrong',
+        debug_options: {},
+        error_config: errorConfig
+      });
+    }
   }
 
 };
 
-const object = new AssignShards({start_client_id: 1});
-object.perform().then(console.log);
+const object = new AssignShards({start_client_id: 1001});
+object.perform().then(logger.info);
