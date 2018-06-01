@@ -219,6 +219,11 @@
     "code": "BAD_REQUEST",
     "message": "At least one parameter is invalid or missing. See \"err.error_data\" array for more details."
   },
+  "blank_addresses": {
+    "http_code": "400",
+    "code": "BAD_REQUEST",
+    "message": "blank addresses"
+  },
   "no_data_found": {
     "http_code": "422",
     "code": "UNPROCESSABLE_ENTITY",
