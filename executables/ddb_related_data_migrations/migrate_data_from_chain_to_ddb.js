@@ -151,7 +151,7 @@ MigrateTokenBalancesKlass.prototype = {
     if(fetchTransactionReceiptRsp.isFailure()) {return Promise.reject(fetchTransactionReceiptRsp)}
     let txHashToTxReceiptMap = fetchTransactionReceiptRsp.data['txHashToTxReceiptMap'];
 
-    console.log('txHashToTxReceiptMap', txHashToTxReceiptMap);
+    // console.log('txHashToTxReceiptMap', txHashToTxReceiptMap);
 
     // fetch transactions to shortlisted events map
     let shortListTransactionEventRsp = await oThis._shortListTransactionEvents(txHashToTxReceiptMap);
@@ -160,7 +160,7 @@ MigrateTokenBalancesKlass.prototype = {
         , erc20ContractAddressesData = shortListTransactionEventRsp.data['erc20ContractAddressesData']
     ;
 
-    console.log('txHashShortListedEventsMap', txHashShortListedEventsMap);
+    // console.log('txHashShortListedEventsMap', txHashShortListedEventsMap);
     // console.log('erc20ContractAddressesData', erc20ContractAddressesData);
 
     // decode shortlisted events
@@ -168,7 +168,7 @@ MigrateTokenBalancesKlass.prototype = {
     if(decodeEventRsp.isFailure()) {return Promise.reject(decodeEventRsp)}
     let txHashDecodedEventsMap = decodeEventRsp.data['txHashDecodedEventsMap'];
 
-    console.log('txHashDecodedEventsMap', txHashDecodedEventsMap);
+    // console.log('txHashDecodedEventsMap', txHashDecodedEventsMap);
 
     // iterate over decoded events to create a map of adjustments which would be made to balances
     let balanceAdjustmentRsp = await oThis._computeBalanceAdjustments(txHashDecodedEventsMap);
@@ -207,13 +207,13 @@ MigrateTokenBalancesKlass.prototype = {
     if(insertTxLogsRsp.isFailure()) {return Promise.reject(insertTxLogsRsp)}
     let insertResponses = insertTxLogsRsp.data['insertResponses'];
 
-    console.log('insertResponses', insertResponses);
+    // console.log('insertResponses', JSON.stringify(insertResponses));
 
     let settleBalancesRsp = await oThis._settleBalancesInDb(balanceAdjustmentMap);
     if(settleBalancesRsp.isFailure()) {return Promise.reject(settleBalancesRsp)}
     let settleResponses = settleBalancesRsp.data['settleResponses'];
 
-    console.log('settleResponses', settleResponses);
+    // console.log('settleResponses', JSON.stringify(settleResponses));
 
   },
 
@@ -571,19 +571,13 @@ MigrateTokenBalancesKlass.prototype = {
             transaction_hash: txHash,
             transaction_uuid: existingTxData['transaction_uuid'],
             transaction_type: existingTxData['transaction_type'],
-            block_number: existingTxData['block_number'],
+            block_number: existingTxData['block_number'] || txDataFromChain['blockNumber'],
             client_id: existingTxData['client_id'],
             client_token_id: existingTxData['client_token_id'],
-            token_symbol: existingInputParams['token_symbol'],
-            gas_used: existingTxData['gas_used'],
+            gas_used: existingTxData['gas_used'] || txDataFromChain['gasUsed'],
             gas_price: existingTxData['gas_price'],
             status: existingTxData['status'],
-            created_at: new Date(existingTxData['created_at']).getTime(),
-            from_uuid: existingInputParams['from_uuid'],
-            to_uuid: existingInputParams['to_uuid'],
-            action_id: existingInputParams['transaction_kind_id'],
-            commission_amount_in_wei: existingFormattedReceipt['commission_amount_in_wei'],
-            bt_transfer_in_wei: existingFormattedReceipt['bt_transfer_in_wei']
+            created_at: new Date(existingTxData['created_at']).getTime()
           };
 
           if (existingInputParams['commission_percent']) {txFormattedData['commission_percent'] = existingInputParams['commission_percent']}
@@ -591,7 +585,13 @@ MigrateTokenBalancesKlass.prototype = {
           if (existingInputParams['amount_in_wei']) {txFormattedData['amount_in_wei'] = existingInputParams['amount_in_wei']}
           if (existingInputParams['to_address']) {txFormattedData['to_address'] = existingInputParams['to_address']}
           if (existingInputParams['from_address']) {txFormattedData['from_address'] = existingInputParams['from_address']}
+          if (existingInputParams['from_uuid']) {txFormattedData['from_uuid'] = existingInputParams['from_uuid']}
+          if (existingInputParams['to_uuid']) {txFormattedData['to_uuid'] = existingInputParams['to_uuid']}
+          if (existingInputParams['token_symbol']) {txFormattedData['token_symbol'] = existingInputParams['token_symbol']}
+          if (existingInputParams['transaction_kind_id']) {txFormattedData['action_id'] = existingInputParams['transaction_kind_id']}
           if (existingFormattedReceipt['error_code']) {txFormattedData['error_code'] = existingFormattedReceipt['error_code']}
+          if (existingFormattedReceipt['commission_amount_in_wei']) {txFormattedData['commission_amount_in_wei'] = existingFormattedReceipt['commission_amount_in_wei']}
+          if (existingFormattedReceipt['bt_transfer_in_wei']) {txFormattedData['bt_transfer_in_wei'] = existingFormattedReceipt['bt_transfer_in_wei']}
 
         } else {
 
