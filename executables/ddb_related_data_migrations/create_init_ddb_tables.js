@@ -71,4 +71,4 @@ CreateInitDdbTables.prototype = {
 };
 
 const object = new CreateInitDdbTables({});
-object.perform().then(logger.info);
+object.perform().then(console.log);
