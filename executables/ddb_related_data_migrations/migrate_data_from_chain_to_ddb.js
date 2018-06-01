@@ -10,6 +10,7 @@
 const Web3 = require('web3')
     , abiDecoder = require('abi-decoder')
     , openStPlatform = require('@openstfoundation/openst-platform')
+    , openStorage = require('@openstfoundation/openst-storage')
     , bigNumber = require('bignumber.js')
     , uuid = require('uuid')
 ;
@@ -25,7 +26,8 @@ const rootPrefix = '../..'
     , commonValidator = require(rootPrefix +  '/lib/validators/common')
     , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
     , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
-    , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
+    , TransactionLogModelDdb = openStorage.TransactionLogModel
+    , TransactionLogConst = openStorage.TransactionLogConst
     , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
     , Erc20ContractAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address')
 ;
@@ -491,8 +493,9 @@ MigrateTokenBalancesKlass.prototype = {
         , affectedAddresses = params['affectedAddresses']
         , addressUuidMap = {}
         , formattedTransactionsData = []
-        , completeStatus = parseInt(new TransactionLogModel().invertedStatuses[transactionLogConst.completeStatus])
-        , failedStatus = parseInt(new TransactionLogModel().invertedStatuses[transactionLogConst.failedStatus])
+        , completeStatus = parseInt(new TransactionLogModel().invertedStatuses[TransactionLogConst.completeStatus])
+        , failedStatus = parseInt(new TransactionLogModel().invertedStatuses[TransactionLogConst.failedStatus])
+        , tokenTransferType = parseInt(new TransactionLogModel().invertedTransactionTypes[TransactionLogConst.extenralTokenTransferTransactionType])
     ;
 
     if (affectedAddresses.length > 0) {
@@ -565,7 +568,7 @@ MigrateTokenBalancesKlass.prototype = {
           txFormattedData = {
             transaction_hash: txHash,
             transaction_uuid: uuid.v4(),
-            transaction_type: 3,
+            transaction_type: tokenTransferType,
             block_number: txDataFromChain['blockNumber'],
             client_id: erc20ContractAddressData['client_id'],
             client_token_id: parseInt(erc20ContractAddressData['client_token_id']),
