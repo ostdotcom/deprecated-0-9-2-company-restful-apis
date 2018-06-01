@@ -10,6 +10,7 @@ const rootPrefix = '../..'
   , actionRoutes = require(rootPrefix + '/routes/v1/actions')
   , transactionsRoutes = require(rootPrefix + '/routes/v1/transactions')
   , airdropsRoutes = require(rootPrefix + '/routes/v1/airdrops')
+  , balancesRoutes = require(rootPrefix + '/routes/v1/balances')
   , transfersRoutes = require(rootPrefix + '/routes/v1/transfers')
 ;
 
@@ -29,6 +30,9 @@ router.use('/actions', actionRoutes);
 router.use('/transactions', transactionsRoutes);
 
 router.use('/transfers', transfersRoutes);
+
+//TODO: Confirm the exact route for this
+router.use('/get_balance', balancesRoutes);
 
 
 module.exports = router;

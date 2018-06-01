@@ -287,5 +287,20 @@
       }
     ],
     "optional": []
+  },
+  "get_balance": {
+    "mandatory": [
+      {
+        "parameter": "client_id",
+        "error_identifier": "missing_client_id"
+      },
+      {
+        "parameter": "id",
+        "error_identifier": "missing_id"
+      }
+    ],
+    "optional": [
+
+    ]
   }
 }
