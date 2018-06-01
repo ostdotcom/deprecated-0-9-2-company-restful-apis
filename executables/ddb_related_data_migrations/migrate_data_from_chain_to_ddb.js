@@ -27,9 +27,12 @@ const rootPrefix = '../..'
     , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
     , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
     , TransactionLogModelDdb = openStorage.TransactionLogModel
+    , TokenBalanceModelDdb = openStorage.TokenBalanceModel
     , TransactionLogConst = openStorage.TransactionLogConst
     , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
     , Erc20ContractAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address')
+    , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
+    , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
 ;
 
 const MigrateTokenBalancesKlass = function (params) {
@@ -140,15 +143,15 @@ MigrateTokenBalancesKlass.prototype = {
         , blockNoDetailsMap = fetchBlockDetailsRsp.data['blockNoDetailsMap']
     ;
 
-    console.log('txHashes', txHashes);
-    console.log('blockNoDetailsMap', blockNoDetailsMap);
+    // console.log('txHashes', txHashes);
+    // console.log('blockNoDetailsMap', blockNoDetailsMap);
 
     // fetch transaction receipts
     let fetchTransactionReceiptRsp = await oThis._fetchTransactionReceipts(txHashes);
     if(fetchTransactionReceiptRsp.isFailure()) {return Promise.reject(fetchTransactionReceiptRsp)}
     let txHashToTxReceiptMap = fetchTransactionReceiptRsp.data['txHashToTxReceiptMap'];
 
-    console.log('txHashToTxReceiptMap', txHashToTxReceiptMap);
+    // console.log('txHashToTxReceiptMap', txHashToTxReceiptMap);
 
     // fetch transactions to shortlisted events map
     let shortListTransactionEventRsp = await oThis._shortListTransactionEvents(txHashToTxReceiptMap);
@@ -157,15 +160,15 @@ MigrateTokenBalancesKlass.prototype = {
         , erc20ContractAddressesData = shortListTransactionEventRsp.data['erc20ContractAddressesData']
     ;
 
-    console.log('txHashShortListedEventsMap', txHashShortListedEventsMap);
-    console.log('erc20ContractAddressesData', erc20ContractAddressesData);
+    // console.log('txHashShortListedEventsMap', txHashShortListedEventsMap);
+    // console.log('erc20ContractAddressesData', erc20ContractAddressesData);
 
     // decode shortlisted events
     let decodeEventRsp = await oThis._decodeTransactionEvents(txHashShortListedEventsMap);
     if(decodeEventRsp.isFailure()) {return Promise.reject(decodeEventRsp)}
     let txHashDecodedEventsMap = decodeEventRsp.data['txHashDecodedEventsMap'];
 
-    console.log('txHashDecodedEventsMap', txHashDecodedEventsMap);
+    // console.log('txHashDecodedEventsMap', txHashDecodedEventsMap);
 
     // iterate over decoded events to create a map of adjustments which would be made to balances
     let balanceAdjustmentRsp = await oThis._computeBalanceAdjustments(txHashDecodedEventsMap);
@@ -175,15 +178,15 @@ MigrateTokenBalancesKlass.prototype = {
         , affectedAddresses = balanceAdjustmentRsp.data['affectedAddresses']
     ;
 
-    console.log('balanceAdjustmentMap', balanceAdjustmentMap);
-    console.log('txHashTransferEventsMap', txHashTransferEventsMap);
+    // console.log('balanceAdjustmentMap', balanceAdjustmentMap);
+    // console.log('txHashTransferEventsMap', txHashTransferEventsMap);
 
     // fetch recognized transactions map
     let fetchRecognizedTransactionRsp = await oThis._fetchRecognizedTransactionDetails(txHashes);
     if(fetchRecognizedTransactionRsp.isFailure()) {return Promise.reject(fetchRecognizedTransactionRsp)}
     let recognizedTxHashDataMap = fetchRecognizedTransactionRsp.data['recognizedTxHashDataMap'];
 
-    console.log('recognizedTxHashDataMap', recognizedTxHashDataMap);
+    // console.log('recognizedTxHashDataMap', recognizedTxHashDataMap);
 
     // format data to be inserted into transaction logs
     let params = {
@@ -198,7 +201,19 @@ MigrateTokenBalancesKlass.prototype = {
     if(formatDataRsp.isFailure()) {return Promise.reject(formatDataRsp)}
     let formattedTransactionsData = formatDataRsp.data['formattedTransactionsData'];
 
-    console.log('formattedTransactionsData', formattedTransactionsData);
+    // console.log('formattedTransactionsData', formattedTransactionsData);
+
+    let insertTxLogsRsp = await oThis._insertDataInTransactionLogs(formattedTransactionsData);
+    if(insertTxLogsRsp.isFailure()) {return Promise.reject(insertTxLogsRsp)}
+    let insertResponses = insertTxLogsRsp.data['insertResponses'];
+
+    // console.log('insertResponses', insertResponses);
+
+    let settleBalancesRsp = await oThis._settleBalancesInDb(balanceAdjustmentMap);
+    if(settleBalancesRsp.isFailure()) {return Promise.reject(settleBalancesRsp)}
+    let settleResponses = settleBalancesRsp.data['settleResponses'];
+
+    // console.log('settleResponses', settleResponses);
 
   },
 
@@ -492,7 +507,7 @@ MigrateTokenBalancesKlass.prototype = {
         , recognizedTxHashDataMap = params['recognizedTxHashDataMap']
         , affectedAddresses = params['affectedAddresses']
         , addressUuidMap = {}
-        , formattedTransactionsData = []
+        , formattedTransactionsData = {}
         , completeStatus = parseInt(new TransactionLogModel().invertedStatuses[TransactionLogConst.completeStatus])
         , failedStatus = parseInt(new TransactionLogModel().invertedStatuses[TransactionLogConst.failedStatus])
         , tokenTransferType = parseInt(new TransactionLogModel().invertedTransactionTypes[TransactionLogConst.extenralTokenTransferTransactionType])
@@ -578,7 +593,7 @@ MigrateTokenBalancesKlass.prototype = {
             created_at: blockNoDetailsMap[blockNo]['timestamp'],
             from_address: txDataFromChain['from'],
             to_address: txDataFromChain['to'], //TODO: is it right to be using these from and to (to is mostly contract adddr) ?
-            bt_transfer_in_wei: '' // Cant fetch it ?
+            // bt_transfer_in_wei: '' // Cant fetch it ?
           }
 
           let fromUuid = addressUuidMap[txDataFromChain['from'].toLowerCase()];
@@ -600,13 +615,86 @@ MigrateTokenBalancesKlass.prototype = {
           }
         }
 
-        formattedTransactionsData.push(txFormattedData);
+        // group data by client_ids so that they can be batch inserted in ddb
+        if(!formattedTransactionsData[txFormattedData['client_id']]) {
+          formattedTransactionsData[txFormattedData['client_id']] = [];
+        }
+
+        formattedTransactionsData[txFormattedData['client_id']].push(txFormattedData);
 
       }
 
     });
 
     return Promise.resolve(responseHelper.successWithData({formattedTransactionsData: formattedTransactionsData}));
+
+  },
+
+  /**
+   * bulk create records in DDB
+   *
+   * @returns {promise<result>}
+   */
+  _insertDataInTransactionLogs: async function (formattedTransactionsData) {
+
+    const oThis = this;
+
+    let insertResponses = {};
+
+    Object.keys(formattedTransactionsData).forEach(async function (clientId) {
+
+      let dataToInsert = formattedTransactionsData[clientId];
+
+      let rsp = await new TransactionLogModelDdb({
+        client_id: clientId,
+        ddb_service: ddbServiceObj,
+        auto_scaling: autoscalingServiceObj
+      }).batchPutItem(dataToInsert);
+
+      insertResponses[clientId] = rsp.toHash();
+
+    });
+
+    return Promise.resolve(responseHelper.successWithData({insertResponses: insertResponses}));
+
+  },
+
+  /**
+   * settle balances in DB
+   *
+   * @returns {promise<result>}
+   */
+  _settleBalancesInDb: async function (balanceAdjustmentMap) {
+
+    const oThis = this;
+
+    let settleResponses = {};
+
+    Object.keys(balanceAdjustmentMap).forEach(async function (erc20ContractAddress) {
+
+      let userBalancesSettlementsData = balanceAdjustmentMap[erc20ContractAddress]
+          , tokenalanceModelObj = new TokenBalanceModelDdb({
+            erc20_contract_address: erc20ContractAddress,
+            ddb_service: ddbServiceObj,
+            auto_scaling: autoscalingServiceObj
+          })
+          , promises = []
+      ;
+
+      Object.keys(userBalancesSettlementsData).forEach(function (userAddress) {
+
+        promises.push(tokenalanceModelObj.update({
+          settle_amount: userBalancesSettlementsData[userAddress].toString(10),
+          ethereum_address: userAddress
+        }));
+
+      });
+
+      settleResponses[erc20ContractAddress] = await Promise.all(promises);
+
+    });
+
+    return Promise.resolve(responseHelper.successWithData({settleResponses: settleResponses}));
 
   }
 
