@@ -151,7 +151,7 @@ MigrateTokenBalancesKlass.prototype = {
     if(fetchTransactionReceiptRsp.isFailure()) {return Promise.reject(fetchTransactionReceiptRsp)}
     let txHashToTxReceiptMap = fetchTransactionReceiptRsp.data['txHashToTxReceiptMap'];
 
-    // console.log('txHashToTxReceiptMap', txHashToTxReceiptMap);
+    console.log('txHashToTxReceiptMap', txHashToTxReceiptMap);
 
     // fetch transactions to shortlisted events map
     let shortListTransactionEventRsp = await oThis._shortListTransactionEvents(txHashToTxReceiptMap);
@@ -160,7 +160,7 @@ MigrateTokenBalancesKlass.prototype = {
         , erc20ContractAddressesData = shortListTransactionEventRsp.data['erc20ContractAddressesData']
     ;
 
-    // console.log('txHashShortListedEventsMap', txHashShortListedEventsMap);
+    console.log('txHashShortListedEventsMap', txHashShortListedEventsMap);
     // console.log('erc20ContractAddressesData', erc20ContractAddressesData);
 
     // decode shortlisted events
@@ -168,7 +168,7 @@ MigrateTokenBalancesKlass.prototype = {
     if(decodeEventRsp.isFailure()) {return Promise.reject(decodeEventRsp)}
     let txHashDecodedEventsMap = decodeEventRsp.data['txHashDecodedEventsMap'];
 
-    // console.log('txHashDecodedEventsMap', txHashDecodedEventsMap);
+    console.log('txHashDecodedEventsMap', txHashDecodedEventsMap);
 
     // iterate over decoded events to create a map of adjustments which would be made to balances
     let balanceAdjustmentRsp = await oThis._computeBalanceAdjustments(txHashDecodedEventsMap);
@@ -207,13 +207,13 @@ MigrateTokenBalancesKlass.prototype = {
     if(insertTxLogsRsp.isFailure()) {return Promise.reject(insertTxLogsRsp)}
     let insertResponses = insertTxLogsRsp.data['insertResponses'];
 
-    // console.log('insertResponses', insertResponses);
+    console.log('insertResponses', insertResponses);
 
     let settleBalancesRsp = await oThis._settleBalancesInDb(balanceAdjustmentMap);
     if(settleBalancesRsp.isFailure()) {return Promise.reject(settleBalancesRsp)}
     let settleResponses = settleBalancesRsp.data['settleResponses'];
 
-    // console.log('settleResponses', settleResponses);
+    console.log('settleResponses', settleResponses);
 
   },
 
@@ -319,15 +319,16 @@ MigrateTokenBalancesKlass.prototype = {
     let contractAddresses = []
         , erc20ContractAddressesData = {}
         , txHashToShortListedEventsMap = {}
+        , txHashes = Object.keys(txHashToTxReceiptMap)
     ;
 
-    Object.keys(txHashToTxReceiptMap).forEach(function (txHash) {
-      let txReceipt = txHashToTxReceiptMap[txHash];
-      for(var i=0; i<txReceipt.logs.length; i++) {
-        let txReceiptLog = txReceipt.logs[i];
+    for(let i=0; i<txHashes.length; i++) {
+      let txReceipt = txHashToTxReceiptMap[txHashes[i]];
+      for(var j=0; j<txReceipt.logs.length; j++) {
+        let txReceiptLog = txReceipt.logs[j];
         contractAddresses.push(txReceiptLog.address);
       }
-    })
+    }
 
     if (contractAddresses.length > 0) {
       // from these addresses create a map of addresses of which are ERC20 address
@@ -338,19 +339,28 @@ MigrateTokenBalancesKlass.prototype = {
       erc20ContractAddressesData = cacheFetchRsp.data;
     }
 
-    Object.keys(txHashToTxReceiptMap).forEach(function (txHash) {
-      let txReceipt = txHashToTxReceiptMap[txHash];
-      for(var i=0; i<txReceipt.logs.length; i++) {
-        let txReceiptLog = txReceipt.logs[i];
-        if(erc20ContractAddressesData.hasOwnProperty(txReceiptLog.address.toLowerCase()) &&
+    for(let i=0; i<txHashes.length; i++) {
+
+      let txHash = txHashes[i]
+          , txReceipt = txHashToTxReceiptMap[txHash]
+      ;
+
+      for(let j=0; j<txReceipt.logs.length; j++) {
+
+        let txReceiptLog = txReceipt.logs[j];
+
+        if(erc20ContractAddressesData[txReceiptLog.address.toLowerCase()] &&
             txReceiptLog.topics[0] === oThis.transferEventSignature) {
-          if(!txHashToShortListedEventsMap.hasOwnProperty(txHash)) {
-            txHashToShortListedEventsMap[txHash] = [];
-          }
+
+          txHashToShortListedEventsMap[txHash] = txHashToShortListedEventsMap[txHash] || [];
+
           txHashToShortListedEventsMap[txHash].push(txReceiptLog);
+
         }
+
       }
-    })
+
+    }
 
     return Promise.resolve(responseHelper.successWithData({
       txHashShortListedEventsMap: txHashToShortListedEventsMap,
@@ -369,11 +379,15 @@ MigrateTokenBalancesKlass.prototype = {
     const oThis = this;
 
     // Decode events from AbiDecoder
-    let txHashDecodedEventsMap = {};
-    Object.keys(txHashEventsMap).forEach(function (txHash) {
+    let txHashDecodedEventsMap = {}
+        , txHashes = Object.keys(txHashEventsMap)
+    ;
+
+    for(let i=0; i<txHashes.length; i++) {
+      let txHash = txHashes[i];
       //TODO: Handle exceptions here and log those transactions in DB
       txHashDecodedEventsMap[txHash] = abiDecoder.decodeLogs(txHashEventsMap[txHash]);
-    })
+    }
 
     return Promise.resolve(responseHelper.successWithData({txHashDecodedEventsMap: txHashDecodedEventsMap}));
 
@@ -392,9 +406,12 @@ MigrateTokenBalancesKlass.prototype = {
     let balanceAdjustmentMap = {}
         , txHashTransferEventsMap = {}
         , affectedAddresses = []
+        , txHashes = Object.keys(txHashDecodedEventsMap)
     ;
 
-    Object.keys(txHashDecodedEventsMap).forEach(function (txHash) {
+    for(let k=0; k<txHashes.length; k++) {
+
+      let txHash = txHashes[k];
 
       let decodedEventsMap = txHashDecodedEventsMap[txHash]
           , transferEvents = []
@@ -458,7 +475,7 @@ MigrateTokenBalancesKlass.prototype = {
         return affectedAddresses.indexOf(item)== pos;
       });
 
-    })
+    }
 
     return Promise.resolve(responseHelper.successWithData({
       balanceAdjustmentMap: balanceAdjustmentMap,
@@ -501,6 +518,7 @@ MigrateTokenBalancesKlass.prototype = {
   _fetchFormattedTransactionsForMigration: async function (params) {
 
     let blockNoDetailsMap = params['blockNoDetailsMap']
+        , blockNos = Object.keys(blockNoDetailsMap)
         , txHashToTxReceiptMap = params['txHashToTxReceiptMap']
         , erc20ContractAddressesData = params['erc20ContractAddressesData']
         , txHashTransferEventsMap = params['txHashTransferEventsMap']
@@ -521,7 +539,9 @@ MigrateTokenBalancesKlass.prototype = {
       }
     }
 
-    Object.keys(blockNoDetailsMap).forEach(function (blockNo) {
+    for(var k=0; k<blockNos.length; k++) {
+
+      let blockNo = blockNos[k];
 
       let txHashes = blockNoDetailsMap[blockNo]['txHashes'];
 
@@ -536,8 +556,10 @@ MigrateTokenBalancesKlass.prototype = {
         // If this was a recorded transaction already
         if (existingTxData) {
 
-          if (!txHashTransferEventsMap[txHash] && existingTxData['status'] != 3) {
-            console.log('highAlert', txHash);
+          if (!txHashTransferEventsMap[txHash]) {
+            if (parseInt(txDataFromChain.status, 16) == 1) {
+              console.log('highAlert: knownInternalTxsDontHaveEvents', txHash);
+            }
             continue;
           }
 
@@ -624,7 +646,7 @@ MigrateTokenBalancesKlass.prototype = {
 
       }
 
-    });
+    }
 
     return Promise.resolve(responseHelper.successWithData({formattedTransactionsData: formattedTransactionsData}));
 
@@ -639,11 +661,15 @@ MigrateTokenBalancesKlass.prototype = {
 
     const oThis = this;
 
-    let insertResponses = {};
+    let insertResponses = {}
+        , clientIds = Object.keys(formattedTransactionsData)
+    ;
 
-    Object.keys(formattedTransactionsData).forEach(async function (clientId) {
+    for(let k=0; k<clientIds.length; k++) {
 
-      let dataToInsert = formattedTransactionsData[clientId];
+      let clientId = clientIds[k]
+          , dataToInsert = formattedTransactionsData[clientId]
+      ;
 
       let rsp = await new TransactionLogModelDdb({
         client_id: clientId,
@@ -653,7 +679,7 @@ MigrateTokenBalancesKlass.prototype = {
 
       insertResponses[clientId] = rsp.toHash();
 
-    });
+    }
 
     return Promise.resolve(responseHelper.successWithData({insertResponses: insertResponses}));
 
@@ -668,9 +694,13 @@ MigrateTokenBalancesKlass.prototype = {
 
     const oThis = this;
 
-    let settleResponses = {};
+    let settleResponses = {}
+        , erc20ContractAddresses = Object.keys(balanceAdjustmentMap)
+    ;
 
-    Object.keys(balanceAdjustmentMap).forEach(async function (erc20ContractAddress) {
+    for(let k=0; k<erc20ContractAddresses.length; k++) {
+
+      let erc20ContractAddress = erc20ContractAddresses[k];
 
       let userBalancesSettlementsData = balanceAdjustmentMap[erc20ContractAddress]
           , tokenalanceModelObj = new TokenBalanceModelDdb({
@@ -679,20 +709,31 @@ MigrateTokenBalancesKlass.prototype = {
             auto_scaling: autoscalingServiceObj
           })
           , promises = []
+          , userAddresses = Object.keys(userBalancesSettlementsData)
       ;
 
-      Object.keys(userBalancesSettlementsData).forEach(function (userAddress) {
+      for(var l=0; l<userAddresses.length; l++) {
+
+        let userAddress = userAddresses[l];
 
         promises.push(tokenalanceModelObj.update({
           settle_amount: userBalancesSettlementsData[userAddress].toString(10),
           ethereum_address: userAddress
         }));
 
-      });
+      }
 
-      settleResponses[erc20ContractAddress] = await Promise.all(promises);
+      let promiseResponses = await Promise.all(promises)
+          , formattedPromiseResponses = []
+      ;
 
-    });
+      for(var l=0; l<promiseResponses.length; l++) {
+        formattedPromiseResponses.push(promiseResponses[l].toHash());
+      }
+
+      settleResponses[erc20ContractAddress] = formattedPromiseResponses;
+
+    }
 
     return Promise.resolve(responseHelper.successWithData({settleResponses: settleResponses}));
 
