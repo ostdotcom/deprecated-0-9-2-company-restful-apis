@@ -204,13 +204,19 @@ MigrateTokenBalancesKlass.prototype = {
     // console.log('formattedTransactionsData', formattedTransactionsData);
 
     let insertTxLogsRsp = await oThis._insertDataInTransactionLogs(formattedTransactionsData);
-    if(insertTxLogsRsp.isFailure()) {return Promise.reject(insertTxLogsRsp)}
+    if(insertTxLogsRsp.isFailure()) {
+      console.error('insertTxLogsRspError', JSON.strinfigy(insertTxLogsRsp.toHash()));
+      return Promise.reject(insertTxLogsRsp);
+    }
     let insertResponses = insertTxLogsRsp.data['insertResponses'];
 
     // console.log('insertResponses', JSON.stringify(insertResponses));
 
     let settleBalancesRsp = await oThis._settleBalancesInDb(balanceAdjustmentMap);
-    if(settleBalancesRsp.isFailure()) {return Promise.reject(settleBalancesRsp)}
+    if(settleBalancesRsp.isFailure()) {
+      console.error('settleBalancesRspError', JSON.strinfigy(settleBalancesRsp.toHash()));
+      return Promise.reject(settleBalancesRsp);
+    }
     let settleResponses = settleBalancesRsp.data['settleResponses'];
 
     // console.log('settleResponses', JSON.stringify(settleResponses));
