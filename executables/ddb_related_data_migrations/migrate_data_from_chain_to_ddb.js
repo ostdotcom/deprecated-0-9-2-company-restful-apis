@@ -45,7 +45,6 @@ const MigrateTokenBalancesKlass = function (params) {
 
   oThis.web3Provider = new Web3(chainInteractionConstants.UTILITY_GETH_WS_PROVIDER);
 
-  // TODO: Check if this signature is same across chain ids
   oThis.transferEventSignature = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
   oThis.parallelBlocksToProcessCnt = 10;
   oThis.blockNoArray = [];
@@ -138,7 +137,10 @@ MigrateTokenBalancesKlass.prototype = {
 
     // fetch transaction hashes
     let fetchBlockDetailsRsp = await oThis._fetchBlockDetails(blockNumbers);
-    if(fetchBlockDetailsRsp.isFailure()) {return Promise.reject(fetchBlockDetailsRsp)}
+    if(fetchBlockDetailsRsp.isFailure()) {
+      console.error('fetchBlockDetailsRsp', JSON.strinfigy(fetchBlockDetailsRsp.toHash()));
+      return Promise.reject(fetchBlockDetailsRsp);
+    }
     let txHashes = fetchBlockDetailsRsp.data['txHashes']
         , blockNoDetailsMap = fetchBlockDetailsRsp.data['blockNoDetailsMap']
     ;
@@ -148,14 +150,20 @@ MigrateTokenBalancesKlass.prototype = {
 
     // fetch transaction receipts
     let fetchTransactionReceiptRsp = await oThis._fetchTransactionReceipts(txHashes);
-    if(fetchTransactionReceiptRsp.isFailure()) {return Promise.reject(fetchTransactionReceiptRsp)}
+    if(fetchTransactionReceiptRsp.isFailure()) {
+      console.error('fetchTransactionReceiptRsp', JSON.strinfigy(fetchTransactionReceiptRsp.toHash()));
+      return Promise.reject(fetchTransactionReceiptRsp);
+    }
     let txHashToTxReceiptMap = fetchTransactionReceiptRsp.data['txHashToTxReceiptMap'];
 
     // console.log('txHashToTxReceiptMap', txHashToTxReceiptMap);
 
     // fetch transactions to shortlisted events map
     let shortListTransactionEventRsp = await oThis._shortListTransactionEvents(txHashToTxReceiptMap);
-    if(shortListTransactionEventRsp.isFailure()) {return Promise.reject(shortListTransactionEventRsp)}
+    if(shortListTransactionEventRsp.isFailure()) {
+      console.error('shortListTransactionEventRsp', JSON.strinfigy(shortListTransactionEventRsp.toHash()));
+      return Promise.reject(shortListTransactionEventRsp);
+    }
     let txHashShortListedEventsMap = shortListTransactionEventRsp.data['txHashShortListedEventsMap']
         , erc20ContractAddressesData = shortListTransactionEventRsp.data['erc20ContractAddressesData']
     ;
@@ -165,14 +173,20 @@ MigrateTokenBalancesKlass.prototype = {
 
     // decode shortlisted events
     let decodeEventRsp = await oThis._decodeTransactionEvents(txHashShortListedEventsMap);
-    if(decodeEventRsp.isFailure()) {return Promise.reject(decodeEventRsp)}
+    if(decodeEventRsp.isFailure()) {
+      console.error('decodeEventRsp', JSON.strinfigy(decodeEventRsp.toHash()));
+      return Promise.reject(decodeEventRsp);
+    }
     let txHashDecodedEventsMap = decodeEventRsp.data['txHashDecodedEventsMap'];
 
     // console.log('txHashDecodedEventsMap', txHashDecodedEventsMap);
 
     // iterate over decoded events to create a map of adjustments which would be made to balances
     let balanceAdjustmentRsp = await oThis._computeBalanceAdjustments(txHashDecodedEventsMap);
-    if(balanceAdjustmentRsp.isFailure()) {return Promise.reject(balanceAdjustmentRsp)}
+    if(balanceAdjustmentRsp.isFailure()) {
+      console.error('balanceAdjustmentRsp', JSON.strinfigy(balanceAdjustmentRsp.toHash()));
+      return Promise.reject(balanceAdjustmentRsp);
+    }
     let balanceAdjustmentMap = balanceAdjustmentRsp.data['balanceAdjustmentMap']
         , txHashTransferEventsMap = balanceAdjustmentRsp.data['txHashTransferEventsMap']
         , affectedAddresses = balanceAdjustmentRsp.data['affectedAddresses']
@@ -183,7 +197,10 @@ MigrateTokenBalancesKlass.prototype = {
 
     // fetch recognized transactions map
     let fetchRecognizedTransactionRsp = await oThis._fetchRecognizedTransactionDetails(txHashes);
-    if(fetchRecognizedTransactionRsp.isFailure()) {return Promise.reject(fetchRecognizedTransactionRsp)}
+    if(fetchRecognizedTransactionRsp.isFailure()) {
+      console.error('fetchRecognizedTransactionRsp', JSON.strinfigy(fetchRecognizedTransactionRsp.toHash()));
+      return Promise.reject(fetchRecognizedTransactionRsp);
+    }
     let recognizedTxHashDataMap = fetchRecognizedTransactionRsp.data['recognizedTxHashDataMap'];
 
     // console.log('recognizedTxHashDataMap', recognizedTxHashDataMap);
@@ -198,7 +215,10 @@ MigrateTokenBalancesKlass.prototype = {
       affectedAddresses: affectedAddresses
     };
     let formatDataRsp = await oThis._fetchFormattedTransactionsForMigration(params);
-    if(formatDataRsp.isFailure()) {return Promise.reject(formatDataRsp)}
+    if(formatDataRsp.isFailure()) {
+      console.error('formatDataRsp', JSON.strinfigy(formatDataRsp.toHash()));
+      return Promise.reject(formatDataRsp);
+    }
     let formattedTransactionsData = formatDataRsp.data['formattedTransactionsData'];
 
     // console.log('formattedTransactionsData', formattedTransactionsData);
@@ -237,14 +257,14 @@ MigrateTokenBalancesKlass.prototype = {
         , txHashes = []
     ;
 
-    logger.info(`starting to fetch txHashes for blocknumbers ${JSON.stringify(blockNumbers)}`);
+    logger.info(`starting to fetch data for blocknumbers ${JSON.stringify(blockNumbers)}`);
 
     for(let index=0; index<blockNumbers.length; index++) {
       let promise = await oThis.web3Provider.eth.getBlock(blockNumbers[index]);
       promises.push(promise);
     }
 
-    const promiseResponses = await Promise.all(promises);
+    let promiseResponses = await Promise.all(promises);
 
     logger.info(`fetched txHashes for blocknumbers ${JSON.stringify(blockNumbers)}`);
 
@@ -363,6 +383,9 @@ MigrateTokenBalancesKlass.prototype = {
           txHashToShortListedEventsMap[txHash].push(txReceiptLog);
 
         }
+        // else if (!erc20ContractAddressesData[txReceiptLog.address.toLowerCase()]) {
+        //   console.error('debug_tx_from_unrecognized_contract_address: ', txReceiptLog.address);
+        // }
 
       }
 
@@ -391,7 +414,6 @@ MigrateTokenBalancesKlass.prototype = {
 
     for(let i=0; i<txHashes.length; i++) {
       let txHash = txHashes[i];
-      //TODO: Handle exceptions here and log those transactions in DB
       txHashDecodedEventsMap[txHash] = abiDecoder.decodeLogs(txHashEventsMap[txHash]);
     }
 
@@ -423,50 +445,45 @@ MigrateTokenBalancesKlass.prototype = {
           , transferEvents = []
       ;
 
-      for(var i=0; i<decodedEventsMap.length; i++) {
+      for(let i=0; i<decodedEventsMap.length; i++) {
 
-        let decodedEventData = decodedEventsMap[i];
+        let decodedEventData = decodedEventsMap[i]
+            , contractAddress = decodedEventData.address.toLowerCase()
+        ;
 
-        if (!balanceAdjustmentMap.hasOwnProperty(decodedEventData.address)) {
-          balanceAdjustmentMap[decodedEventData.address] = {};
-        }
+        balanceAdjustmentMap[contractAddress] = balanceAdjustmentMap[contractAddress] || {};
 
         let fromAddr = null
             , toAddr = null
-            , value = null
+            , valueStr = null
         ;
 
-        for(var j=0; j<decodedEventData.events.length; j++) {
+        for(let j=0; j<decodedEventData.events.length; j++) {
           let eventData = decodedEventData.events[j];
           switch(eventData.name) {
             case "_from":
-              fromAddr = eventData.value;
+              fromAddr = eventData.value.toLowerCase();
               break;
             case "_to":
-              toAddr = eventData.value;
+              toAddr = eventData.value.toLowerCase();
               break;
             case "_value":
-              value = eventData.value;
+              valueStr = eventData.value;
               break;
           }
         }
 
-        if (!balanceAdjustmentMap[decodedEventData.address].hasOwnProperty(fromAddr)) {
-          balanceAdjustmentMap[decodedEventData.address][fromAddr] = new bigNumber('0');
-        }
+        balanceAdjustmentMap[contractAddress][fromAddr] = balanceAdjustmentMap[contractAddress][fromAddr] || new bigNumber('0');
+        balanceAdjustmentMap[contractAddress][toAddr] = balanceAdjustmentMap[contractAddress][toAddr] || new bigNumber('0');
 
-        if (!balanceAdjustmentMap[decodedEventData.address].hasOwnProperty(toAddr)) {
-          balanceAdjustmentMap[decodedEventData.address][toAddr] = new bigNumber('0');
-        }
-
-        let valueBn = new bigNumber(value);
-        balanceAdjustmentMap[decodedEventData.address][fromAddr] = balanceAdjustmentMap[decodedEventData.address][fromAddr].minus(valueBn);
-        balanceAdjustmentMap[decodedEventData.address][toAddr] = balanceAdjustmentMap[decodedEventData.address][toAddr].plus(valueBn);
+        let valueBn = new bigNumber(valueStr);
+        balanceAdjustmentMap[contractAddress][fromAddr] = balanceAdjustmentMap[contractAddress][fromAddr].minus(valueBn);
+        balanceAdjustmentMap[contractAddress][toAddr] = balanceAdjustmentMap[contractAddress][toAddr].plus(valueBn);
 
         transferEvents.push({
           from_address: fromAddr,
           to_address: toAddr,
-          value: value
+          value: valueStr
         });
 
         affectedAddresses.push(fromAddr);
@@ -535,6 +552,7 @@ MigrateTokenBalancesKlass.prototype = {
         , completeStatus = parseInt(new TransactionLogModel().invertedStatuses[TransactionLogConst.completeStatus])
         , failedStatus = parseInt(new TransactionLogModel().invertedStatuses[TransactionLogConst.failedStatus])
         , tokenTransferType = parseInt(new TransactionLogModel().invertedTransactionTypes[TransactionLogConst.extenralTokenTransferTransactionType])
+        , stpTransferTransactionType = parseInt(new TransactionLogModel().invertedTransactionTypes[TransactionLogConst.stpTransferTransactionType])
     ;
 
     if (affectedAddresses.length > 0) {
@@ -562,6 +580,11 @@ MigrateTokenBalancesKlass.prototype = {
         // If this was a recorded transaction already
         if (existingTxData) {
 
+          if (parseInt(existingTxData['transaction_type']) === stpTransferTransactionType) {
+            continue;
+            // ignore stpTransferTransactionType
+          }
+
           if (!txHashTransferEventsMap[txHash]) {
             if (parseInt(txDataFromChain.status, 16) == 1) {
               console.log('highAlert: knownInternalTxsDontHaveEvents', txHash);
@@ -578,7 +601,7 @@ MigrateTokenBalancesKlass.prototype = {
             transaction_uuid: existingTxData['transaction_uuid'],
             transaction_type: existingTxData['transaction_type'],
             block_number: existingTxData['block_number'] || txDataFromChain['blockNumber'],
-            client_id: existingTxData['client_id'],
+            client_id: parseInt(existingTxData['client_id']),
             client_token_id: existingTxData['client_token_id'],
             gas_used: existingTxData['gas_used'] || txDataFromChain['gasUsed'],
             gas_price: existingTxData['gas_price'],
@@ -613,7 +636,7 @@ MigrateTokenBalancesKlass.prototype = {
             transaction_uuid: uuid.v4(),
             transaction_type: tokenTransferType,
             block_number: txDataFromChain['blockNumber'],
-            client_id: erc20ContractAddressData['client_id'],
+            client_id: parseInt(erc20ContractAddressData['client_id']),
             client_token_id: parseInt(erc20ContractAddressData['client_token_id']),
             token_symbol: erc20ContractAddressData['symbol'],
             gas_used: txDataFromChain['gasUsed'],
@@ -636,17 +659,15 @@ MigrateTokenBalancesKlass.prototype = {
           txFormattedData['transfer_events'] = txHashTransferEventsMap[txHash];
           for(var j=0; j<txFormattedData['transfer_events'].length; j++) {
             let event_data = txFormattedData['transfer_events'][j];
-            let fromUuid = addressUuidMap[event_data['from_address'].toLowerCase()];
+            let fromUuid = addressUuidMap[event_data['from_address']];
             if (fromUuid) {event_data['from_uuid'] = fromUuid};
-            let toUuid = addressUuidMap[event_data['to_address'].toLowerCase()];
+            let toUuid = addressUuidMap[event_data['to_address']];
             if (toUuid) {event_data['to_uuid'] = toUuid};
           }
         }
 
         // group data by client_ids so that they can be batch inserted in ddb
-        if(!formattedTransactionsData[txFormattedData['client_id']]) {
-          formattedTransactionsData[txFormattedData['client_id']] = [];
-        }
+        formattedTransactionsData[txFormattedData['client_id']] = formattedTransactionsData[txFormattedData['client_id']] || [];
 
         formattedTransactionsData[txFormattedData['client_id']].push(txFormattedData);
 

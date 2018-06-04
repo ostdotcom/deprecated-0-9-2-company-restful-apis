@@ -73,7 +73,7 @@ CheckBalances.prototype = {
 
     while (true) {
 
-      var dbRows = await new ClientBrandedTokenModel().select('id, client_id, token_erc20_address').where('token_erc20_address IS NOT NULL and client_id = 1001').limit(pageLimit).offset(offset).fire();
+      var dbRows = await new ClientBrandedTokenModel().select('id, client_id, token_erc20_address').where('token_erc20_address IS NOT NULL').limit(pageLimit).offset(offset).fire();
 
       if (dbRows.length == 0) {
         return Promise.resolve("Done");
