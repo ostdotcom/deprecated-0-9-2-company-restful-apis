@@ -374,6 +374,41 @@ ExecuteTransactionService.prototype = {
     const oThis = this
     ;
 
+    if ((oThis.transactionTypeRecord.kind === clientTransactionTypeConst.userToUserKind) && !oThis.fromUuid && !oThis.toUuid ) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_t_e_25',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_from_user_id', 'invalid_to_user_id'],
+        debug_options: {}
+      }));
+    }
+
+    if ((oThis.transactionTypeRecord.kind === clientTransactionTypeConst.userToCompanyKind) && !oThis.fromUuid ) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_t_e_26',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_from_user_id'],
+        debug_options: {}
+      }));
+    }
+
+    if ((oThis.transactionTypeRecord.kind === clientTransactionTypeConst.companyToUserKind) && !oThis.toUuid ) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_t_e_27',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_to_user_id'],
+        debug_options: {}
+      }));
+    }
+
+    if ((oThis.transactionTypeRecord.kind === clientTransactionTypeConst.userToCompanyKind) && !oThis.toUuid ) {
+      oThis.toUuid = oThis.clientBrandedToken.reserve_address_uuid;
+    }
+
+    if ((oThis.transactionTypeRecord.kind === clientTransactionTypeConst.companyToUserKind) && !oThis.fromUuid ) {
+      oThis.fromUuid = oThis.clientBrandedToken.reserve_address_uuid;
+    }
+
     // check if the sender same as recipient
     if (oThis.fromUuid == oThis.toUuid) {
       return Promise.reject(responseHelper.paramValidationError({

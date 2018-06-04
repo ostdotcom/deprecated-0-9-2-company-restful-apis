@@ -21,11 +21,13 @@ const dbName = "saas_transaction_" + coreConstants.SUB_ENVIRONMENT + "_" + coreC
   }
   , transactionTypes = {
     '1': transactionLogConst.tokenTransferTransactionType,
-    '2': transactionLogConst.stpTransferTransactionType
+    '2': transactionLogConst.stpTransferTransactionType,
+    '3': transactionLogConst.extenralTokenTransferTransactionType
   }
   , invertedStatuses = util.invert(statuses)
   , invertedChainTypes = util.invert(chainTypes)
   , invertedTransactionTypes = util.invert(transactionTypes)
+
 ;
 
 const TransactionLogKlass = function () {
@@ -130,6 +132,17 @@ const TransactionLogKlassPrototype = {
     const oThis = this;
     const dbRecords = await oThis.select(['id', 'transaction_hash', 'transaction_uuid', 'process_uuid', 'status', 'input_params', 'transaction_type']).
               where(['transaction_hash IN (?)', transaction_hashes]).fire();
+    return oThis._formatDbRecords(dbRecords);
+  },
+
+  /**
+   *
+   * @param transaction_hashes - Array of Transaction hash
+   * @return {Promise<>}
+   */
+  getAllColumnsByTransactionHash: async function (transaction_hashes) {
+    const oThis = this;
+    const dbRecords = await oThis.select('*').where(['transaction_hash IN (?)', transaction_hashes]).fire();
     return oThis._formatDbRecords(dbRecords);
   },
 

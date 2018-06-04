@@ -66,7 +66,7 @@ CreateShards.prototype = {
 
     await oThis.createTokenBalancesShards();
 
-    // await oThis.createTransactionLogShards();
+    await oThis.createTransactionLogShards();
 
     return Promise.resolve(responseHelper.successWithData({}));
 
@@ -121,4 +121,4 @@ CreateShards.prototype = {
 };
 
 const object = new CreateShards({});
-object.perform().then(logger.info);
+object.perform().then(console.log);

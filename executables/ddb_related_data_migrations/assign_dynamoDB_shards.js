@@ -198,4 +198,4 @@ AssignShards.prototype = {
 };
 
 const object = new AssignShards({start_client_id: 1001});
-object.perform().then(logger.info);
+object.perform().then(console.log);
