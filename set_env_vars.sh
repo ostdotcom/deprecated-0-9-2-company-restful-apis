@@ -74,3 +74,6 @@ export CA_GENERIC_SHA_KEY='9fa6baa9f1ab7a805b80721b65d34964170b1494'
 export CR_CACHE_DATA_SHA_KEY='066f7e6e833db143afee3dbafc888bcf'
 
 export CR_ACCEPTED_PRICE_FLUCTUATION_FOR_PAYMENT='{"OST":{"USD": "1000000000000000000"}}'
+
+# Elastic Search details
+export CR_ES_HOST='http://localhost:9200'
