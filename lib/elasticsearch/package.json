@@ -8,8 +8,9 @@
   "license": "ISC",
   "dependencies": {
     "@openstfoundation/openst-base": "0.9.0",
-    "aws-sdk": "^2.251.1",
+    "aws-sdk": "2.183.0",
     "elasticsearch": "15.0.0",
-    "http-aws-es": "^6.0.0"
+    "http-aws-es": "6.0.0",
+    "bignumber.js": "4.1.0"
   }
 }
