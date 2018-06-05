@@ -19,6 +19,7 @@ const coreAbis = openStPlatform.abis
 ;
 
 abiDecoder.addABI(coreAbis.brandedToken);
+abiDecoder.addABI(coreAbis.openSTUtility);
 
 const rootPrefix = '../..'
     , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
@@ -31,6 +32,7 @@ const rootPrefix = '../..'
     , TransactionLogConst = openStorage.TransactionLogConst
     , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
     , Erc20ContractAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address')
+    , Erc20ContractUuidCacheKlass = require(rootPrefix + '/lib/cache_multi_management/erc20_contract_uuid')
     , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
     , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
 ;
@@ -46,8 +48,13 @@ const MigrateTokenBalancesKlass = function (params) {
   oThis.web3Provider = new Web3(chainInteractionConstants.UTILITY_GETH_WS_PROVIDER);
 
   oThis.transferEventSignature = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+  oThis.ProcessedMintEventSignature = '0x96989a6b1d8c3bb8d6cc22e14b188b5c14b1f33f34ff07ea2e4fd6d880dac2c7';
+  oThis.RevertedMintEventSignature = '0x86e6b95641fbf0f8939eb3da2e7e26aee0188048353d08a45c78218e84cf1d4f';
   oThis.parallelBlocksToProcessCnt = 10;
   oThis.blockNoArray = [];
+  oThis.openSTUtilityContractAddr = chainInteractionConstants.OPENSTUTILITY_CONTRACT_ADDR.toLowerCase();
+  oThis.stPrimeContractUuid = chainInteractionConstants.ST_PRIME_UUID.toLowerCase();
+  oThis.stakerAddr = chainInteractionConstants.STAKER_ADDR.toLowerCase();
 
 };
 
@@ -373,19 +380,18 @@ MigrateTokenBalancesKlass.prototype = {
 
       for(let j=0; j<txReceipt.logs.length; j++) {
 
-        let txReceiptLog = txReceipt.logs[j];
+        let txReceiptLog = txReceipt.logs[j]
+            , contractAddress = txReceiptLog.address.toLowerCase()
+            , eventSignature = txReceiptLog.topics[0]
+        ;
 
-        if(erc20ContractAddressesData[txReceiptLog.address.toLowerCase()] &&
-            txReceiptLog.topics[0] === oThis.transferEventSignature) {
+        if ((erc20ContractAddressesData[contractAddress] && eventSignature === oThis.transferEventSignature) || (oThis.openSTUtilityContractAddr === contractAddress && (eventSignature === oThis.ProcessedMintEventSignature || eventSignature === oThis.RevertedMintEventSignature))) {
 
           txHashToShortListedEventsMap[txHash] = txHashToShortListedEventsMap[txHash] || [];
 
           txHashToShortListedEventsMap[txHash].push(txReceiptLog);
 
         }
-        // else if (!erc20ContractAddressesData[txReceiptLog.address.toLowerCase()]) {
-        //   console.error('debug_tx_from_unrecognized_contract_address: ', txReceiptLog.address);
-        // }
 
       }
 
@@ -451,43 +457,82 @@ MigrateTokenBalancesKlass.prototype = {
             , contractAddress = decodedEventData.address.toLowerCase()
         ;
 
-        balanceAdjustmentMap[contractAddress] = balanceAdjustmentMap[contractAddress] || {};
-
         let fromAddr = null
             , toAddr = null
             , valueStr = null
+            , contractUuid = null
         ;
 
         for(let j=0; j<decodedEventData.events.length; j++) {
           let eventData = decodedEventData.events[j];
           switch(eventData.name) {
-            case "_from":
+            case "_from": //case "_staker":
               fromAddr = eventData.value.toLowerCase();
               break;
-            case "_to":
+            case "_to": //case "_beneficiary":
               toAddr = eventData.value.toLowerCase();
               break;
-            case "_value":
+            case "_value": case "_amount":
               valueStr = eventData.value;
+              break;
+            case "_uuid":
+              contractUuid = eventData.value.toLowerCase();
               break;
           }
         }
 
-        balanceAdjustmentMap[contractAddress][fromAddr] = balanceAdjustmentMap[contractAddress][fromAddr] || new bigNumber('0');
-        balanceAdjustmentMap[contractAddress][toAddr] = balanceAdjustmentMap[contractAddress][toAddr] || new bigNumber('0');
+        if (contractUuid) {
+          // it is not an transfer event but is a mint event
+          if(contractUuid === oThis.stPrimeContractUuid) {
+            // for St prime uuid do not settle balances
+            continue;
+          } else {
+            let cacheObj = new Erc20ContractUuidCacheKlass({uuids: [contractUuid]})
+                , cacheFetchRsp = await cacheObj.fetch()
+            ;
+            if(cacheFetchRsp.isFailure()) {return Promise.reject(cacheFetchRsp)}
+            let erc20ContractUuidsData = cacheFetchRsp.data;
+            // overridr contractAddress of ostutility contract with that of erc 20 address of this token
+            contractAddress = erc20ContractUuidsData[contractUuid]['token_erc20_address'].toLowerCase();
+            switch(decodedEventData.name) {
+              case "ProcessedMint":
+                toAddr = contractAddress;
+                break;
+              case "RevertedMint":
+                fromAddr = contractAddress;
+                break;
+              default:
+                return Promise.reject(responseHelper.error({
+                  internal_error_identifier: 'e_drdm_ads_2',
+                  api_error_identifier: 'unhandled_catch_response',
+                  debug_options: {}
+                }));
+                break;
+            }
+          }
+        }
 
+        balanceAdjustmentMap[contractAddress] = balanceAdjustmentMap[contractAddress] || {};
         let valueBn = new bigNumber(valueStr);
-        balanceAdjustmentMap[contractAddress][fromAddr] = balanceAdjustmentMap[contractAddress][fromAddr].minus(valueBn);
-        balanceAdjustmentMap[contractAddress][toAddr] = balanceAdjustmentMap[contractAddress][toAddr].plus(valueBn);
 
+        if (fromAddr) {
+          balanceAdjustmentMap[contractAddress][fromAddr] = balanceAdjustmentMap[contractAddress][fromAddr] || new bigNumber('0');
+          balanceAdjustmentMap[contractAddress][fromAddr] = balanceAdjustmentMap[contractAddress][fromAddr].minus(valueBn);
+          affectedAddresses.push(fromAddr);
+        }
+
+        if (toAddr) {
+          balanceAdjustmentMap[contractAddress][toAddr] = balanceAdjustmentMap[contractAddress][toAddr] || new bigNumber('0');
+          balanceAdjustmentMap[contractAddress][toAddr] = balanceAdjustmentMap[contractAddress][toAddr].plus(valueBn);
+          affectedAddresses.push(toAddr);
+        }
+
+        // for mit events we would mark staker addr as from / to and wouldn't settle this entry in DB (as out of thin air)
         transferEvents.push({
-          from_address: fromAddr,
-          to_address: toAddr,
-          value: valueStr
+          from_address: fromAddr || oThis.stakerAddr,
+          to_address: toAddr || oThis.stakerAddr,
+          amount_in_wei: valueStr
         });
-
-        affectedAddresses.push(fromAddr);
-        affectedAddresses.push(toAddr);
 
       }
 
@@ -589,7 +634,6 @@ MigrateTokenBalancesKlass.prototype = {
             if (parseInt(txDataFromChain.status, 16) == 1) {
               console.log('highAlert: knownInternalTxsDontHaveEvents', txHash);
             }
-            continue;
           }
 
           let  existingInputParams = existingTxData['input_params']
@@ -606,12 +650,12 @@ MigrateTokenBalancesKlass.prototype = {
             gas_used: existingTxData['gas_used'] || txDataFromChain['gasUsed'],
             gas_price: existingTxData['gas_price'],
             status: existingTxData['status'],
-            created_at: new Date(existingTxData['created_at']).getTime()
+            created_at: new Date(existingTxData['created_at']).getTime(),
+            updated_at: new Date(existingTxData['updated_at']).getTime()
           };
 
-          if (existingInputParams['commission_percent']) {txFormattedData['commission_percent'] = existingInputParams['commission_percent']}
-          if (existingInputParams['amount']) {txFormattedData['amount'] = existingInputParams['amount']}
           if (existingInputParams['amount_in_wei']) {txFormattedData['amount_in_wei'] = existingInputParams['amount_in_wei']}
+          if (existingFormattedReceipt['bt_transfer_in_wei']) {txFormattedData['amount_in_wei'] = existingFormattedReceipt['bt_transfer_in_wei']}
           if (existingInputParams['to_address']) {txFormattedData['to_address'] = existingInputParams['to_address']}
           if (existingInputParams['from_address']) {txFormattedData['from_address'] = existingInputParams['from_address']}
           if (existingInputParams['from_uuid']) {txFormattedData['from_uuid'] = existingInputParams['from_uuid']}
@@ -620,7 +664,6 @@ MigrateTokenBalancesKlass.prototype = {
           if (existingInputParams['transaction_kind_id']) {txFormattedData['action_id'] = existingInputParams['transaction_kind_id']}
           if (existingFormattedReceipt['error_code']) {txFormattedData['error_code'] = existingFormattedReceipt['error_code']}
           if (existingFormattedReceipt['commission_amount_in_wei']) {txFormattedData['commission_amount_in_wei'] = existingFormattedReceipt['commission_amount_in_wei']}
-          if (existingFormattedReceipt['bt_transfer_in_wei']) {txFormattedData['bt_transfer_in_wei'] = existingFormattedReceipt['bt_transfer_in_wei']}
 
         } else {
 
@@ -630,6 +673,12 @@ MigrateTokenBalancesKlass.prototype = {
           let contractAddress = txDataFromChain.logs[0].address
               , erc20ContractAddressData = erc20ContractAddressesData[contractAddress.toLowerCase()]
           ;
+
+          if (!erc20ContractAddressData) {
+            // as we are also processing mint events, they wouldn't have client id.
+            // they should only be used to adjust balances but not insert here
+            continue;
+          }
 
           txFormattedData = {
             transaction_hash: txHash,
@@ -642,9 +691,9 @@ MigrateTokenBalancesKlass.prototype = {
             gas_used: txDataFromChain['gasUsed'],
             status: (parseInt(txDataFromChain.status, 16) == 1) ? completeStatus : failedStatus,
             created_at: blockNoDetailsMap[blockNo]['timestamp'],
+            updated_at: blockNoDetailsMap[blockNo]['timestamp'],
             from_address: txDataFromChain['from'],
-            to_address: txDataFromChain['to'], //TODO: is it right to be using these from and to (to is mostly contract adddr) ?
-            // bt_transfer_in_wei: '' // Cant fetch it ?
+            to_address: txDataFromChain['to']
           }
 
           let fromUuid = addressUuidMap[txDataFromChain['from'].toLowerCase()];
@@ -732,6 +781,7 @@ MigrateTokenBalancesKlass.prototype = {
       let userBalancesSettlementsData = balanceAdjustmentMap[erc20ContractAddress]
           , tokenalanceModelObj = new TokenBalanceModelDdb({
             erc20_contract_address: erc20ContractAddress,
+            chain_id: chainInteractionConstants.UTILITY_CHAIN_ID,
             ddb_service: ddbServiceObj,
             auto_scaling: autoscalingServiceObj
           })

@@ -7,12 +7,17 @@
  *
  */
 
+const openStorage = require('@openstfoundation/openst-storage');
+
 const rootPrefix = '../..'
     , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
     , responseHelper = require(rootPrefix + '/lib/formatter/response')
     , commonValidator = require(rootPrefix +  '/lib/validators/common')
     , TransactionLogModelMysql = require(rootPrefix + '/app/models/transaction_log')
-    , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
+    , TransactionLogModelDdb = openStorage.TransactionLogModel
+    , TransactionLogConst = openStorage.TransactionLogConst
+    , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
+    , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
 ;
 
 const MigrateTransactionLogsKlass = function (params) {
@@ -60,7 +65,7 @@ MigrateTransactionLogsKlass.prototype = {
   asyncPerform: async function () {
 
     const oThis = this
-        , pageLimit = 100;
+        , pageLimit = 1000;
 
     let offset = 0;
 
@@ -87,12 +92,169 @@ MigrateTransactionLogsKlass.prototype = {
    *
    * @returns {promise<result>}
    */
-  _migrateRecords:  async function (dbRows) {
+  _migrateRecords: async function (dbRows) {
+
+    const oThis = this
+        , stpTransferTransactionType = parseInt(new TransactionLogModelMysql().invertedTransactionTypes[TransactionLogConst.stpTransferTransactionType])
+    ;
+
+    let clientIdTxsToMigrateMap = {}
+        , clientIdtxUuidsToVerify = {}
+    ;
 
     for(let i=0; i<dbRows.length; i++) {
       let dbRow = dbRows[i];
-      //TODO: Call DDB model to create
+      // if type == 2 or hash is not present (tx couldn't make it to a block)
+      if (parseInt(dbRow['transaction_type']) === stpTransferTransactionType || !dbRow['transaction_hash']) {
+        let formattedRow = oThis._formatRow(dbRow);
+        clientIdTxsToMigrateMap[formattedRow['client_id']] = clientIdTxsToMigrateMap[formattedRow['client_id']] || [];
+        clientIdTxsToMigrateMap[formattedRow['client_id']].push(formattedRow);
+      } else {
+       // these transaction should have been migrated by chain parsing migration
+        clientIdtxUuidsToVerify[dbRow['client_id']] = clientIdtxUuidsToVerify[dbRow['client_id']] || [];
+        clientIdtxUuidsToVerify[dbRow['client_id']].push(dbRow['transaction_uuid']);
+      }
     }
+
+    // insert in DDb
+    let insertTxLogsRsp = await oThis._insertDataInTransactionLogs(clientIdTxsToMigrateMap);
+    if(insertTxLogsRsp.isFailure()) {
+      console.error('insertTxLogsRspError', JSON.strinfigy(insertTxLogsRsp.toHash()));
+      return Promise.reject(insertTxLogsRsp);
+    }
+
+    let verifyTxLogsRsp = await oThis._verifyDataInTransactionLogs(clientIdtxUuidsToVerify);
+    if(verifyTxLogsRsp.isFailure()) {
+      console.error('verifyTxLogsRsp', JSON.strinfigy(verifyTxLogsRsp.toHash()));
+      return Promise.reject(verifyTxLogsRsp);
+    }
+
+  },
+
+  _formatRow: function(existingTxData) {
+
+    const oThis = this;
+
+    let txFormattedData = {
+      transaction_uuid: existingTxData['transaction_uuid'],
+      transaction_type: existingTxData['transaction_type'],
+      client_id: parseInt(existingTxData['client_id']),
+      client_token_id: existingTxData['client_token_id'],
+      gas_price: existingTxData['gas_price'],
+      status: existingTxData['status'],
+      created_at: new Date(existingTxData['created_at']).getTime(),
+      updated_at: new Date(existingTxData['updated_at']).getTime()
+    };
+
+    let  existingInputParams = existingTxData['input_params']
+        , existingFormattedReceipt = existingTxData['formatted_receipt']
+    ;
+
+    if (existingTxData['transaction_hash']) { txFormattedData['transaction_hash'] = existingTxData['transaction_hash']}
+    if (existingTxData['block_number']) { txFormattedData['block_number'] = existingTxData['block_number']}
+    if (existingTxData['gas_used']) { txFormattedData['gas_used'] = existingTxData['gas_used']}
+    if (existingInputParams['amount_in_wei']) {txFormattedData['amount_in_wei'] = existingInputParams['amount_in_wei']}
+    if (existingFormattedReceipt['bt_transfer_in_wei']) {txFormattedData['amount_in_wei'] = existingFormattedReceipt['bt_transfer_in_wei']}
+    if (existingInputParams['to_address']) {txFormattedData['to_address'] = existingInputParams['to_address']}
+    if (existingInputParams['from_address']) {txFormattedData['from_address'] = existingInputParams['from_address']}
+    if (existingInputParams['from_uuid']) {txFormattedData['from_uuid'] = existingInputParams['from_uuid']}
+    if (existingInputParams['to_uuid']) {txFormattedData['to_uuid'] = existingInputParams['to_uuid']}
+    if (existingInputParams['token_symbol']) {txFormattedData['token_symbol'] = existingInputParams['token_symbol']}
+    if (existingInputParams['transaction_kind_id']) {txFormattedData['action_id'] = existingInputParams['transaction_kind_id']}
+    if (existingFormattedReceipt['error_code']) {txFormattedData['error_code'] = existingFormattedReceipt['error_code']}
+    if (existingFormattedReceipt['commission_amount_in_wei']) {txFormattedData['commission_amount_in_wei'] = existingFormattedReceipt['commission_amount_in_wei']}
+
+    return txFormattedData;
+
+  },
+
+  /**
+   * bulk create records in DDB
+   *
+   * @returns {promise<result>}
+   */
+  _insertDataInTransactionLogs: async function (formattedTransactionsData) {
+
+    const oThis = this;
+
+    let insertResponses = {}
+        , clientIds = Object.keys(formattedTransactionsData)
+    ;
+
+    for(let k=0; k<clientIds.length; k++) {
+
+      let clientId = clientIds[k]
+          , dataToInsert = formattedTransactionsData[clientId]
+      ;
+
+      let rsp = await new TransactionLogModelDdb({
+        client_id: clientId,
+        ddb_service: ddbServiceObj,
+        auto_scaling: autoscalingServiceObj
+      }).batchPutItem(dataToInsert);
+
+      insertResponses[clientId] = rsp.toHash();
+
+    }
+
+    // console.log('insertResponses', JSON.stringify(insertResponses));
+
+    return Promise.resolve(responseHelper.successWithData({insertResponses: insertResponses}));
+
+  },
+
+  _verifyDataInTransactionLogs: async function (clientIdtxUuidsToVerify) {
+
+    const oThis = this
+        , ddbInQueryFetch = 25
+    ;
+
+    let clientIdMissingTxUuidsMap = {}
+        , clientIds = Object.keys(clientIdtxUuidsToVerify)
+    ;
+
+    for(let k=0; k<clientIds.length; k++) {
+
+      let clientId = clientIds[k]
+          , txUuidsToVerify = clientIdtxUuidsToVerify[clientId]
+          , batchNo = 1
+      ;
+
+      while (true) {
+
+        const offset = (batchNo - 1) * ddbInQueryFetch
+            , batchedTxUuidsToVerify = txUuidsToVerify.slice(offset, ddbInQueryFetch + offset)
+        ;
+
+        if (batchedTxUuidsToVerify.length === 0) break;
+
+        logger.info(`starting verification for batch: ${batchNo} for client ${clientId}`);
+
+        let rsp = await new TransactionLogModelDdb({
+          client_id: clientId,
+          ddb_service: ddbServiceObj,
+          auto_scaling: autoscalingServiceObj
+        }).batchGetItem(batchedTxUuidsToVerify);
+
+        if(rsp.isFailure()) {return Promise.reject(rsp)};
+
+        for(let i=0; i<batchedTxUuidsToVerify.length; i++) {
+          let uuidToVerify = batchedTxUuidsToVerify[i];
+          if (!rsp.data[uuidToVerify]) {
+            clientIdMissingTxUuidsMap[clientId] = clientIdMissingTxUuidsMap[clientId] || [];
+            clientIdMissingTxUuidsMap[clientId].push(uuidToVerify);
+          }
+        }
+
+        batchNo = batchNo + 1;
+
+      }
+
+    }
+
+    //console.log('clientIdMissingTxUuidsMap', JSON.stringify(clientIdMissingTxUuidsMap));
+
+    return Promise.resolve(responseHelper.successWithData({clientIdMissingTxUuidsMap: clientIdMissingTxUuidsMap}));
 
   }
 
