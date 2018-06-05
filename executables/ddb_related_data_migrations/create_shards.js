@@ -86,7 +86,7 @@ CreateShards.prototype = {
     for (let index = 1; index <= oThis.tokenBalancesShardCount; index++ ) {
       logger.info('starting to create tokenBalancesShard : ', index);
       let shardName = coreConstants.DYNAMODB_TABLE_NAME_PREFIX + 'token_balances_shard_00' + index;
-      let createRsp = await new OSTStorage.TokenBalanceModel({ddb_service: ddbServiceObj}).createAndRegisterShard(shardName);
+      let createRsp = await new OSTStorage.TokenBalanceModel({ddb_service: ddbServiceObj, auto_scaling: autoscalingServiceObj}).createAndRegisterShard(shardName);
       if (createRsp.isFailure()) {
         return Promise.reject(createRsp);
       }
@@ -109,7 +109,7 @@ CreateShards.prototype = {
     for (let index = 1; index <= oThis.transactionLogShardCount; index++ ) {
       logger.info('starting to create transactionLogShard : ', index);
       let shardName = coreConstants.DYNAMODB_TABLE_NAME_PREFIX + 'transaction_logs_shard_00' + index;
-      let createRsp = await new OSTStorage.TransactionLogModel({ddb_service: ddbServiceObj}).createAndRegisterShard(shardName);
+      let createRsp = await new OSTStorage.TransactionLogModel({ddb_service: ddbServiceObj, auto_scaling: autoscalingServiceObj}).createAndRegisterShard(shardName);
       if (createRsp.isFailure()) {
         return Promise.reject(createRsp);
       }
