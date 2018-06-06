@@ -1,8 +1,5 @@
 'use strict';
 
-const OSTStorage = require('@openstfoundation/openst-storage')
-;
-
 const rootPrefix = '../..'
     , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
     , responseHelper = require(rootPrefix + '/lib/formatter/response')
@@ -30,7 +27,7 @@ CreateInitDdbTables.prototype = {
   /**
    * Perform
    *
-   * @return {promise}
+   * @return {promise<result>}
    */
   perform: function () {
     const oThis = this
@@ -62,12 +59,11 @@ CreateInitDdbTables.prototype = {
     const oThis = this
     ;
 
+    // running the database migrations for shard management table
     await shardMgmtObj.runShardMigration(ddbServiceObj, autoscalingServiceObj);
 
     return Promise.resolve(responseHelper.successWithData({}));
-
   }
-
 };
 
 const object = new CreateInitDdbTables({});
