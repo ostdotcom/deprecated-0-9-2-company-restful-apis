@@ -24,7 +24,6 @@ abiDecoder.addABI(coreAbis.openSTUtility);
 const rootPrefix = '../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , commonValidator = require(rootPrefix + '/lib/validators/common')
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , TransactionLogModelDdb = openStorage.TransactionLogModel
@@ -242,10 +241,8 @@ MigrateTokenBalancesKlass.prototype = {
       console.error('insertTxLogsRspError', JSON.strinfigy(insertTxLogsRsp.toHash()));
       return Promise.reject(insertTxLogsRsp);
     }
-    let insertResponses = insertTxLogsRsp.data['insertResponses'];
-    // TODO - Puneet - check for each of the insertResponses
-
-    // console.log('insertResponses', JSON.stringify(insertResponses));
+    let failedInsertResponses = insertTxLogsRsp.data['failedInsertResponses'];
+    console.log('failedInsertResponses', JSON.stringify(failedInsertResponses));
 
     let settleBalancesRsp = await oThis._settleBalancesInDb(balanceAdjustmentMap);
     if (settleBalancesRsp.isFailure()) {
@@ -253,7 +250,6 @@ MigrateTokenBalancesKlass.prototype = {
       return Promise.reject(settleBalancesRsp);
     }
     let settleResponses = settleBalancesRsp.data['settleResponses'];
-
     // console.log('settleResponses', JSON.stringify(settleResponses));
 
   },
@@ -797,7 +793,7 @@ MigrateTokenBalancesKlass.prototype = {
 
     logger.info('starting _insertDataInTransactionLogs');
 
-    let insertResponses = {}
+    let failedInsertResponses = {}
       , clientIds = Object.keys(formattedTransactionsData)
     ;
 
@@ -815,13 +811,14 @@ MigrateTokenBalancesKlass.prototype = {
         auto_scaling: autoscalingServiceObj
       }).batchPutItem(dataToInsert);
 
-      insertResponses[clientId] = rsp.toHash();
+      failedInsertResponses[clientId] = rsp.toHash();
 
     }
 
     logger.info('completed _insertDataInTransactionLogs');
 
-    return Promise.resolve(responseHelper.successWithData({insertResponses: insertResponses}));
+    return Promise.resolve(responseHelper.successWithData({failedInsertResponses: failedInsertResponses}));
+
   },
 
   /**

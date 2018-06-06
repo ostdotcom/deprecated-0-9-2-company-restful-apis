@@ -150,19 +150,19 @@ MigrateTransactionLogsKlass.prototype = {
         , existingFormattedReceipt = existingTxData['formatted_receipt']
     ;
 
-    if (existingTxData['transaction_hash']) { txFormattedData['transaction_hash'] = existingTxData['transaction_hash']}
-    if (existingTxData['block_number']) { txFormattedData['block_number'] = existingTxData['block_number']}
-    if (existingTxData['gas_used']) { txFormattedData['gas_used'] = existingTxData['gas_used']}
-    if (existingInputParams['amount_in_wei']) {txFormattedData['amount_in_wei'] = existingInputParams['amount_in_wei']}
-    if (existingFormattedReceipt['bt_transfer_in_wei']) {txFormattedData['amount_in_wei'] = existingFormattedReceipt['bt_transfer_in_wei']}
-    if (existingInputParams['to_address']) {txFormattedData['to_address'] = existingInputParams['to_address']}
-    if (existingInputParams['from_address']) {txFormattedData['from_address'] = existingInputParams['from_address']}
-    if (existingInputParams['from_uuid']) {txFormattedData['from_uuid'] = existingInputParams['from_uuid']}
-    if (existingInputParams['to_uuid']) {txFormattedData['to_uuid'] = existingInputParams['to_uuid']}
-    if (existingInputParams['token_symbol']) {txFormattedData['token_symbol'] = existingInputParams['token_symbol']}
-    if (existingInputParams['transaction_kind_id']) {txFormattedData['action_id'] = existingInputParams['transaction_kind_id']}
-    if (existingFormattedReceipt['error_code']) {txFormattedData['error_code'] = existingFormattedReceipt['error_code']}
-    if (existingFormattedReceipt['commission_amount_in_wei']) {txFormattedData['commission_amount_in_wei'] = existingFormattedReceipt['commission_amount_in_wei']}
+    if (!commonValidator.isVarNull(existingTxData['transaction_hash'])) { txFormattedData['transaction_hash'] = existingTxData['transaction_hash']}
+    if (!commonValidator.isVarNull(existingTxData['block_number'])) { txFormattedData['block_number'] = existingTxData['block_number']}
+    if (!commonValidator.isVarNull(existingTxData['gas_used'])) { txFormattedData['gas_used'] = existingTxData['gas_used']}
+    if (!commonValidator.isVarNull(existingInputParams['amount_in_wei'])) {txFormattedData['amount_in_wei'] = existingInputParams['amount_in_wei']}
+    if (!commonValidator.isVarNull(existingFormattedReceipt['bt_transfer_in_wei'])) {txFormattedData['amount_in_wei'] = existingFormattedReceipt['bt_transfer_in_wei']}
+    if (!commonValidator.isVarNull(existingInputParams['to_address'])) {txFormattedData['to_address'] = existingInputParams['to_address']}
+    if (!commonValidator.isVarNull(existingInputParams['from_address']) {txFormattedData['from_address'] = existingInputParams['from_address']}
+    if (!commonValidator.isVarNull(existingInputParams['from_uuid']) {txFormattedData['from_uuid'] = existingInputParams['from_uuid']}
+    if (!commonValidator.isVarNull(existingInputParams['to_uuid'])) {txFormattedData['to_uuid'] = existingInputParams['to_uuid']}
+    if (!commonValidator.isVarNull(existingInputParams['token_symbol']) {txFormattedData['token_symbol'] = existingInputParams['token_symbol']}
+    if (!commonValidator.isVarNull(existingInputParams['transaction_kind_id']) {txFormattedData['action_id'] = existingInputParams['transaction_kind_id']}
+    if (!commonValidator.isVarNull(existingFormattedReceipt['error_code'])) {txFormattedData['error_code'] = existingFormattedReceipt['error_code']}
+    if (!commonValidator.isVarNull(existingFormattedReceipt['commission_amount_in_wei']) {txFormattedData['commission_amount_in_wei'] = existingFormattedReceipt['commission_amount_in_wei']}
 
     return txFormattedData;
 
@@ -177,7 +177,7 @@ MigrateTransactionLogsKlass.prototype = {
 
     const oThis = this;
 
-    let insertResponses = {}
+    let failedInsertResponses = {}
         , clientIds = Object.keys(formattedTransactionsData)
     ;
 
@@ -187,19 +187,21 @@ MigrateTransactionLogsKlass.prototype = {
           , dataToInsert = formattedTransactionsData[clientId]
       ;
 
+      logger.info(`starting insertion for client ${clientId}`);
+
       let rsp = await new TransactionLogModelDdb({
         client_id: clientId,
         ddb_service: ddbServiceObj,
         auto_scaling: autoscalingServiceObj
       }).batchPutItem(dataToInsert);
 
-      insertResponses[clientId] = rsp.toHash();
+      failedInsertResponses[clientId] = rsp.toHash();
 
     }
 
-    // console.log('insertResponses', JSON.stringify(insertResponses));
+    console.log('failedInsertResponses', JSON.stringify(failedInsertResponses));
 
-    return Promise.resolve(responseHelper.successWithData({insertResponses: insertResponses}));
+    return Promise.resolve(responseHelper.successWithData({failedInsertResponses: failedInsertResponses}));
 
   },
 
@@ -252,7 +254,7 @@ MigrateTransactionLogsKlass.prototype = {
 
     }
 
-    //console.log('clientIdMissingTxUuidsMap', JSON.stringify(clientIdMissingTxUuidsMap));
+    console.log('clientIdMissingTxUuidsMap', JSON.stringify(clientIdMissingTxUuidsMap));
 
     return Promise.resolve(responseHelper.successWithData({clientIdMissingTxUuidsMap: clientIdMissingTxUuidsMap}));
 
