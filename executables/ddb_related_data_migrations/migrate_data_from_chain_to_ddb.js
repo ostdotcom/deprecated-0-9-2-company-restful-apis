@@ -705,7 +705,7 @@ MigrateTokenBalancesKlass.prototype = {
           if (!commonValidator.isVarNull(existingFormattedReceipt['error_code'])) {
             txFormattedData['error_code'] = existingFormattedReceipt['error_code']
           }
-          if (!commonValidator.isVarNull(existingFormattedReceipt['commission_amount_in_wei'])() {
+          if (!commonValidator.isVarNull(existingFormattedReceipt['commission_amount_in_wei'])) {
             txFormattedData['commission_amount_in_wei'] = existingFormattedReceipt['commission_amount_in_wei']
           }
 
@@ -836,13 +836,9 @@ MigrateTokenBalancesKlass.prototype = {
       , erc20ContractAddresses = Object.keys(balanceAdjustmentMap)
     ;
 
-    console.log('erc20ContractAddresses', JSON.atringify(erc20ContractAddresses));
-
     for (let k = 0; k < erc20ContractAddresses.length; k++) {
 
       let erc20ContractAddress = erc20ContractAddresses[k];
-
-      console.log('erc20ContractAddress', erc20ContractAddress);
 
       let userBalancesSettlementsData = balanceAdjustmentMap[erc20ContractAddress]
         , tokenalanceModelObj = new TokenBalanceModelDdb({

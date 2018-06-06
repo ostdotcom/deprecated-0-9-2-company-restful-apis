@@ -156,13 +156,13 @@ MigrateTransactionLogsKlass.prototype = {
     if (!commonValidator.isVarNull(existingInputParams['amount_in_wei'])) {txFormattedData['amount_in_wei'] = existingInputParams['amount_in_wei']}
     if (!commonValidator.isVarNull(existingFormattedReceipt['bt_transfer_in_wei'])) {txFormattedData['amount_in_wei'] = existingFormattedReceipt['bt_transfer_in_wei']}
     if (!commonValidator.isVarNull(existingInputParams['to_address'])) {txFormattedData['to_address'] = existingInputParams['to_address']}
-    if (!commonValidator.isVarNull(existingInputParams['from_address']) {txFormattedData['from_address'] = existingInputParams['from_address']}
-    if (!commonValidator.isVarNull(existingInputParams['from_uuid']) {txFormattedData['from_uuid'] = existingInputParams['from_uuid']}
+    if (!commonValidator.isVarNull(existingInputParams['from_address'])) {txFormattedData['from_address'] = existingInputParams['from_address']}
+    if (!commonValidator.isVarNull(existingInputParams['from_uuid'])) {txFormattedData['from_uuid'] = existingInputParams['from_uuid']}
     if (!commonValidator.isVarNull(existingInputParams['to_uuid'])) {txFormattedData['to_uuid'] = existingInputParams['to_uuid']}
-    if (!commonValidator.isVarNull(existingInputParams['token_symbol']) {txFormattedData['token_symbol'] = existingInputParams['token_symbol']}
-    if (!commonValidator.isVarNull(existingInputParams['transaction_kind_id']) {txFormattedData['action_id'] = existingInputParams['transaction_kind_id']}
+    if (!commonValidator.isVarNull(existingInputParams['token_symbol'])) {txFormattedData['token_symbol'] = existingInputParams['token_symbol']}
+    if (!commonValidator.isVarNull(existingInputParams['transaction_kind_id'])) {txFormattedData['action_id'] = existingInputParams['transaction_kind_id']}
     if (!commonValidator.isVarNull(existingFormattedReceipt['error_code'])) {txFormattedData['error_code'] = existingFormattedReceipt['error_code']}
-    if (!commonValidator.isVarNull(existingFormattedReceipt['commission_amount_in_wei']) {txFormattedData['commission_amount_in_wei'] = existingFormattedReceipt['commission_amount_in_wei']}
+    if (!commonValidator.isVarNull(existingFormattedReceipt['commission_amount_in_wei'])) {txFormattedData['commission_amount_in_wei'] = existingFormattedReceipt['commission_amount_in_wei']}
 
     return txFormattedData;
 
