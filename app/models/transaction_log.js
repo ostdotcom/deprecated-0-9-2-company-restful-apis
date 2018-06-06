@@ -147,6 +147,16 @@ const TransactionLogKlassPrototype = {
   },
 
   /**
+   *
+   * @return {Promise<>}
+   */
+  getByRange: async function (startId, endId, pageLimit, offset) {
+    const oThis = this;
+    const dbRecords = await oThis.select('*').where(['id >= ? AND id <= ?', startId, endId]).limit(pageLimit).offset(offset).fire();
+    return oThis._formatDbRecords(dbRecords);
+  },
+
+  /**
    * @param ids - Array of Ids
    * @return {Promise<>}
    */

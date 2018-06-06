@@ -76,7 +76,11 @@ CheckBalances.prototype = {
       var dbRows = await new ClientBrandedTokenModel().select('id, client_id, token_erc20_address').where('token_erc20_address IS NOT NULL').limit(pageLimit).offset(offset).fire();
 
       if (dbRows.length == 0) {
-        return Promise.resolve("Done");
+        return Promise.resolve({
+          checkedAddressCount: oThis.checkedAddressCount,
+          mismatchAddressCount: oThis.mismatchAddressCount,
+          success_percent: ((oThis.checkedAddressCount - oThis.mismatchAddressCount) / parseFloat(oThis.checkedAddressCount) * 100)
+        });
       }
 
       for(let i=0; i<dbRows.length; i++) {
@@ -86,9 +90,6 @@ CheckBalances.prototype = {
       offset += dbRows.length;
 
     }
-
-    console.log('oThis.checkedAddressCount', oThis.checkedAddressCount);
-    console.log('oThis.mismatchAddressCount', oThis.mismatchAddressCount);
 
     return Promise.resolve(responseHelper.successWithData({}));
 
