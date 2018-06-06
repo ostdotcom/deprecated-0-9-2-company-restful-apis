@@ -29,7 +29,7 @@ node executables/ddb_related_data_migrations/migrate_data_from_chain_to_ddb.js s
 7. Migrate transaction log data (for transactions which didn't made it to a block and type != 1) to DDB table (start and end id to be passed as params in the below command)
    
 ``` node.js
-nohup node executables/ddb_related_data_migrations/migrate_remaining_transaction_logs_data.js 1 1200
+nohup node executables/ddb_related_data_migrations/migrate_remaining_transaction_logs_data.js 1 335400 &
 ```
 
 8. Script to check balances in DDB table are in sync with those on chain
