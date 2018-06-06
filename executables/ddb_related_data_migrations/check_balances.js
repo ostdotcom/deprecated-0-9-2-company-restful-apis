@@ -28,7 +28,8 @@ const CheckBalances = function (params) {
   ;
 
   oThis.checkedAddressCount = 0;
-  oThis.mismatchAddressCount = 0;
+  oThis.mismatchAddresses = {};
+  oThis.mismatchAddressesCount = 0;
 
 };
 
@@ -77,9 +78,10 @@ CheckBalances.prototype = {
 
       if (dbRows.length == 0) {
         return Promise.resolve({
+          mismatchAddresses: JSON.stringify(oThis.mismatchAddresses),
           checkedAddressCount: oThis.checkedAddressCount,
-          mismatchAddressCount: oThis.mismatchAddressCount,
-          success_percent: ((oThis.checkedAddressCount - oThis.mismatchAddressCount) / parseFloat(oThis.checkedAddressCount) * 100)
+          mismatchAddressCount: oThis.mismatchAddressesCount,
+          success_percent: ((oThis.checkedAddressCount - oThis.mismatchAddressesCount) / parseFloat(oThis.checkedAddressCount) * 100)
         });
       }
 
@@ -110,6 +112,7 @@ CheckBalances.prototype = {
 
     let batchNo = 1
         , batchSize = 25
+        , mismatchAddresses = []
     ;
 
     while (true) {
@@ -165,14 +168,19 @@ CheckBalances.prototype = {
         oThis.checkedAddressCount += 1;
 
         if (balanceFromChain != balanceFromDdb) {
-          oThis.mismatchAddressCount += 1;
-          console.error(`balanceMismatch : address: ${address} : balanceFromChain : ${balanceFromChain} : balanceFromDdb : ${balanceFromDdb}`);
+          mismatchAddresses.push(address);
+          oThis.mismatchAddressesCount += 1;
+          logger.info(`balanceMismatch : address: ${address} : balanceFromChain : ${balanceFromChain} : balanceFromDdb : ${balanceFromDdb}`);
         }
 
       }
 
       batchNo = batchNo + 1;
 
+    }
+
+    if (mismatchAddresses.length > 0) {
+      oThis.mismatchAddresses[erc20_address] = mismatchAddresses;
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
