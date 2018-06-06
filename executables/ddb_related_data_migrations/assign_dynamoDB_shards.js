@@ -197,5 +197,5 @@ AssignShards.prototype = {
 
 };
 
-const object = new AssignShards({start_client_id: 1000});
+const object = new AssignShards({start_client_id: 1});
 object.perform().then(console.log);
