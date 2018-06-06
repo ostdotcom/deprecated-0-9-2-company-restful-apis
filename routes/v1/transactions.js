@@ -5,6 +5,7 @@ const express = require('express')
 
 const rootPrefix = '../..'
   , routeHelper = require(rootPrefix + '/routes/helper')
+  , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/transaction')
 ;
 
 const router = express.Router()
@@ -62,7 +63,22 @@ router.get('/:id', function (req, res, next) {
   req.decodedParams.apiName = 'get_transaction';
   req.decodedParams.id = req.params.id;
 
-  Promise.resolve(routeHelper.performer(req, res, next, GetTransactionService, 'r_v1_t_3'));
+
+  const dataFormatterFunc = async function(response) {
+
+    let transactionEntityFormatter = new TransactionEntityFormatterKlass(response.data)
+      , transactionEntityFormatterRsp = await transactionEntityFormatter.perform()
+    ;
+
+    delete response.data;
+
+    response.data = {};
+    response.data.result_type = 'transaction';
+    response.data.transaction = transactionEntityFormatterRsp.data;
+
+  };
+
+  Promise.resolve(routeHelper.performer(req, res, next, GetTransactionService, 'r_v1_t_3', null, dataFormatterFunc));
 });
 
 module.exports = router;

@@ -31,8 +31,7 @@ router.use('/transactions', transactionsRoutes);
 
 router.use('/transfers', transfersRoutes);
 
-//TODO: Confirm the exact route for this
-router.use('/get_balance', balancesRoutes);
+router.use('/balances', balancesRoutes);
 
 
 module.exports = router;

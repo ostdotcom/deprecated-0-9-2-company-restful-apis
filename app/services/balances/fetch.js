@@ -3,7 +3,7 @@
 /**
  * Fetch the user balance
  *
- * @module app/services/balance/fetch
+ * @module app/services/balances/fetch
  */
 
 const rootPrefix = '../../..'
@@ -33,7 +33,8 @@ Fetch.prototype = {
    * @return {promise<result>}
    */
   perform: function() {
-    const oThis = this;
+    const oThis = this
+    ;
 
     return oThis.asyncPerform()
       .catch(function(error) {
@@ -49,7 +50,7 @@ Fetch.prototype = {
             debug_options: {}
           });
         }
-      })
+      });
   },
 
   /**

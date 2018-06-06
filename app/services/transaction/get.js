@@ -6,12 +6,13 @@
  * @module app/services/transaction/get
  */
 
+const OSTStorage = require('@openstfoundation/openst-storage');
+
 const rootPrefix = '../../..'
-  , transactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/transaction')
   , basicHelper = require(rootPrefix + '/helpers/basic')
+  , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
 ;
 
 /**
@@ -28,7 +29,6 @@ const GetTransactionsService = function (params) {
   oThis.clientId = params.client_id;
   oThis.transactionUuid = params.id;
 
-  oThis.record = null;
 };
 
 GetTransactionsService.prototype = {
@@ -67,9 +67,7 @@ GetTransactionsService.prototype = {
 
     await oThis._validateId();
 
-    await oThis._fetchRecord();
-
-    return oThis._formatApiResponse();
+    return oThis._fetchRecord();
   },
 
   /**
@@ -95,7 +93,7 @@ GetTransactionsService.prototype = {
   /**
    * Fetch record
    *
-   * Sets oThis.record
+   * Fetches and returns transaction log record
    *
    * @return {promise<result>}
    */
@@ -103,10 +101,15 @@ GetTransactionsService.prototype = {
     const oThis = this
     ;
 
-    let records = await new transactionLogModel().getByTransactionUuid([oThis.transactionUuid]);
+    let transactionFetchRespone = await new OSTStorage.TransactionLogModel({
+      client_id: oThis.clientId,
+      ddb_service: ddbServiceObj
+    }).batchGetItem([oThis.transactionUuid]);
+
+    let transactionLogData = transactionFetchRespone.data[oThis.transactionUuid];
 
     // if no records found, return error.
-    if (!records[0]) {
+    if (!transactionLogData) {
       return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_t_g_3',
         api_error_identifier: 'data_not_found',
@@ -115,7 +118,7 @@ GetTransactionsService.prototype = {
     }
 
     // if the record if from another client_id, return error
-    if (oThis.clientId != records[0].client_id) {
+    if (oThis.clientId != transactionLogData.client_id) {
       return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_t_g_4',
         api_error_identifier: 'data_not_found',
@@ -123,39 +126,7 @@ GetTransactionsService.prototype = {
       }));
     }
 
-    oThis.record = records[0];
-
-    return Promise.resolve(responseHelper.successWithData({}));
-  },
-
-  /**
-   * Format api response
-   *
-   * @return {promise<result>}
-   */
-  _formatApiResponse: async function () {
-    const oThis = this
-    ;
-
-    let apiResponseData = {
-      result_type: 'transaction'
-    };
-
-    let transactionEntityFormatter = new TransactionEntityFormatterKlass(oThis.record)
-      , transactionEntityFormatterRsp = await transactionEntityFormatter.perform()
-    ;
-
-    if (transactionEntityFormatterRsp.isFailure()) {
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_t_g_5',
-        api_error_identifier: 'data_not_found',
-        debug_options: {}
-      }));
-    }
-
-    apiResponseData.transaction = transactionEntityFormatterRsp.data;
-
-    return responseHelper.successWithData(apiResponseData);
+    return Promise.resolve(responseHelper.successWithData(transactionLogData));
   }
 };
 

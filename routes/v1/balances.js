@@ -21,7 +21,7 @@ const router = express.Router()
  */
 router.get('/:id', function (req, res, next) {
 
-  const getBalanceKlass = require(rootPrefix + '/app/services/balance/fetch');
+  const getBalanceKlass = require(rootPrefix + '/app/services/balances/fetch');
   req.decodedParams.apiName = 'get_balance';
 
   Promise.resolve(routeHelper.performer(req, res, next, getBalanceKlass, 'r_v1_b_1'));
