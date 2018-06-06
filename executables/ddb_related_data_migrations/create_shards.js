@@ -23,8 +23,8 @@ const CreateShards = function (params) {
   const oThis = this
   ;
 
-  oThis.tokenBalancesShardCount = 4;
-  oThis.transactionLogShardCount = 5;
+  oThis.tokenBalancesShardCount = 2;
+  oThis.transactionLogShardCount = 2;
 
 };
 
