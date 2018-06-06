@@ -35,6 +35,7 @@ const rootPrefix = '../..'
   , Erc20ContractUuidCacheKlass = require(rootPrefix + '/lib/cache_multi_management/erc20_contract_uuid')
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
   , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
+  , commonValidator = require(rootPrefix + '/lib/validators/common')
 ;
 
 const MigrateTokenBalancesKlass = function (params) {
@@ -681,34 +682,34 @@ MigrateTokenBalancesKlass.prototype = {
             updated_at: new Date(existingTxData['updated_at']).getTime()
           };
 
-          if (existingInputParams['amount_in_wei']) {
+          if (!commonValidator.isVarNull(existingInputParams['amount_in_wei'])) {
             txFormattedData['amount_in_wei'] = existingInputParams['amount_in_wei']
           }
-          if (existingFormattedReceipt['bt_transfer_in_wei']) {
+          if (!commonValidator.isVarNull(existingFormattedReceipt['bt_transfer_in_wei'])) {
             txFormattedData['amount_in_wei'] = existingFormattedReceipt['bt_transfer_in_wei']
           }
-          if (existingInputParams['to_address']) {
+          if (!commonValidator.isVarNull(existingInputParams['to_address'])) {
             txFormattedData['to_address'] = existingInputParams['to_address']
           }
-          if (existingInputParams['from_address']) {
+          if (!commonValidator.isVarNull(existingInputParams['from_address'])) {
             txFormattedData['from_address'] = existingInputParams['from_address']
           }
-          if (existingInputParams['from_uuid']) {
+          if (!commonValidator.isVarNull(existingInputParams['from_uuid'])) {
             txFormattedData['from_uuid'] = existingInputParams['from_uuid']
           }
-          if (existingInputParams['to_uuid']) {
+          if (!commonValidator.isVarNull(existingInputParams['to_uuid'])) {
             txFormattedData['to_uuid'] = existingInputParams['to_uuid']
           }
-          if (existingInputParams['token_symbol']) {
+          if (!commonValidator.isVarNull(existingInputParams['token_symbol'])) {
             txFormattedData['token_symbol'] = existingInputParams['token_symbol']
           }
-          if (existingInputParams['transaction_kind_id']) {
+          if (!commonValidator.isVarNull(existingInputParams['transaction_kind_id'])) {
             txFormattedData['action_id'] = existingInputParams['transaction_kind_id']
           }
-          if (existingFormattedReceipt['error_code']) {
+          if (!commonValidator.isVarNull(existingFormattedReceipt['error_code'])) {
             txFormattedData['error_code'] = existingFormattedReceipt['error_code']
           }
-          if (existingFormattedReceipt['commission_amount_in_wei']) {
+          if (!commonValidator.isVarNull(existingFormattedReceipt['commission_amount_in_wei'])() {
             txFormattedData['commission_amount_in_wei'] = existingFormattedReceipt['commission_amount_in_wei']
           }
 
@@ -746,12 +747,12 @@ MigrateTokenBalancesKlass.prototype = {
           };
 
           let fromUuid = addressUuidMap[txDataFromChain['from'].toLowerCase()];
-          if (fromUuid) {
+          if (!commonValidator.isVarNull(fromUuid)) {
             txFormattedData['from_uuid'] = fromUuid
           }
 
           let toUuid = addressUuidMap[txDataFromChain['to'].toLowerCase()];
-          if (toUuid) {
+          if (!commonValidator.isVarNull(toUuid)) {
             txFormattedData['to_uuid'] = toUuid
           }
 
@@ -762,11 +763,11 @@ MigrateTokenBalancesKlass.prototype = {
           for (let j = 0; j < txFormattedData['transfer_events'].length; j++) {
             let event_data = txFormattedData['transfer_events'][j];
             let fromUuid = addressUuidMap[event_data['from_address']];
-            if (fromUuid) {
+            if (!commonValidator.isVarNull(fromUuid)) {
               event_data['from_uuid'] = fromUuid
             }
             let toUuid = addressUuidMap[event_data['to_address']];
-            if (toUuid) {
+            if (!commonValidator.isVarNull(toUuid)) {
               event_data['to_uuid'] = toUuid
             }
           }
@@ -778,6 +779,7 @@ MigrateTokenBalancesKlass.prototype = {
         formattedTransactionsData[txFormattedData['client_id']].push(txFormattedData);
 
       }
+
     }
 
     logger.info('completed _fetchFormattedTransactionsForMigration');
