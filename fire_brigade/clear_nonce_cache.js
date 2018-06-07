@@ -1,7 +1,7 @@
 const rootPrefix = '..'
   , coreConstants = require(rootPrefix + '/config/core_constants')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , cacheImplementer = require(rootPrefix + '/lib/cache_management/balance_and_nonce_cache_engine')
+  , cacheImplementer = require(rootPrefix + '/lib/cache_management/engine/nonce')
 ;
 
 const ClearNonceCache = function(params) {
