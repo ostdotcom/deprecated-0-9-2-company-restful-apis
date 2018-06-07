@@ -28,6 +28,9 @@ const MigrateTransactionLogsKlass = function (params) {
   oThis.startId = params.start_id;
   oThis.endId = params.end_id;
 
+  oThis.totalCheckedUuidsCount = 0;
+  oThis.totalVerifiedUuidsCount = 0;
+
 };
 
 MigrateTransactionLogsKlass.prototype = {
@@ -74,7 +77,11 @@ MigrateTransactionLogsKlass.prototype = {
       var dbRows = await new TransactionLogModelMysql().getByRange(oThis.startId, oThis.endId, pageLimit, offset);
 
       if (dbRows.length == 0) {
-        return Promise.resolve("Done");
+        return Promise.resolve({
+          totalCheckedUuidsCount: oThis.totalCheckedUuidsCount,
+          totalVerifiedUuidsCount: oThis.totalVerifiedUuidsCount,
+          success_percent: (oThis.totalCheckedUuidsCount - oThis.totalVerifiedUuidsCount) / parseFloat(oThis.totalCheckedUuidsCount) * 100
+        });
       }
 
       await oThis._migrateRecords(dbRows);
@@ -208,7 +215,7 @@ MigrateTransactionLogsKlass.prototype = {
   _verifyDataInTransactionLogs: async function (clientIdtxUuidsToVerify) {
 
     const oThis = this
-        , ddbInQueryFetch = 25
+        , ddbInQueryFetch = 100
     ;
 
     let clientIdMissingTxUuidsMap = {}
@@ -241,10 +248,13 @@ MigrateTransactionLogsKlass.prototype = {
         if(rsp.isFailure()) {return Promise.reject(rsp)};
 
         for(let i=0; i<batchedTxUuidsToVerify.length; i++) {
+          oThis.totalCheckedUuidsCount += 1;
           let uuidToVerify = batchedTxUuidsToVerify[i];
           if (!rsp.data[uuidToVerify]) {
             clientIdMissingTxUuidsMap[clientId] = clientIdMissingTxUuidsMap[clientId] || [];
             clientIdMissingTxUuidsMap[clientId].push(uuidToVerify);
+          } else {
+            oThis.totalVerifiedUuidsCount += 1;
           }
         }
 
@@ -289,5 +299,5 @@ const validateAndSanitize = function () {
 validateAndSanitize();
 
 const obj = new MigrateTransactionLogsKlass({start_id: startId, end_id: endId});
-obj.perform();
+obj.perform().then(console.log);
 
