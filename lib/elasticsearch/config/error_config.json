@@ -25,6 +25,16 @@
       "code": "BAD_REQUEST",
       "message": "At least one parameter is invalid or missing."
     },
+    "elasticsearch_api_error": {
+      "http_code": "500",
+      "code": "INTERNAL_SERVER_ERROR",
+      "message": "Something went wrong."
+    },
+    "elasticsearch_api_timeout": {
+      "http_code": "408",
+      "code": "REQUEST_TIMEOUT",
+      "message": "Request timed-out."
+    },
     "no_operation_specified": {
       "http_code": "400",
       "code": "BAD_REQUEST",
