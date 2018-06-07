@@ -683,17 +683,13 @@ MigrateTokenBalancesKlass.prototype = {
             txFormattedData['amount_in_wei'] = existingInputParams['amount_in_wei']
           } else if (!commonValidator.isVarNull(existingFormattedReceipt['bt_transfer_in_wei'])) {
             txFormattedData['amount_in_wei'] = existingFormattedReceipt['bt_transfer_in_wei']
-          } else if (!commonValidator.isVarNull(existingInputParams['amount'])) {
-            // check if amount is already in wei
-            if(basicHelper.isGreaterThanMinWei(existingInputParams['amount'])) {
-              txFormattedData['amount_in_wei'] = existingInputParams['amount'];
-            } else {
-              txFormattedData['amount_in_wei'] = basicHelper.convertToWei(existingInputParams['amount']).toString(10);
-            }
           }
 
           if (!commonValidator.isVarNull(existingInputParams['commission_percent'])) {
             txFormattedData['commission_percent'] = existingInputParams['commission_percent']
+          }
+          if (!commonValidator.isVarNull(existingInputParams['amount'])) {
+            txFormattedData['amount'] = existingInputParams['amount']
           }
           if (!commonValidator.isVarNull(existingInputParams['to_address'])) {
             txFormattedData['to_address'] = existingInputParams['to_address']
