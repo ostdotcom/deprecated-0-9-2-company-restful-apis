@@ -24,6 +24,11 @@
       "http_code": "400",
       "code": "BAD_REQUEST",
       "message": "At least one parameter is invalid or missing."
+    },
+    "no_operation_specified": {
+      "http_code": "400",
+      "code": "BAD_REQUEST",
+      "message": "Nothing to do."
     }
   }
 }
