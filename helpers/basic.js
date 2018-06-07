@@ -299,6 +299,18 @@ BasicHelperKlass.prototype = {
 
     return str.split(',').map(ele => ele.trim());
 
+  },
+
+  /**
+   * check if number is already in wei
+   * by checking if it is greater then min wei value
+   *
+   * @param {String} str
+   *
+   * @return {Array}
+   */
+  isGreaterThanMinWei: function(str) {
+    return this.convertToBigNumber(str) >= this.convertToBigNumber(10).toPower(18)
   }
 
 };
