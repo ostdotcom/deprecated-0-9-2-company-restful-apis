@@ -499,7 +499,7 @@ ExecuteTransactionService.prototype = {
       client_id: oThis.clientId,
       ddb_service: ddbServiceObj,
       auto_scaling: autoscalingServiceObj
-    }).batchPutItem([oThis.transactionLogData]);
+    }).updateItem(oThis.transactionLogData);
 
     return responseHelper.successWithData({});
   },

@@ -280,7 +280,7 @@ ExecuteSTPTransferService.prototype = {
     let insertedRec = await new OSTStorage.TransactionLogModel({
       client_id: oThis.clientId,
       ddb_service: ddbServiceObj
-    }).batchPutItem(dataToInsert);
+    }).updateItem(dataToInsert);
 
     if (!insertedRec.data) {
        return Promise.reject(responseHelper.error({
