@@ -59,6 +59,7 @@ const routeMethods = {
 
     var handleResponse = async function (response) {
 
+      console.log('-----response in helper', response);
       if (response.isSuccess() && dataFormatterFunc) {
         // if requires this function could reformat data as per API version requirements.
         await dataFormatterFunc(response);

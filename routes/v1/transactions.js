@@ -43,10 +43,33 @@ router.post('/', function (req, res, next) {
  * @routeparam {number} :limit (optional) - Min 1, Max 100, Default 10.
  */
 router.get('/', function (req, res, next) {
-  const GetTransactionListService = require(rootPrefix + '/app/services/transaction/list');
+  const GetTransactionListService = require(rootPrefix + '/app/services/transaction/list/for_client_id');
   req.decodedParams.apiName = 'list_transactions';
 
-  Promise.resolve(routeHelper.performer(req, res, next, GetTransactionListService, 'r_v1_t_2'));
+  const dataFormatterFunc = async function(response) {
+
+    let transactionData = [];
+
+    for (let key in response.data) {
+      let data = response.data[key];
+      console.log('----data', data);
+      let transactionEntityFormatter = new TransactionEntityFormatterKlass(data)
+        , transactionEntityFormatterRsp = await transactionEntityFormatter.perform()
+      ;
+
+      transactionData.push(transactionEntityFormatterRsp.data);
+    }
+
+    delete response.data;
+
+    response.data = {};
+    response.data.meta = { next_page_payload: {}}; // TODO: Need to be populated appropriately
+    response.data.result_type = 'transactions';
+    response.data.transactions = transactionData;
+
+  };
+
+  Promise.resolve(routeHelper.performer(req, res, next, GetTransactionListService, 'r_v1_t_2', null, dataFormatterFunc));
 });
 
 /**

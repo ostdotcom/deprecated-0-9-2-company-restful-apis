@@ -9,6 +9,8 @@
  * @module app/services/transaction/get_detail
  */
 
+const OSTStorage = require('@openstfoundation/openst-storage');
+
 const rootPrefix = '../../..'
   , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type')
@@ -18,8 +20,8 @@ const rootPrefix = '../../..'
   , UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/user')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/transaction')
   , ActionEntityFormatterKlass = require(rootPrefix +'/lib/formatter/entities/latest/action')
+  , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
 ;
 
 const GetTransactionDetailKlass = function (params) {
@@ -82,6 +84,7 @@ GetTransactionDetailKlass.prototype = {
 
     oThis.response.result_type = "transactions";
     oThis.response.transactions = [];
+
     for (var i = 0; i < oThis.transactionUuids.length; i++) {
       var key = oThis.transactionUuids[i];
       var transactionData = oThis.transactionUuidToDataMap[key];
@@ -104,10 +107,14 @@ GetTransactionDetailKlass.prototype = {
     const oThis = this
     ;
 
-    const transactionLogRecords = await new TransactionLogModel()
-      .getByTransactionUuid(oThis.transactionUuids);
+    let transactionFetchRespone = await new OSTStorage.TransactionLogModel({
+      client_id: oThis.clientId,
+      ddb_service: ddbServiceObj
+    }).batchGetItem(oThis.transactionUuids);
 
-    if (!transactionLogRecords || transactionLogRecords.length == 0) {
+    let transactionLogRecordsHash = transactionFetchRespone.data;
+
+    if (!transactionLogRecordsHash || Object.keys(transactionLogRecordsHash).length == 0) {
       return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_t_gd_3',
         api_error_identifier: 'data_not_found',
@@ -115,29 +122,19 @@ GetTransactionDetailKlass.prototype = {
       }));
     }
 
-    for (var i = 0; i < transactionLogRecords.length; i++) {
-      const transactionLogRecord = transactionLogRecords[i]
-        , formattedReceipt = transactionLogRecord.formatted_receipt
-        , inputParams = transactionLogRecord.input_params
-        , gasPriceBig = basicHelper.convertToBigNumber(transactionLogRecord.gas_price)
+    for (var transactionLog in transactionLogRecordsHash) {
+      const transactionLogRecord = transactionLogRecordsHash[transactionLog]
       ;
 
-      let transactionEntityFormatter = new TransactionEntityFormatterKlass(transactionLogRecord)
-        , transactionEntityFormatterRsp = await transactionEntityFormatter.perform()
-      ;
-
-      if (transactionEntityFormatterRsp.isFailure()) {
-        continue;
-      }
-
-      oThis.chainMaps[transactionLogRecord.transaction_uuid] = new TransactionLogModel().chainTypes[transactionLogRecord.chain_type];
-      oThis.transactionTypeMap[inputParams.transaction_kind_id] = {};
+      oThis.chainMaps[transactionLogRecord.transaction_uuid] = new TransactionLogModel().chainTypes[transactionLogRecord.chain_type]; //TODO: How to get this?
+      oThis.transactionTypeMap[transactionLogRecord.action_id] = {};
       oThis.clientTokenMap[transactionLogRecord.client_token_id] = {};
 
-      oThis.economyUserMap[inputParams.from_uuid] = {};
-      oThis.economyUserMap[inputParams.to_uuid] = {};
+      oThis.economyUserMap[transactionLogRecord.from_uuid] = {};
+      oThis.economyUserMap[transactionLogRecord.to_uuid] = {};
 
-      oThis.transactionUuidToDataMap[transactionLogRecord.transaction_uuid] =  transactionEntityFormatterRsp.data;
+      oThis.transactionUuidToDataMap[transactionLogRecord.transaction_uuid] =  transactionLogRecord;
+
     }
 
     return Promise.resolve();
