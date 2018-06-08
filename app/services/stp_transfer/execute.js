@@ -21,7 +21,6 @@ const rootPrefix = '../../..'
   , transactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , basicHelper = require(rootPrefix + '/helpers/basic')
-  , STPTransferEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/stp_transfer')
   , notificationTopics = require(rootPrefix + '/lib/global_constant/notification_topics')
   , commonValidator = require(rootPrefix + '/lib/validators/common')
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
@@ -111,16 +110,7 @@ ExecuteSTPTransferService.prototype = {
 
     let dbRecord = dbResponse.data[oThis.transactionUuid];
 
-    const stpTransferEntityFormatter = new STPTransferEntityFormatterKlass(dbRecord)
-      , stpTransferEntityFormatterRsp = await stpTransferEntityFormatter.perform()
-    ;
-
-    const apiResponseData = {
-      result_type: 'transfer',
-      transfer: stpTransferEntityFormatterRsp.data
-    };
-
-    return Promise.resolve(responseHelper.successWithData(apiResponseData));
+    return responseHelper.successWithData(dbRecord);
   },
 
   /**

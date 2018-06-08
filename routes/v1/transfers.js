@@ -5,6 +5,7 @@ const express = require('express')
 
 const rootPrefix = '../..'
   , routeHelper = require(rootPrefix + '/routes/helper')
+  , StPrimeTransferFormatter = require(rootPrefix + '/lib/formatter/entities/latest/stp_transfer')
 ;
 
 const router = express.Router()
@@ -23,7 +24,20 @@ router.post('/', function (req, res, next) {
 
   const ExecuteSTPTransferService = require(rootPrefix + '/app/services/stp_transfer/execute');
 
-  Promise.resolve(routeHelper.performer(req, res, next, ExecuteSTPTransferService, 'r_v1_stp_t_1'));
+  const dataFormatterFunc = async function(response) {
+
+    let stPrimeTransferFormatter = new StPrimeTransferFormatter(response.data)
+      , stPrimeTransferFormatterResponse = await stPrimeTransferFormatter.perform()
+    ;
+
+    delete response.data;
+
+    response.data.result_type = 'transfer';
+    response.data.transfer = stPrimeTransferFormatterResponse.data;
+
+  };
+
+  Promise.resolve(routeHelper.performer(req, res, next, ExecuteSTPTransferService, 'r_v1_stp_t_1', null, dataFormatterFunc));
 });
 
 /**
@@ -43,7 +57,28 @@ router.get('/', function (req, res, next) {
   const GetSTPTransferListService = require(rootPrefix + '/app/services/stp_transfer/list');
   req.decodedParams.apiName = 'list_stp_transfers';
 
-  Promise.resolve(routeHelper.performer(req, res, next, GetSTPTransferListService, 'r_v1_stp_t_2'));
+  const dataFormatterFunc = async function (response) {
+    let recordList = response.data;
+
+    delete response.data;
+
+    let resultData = [];
+
+    for (let i=0; i < recordList.length; i++) {
+      let stPrimeTransferFormatter = new StPrimeTransferFormatter(recordList[0])
+        , stPrimeTransferFormatterResponse = await stPrimeTransferFormatter.perform()
+      ;
+
+      resultData.push(stPrimeTransferFormatterResponse.data);
+    }
+
+    response.data = {};
+    response.data.result_type ='transfers';
+    response.data.transfers = resultData;
+
+  };
+
+  Promise.resolve(routeHelper.performer(req, res, next, GetSTPTransferListService, 'r_v1_stp_t_2', null, dataFormatterFunc));
 });
 
 /**
@@ -60,8 +95,21 @@ router.get('/:id', function (req, res, next) {
 
   req.decodedParams.apiName = 'get_stp_transfer';
   req.decodedParams.id = req.params.id;
+  
+  const dataFormatterFunc = async function (response) {
 
-  Promise.resolve(routeHelper.performer(req, res, next, GetSTPTransferService, 'r_v1_stp_t_3'));
+    let stPrimeTransferFormatter = new StPrimeTransferFormatter(response.data)
+      , stPrimeTransferFormatterResponse = await stPrimeTransferFormatter.perform()
+    ;
+
+    delete response.data;
+
+    response.data = {};
+    response.data.result_type ='transfer';
+    response.data.transfer = stPrimeTransferFormatterResponse.data;
+  };
+
+  Promise.resolve(routeHelper.performer(req, res, next, GetSTPTransferService, 'r_v1_stp_t_4', null, dataFormatterFunc));
 });
 
 module.exports = router;

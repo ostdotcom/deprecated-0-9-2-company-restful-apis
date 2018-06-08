@@ -83,9 +83,7 @@ ListStpTransfersService.prototype = {
 
     await oThis._validateAndSanitize();
 
-    await oThis._fetchRecords();
-
-    return oThis._formatApiResponse();
+    return oThis._fetchRecords();
   },
 
   /**
@@ -201,69 +199,15 @@ ListStpTransfersService.prototype = {
       }));
     }
 
-    for (let key in transactionResponse.data) {
-      let record = transactionResponse.data[key];
-      oThis.listRecords.push(record);
+    let recordList = [];
+
+    for (let i=0; i < oThis.uuids; i++) {
+
+      let record = transactionResponse.data[oThis.uuids[i]];
+      recordList.push(record);
     }
 
-    return Promise.resolve(responseHelper.successWithData({}));
-  },
-
-  /**
-   * Validate and sanitize
-   *
-   * Sets oThis.listRecords
-   *
-   * @return {promise<result>}
-   */
-  _formatApiResponse: async function () {
-    const oThis = this
-    ;
-
-    let apiResponseData = {
-      result_type: 'transfers',
-      transfers: [],
-      meta: {
-        next_page_payload: {}
-      }
-    };
-
-    let hasMore = false;
-
-    for (var i = 0; i < oThis.listRecords.length; i++) {
-      let dbRecord = oThis.listRecords[i];
-
-      if (i == oThis.limit) {
-        // as we fetched limit + 1, ignore that extra one
-        hasMore = true;
-        continue;
-      }
-
-      let stpTransferEntityFormatter = new StpTransferEntityFormatterKlass(dbRecord)
-        , stpTransferEntityFormatterRsp = await stpTransferEntityFormatter.perform()
-      ;
-
-      if (stpTransferEntityFormatterRsp.isFailure()) continue;
-
-      apiResponseData.transfers.push(stpTransferEntityFormatterRsp.data);
-    }
-
-    if (hasMore) {
-      let nextPagePayload = {
-        order_by: oThis.orderBy,
-        order: oThis.order,
-        limit: oThis.limit,
-        page_no: oThis.pageNo + 1
-      };
-
-      if (oThis.idsFilterStr && oThis.idsFilterStr.length > 0) {
-        nextPagePayload.id = oThis.idsFilterStr;
-      }
-
-      apiResponseData.meta.next_page_payload = nextPagePayload;
-    }
-
-    return responseHelper.successWithData(apiResponseData);
+    return Promise.resolve(responseHelper.successWithData(recordList));
   }
 
 };

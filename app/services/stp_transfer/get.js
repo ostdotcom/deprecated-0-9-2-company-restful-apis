@@ -64,9 +64,8 @@ GetStPTransferService.prototype = {
 
     await oThis._validateId();
 
-    await oThis._fetchRecord();
+    return oThis._fetchRecord();
 
-    return oThis._formatApiResponse();
   },
 
   /**
@@ -92,7 +91,6 @@ GetStPTransferService.prototype = {
   /**
    * Async perform
    *
-   * Sets oThis.record
    *
    * @return {promise<result>}
    */
@@ -133,39 +131,7 @@ GetStPTransferService.prototype = {
       }));
     }
 
-    oThis.record = transactionLog;
-
-    return Promise.resolve({});
-  },
-
-  /**
-   * Format api response
-   *
-   * @return {promise<result>}
-   */
-  _formatApiResponse: async function () {
-    const oThis = this
-    ;
-
-    let apiResponseData = {
-      result_type: 'transfer'
-    };
-
-    let stPrimeTransferFormatter = new StPrimeTransferFormatter(oThis.record)
-      , stPrimeTransferFormatterResponse = await stPrimeTransferFormatter.perform()
-    ;
-
-    if (stPrimeTransferFormatterResponse.isFailure()) {
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_stpt_g_6',
-        api_error_identifier: 'data_not_found',
-        debug_options: {}
-      }));
-    }
-
-    apiResponseData.transfer = stPrimeTransferFormatterResponse.data;
-
-    return responseHelper.successWithData(apiResponseData);
+    return responseHelper.successWithData(transactionLog);
   }
 
 };
