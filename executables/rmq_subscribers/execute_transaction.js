@@ -44,14 +44,11 @@ const promiseExecutor = function (onResolve, onReject, params ) {
   const parsedParams = JSON.parse(params);
 
   const payload = parsedParams.message.payload
-    , transactionLogId = payload.transactionLogId
-    , transactionUuid = payload.transactionUuid
-    , rateLimitCount = payload.rateLimitCount
     , executeTransactionObj = new ExecuteTransferBt(
       {
-        transactionLogId: transactionLogId,
-        transactionUuid: transactionUuid,
-        rateLimitCount: rateLimitCount
+        transactionUuid: payload.transactionUuid,
+        clientId: payload.clientId,
+        rateLimitCount: payload.rateLimitCount
       })
   ;
 

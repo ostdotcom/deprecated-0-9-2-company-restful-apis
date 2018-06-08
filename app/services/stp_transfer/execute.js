@@ -321,8 +321,8 @@ ExecuteSTPTransferService.prototype = {
         message: {
           kind: 'background_job',
           payload: {
-            transaction_log_id: oThis.transactionLogId,
-            transaction_uuid: oThis.transactionUuid
+            transaction_uuid: oThis.transactionUuid,
+            client_id: oThis.clientId
           }
         }
       }

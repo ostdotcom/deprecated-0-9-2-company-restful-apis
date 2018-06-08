@@ -7,6 +7,7 @@
  */
 
 const openSTNotification = require('@openstfoundation/openst-notification')
+  , openStorage = require('@openstfoundation/openst-storage')
   , uuid = require("uuid")
 ;
 
@@ -28,6 +29,9 @@ const rootPrefix = '../../..'
   , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/transaction')
   , commonValidator = require(rootPrefix + '/lib/validators/common')
   , ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type')
+  , TransactionLogModelDdb = openStorage.TransactionLogModel
+  , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
+  , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
 ;
 
 /**
@@ -50,15 +54,17 @@ const ExecuteTransactionService = function (params) {
   oThis.fromUuid = params.from_user_id;
   oThis.toUuid = params.to_user_id;
   oThis.transactionKind = params.transaction_kind;
-  oThis.transactionKindId = params.action_id;
+  oThis.actionId = params.action_id;
   oThis.amount = params.amount;
   oThis.commissionPercent = params.commission_percent;
 
-  oThis.transactionLogId = null;
+  oThis.transactionLogData = null;
   oThis.transactionUuid = uuid.v4();
   oThis.tokenSymbol = null;
   oThis.transactionTypeRecord = null;
   oThis.clientBrandedToken = null;
+  oThis.toUserObj = null;
+  oThis.fromUserObj = null;
 };
 
 ExecuteTransactionService.prototype = {
@@ -110,9 +116,7 @@ ExecuteTransactionService.prototype = {
     // Transaction would be set in background & response would be returned with uuid.
     await oThis.enqueueTxForExecution();
 
-    let dbRecords = await new transactionLogModel().getById([oThis.transactionLogId]);
-
-    const transactionEntityFormatter = new TransactionEntityFormatterKlass(dbRecords[0])
+    const transactionEntityFormatter = new TransactionEntityFormatterKlass(oThis.transactionLogData)
       , transactionEntityFormatterRsp = await transactionEntityFormatter.perform()
     ;
 
@@ -182,6 +186,7 @@ ExecuteTransactionService.prototype = {
       }));
     }
 
+    oThis.erc20ContractAddress = btSecureCacheFetchResponse.data.token_erc20_address;
     oThis.clientBrandedToken = btSecureCacheFetchResponse.data;
 
     return responseHelper.successWithData({});
@@ -207,9 +212,9 @@ ExecuteTransactionService.prototype = {
       if (clientTransactionTypeCacheFetchResponse.isFailure()) return Promise.reject(clientTransactionTypeCacheFetchResponse);
 
       oThis.transactionTypeRecord = clientTransactionTypeCacheFetchResponse.data;
-    } else if (oThis.transactionKindId) {
+    } else if (oThis.actionId) {
       let clientTransactionTypeCacheFetchResponse = await (new ClientTransactionTypeFromIdCache(
-        {id: oThis.transactionKindId})).fetch();
+        {id: oThis.actionId})).fetch();
       if (clientTransactionTypeCacheFetchResponse.isFailure()) {
         return Promise.reject(responseHelper.paramValidationError({
           internal_error_identifier: 's_t_e_24',
@@ -240,7 +245,7 @@ ExecuteTransactionService.prototype = {
       }));
     }
 
-    oThis.transactionKindId = oThis.transactionTypeRecord.id;
+    oThis.actionId = oThis.transactionTypeRecord.id;
     oThis.transactionKind = oThis.transactionTypeRecord.name;
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -430,13 +435,13 @@ ExecuteTransactionService.prototype = {
       }));
     }
 
-    let fromUSer = managedAddressCacheFetchResponse.data[oThis.fromUuid];
-    if (!fromUSer || fromUSer.client_id != oThis.clientId || fromUSer.status != managedAddressesConst.activeStatus) {
+    oThis.fromUserObj = managedAddressCacheFetchResponse.data[oThis.fromUuid];
+    if (!oThis.fromUserObj || oThis.fromUserObj.client_id != oThis.clientId || oThis.fromUserObj.status != managedAddressesConst.activeStatus) {
       return Promise.reject(oThis._invalid_from_user_id_error('s_t_e_12'));
     }
 
-    let toUser = managedAddressCacheFetchResponse.data[oThis.toUuid];
-    if (!toUser || toUser.client_id != oThis.clientId || toUser.status != managedAddressesConst.activeStatus) {
+    oThis.toUserObj = managedAddressCacheFetchResponse.data[oThis.toUuid];
+    if (!oThis.toUserObj || oThis.toUserObj.client_id != oThis.clientId || oThis.toUserObj.status != managedAddressesConst.activeStatus) {
       return Promise.reject(oThis._invalid_to_user_id_error('s_t_e_13'));
     }
 
@@ -471,30 +476,30 @@ ExecuteTransactionService.prototype = {
     const oThis = this
     ;
 
-    let inputParams = {
-      from_uuid: oThis.fromUuid,
-      to_uuid: oThis.toUuid,
-      transaction_kind: oThis.transactionKind,
-      token_symbol: oThis.tokenSymbol,
-      transaction_kind_id: oThis.transactionKindId,
-      amount: oThis.amount,
-      commission_percent: oThis.commissionPercent
-    };
-
-    let insertedRec = await new transactionLogModel().insertRecord({
+    oThis.transactionLogData = {
+      transaction_uuid: oThis.transactionUuid,
       client_id: oThis.clientId,
       client_token_id: oThis.clientBrandedToken.id,
       transaction_type: new transactionLogModel().invertedTransactionTypes[transactionLogConst.tokenTransferTransactionType],
-      input_params: inputParams,
-      chain_type: new transactionLogModel().invertedChainTypes[transactionLogConst.utilityChainType],
+      amount: oThis.amount,
+      from_address: oThis.fromUserObj.ethereum_address,
+      from_uuid: oThis.fromUuid,
+      to_address: oThis.toUserObj.ethereum_address,
+      to_uuid: oThis.toUuid,
+      token_symbol: oThis.tokenSymbol,
+      action_id: oThis.actionId,
+      commission_percent: oThis.commissionPercent,
+      gas_price: basicHelper.convertToBigNumber(chainInteractionConstants.UTILITY_GAS_PRICE).toString(10),
       status: new transactionLogModel().invertedStatuses[transactionLogConst.processingStatus],
-      transaction_uuid: oThis.transactionUuid,
-      gas_price: basicHelper.convertToBigNumber(
-        chainInteractionConstants.UTILITY_GAS_PRICE
-      ).toString(10) // converting hex to base 10
-    });
+      created_at: Date.now(),
+      updated_at: Date.now()
+    };
 
-    oThis.transactionLogId = insertedRec.insertId;
+    await new TransactionLogModelDdb({
+      client_id: oThis.clientId,
+      ddb_service: ddbServiceObj,
+      auto_scaling: autoscalingServiceObj
+    }).batchPutItem([oThis.transactionLogData]);
 
     return responseHelper.successWithData({});
   },
@@ -524,8 +529,8 @@ ExecuteTransactionService.prototype = {
         message: {
           kind: 'execute_transaction',
           payload: {
-            transactionLogId: oThis.transactionLogId,
             transactionUuid: oThis.transactionUuid,
+            clientId: oThis.clientId,
             rateLimitCount: rateLimitCount
           }
         }
