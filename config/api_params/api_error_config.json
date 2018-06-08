@@ -328,6 +328,11 @@
     "http_code": "400",
     "code": "BAD_REQUEST",
     "message": "At least one parameter is invalid or missing. See \"err.error_data\" array for more details."
+  },
+  "ddb_insert_failed": {
+    "http_code": "500",
+    "code": "SOMETHING_WENT_WRONG",
+    "message": "Something went wrong"
   }
 
 }

@@ -1,5 +1,7 @@
 "use strict";
 
+const OSTStorage = require('@openstfoundation/openst-storage');
+
 const rootPrefix = '../../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
@@ -7,6 +9,7 @@ const rootPrefix = '../../..'
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
   , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , basicHelper = require(rootPrefix + '/helpers/basic')
+  , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
 ;
 
 /**
@@ -97,15 +100,20 @@ GetStPTransferService.prototype = {
     const oThis = this
     ;
 
-    let transactionLogs = await new TransactionLogModel().getByTransactionUuid([oThis.transactionUuid]);
-    let transactionLog = transactionLogs[0];
-    if (!transactionLog) {
+    let transactionLogResponse = await new OSTStorage.TransactionLogModel({
+      client_id: oThis.client_id,
+      ddb_service: ddbServiceObj
+    }).batchGetItem([oThis.transactionUuid]);
+
+    if (!transactionLogResponse.data[oThis.transactionUuid]) {
       return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_stpt_g_3',
         api_error_identifier: 'data_not_found',
         debug_options: {}
       }));
     }
+
+    let transactionLog = transactionLogResponse.data[oThis.transactionUuid];
 
     if (oThis.client_id != transactionLog.client_id) {
       return Promise.reject(responseHelper.error({

@@ -6,6 +6,8 @@
  * @module app/services/stp_transfer/execute
  */
 
+const OSTStorage = require('@openstfoundation/openst-storage');
+
 const openSTNotification = require('@openstfoundation/openst-notification')
   , uuid = require("uuid")
 ;
@@ -22,6 +24,7 @@ const rootPrefix = '../../..'
   , STPTransferEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/stp_transfer')
   , notificationTopics = require(rootPrefix + '/lib/global_constant/notification_topics')
   , commonValidator = require(rootPrefix + '/lib/validators/common')
+  , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
 ;
 
 /**
@@ -93,8 +96,22 @@ ExecuteSTPTransferService.prototype = {
     // Transaction would be set in background & response would be returned with uuid.
     await oThis.enqueueTxForExecution();
 
-    let dbRecords = await new transactionLogModel().getById([oThis.transactionLogId]);
-    const stpTransferEntityFormatter = new STPTransferEntityFormatterKlass(dbRecords[0])
+    let dbResponse = await new OSTStorage.TransactionLogModel({
+      client_id: oThis.clientId,
+      ddb_service: ddbServiceObj
+    }).batchGetItem([oThis.transactionUuid]);
+
+    if (!dbResponse.data) {
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_stp_e_10',
+        api_error_identifier: 'data_not_found',
+        debug_options: {}
+      }));
+    }
+
+    let dbRecord = dbResponse.data[oThis.transactionUuid];
+
+    const stpTransferEntityFormatter = new STPTransferEntityFormatterKlass(dbRecord)
       , stpTransferEntityFormatterRsp = await stpTransferEntityFormatter.perform()
     ;
 
@@ -242,7 +259,6 @@ ExecuteSTPTransferService.prototype = {
   /**
    * Create Entry in transaction logs
    *
-   * Sets oThis.transactionLogId
    *
    * @return {promise<result>}
    */
@@ -250,26 +266,39 @@ ExecuteSTPTransferService.prototype = {
     const oThis = this
     ;
 
-    let inputParams = {
-      from_address: oThis.fromAddress,
-      to_address: oThis.toAddress,
-      amount_in_wei: oThis.amountInWei
-    };
-
-    let insertedRec = await new transactionLogModel().insertRecord({
+    let dataToInsert = {
       client_id: oThis.clientId,
-      client_token_id: oThis.clientTokenId,
-      transaction_type: new transactionLogModel().invertedTransactionTypes[transactionLogConst.stpTransferTransactionType],
-      input_params: inputParams,
-      chain_type: new transactionLogModel().invertedChainTypes[transactionLogConst.utilityChainType],
-      status: new transactionLogModel().invertedStatuses[transactionLogConst.processingStatus],
       transaction_uuid: oThis.transactionUuid,
+      block_number: null,
+      transaction_type: new transactionLogModel().invertedTransactionTypes[transactionLogConst.stpTransferTransactionType],
+      client_token_id: oThis.clientTokenId,
+      gas_used: null,
       gas_price: basicHelper.convertToBigNumber(
         chainInteractionConstants.UTILITY_GAS_PRICE
-      ).toString(10) // converting hex to base 10
-    });
+      ).toString(10), // converting hex to base 10
+      status: new transactionLogModel().invertedStatuses[transactionLogConst.processingStatus],
+      created_at: Date.now(),
+      updated_at: null,
+      from_address: oThis.fromAddress,
+      to_address: oThis.toAddress,
+      action_id: null,
+      commission_amount_in_wei: null,
+      amount_in_wei: oThis.amountInWei,
+      token_symbol: null,
+    };
 
-    oThis.transactionLogId = insertedRec.insertId;
+    let insertedRec = await new OSTStorage.TransactionLogModel({
+      client_id: oThis.clientId,
+      ddb_service: ddbServiceObj
+    }).batchPutItem(dataToInsert);
+
+    if (!insertedRec.data) {
+       return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_stp_e_7',
+        api_error_identifier: 'ddb_insert_failed',
+        debug_options: {client_id: oThis.clientId}
+      }));
+    }
 
     return responseHelper.successWithData({});
   },

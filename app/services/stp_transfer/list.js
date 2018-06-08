@@ -6,6 +6,8 @@
  * @module app/services/stp_transfer/list
  */
 
+const OSTStorage = require('@openstfoundation/openst-storage');
+
 const rootPrefix = '../../..'
   , transactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
@@ -14,6 +16,7 @@ const rootPrefix = '../../..'
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , StpTransferEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/stp_transfer')
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
+  , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
 ;
 
 /**
@@ -173,12 +176,35 @@ ListStpTransfersService.prototype = {
     const oThis = this
     ;
 
+    /*
     oThis.listRecords = await new transactionLogModel().getList(
       oThis.clientId,
       transactionLogConst.stpTransferTransactionType,
       {limit: oThis.limit + 1, offset: oThis.offset, orderBy: oThis.orderByForQuery, order: oThis.order},
       {id: oThis.idsFilterArr}
-    );
+    ); */
+
+    oThis.uuids = [];
+
+    //TODO: Call ES library method with appropriate params to get the uuids
+
+    let transactionResponse = new OSTStorage.TransactionLogModel({
+      client_id: oThis.clientId,
+      ddb_service: ddbServiceObj
+    }).batchGetItem(oThis.uuids);
+
+    if (!transactionResponse.data) {
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_stp_l_6',
+        api_error_identifier: 'data_not_found',
+        debug_options: {}
+      }));
+    }
+
+    for (let key in transactionResponse.data) {
+      let record = transactionResponse.data[key];
+      oThis.listRecords.push(record);
+    }
 
     return Promise.resolve(responseHelper.successWithData({}));
   },
@@ -210,7 +236,7 @@ ListStpTransfersService.prototype = {
       if (i == oThis.limit) {
         // as we fetched limit + 1, ignore that extra one
         hasMore = true;
-        continue
+        continue;
       }
 
       let stpTransferEntityFormatter = new StpTransferEntityFormatterKlass(dbRecord)
@@ -239,7 +265,6 @@ ListStpTransfersService.prototype = {
 
     return responseHelper.successWithData(apiResponseData);
   }
-
 
 };
 
