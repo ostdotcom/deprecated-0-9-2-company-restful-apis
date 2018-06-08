@@ -122,4 +122,4 @@ CreateShards.prototype = {
 };
 
 const object = new CreateShards({});
-object.perform().then(console.log);
+object.perform().then(function(a) {console.log(JSON.stringify(a.toHash())); process.exit(1)}).catch(function(a) {console.log(JSON.stringify(a)); process.exit(1)});

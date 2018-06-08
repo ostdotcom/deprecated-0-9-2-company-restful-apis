@@ -299,5 +299,5 @@ const validateAndSanitize = function () {
 validateAndSanitize();
 
 const obj = new MigrateTransactionLogsKlass({start_id: startId, end_id: endId});
-obj.perform().then(console.log);
+obj.perform().then(function(a) {console.log(JSON.stringify(a.toHash())); process.exit(1)}).catch(function(a) {console.log(JSON.stringify(a)); process.exit(1)});
 

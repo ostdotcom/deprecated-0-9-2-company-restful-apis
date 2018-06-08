@@ -920,4 +920,4 @@ const validateAndSanitize = function () {
 validateAndSanitize();
 
 const obj = new MigrateTokenBalancesKlass({start_block_no: startBlockNo, end_block_no: endBlockNo});
-obj.perform();
+obj.perform().then(function(a) {console.log(JSON.stringify(a.toHash())); process.exit(1)}).catch(function(a) {console.log(JSON.stringify(a)); process.exit(1)});

@@ -190,4 +190,4 @@ CheckBalances.prototype = {
 };
 
 const object = new CheckBalances({});
-object.perform().then(console.log);
+object.perform().then(function(a) {console.log(JSON.stringify(a.toHash())); process.exit(1)}).catch(function(a) {console.log(JSON.stringify(a)); process.exit(1)});
