@@ -186,7 +186,7 @@ Use the file path in the following command:
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> node ./executables/block_scanner/execute_transaction.js 1 datafilePath
+> node ./executables/block_scanner/for_tx_status_and_balance_sync.js 1 datafilePath
 ```
 
 * Start worker to process events

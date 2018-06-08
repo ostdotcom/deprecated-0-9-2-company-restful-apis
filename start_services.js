@@ -137,7 +137,7 @@ StartServicesKlass.prototype = {
     oThis._asyncCommand(cmd);
 
     logger.step("** Starting Block Scanner to mark mined transactions as done");
-    var cmd = "node executables/block_scanner/execute_transaction.js 1 "
+    var cmd = "node executables/block_scanner/for_tx_status_and_balance_sync.js 1 "
       + homeAbsolutePath
       + "/openst-setup/logs/block_scanner_execute_transaction.data"
       + " >> " + homeAbsolutePath + "/openst-setup/logs/block_scanner_execute_transaction.log";

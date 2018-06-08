@@ -3,48 +3,48 @@
 /**
  * This is the base class for block scanners
  *
- * @module executables/block_scanner/execute_transaction
- *
+ * @module executables/block_scanner/for_tx_status_and_balance_sync
  */
-
 const fs = require('fs')
   , Web3 = require('web3')
   , abiDecoder = require('abi-decoder')
   , openStPlatform = require('@openstfoundation/openst-platform')
   , openStPayments = require('@openstfoundation/openst-payments')
+  , openStorage = require('@openstfoundation/openst-storage')
 ;
 
 const rootPrefix = '../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
-  , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
+  , TransactionMeta = require(rootPrefix + '/app/models/transaction_meta')
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
+  , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
+  , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
   , PostAirdropPayKlass = openStPayments.services.airdropManager.postAirdropPay
 ;
 
-const coreAbis = openStPlatform.abis
+const TransactionLogModel = openStorage.TransactionLogModel
+  , coreAbis = openStPlatform.abis
 ;
 
 abiDecoder.addABI(coreAbis.airdrop);
 abiDecoder.addABI(coreAbis.brandedToken);
 
-const BlockScannerBaseKlass = function (params) {
+const BlockScannerForTxStatusAndBalanceSync = function (params) {
   const oThis = this
   ;
 
   oThis.filePath = params.file_path;
-
   oThis.currentBlock = 0;
-
   oThis.scannerData = {};
   oThis.interruptSignalObtained = false;
-
   oThis.highestBlock = null;
-  oThis.shortlistedTxObjs = null;
-  oThis.transactionInfo = null;
+
+  oThis.tokenTransferKind = new TransactionMeta().invertedKinds[transactionLogConst.tokenTransferTransactionType];
+  oThis.stpTransferKind = new TransactionMeta().invertedKinds[transactionLogConst.stpTransferTransactionType];
 };
 
-BlockScannerBaseKlass.prototype = {
+BlockScannerForTxStatusAndBalanceSync.prototype = {
 
   /**
    * Intentional block delay
@@ -53,7 +53,6 @@ BlockScannerBaseKlass.prototype = {
 
   /**
    * Starts the process of the script with initializing processor
-   *
    */
   init: function () {
     const oThis = this
@@ -65,12 +64,10 @@ BlockScannerBaseKlass.prototype = {
     oThis.scannerData = JSON.parse(fs.readFileSync(oThis.filePath).toString());
 
     oThis.checkForNewBlocks();
-
   },
 
   /**
    * Check for new blocks
-   *
    */
   checkForNewBlocks: async function () {
     const oThis = this
@@ -83,32 +80,34 @@ BlockScannerBaseKlass.prototype = {
 
     const processNewBlocksAsync = async function () {
       try {
-        oThis.shortlistedTxObjs = [];
-        oThis.transactionInfo = {};
+
+        oThis.initParams();
 
         await oThis.refreshHighestBlock();
 
-        // return if nothing more to do.
+        // return if nothing more to do, as of now.
         if (oThis.highestBlock - oThis.INTENTIONAL_BLOCK_DELAY <= oThis.scannerData.lastProcessedBlock) return oThis.schedule();
 
         oThis.currentBlock = oThis.scannerData.lastProcessedBlock + 1;
 
         logger.log('Current Block =', oThis.currentBlock);
 
-        const currentBlock = await oThis.web3Provider.eth.getBlock(oThis.currentBlock);
+        oThis.currentBlockInfo = await oThis.web3Provider.eth.getBlock(oThis.currentBlock);
 
-        if (!currentBlock) return oThis.schedule();
+        if (!oThis.currentBlockInfo) return oThis.schedule();
 
-        await oThis.shortlistTransactions(currentBlock.transactions);
+        await oThis.categorizeTransactions();
 
-        if (oThis.shortlistedTxObjs.length === 0) {
+        await oThis.getTransactionReceipts();
+
+        await oThis.generateToUpdateData();
+
+        if (oThis.recognizedTxHashes.length === 0) {
           oThis.updateScannerDataFile();
           return oThis.schedule();
         }
 
-        await oThis.fetchTransactionReceipts();
-
-        await oThis.updateTransactionLogs();
+        await oThis.processTokenTransferTransactions();
 
         oThis.updateScannerDataFile();
 
@@ -134,30 +133,45 @@ BlockScannerBaseKlass.prototype = {
       });
   },
 
-  shortlistTransactions: async function (allTxHashes) {
+  /**
+   * Init params
+   */
+  initParams: function () {
+    const oThis = this
+    ;
+
+    oThis.tokenTransferTxHashesMap = {};
+    oThis.recognizedTxUuidsGroupedByClientId = {};
+    oThis.recognizedTxHashes = [];
+    oThis.knownTxUuidToTxHashMap = {};
+    oThis.txHashToTxReceiptMap = {};
+    oThis.clientIdWiseDataToUpdate = {};
+  },
+
+  /**
+   * Categorize Transactions using transaction_meta table
+   */
+  categorizeTransactions: async function (allTxHashes) {
     const oThis = this
       , batchSize = 100
-      , waitingForMiningStatus = new TransactionLogModel().invertedStatuses[transactionLogConst.waitingForMiningStatus]
-      , tokenTransferTransactionType = new TransactionLogModel().invertedTransactionTypes[
-      transactionLogConst.tokenTransferTransactionType]
-      , stpTransferTransactionType = new TransactionLogModel().invertedTransactionTypes[
-      transactionLogConst.stpTransferTransactionType]
     ;
 
     var batchNo = 1
       , totalBtTransfers = 0
-      , totalSTPTransfers = 0;
+      , totalSTPTransfers = 0
+    ;
 
+    // batch-wise fetch data from transaction_meta table.
     while (true) {
       const offset = (batchNo - 1) * batchSize
-        , batchedTxHashes = allTxHashes.slice(offset, batchSize + offset)
+        , batchedTxHashes = oThis.currentBlockInfo.transactions.slice(offset, batchSize + offset)
       ;
 
       batchNo = batchNo + 1;
 
       if (batchedTxHashes.length === 0) break;
 
-      const batchedTxLogRecords = await new TransactionLogModel()
+      const batchedTxLogRecords = await new TransactionMeta()
         .getByTransactionHash(batchedTxHashes);
 
       if (batchedTxLogRecords.length === 0) continue;
@@ -166,23 +180,20 @@ BlockScannerBaseKlass.prototype = {
 
         const currRecord = batchedTxLogRecords[i];
 
-        if (currRecord.status != waitingForMiningStatus) continue;
-
-        if (currRecord.transaction_type != tokenTransferTransactionType) {
+        if (currRecord.kind == oThis.tokenTransferKind) {
           totalBtTransfers = totalBtTransfers + 1;
-        } else if (currRecord.transaction_type != stpTransferTransactionType) {
+          oThis.tokenTransferTxHashesMap[currRecord.transaction_hash] = 1;
+        } else if (currRecord.kind == oThis.stpTransferKind) {
           totalSTPTransfers = totalSTPTransfers + 1;
         } else {
           continue;
         }
 
-        oThis.shortlistedTxObjs.push(
-          {
-            id: currRecord.id,
-            transaction_hash: currRecord.transaction_hash,
-            input_params: currRecord.input_params,
-            transaction_type: new TransactionLogModel().transactionTypes[currRecord.transaction_type]
-          });
+        oThis.recognizedTxUuidsGroupedByClientId[currRecord.client_id] = oThis.recognizedTxUuidsGroupedByClientId[currRecord.client_id] || [];
+        oThis.recognizedTxUuidsGroupedByClientId[currRecord.client_id].push(currRecord.transqaction_uuid);
+
+        oThis.recognizedTxHashes.push(currRecord.transaction_hash);
+        oThis.knownTxUuidToTxHashMap[currRecord.transaction_uuid] = currRecord.transaction_hash;
       }
     }
 
@@ -192,56 +203,35 @@ BlockScannerBaseKlass.prototype = {
     return Promise.resolve();
   },
 
-  fetchTransactionReceipts: async function () {
+  /**
+   * Get transaction receipt
+   */
+  getTransactionReceipts: async function () {
     const oThis = this
       , batchSize = 100
     ;
 
-    var batchNo = 1;
+    let batchNo = 1;
 
     while (true) {
       const offset = (batchNo - 1) * batchSize
-        , batchedTxObjs = oThis.shortlistedTxObjs.slice(offset, batchSize + offset)
+        , batchedTxHashes = oThis.recognizedTxHashes.slice(offset, batchSize + offset)
         , promiseArray = []
       ;
 
       batchNo = batchNo + 1;
 
-      if (batchedTxObjs.length === 0) break;
+      if (batchedTxHashes.length === 0) break;
 
-      for (var i = 0; i < batchedTxObjs.length; i++) {
-        const currTxHash = batchedTxObjs[i].transaction_hash;
-        promiseArray.push(oThis.web3Provider.eth.getTransactionReceipt(currTxHash))
+      for (var i = 0; i < batchedTxHashes.length; i++) {
+        promiseArray.push(oThis.web3Provider.eth.getTransactionReceipt(batchedTxHashes[i]))
       }
 
       const txReceiptResults = await Promise.all(promiseArray);
 
-      for (var i = 0; i < batchedTxObjs.length; i++) {
-        const txReceipt = txReceiptResults[i];
-
-        if (batchedTxObjs[i].transaction_type == transactionLogConst.tokenTransferTransactionType) {
-          const decodedEvents = abiDecoder.decodeLogs(txReceipt.logs);
-
-          if (batchedTxObjs[i].input_params && batchedTxObjs[i].input_params.postReceiptProcessParams) {
-            const postAirdropParams = batchedTxObjs[i].input_params.postReceiptProcessParams;
-            const postAirdropPay = new PostAirdropPayKlass(postAirdropParams, decodedEvents, txReceipt.status);
-            const postAirdropPayResponse = await postAirdropPay.perform();
-
-            if (postAirdropPayResponse.isSuccess()) {
-              delete batchedTxObjs[i].input_params.postReceiptProcessParams;
-            }
-          }
-
-          const eventData = oThis._getEventData(decodedEvents);
-
-          batchedTxObjs[i].commission_amount_in_wei = eventData._commissionTokenAmount;
-          batchedTxObjs[i].bt_transfer_in_wei = eventData._tokenAmount;
-        }
-
-        batchedTxObjs[i].gas_used = txReceipt.gasUsed;
-        batchedTxObjs[i].status = parseInt(txReceipt.status, 16);
+      for (var i = 0; i < batchedTxHashes.length; i++) {
+        oThis.txHashToTxReceiptMap[batchedTxHashes[i]] = txReceiptResults[i];
       }
-
     }
 
     logger.win('* Fetching Tx Receipts DONE');
@@ -249,63 +239,95 @@ BlockScannerBaseKlass.prototype = {
     return Promise.resolve();
   },
 
-  updateTransactionLogs: async function () {
+  /**
+   * Generate to update data
+   */
+  generateToUpdateData: async function () {
     const oThis = this
-      , batchSize = 100
-      , completeStatus = new TransactionLogModel().invertedStatuses[transactionLogConst.completeStatus]
-      , failedStatus = new TransactionLogModel().invertedStatuses[transactionLogConst.failedStatus]
+      , batchSize = 50
     ;
 
-    var batchNo = 1;
+    for (var clientId in oThis.recognizedTxUuidsGroupedByClientId) {
+      let txUuids = oThis.recognizedTxUuidsGroupedByClientId[clientId];
 
-    while (true) {
-
-      const offset = (batchNo - 1) * batchSize
-        , batchedTxObjs = oThis.shortlistedTxObjs.slice(offset, batchSize + offset)
-        , promiseArray = []
+      let batchNo = 1
       ;
 
-      batchNo = batchNo + 1;
+      oThis.clientIdWiseDataToUpdate[clientId] = [];
 
-      if (batchedTxObjs.length === 0) break;
+      while (true) {
+        const offset = (batchNo - 1) * batchSize
+          , batchedTxUuids = txUuids.slice(offset, batchSize + offset)
+          , batchedTxUuidToUpdateDataMap = {}
+        ;
 
-      for (var i = 0; i < batchedTxObjs.length; i++) {
-        let formattedReceipt = batchedTxObjs[i].transaction_type == transactionLogConst.tokenTransferTransactionType ?
-          {
-            commission_amount_in_wei: batchedTxObjs[i].commission_amount_in_wei,
-            bt_transfer_in_wei: batchedTxObjs[i].bt_transfer_in_wei,
-          } :
-          {};
+        batchNo = batchNo + 1;
 
-        const status = (batchedTxObjs[i].status == 1) ? completeStatus : failedStatus;
+        if (batchedTxUuids.length === 0) break;
 
-        const promise = new TransactionLogModel().updateRecord(
-          batchedTxObjs[i].id,
-          {
-            status: status,
-            formatted_receipt: formattedReceipt,
-            input_params: batchedTxObjs[i].input_params,
-            block_number: oThis.currentBlock,
-            gas_used: batchedTxObjs[i].gas_used
+        let batchGetItemResponse = await new TransactionLogModel({
+          client_id: clientId,
+          ddb_service: ddbServiceObj,
+          auto_scaling: autoscalingServiceObj
+        }).batchGetItem(batchedTxUuids);
+
+        if (batchGetItemResponse.isFailure()) return Promise.reject(batchGetItemResponse);
+
+        let batchGetItemData = batchGetItemResponse.data;
+
+        for (var txUuid in batchGetItemData) {
+          let txHash = oThis.knownTxUuidToTxHashMap[txUuid];
+          let txReceipt = oThis.txHashToTxReceiptMap[txHash];
+
+          let toUpdateFields = {};
+
+          if (oThis.tokenTransferTxHashesMap[txHash]) {
+            const decodedEvents = abiDecoder.decodeLogs(txReceipt.logs);
+
+            if (batchGetItemData.post_receipt_process_params) {
+              const postAirdropParams = batchGetItemData.post_receipt_process_params;
+              const postAirdropPay = new PostAirdropPayKlass(postAirdropParams, decodedEvents, txReceipt.status);
+              await postAirdropPay.perform();
+            }
+
+            const eventData = oThis._getEventData(decodedEvents);
+
+            toUpdateFields = {
+              commission_amount_in_wei: eventData._commissionTokenAmount,
+              bt_transfer_in_wei: eventData._tokenAmount
+            };
           }
-        );
 
-        promiseArray.push(promise);
+          toUpdateFields.transaction_uuid = txUuid;
+          toUpdateFields.transfer_events = eventData.transfer_events;
+          toUpdateFields.post_receipt_process_params = null;
+          toUpdateFields.gas_used = txReceipt.gasUsed;
+          toUpdateFields.status = parseInt(txReceipt.status, 16);
 
+          oThis.clientIdWiseDataToUpdate[clientId].push(toUpdateFields);
+        }
       }
-
-      await Promise.all(promiseArray);
-
     }
+  },
 
-    logger.win('* Updating transaction_logs table DONE');
+  /**
+   * Update transaction logs table
+   */
+  updateTransactionLogs: async function () {
+    const oThis = this
+    ;
 
-    return Promise.resolve();
+    for (var clientId in oThis.clientIdWiseDataToUpdate) {
+      new TransactionLogModel({
+        client_id: clientId,
+        ddb_service: ddbServiceObj,
+        auto_scaling: autoscalingServiceObj
+      }).batchPutItem(oThis.clientIdWiseDataToUpdate[clientId]);
+    }
   },
 
   /**
    * Register interrupt signal handlers
-   *
    */
   registerInterruptSignalHandlers: function () {
     const oThis = this;
@@ -399,24 +421,26 @@ BlockScannerBaseKlass.prototype = {
   },
 
   _getEventData: function (decodedEvents) {
-    const eventData = {_tokenAmount: '0', _commissionTokenAmount: '0'};
+    const eventData = {_tokenAmount: '0', _commissionTokenAmount: '0', transfer_events: []};
 
     if (!decodedEvents || decodedEvents.length === 0) {
       return eventData;
     }
 
-    var airdropPaymentEventVars = null;
+    let airdropPaymentEventVars = null
+      , allTransferEventsVars = []
+    ;
 
     for (var i = 0; i < decodedEvents.length; i++) {
       if (decodedEvents[i].name == 'AirdropPayment') {
         airdropPaymentEventVars = decodedEvents[i].events;
-        break;
+      }
+      if (decodedEvents[i].name == 'Transfer') {
+        allTransferEventsVars.push(decodedEvents[i].events);
       }
     }
 
-    if (!airdropPaymentEventVars || airdropPaymentEventVars.length === 0) {
-      return eventData;
-    }
+    airdropPaymentEventVars = airdropPaymentEventVars || [];
 
     for (var i = 0; i < airdropPaymentEventVars.length; i++) {
       if (airdropPaymentEventVars[i].name == '_commissionTokenAmount') {
@@ -428,12 +452,34 @@ BlockScannerBaseKlass.prototype = {
       }
     }
 
+    for (var i = 0; i < allTransferEventsVars.length; i++) {
+      let transferEventVars = allTransferEventsVars[i];
+
+      let transferEvent = {};
+
+      for (var j = 0; j < transferEventVars.length; j ++) {
+        if (transferEventVars[j].name == '_from') {
+          transferEvent.from_address = transferEventVars[i].value;
+        }
+
+        if (transferEventVars[j].name == '_to') {
+          transferEvent.to_address = transferEventVars[i].value;
+        }
+
+        if (transferEventVars[j].name == '_value') {
+          transferEvent.amount_in_wei = transferEventVars[i].value;
+        }
+      }
+
+      eventData.transfer_events.push(transferEvent);
+    }
+
     return eventData;
   }
 };
 
 const usageDemo = function () {
-  logger.log('usage:', 'node ./executables/block_scanner/execute_transaction.js processLockId datafilePath');
+  logger.log('usage:', 'node ./executables/block_scanner/for_tx_status_and_balance_sync.js processLockId datafilePath');
   logger.log('* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.');
   logger.log('* datafilePath is the path to the file which is storing the last block scanned info.');
 };
@@ -466,6 +512,6 @@ const validateAndSanitize = function () {
 // validate and sanitize the input params
 validateAndSanitize();
 
-const blockScannerObj = new BlockScannerBaseKlass({file_path: datafilePath});
+const blockScannerObj = new BlockScannerForTxStatusAndBalanceSync({file_path: datafilePath});
 blockScannerObj.registerInterruptSignalHandlers();
 blockScannerObj.init();
