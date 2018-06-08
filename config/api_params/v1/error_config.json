@@ -103,6 +103,11 @@
     "code": "invalid",
     "message": "invalid id passed."
   },
+  "invalid_transaction_status": {
+    "parameter": "status",
+    "code": "invalid",
+    "message": "invalid status passed."
+  },
   "invalid_id_transfer_get": {
     "parameter": "id",
     "code": "invalid",
