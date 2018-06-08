@@ -37,7 +37,6 @@ const StartAirdropKlass = function (params) {
   oThis.userIds = params.user_ids;
   oThis.airdropUserListType = null;
 
-  console.log(params);
 };
 
 StartAirdropKlass.prototype = {

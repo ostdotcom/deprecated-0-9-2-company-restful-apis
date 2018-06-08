@@ -51,7 +51,9 @@ router.get('/', function (req, res, next) {
     let transactionData = [];
 
     for (let key in response.data) {
+
       let data = response.data[key];
+
       let transactionEntityFormatter = new TransactionEntityFormatterKlass(data)
         , transactionEntityFormatterRsp = await transactionEntityFormatter.perform()
       ;
