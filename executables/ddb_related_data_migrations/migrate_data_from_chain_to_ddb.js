@@ -78,9 +78,9 @@ MigrateTokenBalancesKlass.prototype = {
           return error;
         } else {
           logger.error(`${__filename}::perform::catch`);
-          logger.error(error);
+          logger.error(error.toHash());
           return responseHelper.error({
-            internal_error_identifier: 'e_drdm_ads_1',
+            internal_error_identifier: 'e_drdm_mdfctb_1',
             api_error_identifier: 'unhandled_catch_response',
             debug_options: {}
           });
@@ -242,16 +242,12 @@ MigrateTokenBalancesKlass.prototype = {
       console.error('insertTxLogsRspError', JSON.strinfigy(insertTxLogsRsp.toHash()));
       return Promise.reject(insertTxLogsRsp);
     }
-    let failedInsertResponses = insertTxLogsRsp.data['failedInsertResponses'];
-    console.log('failedInsertResponses', JSON.stringify(failedInsertResponses));
 
     let settleBalancesRsp = await oThis._settleBalancesInDb(balanceAdjustmentMap);
     if (settleBalancesRsp.isFailure()) {
       console.error('settleBalancesRspError', JSON.strinfigy(settleBalancesRsp.toHash()));
       return Promise.reject(settleBalancesRsp);
     }
-    let settleResponses = settleBalancesRsp.data['settleResponses'];
-    // console.log('settleResponses', JSON.stringify(settleResponses));
 
   },
 
@@ -800,8 +796,7 @@ MigrateTokenBalancesKlass.prototype = {
 
     logger.info('starting _insertDataInTransactionLogs');
 
-    let failedInsertResponses = {}
-      , clientIds = Object.keys(formattedTransactionsData)
+    let clientIds = Object.keys(formattedTransactionsData)
     ;
 
     for (let k = 0; k < clientIds.length; k++) {
@@ -818,13 +813,11 @@ MigrateTokenBalancesKlass.prototype = {
         auto_scaling: autoscalingServiceObj
       }).batchPutItem(dataToInsert);
 
-      failedInsertResponses[clientId] = rsp.toHash();
-
     }
 
     logger.info('completed _insertDataInTransactionLogs');
 
-    return Promise.resolve(responseHelper.successWithData({failedInsertResponses: failedInsertResponses}));
+    return Promise.resolve(responseHelper.successWithData({}));
 
   },
 
@@ -839,9 +832,7 @@ MigrateTokenBalancesKlass.prototype = {
 
     logger.info('starting _settleBalancesInDb');
 
-    let settleResponses = {}
-      , erc20ContractAddresses = Object.keys(balanceAdjustmentMap)
-    ;
+    let erc20ContractAddresses = Object.keys(balanceAdjustmentMap);
 
     for (let k = 0; k < erc20ContractAddresses.length; k++) {
 
@@ -865,26 +856,39 @@ MigrateTokenBalancesKlass.prototype = {
         promises.push(tokenalanceModelObj.update({
           settle_amount: userBalancesSettlementsData[userAddress].toString(10),
           ethereum_address: userAddress
-        }));
+        }).catch(oThis.catchHandlingFunction));
 
       }
 
-      let promiseResponses = await Promise.all(promises)
-        , formattedPromiseResponses = []
-      ;
-
-      for (var l = 0; l < promiseResponses.length; l++) {
-        formattedPromiseResponses.push(promiseResponses[l].toHash());
-      }
-
-      settleResponses[erc20ContractAddress] = formattedPromiseResponses;
+      await Promise.all(promises);
 
     }
 
     logger.info('completed _settleBalancesInDb');
 
-    return Promise.resolve(responseHelper.successWithData({settleResponses: settleResponses}));
+    return Promise.resolve(responseHelper.successWithData({}));
 
+  },
+
+  /**
+   * generic function to handle catch blocks
+   *
+   * @returns {object}
+   */
+  catchHandlingFunction: async function (error) {
+    if (responseHelper.isCustomResult(error)) {
+      logger.error(error.toHash());
+      return error;
+    } else {
+      logger.error(`${__filename}::perform::catch`);
+      logger.error(error);
+      return responseHelper.error({
+        internal_error_identifier: 'e_drdm_mdfctb_2',
+        api_error_identifier: 'something_went_wrong',
+        debug_options: {},
+        error_config: errorConfig
+      });
+    }
   }
 
 }
