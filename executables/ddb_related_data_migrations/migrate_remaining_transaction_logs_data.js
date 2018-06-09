@@ -200,7 +200,7 @@ MigrateTransactionLogsKlass.prototype = {
         client_id: clientId,
         ddb_service: ddbServiceObj,
         auto_scaling: autoscalingServiceObj
-      }).batchPutItem(dataToInsert);
+      }).batchPutItem(dataToInsert, 10);
 
       failedInsertResponses[clientId] = rsp.toHash();
 
@@ -243,7 +243,7 @@ MigrateTransactionLogsKlass.prototype = {
           client_id: clientId,
           ddb_service: ddbServiceObj,
           auto_scaling: autoscalingServiceObj
-        }).batchGetItem(batchedTxUuidsToVerify);
+        }).batchGetItem(batchedTxUuidsToVerify, 10);
 
         if(rsp.isFailure()) {return Promise.reject(rsp)};
 
