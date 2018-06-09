@@ -30,6 +30,7 @@ const CheckBalances = function (params) {
   oThis.checkedAddressCount = 0;
   oThis.mismatchAddresses = {};
   oThis.mismatchAddressesCount = 0;
+  oThis.clientIds = params.client_ids;
 
 };
 
@@ -74,15 +75,19 @@ CheckBalances.prototype = {
 
     while (true) {
 
-      var dbRows = await new ClientBrandedTokenModel().select('id, client_id, token_erc20_address').where('token_erc20_address IS NOT NULL').limit(pageLimit).offset(offset).fire();
+      let query = new ClientBrandedTokenModel().select('id, client_id, token_erc20_address').where('token_erc20_address IS NOT NULL');
+      if (oThis.clientIds.length > 0) {
+        query = query.where(["client_id in (?)", oThis.clientIds]);
+      }
+      var dbRows = await query.limit(pageLimit).offset(offset).fire();
 
       if (dbRows.length == 0) {
-        return Promise.resolve({
+        return Promise.resolve(responseHelper.successWithData({
           mismatchAddresses: JSON.stringify(oThis.mismatchAddresses),
           checkedAddressCount: oThis.checkedAddressCount,
           mismatchAddressCount: oThis.mismatchAddressesCount,
           success_percent: ((oThis.checkedAddressCount - oThis.mismatchAddressesCount) / parseFloat(oThis.checkedAddressCount) * 100)
-        });
+        }));
       }
 
       for(let i=0; i<dbRows.length; i++) {
@@ -170,7 +175,7 @@ CheckBalances.prototype = {
         if (balanceFromChain != balanceFromDdb) {
           mismatchAddresses.push(address);
           oThis.mismatchAddressesCount += 1;
-          logger.info(`balanceMismatch : address: ${address} : balanceFromChain : ${balanceFromChain} : balanceFromDdb : ${balanceFromDdb}`);
+          logger.info(`balanceMismatch : contractAddress : ${erc20_address} userAddress: ${address} : balanceFromChain : ${balanceFromChain} : balanceFromDdb : ${balanceFromDdb}`);
         }
 
       }
@@ -189,5 +194,26 @@ CheckBalances.prototype = {
 
 };
 
-const object = new CheckBalances({});
+const usageDemo = function () {
+  logger.log('usage:', 'node ./executables/ddb_related_data_migrations/check_balances.js client_ids_str');
+};
+
+const args = process.argv
+    , clientIdsStr = args[2]
+;
+
+let clientIdsArray = [];
+
+const validateAndSanitize = function () {
+
+  if (clientIdsStr) {
+    clientIdsArray = JSON.parse(clientIdsStr);
+  }
+
+};
+
+// validate and sanitize the input params
+validateAndSanitize();
+
+const object = new CheckBalances({client_ids: clientIdsArray});
 object.perform().then(function(a) {console.log(JSON.stringify(a.toHash())); process.exit(1)}).catch(function(a) {console.log(JSON.stringify(a)); process.exit(1)});
