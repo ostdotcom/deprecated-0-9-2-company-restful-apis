@@ -30,6 +30,7 @@ const MigrateTransactionLogsKlass = function (params) {
 
   oThis.totalCheckedUuidsCount = 0;
   oThis.totalVerifiedUuidsCount = 0;
+  oThis.clientIdMissingTxUuidsMap = {};
 
 };
 
@@ -80,7 +81,8 @@ MigrateTransactionLogsKlass.prototype = {
         return Promise.resolve(responseHelper.successWithData({
           totalCheckedUuidsCount: oThis.totalCheckedUuidsCount,
           totalVerifiedUuidsCount: oThis.totalVerifiedUuidsCount,
-          success_percent: (oThis.totalCheckedUuidsCount - oThis.totalVerifiedUuidsCount) / parseFloat(oThis.totalCheckedUuidsCount) * 100
+          success_percent: (oThis.totalCheckedUuidsCount - oThis.totalVerifiedUuidsCount) / parseFloat(oThis.totalCheckedUuidsCount) * 100,
+          clientIdMissingTxUuidsMap: JSON.stringify(oThis.clientIdMissingTxUuidsMap)
         }));
       }
 
@@ -184,9 +186,7 @@ MigrateTransactionLogsKlass.prototype = {
 
     const oThis = this;
 
-    let failedInsertResponses = {}
-        , clientIds = Object.keys(formattedTransactionsData)
-    ;
+    let clientIds = Object.keys(formattedTransactionsData);
 
     for(let k=0; k<clientIds.length; k++) {
 
@@ -202,13 +202,9 @@ MigrateTransactionLogsKlass.prototype = {
         auto_scaling: autoscalingServiceObj
       }).batchPutItem(dataToInsert, 10);
 
-      failedInsertResponses[clientId] = rsp.toHash();
-
     }
 
-    console.log('failedInsertResponses', JSON.stringify(failedInsertResponses));
-
-    return Promise.resolve(responseHelper.successWithData({failedInsertResponses: failedInsertResponses}));
+    return Promise.resolve(responseHelper.successWithData({}));
 
   },
 
@@ -218,9 +214,7 @@ MigrateTransactionLogsKlass.prototype = {
         , ddbInQueryFetch = 100
     ;
 
-    let clientIdMissingTxUuidsMap = {}
-        , clientIds = Object.keys(clientIdtxUuidsToVerify)
-    ;
+    let clientIds = Object.keys(clientIdtxUuidsToVerify);
 
     for(let k=0; k<clientIds.length; k++) {
 
@@ -251,8 +245,9 @@ MigrateTransactionLogsKlass.prototype = {
           oThis.totalCheckedUuidsCount += 1;
           let uuidToVerify = batchedTxUuidsToVerify[i];
           if (!rsp.data[uuidToVerify]) {
-            clientIdMissingTxUuidsMap[clientId] = clientIdMissingTxUuidsMap[clientId] || [];
-            clientIdMissingTxUuidsMap[clientId].push(uuidToVerify);
+            logger.error(`clientId ${clientId} missing txUuid : ${uuidToVerify}`);
+            oThis.clientIdMissingTxUuidsMap[clientId] = oThis.clientIdMissingTxUuidsMap[clientId] || [];
+            oThis.clientIdMissingTxUuidsMap[clientId].push(uuidToVerify);
           } else {
             oThis.totalVerifiedUuidsCount += 1;
           }
@@ -264,9 +259,7 @@ MigrateTransactionLogsKlass.prototype = {
 
     }
 
-    console.log('clientIdMissingTxUuidsMap', JSON.stringify(clientIdMissingTxUuidsMap));
-
-    return Promise.resolve(responseHelper.successWithData({clientIdMissingTxUuidsMap: clientIdMissingTxUuidsMap}));
+    return Promise.resolve(responseHelper.successWithData({}));
 
   }
 
