@@ -77,11 +77,11 @@ MigrateTransactionLogsKlass.prototype = {
       var dbRows = await new TransactionLogModelMysql().getByRange(oThis.startId, oThis.endId, pageLimit, offset);
 
       if (dbRows.length == 0) {
-        return Promise.resolve({
+        return Promise.resolve(responseHelper.successWithData({
           totalCheckedUuidsCount: oThis.totalCheckedUuidsCount,
           totalVerifiedUuidsCount: oThis.totalVerifiedUuidsCount,
           success_percent: (oThis.totalCheckedUuidsCount - oThis.totalVerifiedUuidsCount) / parseFloat(oThis.totalCheckedUuidsCount) * 100
-        });
+        }));
       }
 
       await oThis._migrateRecords(dbRows);
