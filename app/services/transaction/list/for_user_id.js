@@ -2,14 +2,12 @@
 
 const rootPrefix = '../../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , BaseKlass = require(rootPrefix + '/app/services/transaction/list/base')
-  , commonValidator = require(rootPrefix +  '/lib/validators/common')
   , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
 
-const GetTransactionList = function(params) {
+const GetTransactionList = function (params) {
   const oThis = this
   ;
 
@@ -22,7 +20,7 @@ const GetTransactionList = function(params) {
   oThis.statusStr = params.status;
 
   oThis.statusesIntArray = [];
-  
+
 };
 
 GetTransactionList.prototype = Object.create(BaseKlass.prototype);
@@ -31,10 +29,10 @@ const GetTransactionListForUser = {
 
   /**
    * validateAndSanitize
-   * 
+   *
    */
   _validateAndSanitize: async function () {
-    
+
     const oThis = this
     ;
 
@@ -55,7 +53,7 @@ const GetTransactionListForUser = {
 
       let statusesStrToIntMap = new TransactionLogModel().invertedStatuses;
 
-      for(var i=0; i < statusesStrArray.length; i++){
+      for (var i = 0; i < statusesStrArray.length; i++) {
         let statusInt = statusesStrToIntMap[statusesStrArray[i].toLowerCase()];
         if (!statusInt) {
           return Promise.reject(responseHelper.error({
@@ -86,25 +84,28 @@ const GetTransactionListForUser = {
 
     let filteringParams = {
       "query": {}
-    }
+    };
 
     // filter by client id
-    let boolFilters = {
-      "term":  { "client_id": oThis.clientId },
-      "bool": {
-        "should": {
-          "term":  { "from_uuid": oThis.userUuid },
-          "term":  { "to_uuid": oThis.userUuid }
+    let boolFilters = [
+      {"term": {"client_id": oThis.clientId}},
+      {"term": {"transaction_type": 1}},
+      {
+        "bool": {
+          "should": [
+            {"term": {"from_uuid": oThis.userUuid}},
+            {"term": {"to_uuid": oThis.userUuid}}
+          ]
         }
       }
-    };
+    ];
 
     // if statuses are passes in params, add filter on it
     if (oThis.statusesIntArray.length > 0) {
-      boolFilters['terms'] = { "status" : oThis.statusesIntArray };
+      boolFilters.push({'terms': {"status": oThis.statusesIntArray}});
     }
 
-    filteringParams['query']['bool']['filter']['must'] = [boolFilters];
+    filteringParams['query']['bool']['filter']['must'] = boolFilters;
 
     Object.assign(filteringParams, oThis._getPaginationParams());
 

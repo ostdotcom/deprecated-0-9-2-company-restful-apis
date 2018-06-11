@@ -11,6 +11,7 @@ const rootPrefix = '../..'
   , transactionsRoutes = require(rootPrefix + '/routes/v1/transactions')
   , airdropsRoutes = require(rootPrefix + '/routes/v1/airdrops')
   , balancesRoutes = require(rootPrefix + '/routes/v1/balances')
+  , ledgerRoutes = require(rootPrefix + '/routes/v1/ledger')
   , transfersRoutes = require(rootPrefix + '/routes/v1/transfers')
 ;
 
@@ -33,5 +34,6 @@ router.use('/transfers', transfersRoutes);
 
 router.use('/balances', balancesRoutes);
 
+router.use('/ledger', ledgerRoutes);
 
 module.exports = router;

@@ -2,9 +2,7 @@
 
 const rootPrefix = '../../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , BaseKlass = require(rootPrefix + '/app/services/transaction/list/base')
-  , commonValidator = require(rootPrefix +  '/lib/validators/common')
 ;
 
 /**
@@ -73,12 +71,13 @@ const GetTransactionListForClient = {
 
     let filteringParams = {
       "query": {}
-    }
+    };
 
     // filter by client id
-    let boolFilters = [{
-      "term":  { "client_id": oThis.clientId }
-    }];
+    let boolFilters = [
+        {"term":  { "client_id": oThis.clientId } },
+        {"term":  { "transaction_type": 1 } }
+      ];
 
     // if transaction_uuids are passes in params, add filter on it
     if (oThis.idsFilterArr.length > 0) {

@@ -10,21 +10,21 @@ const rootPrefix = '../..'
 const router = express.Router()
 ;
 
-
 /**
- * Get balance of user
+ * Get ledger of transactions of user
  *
- * @route {GET} {base_url}/get_balance/{id}
+ * @route {GET} {base_url}/{id}
  *
  * @routeparam {String} :id - User uuid
  *
  */
 router.get('/:id', function (req, res, next) {
 
-  const getBalanceKlass = require(rootPrefix + '/app/services/balances/fetch');
-  req.decodedParams.apiName = 'get_balance';
+  const getLedgerKlass = require(rootPrefix + '/app/services/transaction/list/for_user_id');
+  req.decodedParams.apiName = 'get_transaction_ledger';
 
-  Promise.resolve(routeHelper.performer(req, res, next, getBalanceKlass, 'r_v1_b_1'));
+  Promise.resolve(routeHelper.performer(req, res, next, getLedgerKlass, 'r_v1_l_1'));
+
 });
 
 module.exports = router;
