@@ -22,6 +22,7 @@ router.get('/:id', function (req, res, next) {
 
   const getLedgerKlass = require(rootPrefix + '/app/services/transaction/list/for_user_id');
   req.decodedParams.apiName = 'get_transaction_ledger';
+  req.decodedParams.id = req.params.id;
 
   Promise.resolve(routeHelper.performer(req, res, next, getLedgerKlass, 'r_v1_l_1'));
 

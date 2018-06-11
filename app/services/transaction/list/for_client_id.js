@@ -17,10 +17,11 @@ const rootPrefix = '../../../..'
  * @param {string} params.id (optional) - comma separated ids to filter
  */
 const GetTransactionListByClientId = function(params) {
-  const oThis = this
+  var oThis = this
   ;
 
-  oThis.clientId = params.client_id;
+  BaseKlass.apply(oThis, arguments);
+
   oThis.idsFilterStr = params.id;
 
   oThis.offset = null;
@@ -39,10 +40,11 @@ const GetTransactionListForClient = {
    * @return {Promise}
    */
   _validateAndSanitize: async function () {
-    const oThis = this
+
+    var oThis = this
     ;
 
-    await BaseKlass.call(this);
+    await oThis._baseValidateAndSanitize.apply( oThis );
 
     if (oThis.idsFilterStr && oThis.idsFilterStr.length > 0) {
       oThis.idsFilterArr = basicHelper.commaSeperatedStrToArray(oThis.idsFilterStr);
@@ -63,14 +65,16 @@ const GetTransactionListForClient = {
   /**
    * get filtering params
    *
-   * @return {object}
+   * @return {Promise}
    */
   _getFilteringParams: function () {
 
-    const oThis = this;
+    var oThis = this;
 
     let filteringParams = {
-      "query": {}
+      "query": {
+        "bool": {}
+      }
     };
 
     // filter by client id
@@ -88,7 +92,9 @@ const GetTransactionListForClient = {
 
     Object.assign(filteringParams, oThis._getPaginationParams());
 
-    return filteringParams;
+    oThis.filteringParams = filteringParams;
+
+    return Promise.resolve(responseHelper.successWithData({}));
 
   }
 

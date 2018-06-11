@@ -12,9 +12,10 @@ const rootPrefix = '../../../..'
 ;
 
 const Base = function(params) {
-  const oThis = this
+  var oThis = this
   ;
 
+  oThis.clientId = params.client_id;
   oThis.pageNo = params.page_no;
   oThis.orderBy = params.order_by;
   oThis.order = params.order;
@@ -22,6 +23,7 @@ const Base = function(params) {
 
   oThis.offset = null;
   oThis.transactionUuids = [];
+  oThis.filteringParams = {};
 
 };
 
@@ -35,7 +37,7 @@ Base.prototype = {
    *
    */
   perform: function () {
-    const oThis = this
+    var oThis = this
     ;
 
     return oThis._asyncPerform()
@@ -60,12 +62,14 @@ Base.prototype = {
    * @return {Promise}
    */
   _asyncPerform: async function() {
-    const oThis = this
+    var oThis = this
     ;
 
     await oThis._validateAndSanitize();
 
-    await oThis._getFilteredUuids(oThis._getFilteringParams());
+    await oThis._getFilteringParams();
+
+    await oThis._getFilteredUuids();
 
     return oThis._getDataForUuids();
 
@@ -76,9 +80,9 @@ Base.prototype = {
    *
    * @return {Promise}
    */
-  _validateAndSanitize: async function () {
+  _baseValidateAndSanitize: async function () {
 
-    const oThis = this
+    var oThis = this
     ;
 
     // validate / sanitize page number
@@ -141,11 +145,11 @@ Base.prototype = {
    *
    * @return {Promise}
    */
-  _getFilteredUuids: async function (queryParams) {
-    const oThis = this
+  _getFilteredUuids: async function () {
+    var oThis = this
     ;
 
-    let searchRsp = await ddbSearchServiceObject.search(queryParams);
+    let searchRsp = await ddbSearchServiceObject.search(oThis.filteringParams);
     if(searchRsp.isFailure()) {return Promise.reject(searchRsp)}
 
     let searchData = searchRsp.data
@@ -171,15 +175,34 @@ Base.prototype = {
    */
   _getPaginationParams: function () {
 
-    let paginationParams = {
+    var oThis = this;
+
+    let sortParams = {};
+
+    if (oThis.orderBy === 'created') {
+      sortParams['created_at'] = oThis.order;
+    }
+
+    return {
       "from" : oThis.offset,
       "size" : oThis.limit,
-      "sort": [
-        { oThis.orderBy : oThis.order }
-      ]
+      "sort": [sortParams]
     };
 
-    return paginationParams;
+  },
+
+  /**
+   * get common filtering params for search query
+   *
+   * @return {object}
+   */
+  _getCommonFilteringParams: function() {
+
+    var oThis = this;
+    return [
+      {"term": {"client_id": parseInt(oThis.clientId)}},
+      {"term": {"transaction_type": 1}}
+    ];
 
   },
 
@@ -189,8 +212,14 @@ Base.prototype = {
    * @return {Promise}
    */
   _getDataForUuids: async function () {
-    const oThis = this
+
+    var oThis = this
+      , transactionLogData = {}
     ;
+
+    if (oThis.transactionUuids.length === 0) {
+      return responseHelper.successWithData(transactionLogData);
+    }
 
     let transactionFetchRespone = await new OSTStorage.TransactionLogModel({
       client_id: oThis.clientId,
@@ -206,7 +235,7 @@ Base.prototype = {
       }));
     }
 
-    let transactionLogData = transactionFetchRespone.data;
+    transactionLogData = transactionFetchRespone.data;
 
     return responseHelper.successWithData(transactionLogData);
 

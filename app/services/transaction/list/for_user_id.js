@@ -7,23 +7,33 @@ const rootPrefix = '../../../..'
   , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
 
+const BaseKlassProto = BaseKlass.prototype;
+
+/**
+ * @constructor
+ *
+ * @param {object} params - service params
+ * @param {number} params.client_id (mandatory) - client id
+ * @param {number} params.page_no (optional) - page number (starts from 1)
+ * @param {string} params.order_by (optional) - order the list by 'created' (default)
+ * @param {string} params.order (optional) - order list in 'desc' (default) or 'asc' order.
+ * @param {number} params.limit (optional) - Min 1, Max 100, Default 10.
+ * @param {string} params.id (optional) - comma separated ids to filter
+ */
 const GetTransactionList = function (params) {
-  const oThis = this
+  var oThis = this
   ;
 
-  oThis.clientId = params.client_id;
+  BaseKlass.apply(oThis, arguments);
+
   oThis.userUuid = params.id;
-  oThis.pageNo = params.page_no;
-  oThis.orderBy = params.order_by;
-  oThis.order = params.order;
-  oThis.limit = params.limit;
   oThis.statusStr = params.status;
 
   oThis.statusesIntArray = [];
 
 };
 
-GetTransactionList.prototype = Object.create(BaseKlass.prototype);
+GetTransactionList.prototype = Object.create( BaseKlass.prototype ) ;
 
 const GetTransactionListForUser = {
 
@@ -33,10 +43,10 @@ const GetTransactionListForUser = {
    */
   _validateAndSanitize: async function () {
 
-    const oThis = this
+    var oThis = this
     ;
 
-    await BaseKlass.call(this);
+    await oThis._baseValidateAndSanitize.apply( oThis );
 
     if (!basicHelper.isUuidValid(oThis.userUuid)) {
       return Promise.reject(responseHelper.error({
@@ -76,45 +86,46 @@ const GetTransactionListForUser = {
   /**
    * get filtering params
    *
-   * @return {object}
+   * @return {Promise}
    */
   _getFilteringParams: function () {
 
-    const oThis = this;
+    var oThis = this;
 
     let filteringParams = {
-      "query": {}
+      "query": {
+        "bool": {}
+      }
     };
 
-    // filter by client id
-    let boolFilters = [
-      {"term": {"client_id": oThis.clientId}},
-      {"term": {"transaction_type": 1}},
-      {
-        "bool": {
-          "should": [
-            {"term": {"from_uuid": oThis.userUuid}},
-            {"term": {"to_uuid": oThis.userUuid}}
-          ]
-        }
+    // filter by client id , transaction type and user id
+    let boolFilters = oThis._getCommonFilteringParams();
+    boolFilters.push({
+      "bool": {
+        "should": [
+          {"term": {"from_uuid": oThis.userUuid}},
+          {"term": {"to_uuid": oThis.userUuid}}
+        ]
       }
-    ];
+    });
 
     // if statuses are passes in params, add filter on it
     if (oThis.statusesIntArray.length > 0) {
       boolFilters.push({'terms': {"status": oThis.statusesIntArray}});
     }
 
-    filteringParams['query']['bool']['filter']['must'] = boolFilters;
+    filteringParams['query']['bool']['must'] = boolFilters;
 
     Object.assign(filteringParams, oThis._getPaginationParams());
 
-    return filteringParams;
+    oThis.filteringParams = filteringParams;
+
+    return Promise.resolve(responseHelper.successWithData({}));
 
   }
 
 };
 
-Object.assign(GetTransactionList.prototype, GetTransactionListForUser);
+Object.assign( GetTransactionList.prototype, GetTransactionListForUser);
 
 module.exports = GetTransactionList;
