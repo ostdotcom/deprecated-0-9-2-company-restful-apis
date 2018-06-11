@@ -6,8 +6,8 @@
     "start": "node app.js"
   },
   "dependencies": {
-    "@openstfoundation/openst-cache": "1.0.3",
     "@openstfoundation/openst-base": "0.9.0",
+    "@openstfoundation/openst-cache": "1.0.3",
     "@openstfoundation/openst-notification": "1.0.2-beta.1",
     "@openstfoundation/openst-payments": "1.0.8-beta.5",
     "@openstfoundation/openst-platform": "0.9.4-beta.7",
@@ -35,6 +35,7 @@
     "shelljs": "0.8.1",
     "shortid": "2.2.8",
     "underscore": "1.8.3",
+    "uuid": "^3.2.1",
     "web3": "1.0.0-beta.33"
   },
   "devDependencies": {

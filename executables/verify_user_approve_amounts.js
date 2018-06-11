@@ -149,5 +149,5 @@ VerifyUserApprovalAmountsKlass.prototype = {
 
 };
 
-const populateData = new VerifyUserApprovalAmountsKlass({startClientId: 1021, endClientId: 1021});
-populateData.perform().then();
+const populateData = new VerifyUserApprovalAmountsKlass({startClientId: 1090, endClientId: 1090});
+populateData.perform().then(console.log);

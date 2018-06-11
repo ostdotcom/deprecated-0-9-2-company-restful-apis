@@ -102,12 +102,12 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
         await oThis.generateToUpdateData();
 
+        await oThis.updateTransactionLogs();
+
         if (oThis.recognizedTxHashes.length === 0) {
           oThis.updateScannerDataFile();
           return oThis.schedule();
         }
-
-        await oThis.processTokenTransferTransactions();
 
         oThis.updateScannerDataFile();
 
@@ -171,8 +171,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
       if (batchedTxHashes.length === 0) break;
 
-      const batchedTxLogRecords = await new TransactionMeta()
-        .getByTransactionHash(batchedTxHashes);
+      const batchedTxLogRecords = await new TransactionMeta().getByTransactionHash(batchedTxHashes);
 
       if (batchedTxLogRecords.length === 0) continue;
 
@@ -190,7 +189,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         }
 
         oThis.recognizedTxUuidsGroupedByClientId[currRecord.client_id] = oThis.recognizedTxUuidsGroupedByClientId[currRecord.client_id] || [];
-        oThis.recognizedTxUuidsGroupedByClientId[currRecord.client_id].push(currRecord.transqaction_uuid);
+        oThis.recognizedTxUuidsGroupedByClientId[currRecord.client_id].push(currRecord.transaction_uuid);
 
         oThis.recognizedTxHashes.push(currRecord.transaction_hash);
         oThis.knownTxUuidToTxHashMap[currRecord.transaction_uuid] = currRecord.transaction_hash;
@@ -229,6 +228,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
       const txReceiptResults = await Promise.all(promiseArray);
 
+      console.log("-----------------999--------------txReceiptResults-", JSON.stringify(txReceiptResults));
+
       for (var i = 0; i < batchedTxHashes.length; i++) {
         oThis.txHashToTxReceiptMap[batchedTxHashes[i]] = txReceiptResults[i];
       }
@@ -246,10 +247,11 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     const oThis = this
       , batchSize = 50
     ;
-
+    console.log("----------------oThis.recognizedTxUuidsGroupedByClientId---", JSON.stringify(oThis.recognizedTxUuidsGroupedByClientId));
     for (var clientId in oThis.recognizedTxUuidsGroupedByClientId) {
       let txUuids = oThis.recognizedTxUuidsGroupedByClientId[clientId];
 
+      console.log("----------------txUuids---", JSON.stringify(txUuids));
       let batchNo = 1
       ;
 
@@ -258,40 +260,49 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       while (true) {
         const offset = (batchNo - 1) * batchSize
           , batchedTxUuids = txUuids.slice(offset, batchSize + offset)
-          , batchedTxUuidToUpdateDataMap = {}
         ;
 
         batchNo = batchNo + 1;
 
         if (batchedTxUuids.length === 0) break;
 
+        console.log("------1----batchedTxUuids---", JSON.stringify(batchedTxUuids));
         let batchGetItemResponse = await new TransactionLogModel({
           client_id: clientId,
           ddb_service: ddbServiceObj,
           auto_scaling: autoscalingServiceObj
         }).batchGetItem(batchedTxUuids);
 
+        console.log("------2----batchGetItemResponse---", JSON.stringify(batchGetItemResponse));
         if (batchGetItemResponse.isFailure()) return Promise.reject(batchGetItemResponse);
 
         let batchGetItemData = batchGetItemResponse.data;
 
+        console.log("------3----oThis.knownTxUuidToTxHashMap---", JSON.stringify(oThis.knownTxUuidToTxHashMap));
+        console.log("------4----oThis.txHashToTxReceiptMap---", JSON.stringify(oThis.txHashToTxReceiptMap));
+        console.log("------4----oThis.tokenTransferTxHashesMap---", JSON.stringify(oThis.tokenTransferTxHashesMap));
         for (var txUuid in batchGetItemData) {
           let txHash = oThis.knownTxUuidToTxHashMap[txUuid];
           let txReceipt = oThis.txHashToTxReceiptMap[txHash];
 
-          let toUpdateFields = {};
+          let toUpdateFields = {}
+            , eventData= {};
+          console.log("------5----txHash---", txHash, '--', JSON.stringify(oThis.tokenTransferTxHashesMap[txHash]));
 
           if (oThis.tokenTransferTxHashesMap[txHash]) {
             const decodedEvents = abiDecoder.decodeLogs(txReceipt.logs);
 
-            if (batchGetItemData.post_receipt_process_params) {
-              const postAirdropParams = batchGetItemData.post_receipt_process_params;
+            if (batchGetItemData[txUuid].post_receipt_process_params) {
+              const postAirdropParams = batchGetItemData[txUuid].post_receipt_process_params;
+              console.log("postAirdropParams--", JSON.stringify(postAirdropParams));
               const postAirdropPay = new PostAirdropPayKlass(postAirdropParams, decodedEvents, txReceipt.status);
-              await postAirdropPay.perform();
+              const payResp = await postAirdropPay.perform();
+              console.log("---payResp--", JSON.stringify(payResp));
             }
 
-            const eventData = oThis._getEventData(decodedEvents);
+            eventData = oThis._getEventData(decodedEvents);
 
+            console.log('----------------------eventData-', txHash, JSON.stringify(eventData));
             toUpdateFields = {
               commission_amount_in_wei: eventData._commissionTokenAmount,
               bt_transfer_in_wei: eventData._tokenAmount
@@ -307,6 +318,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           oThis.clientIdWiseDataToUpdate[clientId].push(toUpdateFields);
         }
       }
+      console.log('----------------------oThis.clientIdWiseDataToUpdate-', clientId, JSON.stringify(oThis.clientIdWiseDataToUpdate));
     }
   },
 
@@ -318,11 +330,15 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     ;
 
     for (var clientId in oThis.clientIdWiseDataToUpdate) {
-      new TransactionLogModel({
+      const clientTxData = oThis.clientIdWiseDataToUpdate[clientId]
+        , txLogObj = new TransactionLogModel({
         client_id: clientId,
         ddb_service: ddbServiceObj,
         auto_scaling: autoscalingServiceObj
-      }).batchPutItem(oThis.clientIdWiseDataToUpdate[clientId]);
+      });
+      for(var i=0; i<clientTxData.length; i++){
+        txLogObj.updateItem(clientTxData[i]);
+      }
     }
   },
 
@@ -452,6 +468,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       }
     }
 
+    console.log("---------------------------allTransferEventsVars------", JSON.stringify(allTransferEventsVars));
     for (var i = 0; i < allTransferEventsVars.length; i++) {
       let transferEventVars = allTransferEventsVars[i];
 
@@ -459,15 +476,15 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
       for (var j = 0; j < transferEventVars.length; j ++) {
         if (transferEventVars[j].name == '_from') {
-          transferEvent.from_address = transferEventVars[i].value;
+          transferEvent.from_address = transferEventVars[j].value;
         }
 
         if (transferEventVars[j].name == '_to') {
-          transferEvent.to_address = transferEventVars[i].value;
+          transferEvent.to_address = transferEventVars[j].value;
         }
 
         if (transferEventVars[j].name == '_value') {
-          transferEvent.amount_in_wei = transferEventVars[i].value;
+          transferEvent.amount_in_wei = transferEventVars[j].value;
         }
       }
 
