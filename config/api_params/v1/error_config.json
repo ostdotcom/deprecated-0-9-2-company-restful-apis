@@ -212,6 +212,11 @@
     "code": "invalid",
     "message": "current status should have comma seperated status filters (eg: incomplete,processing,complete,failed)"
   },
+  "invalid_status_transactions_ledger": {
+    "parameter": "status",
+    "code": "invalid",
+    "message": "status should have comma seperated status filters (eg: processing,waiting_for_mining,complete,failed)"
+  },
   "invalid_order_by": {
     "parameter": "order_by",
     "message": "Order by not valid on this field"

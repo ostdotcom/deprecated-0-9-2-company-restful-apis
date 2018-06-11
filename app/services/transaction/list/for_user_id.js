@@ -14,100 +14,101 @@ const GetTransactionList = function(params) {
   ;
 
   oThis.clientId = params.client_id;
-  oThis.user_uuid = params.id;
-  oThis.status = params.status;
+  oThis.userUuid = params.id;
+  oThis.pageNo = params.page_no;
+  oThis.orderBy = params.order_by;
+  oThis.order = params.order;
+  oThis.limit = params.limit;
+  oThis.statusStr = params.status;
+
+  oThis.statusesIntArray = [];
+  
 };
 
 GetTransactionList.prototype = Object.create(BaseKlass.prototype);
 
 const GetTransactionListForUser = {
-  /**
-   *
-   * Perform
-   *
-   * @return {Promise}
-   *
-   */
-  perform: function () {
-    const oThis = this
-    ;
-
-    return oThis.asyncPerform()
-      .catch(function (error) {
-        if (responseHelper.isCustomResult(error)) {
-          return error;
-        } else {
-          logger.error(`${__filename}::perform::catch`);
-          logger.error(error);
-          return responseHelper.error({
-            internal_error_identifier: 's_t_l_fui_1',
-            api_error_identifier: 'unhandled_catch_response',
-            debug_options: {}
-          });
-        }
-      });
-  },
-
-  /**
-   * asyncPerform
-   *
-   * @return {Promise}
-   */
-  asyncPerform: async function() {
-    const oThis = this
-    ;
-
-    await oThis.validateAndSanitize();
-
-    await oThis.getFilteredUuids();
-
-    return oThis.getDataForUuids();
-
-  },
 
   /**
    * validateAndSanitize
    * 
    */
-  validateAndSanitize: async function () {
+  _validateAndSanitize: async function () {
+    
     const oThis = this
     ;
 
-    if (commonValidator.isVarNull(oThis.clientId)) {
+    await BaseKlass.call(this);
+
+    if (!basicHelper.isUuidValid(oThis.userUuid)) {
       return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_t_l_fui_2',
         api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['missing_client_id'],
+        params_error_identifiers: ['invalid_id_user'],
         debug_options: {}
       }));
     }
 
-    if ( !basicHelper.isUuidValid(oThis.user_uuid)) {
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_t_l_fui_3',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_id'],
-        debug_options: {}
-      }));
+    if (oThis.statusStr) {
+
+      let statusesStrArray = basicHelper.commaSeperatedStrToArray(oThis.statusStr);
+
+      let statusesStrToIntMap = new TransactionLogModel().invertedStatuses;
+
+      for(var i=0; i < statusesStrArray.length; i++){
+        let statusInt = statusesStrToIntMap[statusesStrArray[i].toLowerCase()];
+        if (!statusInt) {
+          return Promise.reject(responseHelper.error({
+            internal_error_identifier: 's_t_l_fui_3',
+            api_error_identifier: 'invalid_api_params',
+            params_error_identifiers: ['invalid_status_transactions_ledger'],
+            debug_options: {}
+          }));
+        } else {
+          oThis.statusesIntArray.push(parseInt(statusInt));
+        }
+      }
+
     }
 
-    let transactionLog = new TransactionLogModel();
-    if ( !Object.keys(transactionLog.statuses).includes(oThis.status) ) { // TODO: Might need to invert the status based on input
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_t_l_fui_4',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_transaction_status'],
-        debug_options: {}
-      }));
-    }
+    return Promise.resolve(responseHelper.successWithData({}));
 
   },
 
-  getFilteredUuids: async function () {
-    const oThis = this
-    ;
+  /**
+   * get filtering params
+   *
+   * @return {object}
+   */
+  _getFilteringParams: function () {
 
-    oThis.uuids = ['7bbde231-8315-4c74-b570-98da28e61cb9'];
+    const oThis = this;
+
+    let filteringParams = {
+      "query": {}
+    }
+
+    // filter by client id
+    let boolFilters = {
+      "term":  { "client_id": oThis.clientId },
+      "bool": {
+        "should": {
+          "term":  { "from_uuid": oThis.userUuid },
+          "term":  { "to_uuid": oThis.userUuid }
+        }
+      }
+    };
+
+    // if statuses are passes in params, add filter on it
+    if (oThis.statusesIntArray.length > 0) {
+      boolFilters['terms'] = { "status" : oThis.statusesIntArray };
+    }
+
+    filteringParams['query']['bool']['filter']['must'] = [boolFilters];
+
+    Object.assign(filteringParams, oThis._getPaginationParams());
+
+    return filteringParams;
 
   }
 
