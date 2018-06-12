@@ -28,12 +28,14 @@ router.get('/:id', function (req, res, next) {
   const dataFormatterFunc = async function(response) {
 
     let transactionLogDDbRecords = response.data['transactionLogDDbRecords']
+      , transactionUuids = response.data['transactionUuids']
       , transactionData = []
     ;
 
     delete response.data['transactionLogDDbRecords'];
+    delete response.data['transactionUuids'];
 
-    for (let transactionUuid in response.data['transactionUuid']) {
+    for (let transactionUuid in transactionUuids) {
 
       let data = transactionLogDDbRecords[transactionUuid];
       if(!data) {continue}
