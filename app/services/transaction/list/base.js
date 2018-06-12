@@ -22,6 +22,7 @@ const Base = function(params) {
   oThis.limit = params.limit;
 
   oThis.offset = null;
+  oThis.hasNextPage = null;
   oThis.transactionUuids = [];
   oThis.filteringParams = {};
 
@@ -62,6 +63,7 @@ Base.prototype = {
    * @return {Promise}
    */
   _asyncPerform: async function() {
+
     var oThis = this
     ;
 
@@ -71,7 +73,15 @@ Base.prototype = {
 
     await oThis._getFilteredUuids();
 
-    return oThis._getDataForUuids();
+    let getDataFromDdbRsp = await oThis._getDataForUuids();
+    let nextPagePayload = oThis.hasNextPage ? oThis._getNextPagePayload() : {};
+
+    return Promise.resolve(responseHelper.successWithData({
+      result_type: 'transactions',
+      transactionLogDDbRecords: getDataFromDdbRsp.data,
+      transactionUuid: oThis.transactionUuids,
+      meta: {next_page_payload: nextPagePayload}
+    }));
 
   },
 
@@ -163,6 +173,7 @@ Base.prototype = {
     }
 
     oThis.transactionUuids = transaction_uuids;
+    oThis.hasNextPage = meta.has_next_page ;
 
     return Promise.resolve(responseHelper.successWithData({}));
 
@@ -200,8 +211,8 @@ Base.prototype = {
 
     var oThis = this;
     return [
-      {"term": {"client_id": parseInt(oThis.clientId)}},
-      {"term": {"transaction_type": 1}}
+      {"term": {"client_id": oThis.clientId}}, // filter by client id
+      {"term": {"type": 1}} // filter by transaction type
     ];
 
   },

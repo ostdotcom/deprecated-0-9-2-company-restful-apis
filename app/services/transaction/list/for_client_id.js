@@ -3,6 +3,7 @@
 const rootPrefix = '../../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , BaseKlass = require(rootPrefix + '/app/services/transaction/list/base')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
 
 /**
@@ -77,24 +78,33 @@ const GetTransactionListForClient = {
       }
     };
 
-    // filter by client id
-    let boolFilters = [
-        {"term":  { "client_id": oThis.clientId } },
-        {"term":  { "transaction_type": 1 } }
-      ];
+    let boolFilters = oThis._getCommonFilteringParams();
 
     // if transaction_uuids are passes in params, add filter on it
     if (oThis.idsFilterArr.length > 0) {
-      filteringParams['query']['terms'] = { "id" : oThis.idsFilterArr };
+      boolFilters.push({"terms": { "id" : oThis.idsFilterArr }});
     }
 
-    filteringParams['query']['bool']['filter'] = boolFilters;
+    filteringParams['query']['bool'] = {"filter": boolFilters};
 
     Object.assign(filteringParams, oThis._getPaginationParams());
 
     oThis.filteringParams = filteringParams;
 
     return Promise.resolve(responseHelper.successWithData({}));
+
+  },
+
+  /**
+   * get next page payload
+   *
+   * @return {object}
+   */
+  _getNextPagePayload: function () {
+
+    var oThis = this;
+
+    return {};
 
   }
 

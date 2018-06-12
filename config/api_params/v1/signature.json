@@ -318,7 +318,8 @@
       "page_no",
       "order_by",
       "order",
-      "limit"
+      "limit",
+      "status"
     ]
   }
 }

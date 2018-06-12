@@ -18,7 +18,7 @@ const BaseKlassProto = BaseKlass.prototype;
  * @param {string} params.order_by (optional) - order the list by 'created' (default)
  * @param {string} params.order (optional) - order list in 'desc' (default) or 'asc' order.
  * @param {number} params.limit (optional) - Min 1, Max 100, Default 10.
- * @param {string} params.id (optional) - comma separated ids to filter
+ * @param {string} params.status (optional) - comma separated status(s) to filter
  */
 const GetTransactionList = function (params) {
   var oThis = this
@@ -49,7 +49,7 @@ const GetTransactionListForUser = {
     await oThis._baseValidateAndSanitize.apply( oThis );
 
     if (!basicHelper.isUuidValid(oThis.userUuid)) {
-      return Promise.reject(responseHelper.error({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_t_l_fui_2',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_id_user'],
@@ -66,7 +66,7 @@ const GetTransactionListForUser = {
       for (var i = 0; i < statusesStrArray.length; i++) {
         let statusInt = statusesStrToIntMap[statusesStrArray[i].toLowerCase()];
         if (!statusInt) {
-          return Promise.reject(responseHelper.error({
+          return Promise.reject(responseHelper.paramValidationError({
             internal_error_identifier: 's_t_l_fui_3',
             api_error_identifier: 'invalid_api_params',
             params_error_identifiers: ['invalid_status_transactions_ledger'],
@@ -114,7 +114,7 @@ const GetTransactionListForUser = {
       boolFilters.push({'terms': {"status": oThis.statusesIntArray}});
     }
 
-    filteringParams['query']['bool']['must'] = boolFilters;
+    filteringParams['query']['bool']['filter'] = boolFilters;
 
     Object.assign(filteringParams, oThis._getPaginationParams());
 
@@ -122,7 +122,21 @@ const GetTransactionListForUser = {
 
     return Promise.resolve(responseHelper.successWithData({}));
 
+  },
+
+  /**
+   * get next page payload
+   *
+   * @return {object}
+   */
+  _getNextPagePayload: function () {
+
+    var oThis = this;
+
+    return {};
+
   }
+
 
 };
 

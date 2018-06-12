@@ -5,6 +5,7 @@ const express = require('express')
 
 const rootPrefix = '../..'
   , routeHelper = require(rootPrefix + '/routes/helper')
+  , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/transaction')
 ;
 
 const router = express.Router()
@@ -24,7 +25,32 @@ router.get('/:id', function (req, res, next) {
   req.decodedParams.apiName = 'get_transaction_ledger';
   req.decodedParams.id = req.params.id;
 
-  Promise.resolve(routeHelper.performer(req, res, next, getLedgerKlass, 'r_v1_l_1'));
+  const dataFormatterFunc = async function(response) {
+
+    let transactionLogDDbRecords = response.data['transactionLogDDbRecords']
+      , transactionData = []
+    ;
+
+    delete response.data['transactionLogDDbRecords'];
+
+    for (let transactionUuid in response.data['transactionUuid']) {
+
+      let data = transactionLogDDbRecords[transactionUuid];
+      if(!data) {continue}
+
+      let transactionEntityFormatter = new TransactionEntityFormatterKlass(data)
+        , transactionEntityFormatterRsp = await transactionEntityFormatter.perform()
+      ;
+
+      transactionData.push(transactionEntityFormatterRsp.data);
+
+    }
+
+    response.data[response.data.result_type] = transactionData;
+
+  };
+
+  Promise.resolve(routeHelper.performer(req, res, next, getLedgerKlass, 'r_v1_l_1', null, dataFormatterFunc));
 
 });
 
