@@ -811,7 +811,7 @@ MigrateTokenBalancesKlass.prototype = {
         client_id: clientId,
         ddb_service: ddbServiceObj,
         auto_scaling: autoscalingServiceObj
-      }).batchPutItem(dataToInsert);
+      }).batchPutItem(dataToInsert, 10);
 
     }
 

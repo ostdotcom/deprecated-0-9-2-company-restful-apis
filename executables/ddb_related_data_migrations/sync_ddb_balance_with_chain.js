@@ -123,12 +123,14 @@ SyncDdbBalancesWithChain.prototype = {
 
       for(let i=0; i<batcheduserAddresses.length; i++) {
 
-        let updateRsp = await tokenBalanceObj.update({
+        let updateData = {
           ethereum_address: batcheduserAddresses[i],
           settle_amount: promiseResponses[i].data.balance
-        });
+        };
+        let updateRsp = await tokenBalanceObj.set(updateData);
 
-        logger.debug('updateRsp', JSON.stringify(updateRsp.toHash()));
+        logger.info('updateData', updateData);
+        logger.info('updateRsp', JSON.stringify(updateRsp.toHash()));
 
       }
 
