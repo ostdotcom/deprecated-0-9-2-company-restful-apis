@@ -79,7 +79,7 @@ Base.prototype = {
     return Promise.resolve(responseHelper.successWithData({
       result_type: 'transactions',
       transactionLogDDbRecords: getDataFromDdbRsp.data,
-      transactionUuid: oThis.transactionUuids,
+      transactionUuids: oThis.transactionUuids,
       meta: {next_page_payload: nextPagePayload}
     }));
 

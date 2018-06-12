@@ -133,7 +133,13 @@ const GetTransactionListForUser = {
 
     var oThis = this;
 
-    return {};
+    return {
+      order_by: oThis.orderBy,
+      order: oThis.order,
+      page_no: oThis.pageNo + 1,
+      limit: oThis.limit,
+      status: oThis.statusStr
+    };
 
   }
 
