@@ -21,6 +21,7 @@ const rootPrefix = '../..'
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
   , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
   , PostAirdropPayKlass = openStPayments.services.airdropManager.postAirdropPay
+  , ManagedAddressesModel = require(rootPrefix + '/app/models/managed_address')
 ;
 
 const TransactionLogModel = openStorage.TransactionLogModel
@@ -300,7 +301,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
               console.log("---payResp--", JSON.stringify(payResp));
             }
 
-            eventData = oThis._getEventData(decodedEvents);
+            eventData = await oThis._getEventData(decodedEvents);
 
             console.log('----------------------eventData-', txHash, JSON.stringify(eventData));
             toUpdateFields = {
@@ -436,7 +437,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     return Promise.resolve();
   },
 
-  _getEventData: function (decodedEvents) {
+  _getEventData: async function (decodedEvents) {
     const eventData = {_tokenAmount: '0', _commissionTokenAmount: '0', transfer_events: []};
 
     if (!decodedEvents || decodedEvents.length === 0) {
@@ -447,12 +448,19 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       , allTransferEventsVars = []
     ;
 
+    let addressesToFetch = [];
+
     for (var i = 0; i < decodedEvents.length; i++) {
       if (decodedEvents[i].name == 'AirdropPayment') {
         airdropPaymentEventVars = decodedEvents[i].events;
       }
       if (decodedEvents[i].name == 'Transfer') {
+        //
         allTransferEventsVars.push(decodedEvents[i].events);
+
+        if (['_from', '_to'].includes(decodedEvents[i].event.name)) {
+          addressesToFetch.push(transferEventVars[j].value);
+        }
       }
     }
 
@@ -469,6 +477,16 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     }
 
     console.log("---------------------------allTransferEventsVars------", JSON.stringify(allTransferEventsVars));
+
+    let managedAddressResults = await new ManagedAddressesModel().getByEthAddresses(addressesToFetch);
+
+    let addressToUuidMap = {};
+
+    for (let i = 0; i < managedAddressResults.length; i++) {
+      addressToUuidMap[managedAddressResults[i].ethereum_address] = managedAddressResults[i].uuid;
+    }
+
+
     for (var i = 0; i < allTransferEventsVars.length; i++) {
       let transferEventVars = allTransferEventsVars[i];
 
@@ -477,10 +495,16 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       for (var j = 0; j < transferEventVars.length; j ++) {
         if (transferEventVars[j].name == '_from') {
           transferEvent.from_address = transferEventVars[j].value;
+          if (addressToUuidMap[transferEvent.from_address]) {
+            transferEvent.from_uuid = addressToUuidMap[transferEvent.from_address];
+          }
         }
 
         if (transferEventVars[j].name == '_to') {
           transferEvent.to_address = transferEventVars[j].value;
+          if (addressToUuidMap[transferEvent.to_address]) {
+            transferEvent.to_uuid = addressToUuidMap[transferEvent.to_address];
+          }
         }
 
         if (transferEventVars[j].name == '_value') {
