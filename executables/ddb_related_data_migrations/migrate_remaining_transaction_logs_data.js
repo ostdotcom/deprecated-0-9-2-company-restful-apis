@@ -81,7 +81,7 @@ MigrateTransactionLogsKlass.prototype = {
         return Promise.resolve(responseHelper.successWithData({
           totalCheckedUuidsCount: oThis.totalCheckedUuidsCount,
           totalVerifiedUuidsCount: oThis.totalVerifiedUuidsCount,
-          success_percent: (oThis.totalCheckedUuidsCount - oThis.totalVerifiedUuidsCount) / parseFloat(oThis.totalCheckedUuidsCount) * 100,
+          failure_percent: (oThis.totalCheckedUuidsCount - oThis.totalVerifiedUuidsCount) / parseFloat(oThis.totalCheckedUuidsCount) * 100,
           clientIdMissingTxUuidsMap: JSON.stringify(oThis.clientIdMissingTxUuidsMap)
         }));
       }
@@ -239,7 +239,7 @@ MigrateTransactionLogsKlass.prototype = {
           auto_scaling: autoscalingServiceObj
         }).batchGetItem(batchedTxUuidsToVerify, 10);
 
-        if(rsp.isFailure()) {return Promise.reject(rsp)};
+        if(rsp.isFailure()) {return Promise.reject(rsp)}
 
         for(let i=0; i<batchedTxUuidsToVerify.length; i++) {
           oThis.totalCheckedUuidsCount += 1;
