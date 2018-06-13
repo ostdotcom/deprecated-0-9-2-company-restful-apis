@@ -684,7 +684,7 @@ MigrateTokenBalancesKlass.prototype = {
           if (!commonValidator.isVarNull(existingInputParams['commission_percent'])) {
             txFormattedData['commission_percent'] = existingInputParams['commission_percent']
           }
-          if (!commonValidator.isVarNull(existingInputParams['amount'])) {
+          if (!commonValidator.isVarNull(existingInputParams['amount']) && commonValidator.validateAmount(existingInputParams['amount'])) {
             txFormattedData['amount'] = existingInputParams['amount']
           }
           if (!commonValidator.isVarNull(existingInputParams['to_address'])) {
