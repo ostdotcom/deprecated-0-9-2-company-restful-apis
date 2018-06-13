@@ -68,7 +68,7 @@ CheckTransactionLogESData.prototype = {
         ;
         if( LastEvaluatedKeyValue ){ //Check for value present
             oThis.dynamoDataBatch++;
-            oThis.getDynamoDBData( LastEvaluatedObj);
+            oThis.validateDynamoDBData( LastEvaluatedObj);
         }else {
             oThis.dynamoDataBatch = 0;
         }
