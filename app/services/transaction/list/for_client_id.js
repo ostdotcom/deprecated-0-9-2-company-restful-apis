@@ -105,13 +105,16 @@ const GetTransactionListForClient = {
 
     var oThis = this;
 
-    return {
+    let payload = {
       order_by: oThis.orderBy,
       order: oThis.order,
       page_no: oThis.pageNo + 1,
-      limit: oThis.limit,
-      id: oThis.idsFilterStr
+      limit: oThis.limit
     };
+
+    if(oThis.idsFilterStr) {payload['id'] = oThis.idsFilterStr}
+
+    return payload;
 
   }
 

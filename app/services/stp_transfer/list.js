@@ -9,14 +9,15 @@
 const OSTStorage = require('@openstfoundation/openst-storage');
 
 const rootPrefix = '../../..'
-  , transactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , commonValidator = require(rootPrefix + '/lib/validators/common')
   , basicHelper = require(rootPrefix + '/helpers/basic')
-  , StpTransferEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/stp_transfer')
-  , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
+  , elasticSearchLibManifest = require(rootPrefix +  '/lib/elasticsearch/manifest')
+  , esSearchServiceObject = elasticSearchLibManifest.services.transactionLog
+  , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
+  , transactionLogModel = require(rootPrefix + '/app/models/transaction_log')
 ;
 
 /**
@@ -42,9 +43,10 @@ const ListStpTransfersService = function (params) {
   oThis.idsFilterStr = params.id;
 
   oThis.idsFilterArr = [];
-  oThis.orderByForQuery = null;
+  oThis.transferUuids = [];
   oThis.offset = null;
-  oThis.listRecords = null;
+  oThis.hasNextPage = null;
+
 };
 
 ListStpTransfersService.prototype = {
@@ -83,7 +85,18 @@ ListStpTransfersService.prototype = {
 
     await oThis._validateAndSanitize();
 
-    return oThis._fetchRecords();
+    await oThis._getFilteredUuids();
+
+    let getDataFromDdbRsp = await oThis._getDataForUuids();
+    let nextPagePayload = oThis.hasNextPage ? oThis._getNextPagePayload() : {};
+
+    return Promise.resolve(responseHelper.successWithData({
+      result_type: 'transfers',
+      transactionLogDDbRecords: getDataFromDdbRsp.data,
+      transferUuids: oThis.transferUuids,
+      meta: {next_page_payload: nextPagePayload}
+    }));
+
   },
 
   /**
@@ -134,8 +147,6 @@ ListStpTransfersService.prototype = {
     oThis.orderBy = oThis.orderBy || 'created';
     oThis.orderBy = oThis.orderBy.toLowerCase();
 
-    if (oThis.orderBy == 'created') oThis.orderByForQuery = 'id';
-
     if (oThis.order && !commonValidator.isValidOrderingString(oThis.order)) {
       return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 's_stp_l_5',
@@ -164,32 +175,92 @@ ListStpTransfersService.prototype = {
   },
 
   /**
-   * Validate and sanitize
+   * Get transaction UUID's
    *
-   * Sets oThis.listRecords
-   *
-   * @return {promise<result>}
+   * @return {Promise}
    */
-  _fetchRecords: async function () {
+  _getFilteredUuids: async function () {
     const oThis = this
     ;
 
-    /*
-    oThis.listRecords = await new transactionLogModel().getList(
-      oThis.clientId,
-      transactionLogConst.stpTransferTransactionType,
-      {limit: oThis.limit + 1, offset: oThis.offset, orderBy: oThis.orderByForQuery, order: oThis.order},
-      {id: oThis.idsFilterArr}
-    ); */
+    // https://www.elastic.co/guide/en/elasticsearch/guide/current/bool-query.html
+    let boolFilters = [
+      {"term": {"client_id": oThis.clientId}}, // filter by client id
+      {"term": {"type": new transactionLogModel().invertedTransactionTypes[transactionLogConst.stpTransferTransactionType]}} // filter by transaction type
+    ];
 
-    oThis.uuids = [];
+    // if transaction_uuids are passes in params, add filter on it
+    if (oThis.idsFilterArr.length > 0) {
+      boolFilters.push({"terms": { "id" : oThis.idsFilterArr }});
+    }
 
-    //TODO: Call ES library method with appropriate params to get the uuids
+    let sortParams = {};
+    if (oThis.orderBy === 'created') {sortParams['created_at'] = oThis.order}
 
-    let transactionResponse = new OSTStorage.TransactionLogModel({
+    let filteringParams = {
+      "query": {
+        "bool": {"filter": boolFilters}
+      },
+      "from" : oThis.offset,
+      "size" : oThis.limit,
+      "sort": [sortParams]
+    };
+
+    let searchRsp = await esSearchServiceObject.search(filteringParams);
+    if(searchRsp.isFailure()) {return Promise.reject(searchRsp)}
+
+    let searchData = searchRsp.data
+      , meta = searchData.meta
+      , transaction_logs = searchData.transaction_logs
+      , transfer_uuids = []
+    ;
+
+    for(let i=0; i<transaction_logs.length; i++) {
+      transfer_uuids.push(transaction_logs[i].id);
+    }
+
+    oThis.transferUuids = transfer_uuids;
+    oThis.hasNextPage = meta.has_next_page ;
+
+    return Promise.resolve(responseHelper.successWithData({}));
+
+  },
+
+  /**
+   * get next page payload
+   *
+   * @return {object}
+   */
+  _getNextPagePayload: function () {
+
+    const oThis = this;
+
+    let payload = {
+      order_by: oThis.orderBy,
+      order: oThis.order,
+      page_no: oThis.pageNo + 1,
+      limit: oThis.limit
+    };
+
+    if(oThis.idsFilterStr) {payload['id'] = oThis.idsFilterStr}
+
+    return payload;
+
+  },
+
+  /**
+   * For shortlisted UUID's, fetch data from DDB
+   *
+   * @return {promise<result>}
+   */
+  _getDataForUuids: async function () {
+    const oThis = this
+    ;
+
+    let transactionResponse = await new OSTStorage.TransactionLogModel({
       client_id: oThis.clientId,
       ddb_service: ddbServiceObj
-    }).batchGetItem(oThis.uuids);
+    }).batchGetItem(oThis.transferUuids);
 
     if (!transactionResponse.data) {
       return Promise.reject(responseHelper.error({
@@ -199,15 +270,8 @@ ListStpTransfersService.prototype = {
       }));
     }
 
-    let recordList = [];
+    return Promise.resolve(responseHelper.successWithData(transactionResponse.data));
 
-    for (let i=0; i < oThis.uuids; i++) {
-
-      let record = transactionResponse.data[oThis.uuids[i]];
-      recordList.push(record);
-    }
-
-    return Promise.resolve(responseHelper.successWithData(recordList));
   }
 
 };

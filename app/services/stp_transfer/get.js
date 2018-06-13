@@ -5,7 +5,6 @@ const OSTStorage = require('@openstfoundation/openst-storage');
 const rootPrefix = '../../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , StPrimeTransferFormatter = require(rootPrefix + '/lib/formatter/entities/latest/stp_transfer')
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
   , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , basicHelper = require(rootPrefix + '/helpers/basic')

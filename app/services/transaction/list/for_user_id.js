@@ -134,16 +134,18 @@ const GetTransactionListForUser = {
 
     var oThis = this;
 
-    return {
+    let payload = {
       order_by: oThis.orderBy,
       order: oThis.order,
       page_no: oThis.pageNo + 1,
-      limit: oThis.limit,
-      status: oThis.statusStr
+      limit: oThis.limit
     };
 
-  }
+    if(oThis.statusStr) {payload['status'] = oThis.statusStr}
 
+    return payload;
+
+  }
 
 };
 

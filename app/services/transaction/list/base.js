@@ -8,7 +8,9 @@ const rootPrefix = '../../../..'
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
   , commonValidator = require(rootPrefix +  '/lib/validators/common')
   , elasticSearchLibManifest = require(rootPrefix +  '/lib/elasticsearch/manifest')
-  , ddbSearchServiceObject = elasticSearchLibManifest.services.transactionLog
+  , esSearchServiceObject = elasticSearchLibManifest.services.transactionLog
+  , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
+  , transactionLogModel = require(rootPrefix + '/app/models/transaction_log')
 ;
 
 const Base = function(params) {
@@ -151,7 +153,7 @@ Base.prototype = {
   },
 
   /**
-   * Get transaction log data
+   * Get transaction UUID's
    *
    * @return {Promise}
    */
@@ -159,7 +161,7 @@ Base.prototype = {
     var oThis = this
     ;
 
-    let searchRsp = await ddbSearchServiceObject.search(oThis.filteringParams);
+    let searchRsp = await esSearchServiceObject.search(oThis.filteringParams);
     if(searchRsp.isFailure()) {return Promise.reject(searchRsp)}
 
     let searchData = searchRsp.data
@@ -212,7 +214,7 @@ Base.prototype = {
     var oThis = this;
     return [
       {"term": {"client_id": oThis.clientId}}, // filter by client id
-      {"term": {"type": 1}} // filter by transaction type
+      {"term": {"type": new transactionLogModel().invertedTransactionTypes[transactionLogConst.tokenTransferTransactionType]}} // filter by transaction type
     ];
 
   },

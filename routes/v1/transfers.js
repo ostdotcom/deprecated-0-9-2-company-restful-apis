@@ -54,31 +54,42 @@ router.post('/', function (req, res, next) {
  * @routeparam {string} :id (optional) - this is the comma separated ids to filter on.
  */
 router.get('/', function (req, res, next) {
+  
   const GetSTPTransferListService = require(rootPrefix + '/app/services/stp_transfer/list');
   req.decodedParams.apiName = 'list_stp_transfers';
 
   const dataFormatterFunc = async function (response) {
-    let recordList = response.data;
 
-    delete response.data;
+    let transactionLogDDbRecords = response.data['transactionLogDDbRecords']
+      , transferUuids = response.data['transferUuids']
+      , transferData = []
+    ;
 
-    let resultData = [];
+    delete response.data['transactionLogDDbRecords'];
+    delete response.data['transferUuids'];
 
-    for (let i=0; i < recordList.length; i++) {
-      let stPrimeTransferFormatter = new StPrimeTransferFormatter(recordList[0])
-        , stPrimeTransferFormatterResponse = await stPrimeTransferFormatter.perform()
+    for (let transactionUuid in transferUuids) {
+
+      let data = transactionLogDDbRecords[transactionUuid];
+      if(!data) {continue}
+
+      let stPrimeTransferFormatter = new StPrimeTransferFormatter(data)
+        , stPrimeTransferFormatterRsp = await stPrimeTransferFormatter.perform()
       ;
 
-      resultData.push(stPrimeTransferFormatterResponse.data);
+      transferData.push(stPrimeTransferFormatterRsp.data);
+
     }
 
-    response.data = {};
-    response.data.result_type ='transfers';
-    response.data.transfers = resultData;
+    response.data[response.data.result_type] = transferData;
 
   };
 
-  Promise.resolve(routeHelper.performer(req, res, next, GetSTPTransferListService, 'r_v1_stp_t_2', null, dataFormatterFunc));
+  Promise.resolve(routeHelper.performer(
+    req, res, next, GetSTPTransferListService,
+    'r_v1_stp_t_2', null, dataFormatterFunc)
+  );
+  
 });
 
 /**
@@ -91,6 +102,7 @@ router.get('/', function (req, res, next) {
  * @routeparam {number} :id (mandatory) - id of the transaction
  */
 router.get('/:id', function (req, res, next) {
+  
   const GetSTPTransferService = require(rootPrefix + '/app/services/stp_transfer/get');
 
   req.decodedParams.apiName = 'get_stp_transfer';
