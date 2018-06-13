@@ -11,25 +11,38 @@ const fs = require('fs')
   , openStPlatform = require('@openstfoundation/openst-platform')
   , openStPayments = require('@openstfoundation/openst-payments')
   , openStorage = require('@openstfoundation/openst-storage')
+  , openSTNotification = require('@openstfoundation/openst-notification')
+  , BigNumber = require('bignumber.js')
+  , uuid = require('uuid')
 ;
 
 const rootPrefix = '../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , TransactionMeta = require(rootPrefix + '/app/models/transaction_meta')
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
   , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
+  , Erc20ContractAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address')
+  , Erc20ContractUuidCacheKlass = require(rootPrefix + '/lib/cache_multi_management/erc20_contract_uuid')
+  , commonValidator = require(rootPrefix + '/lib/validators/common')
+  , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
+  , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
   , PostAirdropPayKlass = openStPayments.services.airdropManager.postAirdropPay
   , ManagedAddressesModel = require(rootPrefix + '/app/models/managed_address')
+  , notificationTopics = require(rootPrefix + '/lib/global_constant/notification_topics')
 ;
 
-const TransactionLogModel = openStorage.TransactionLogModel
+const transactionLogModelDdb = openStorage.TransactionLogModel
+  , tokenBalanceModelDdb = openStorage.TokenBalanceModel
   , coreAbis = openStPlatform.abis
 ;
 
 abiDecoder.addABI(coreAbis.airdrop);
 abiDecoder.addABI(coreAbis.brandedToken);
+abiDecoder.addABI(coreAbis.openSTUtility);
 
 const BlockScannerForTxStatusAndBalanceSync = function (params) {
   const oThis = this
@@ -40,6 +53,14 @@ const BlockScannerForTxStatusAndBalanceSync = function (params) {
   oThis.scannerData = {};
   oThis.interruptSignalObtained = false;
   oThis.highestBlock = null;
+
+  oThis.TransferEventSignature = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+  oThis.ProcessedMintEventSignature = '0x96989a6b1d8c3bb8d6cc22e14b188b5c14b1f33f34ff07ea2e4fd6d880dac2c7';
+  oThis.RevertedMintEventSignature = '0x86e6b95641fbf0f8939eb3da2e7e26aee0188048353d08a45c78218e84cf1d4f';
+
+  oThis.OpenSTUtilityContractAddr = chainInteractionConstants.OPENSTUTILITY_CONTRACT_ADDR.toLowerCase();
+  oThis.StPrimeContractUuid = chainInteractionConstants.ST_PRIME_UUID.toLowerCase();
+  oThis.ZeroXAddress = '0x0000000000000000000000000000000000000000';
 
   oThis.tokenTransferKind = new TransactionMeta().invertedKinds[transactionLogConst.tokenTransferTransactionType];
   oThis.stpTransferKind = new TransactionMeta().invertedKinds[transactionLogConst.stpTransferTransactionType];
@@ -101,7 +122,9 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
         await oThis.getTransactionReceipts();
 
-        await oThis.generateToUpdateData();
+        await oThis.generateToUpdateDataForKnownTx();
+
+        await oThis.generateToUpdateDataForUnKnownTx();
 
         await oThis.updateTransactionLogs();
 
@@ -147,6 +170,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     oThis.knownTxUuidToTxHashMap = {};
     oThis.txHashToTxReceiptMap = {};
     oThis.clientIdWiseDataToUpdate = {};
+    oThis.unRecognizedTxHashes = []
   },
 
   /**
@@ -166,6 +190,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     while (true) {
       const offset = (batchNo - 1) * batchSize
         , batchedTxHashes = oThis.currentBlockInfo.transactions.slice(offset, batchSize + offset)
+        , recognizedTxHashesMap = {}
       ;
 
       batchNo = batchNo + 1;
@@ -174,11 +199,11 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
       const batchedTxLogRecords = await new TransactionMeta().getByTransactionHash(batchedTxHashes);
 
-      if (batchedTxLogRecords.length === 0) continue;
-
       for (var i = 0; i < batchedTxLogRecords.length; i++) {
 
         const currRecord = batchedTxLogRecords[i];
+
+        recognizedTxHashesMap[currRecord.transaction_hash] = 1;
 
         if (currRecord.kind == oThis.tokenTransferKind) {
           totalBtTransfers = totalBtTransfers + 1;
@@ -195,6 +220,13 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         oThis.recognizedTxHashes.push(currRecord.transaction_hash);
         oThis.knownTxUuidToTxHashMap[currRecord.transaction_uuid] = currRecord.transaction_hash;
       }
+
+      for(var i=0; i<batchedTxHashes.length; i++){
+        //if already known transaction skip here.
+        if(recognizedTxHashesMap[batchedTxHashes[i]]) continue;
+        oThis.unRecognizedTxHashes.push(batchedTxHashes[i]);
+      }
+
     }
 
     logger.log('Total BT Transfers:', totalBtTransfers);
@@ -215,7 +247,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     while (true) {
       const offset = (batchNo - 1) * batchSize
-        , batchedTxHashes = oThis.recognizedTxHashes.slice(offset, batchSize + offset)
+        , batchedTxHashes = oThis.currentBlockInfo.transactions.slice(offset, batchSize + offset)
         , promiseArray = []
       ;
 
@@ -244,7 +276,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   /**
    * Generate to update data
    */
-  generateToUpdateData: async function () {
+  generateToUpdateDataForKnownTx: async function () {
     const oThis = this
       , batchSize = 50
     ;
@@ -268,7 +300,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         if (batchedTxUuids.length === 0) break;
 
         console.log("------1----batchedTxUuids---", JSON.stringify(batchedTxUuids));
-        let batchGetItemResponse = await new TransactionLogModel({
+        let batchGetItemResponse = await new transactionLogModelDdb({
           client_id: clientId,
           ddb_service: ddbServiceObj,
           auto_scaling: autoscalingServiceObj
@@ -324,6 +356,127 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   },
 
   /**
+   * Generate to update data for unrecognized transaction if it belongs to us.
+   */
+  generateToUpdateDataForUnKnownTx: async function () {
+    const oThis = this
+      , erc20Addresses = []
+      , txHashToShortListedEventsMap = {}
+    ;
+    let erc20ContractAddressesData = {};
+
+    console.log("c----------------------oThis.unRecognizedTxHashes----", JSON.stringify(oThis.unRecognizedTxHashes));
+
+    for(var i=0; i<oThis.unRecognizedTxHashes.length; i++){
+      let txHash = oThis.unRecognizedTxHashes[i];
+      let txReceipt = oThis.txHashToTxReceiptMap[txHash];
+
+      console.log("c----------------------txReceipt----", txHash, '--', JSON.stringify(txReceipt));
+      for(var j=0; j<txReceipt.logs.length; j++){
+        erc20Addresses.push(txReceipt.logs[j].address);
+      }
+
+    }
+
+    console.log("c----------------------erc20Addresses----", JSON.stringify(erc20Addresses));
+
+    if (erc20Addresses.length > 0) {
+      // from these addresses create a map of addresses of which are ERC20 address
+      let cacheObj = new Erc20ContractAddressCacheKlass({addresses: erc20Addresses})
+        , cacheFetchRsp = await cacheObj.fetch()
+      ;
+      if (cacheFetchRsp.isFailure()) {
+        return Promise.reject(cacheFetchRsp)
+      }
+      erc20ContractAddressesData = cacheFetchRsp.data;
+    }
+
+    for(var i=0; i<oThis.unRecognizedTxHashes.length; i++){
+      let txHash = oThis.unRecognizedTxHashes[i];
+      let txReceipt = oThis.txHashToTxReceiptMap[txHash];
+
+      for(var j=0; j<txReceipt.logs.length; j++){
+        let txReceiptLogElement = txReceipt.logs[j]
+          , contractAddress = txReceiptLogElement.address.toLowerCase()
+          , eventSignature = txReceiptLogElement.topics[0]
+          , isKnownBTContract = erc20ContractAddressesData[contractAddress]
+          , isTransferEvent = (eventSignature === oThis.TransferEventSignature)
+          , isUtilityContract = (oThis.OpenSTUtilityContractAddr === contractAddress)
+          , isProcessedMintEvent = (eventSignature === oThis.ProcessedMintEventSignature)
+          , isRevertedMintEvent = (eventSignature === oThis.RevertedMintEventSignature)
+        ;
+
+        if((isKnownBTContract && isTransferEvent) || (isUtilityContract && (isProcessedMintEvent || isRevertedMintEvent))){
+          txHashToShortListedEventsMap[txHash] = txHashToShortListedEventsMap[txHash] || [];
+          txHashToShortListedEventsMap[txHash].push(txReceiptLogElement);
+        }
+      }
+    }
+
+    console.log("----------------------txHashToShortListedEventsMap----", JSON.stringify(txHashToShortListedEventsMap));
+    let txHashDecodedEventsMap = await oThis._decodeTransactionEvents(txHashToShortListedEventsMap);
+
+    let balanceAdjustmentRsp = await oThis._computeBalanceAdjustments(txHashDecodedEventsMap, erc20ContractAddressesData);
+    let balanceAdjustmentMap = balanceAdjustmentRsp['balanceAdjustmentMap']
+      , txHashTransferEventsMap = balanceAdjustmentRsp['txHashTransferEventsMap']
+      , affectedAddresses = balanceAdjustmentRsp['affectedAddresses']
+      , doClaimTransferEventData = balanceAdjustmentRsp['doClaimTransferEventData']
+    ;
+    console.log("----------------------balanceAdjustmentMap----", JSON.stringify(balanceAdjustmentMap));
+    console.log("----------------------txHashTransferEventsMap----", JSON.stringify(txHashTransferEventsMap));
+    console.log("----------------------affectedAddresses----", JSON.stringify(affectedAddresses));
+
+
+    // format data to be inserted into transaction logs
+    let params = {
+      blockNoDetailsMap: oThis.currentBlockInfo,
+      txHashToTxReceiptMap: oThis.txHashToTxReceiptMap,
+      erc20ContractAddressesData: erc20ContractAddressesData,
+      txHashTransferEventsMap: txHashTransferEventsMap,
+      affectedAddresses: affectedAddresses
+    };
+    let formattedTransactionsData = await oThis._fetchFormattedTransactionsForMigration(params);
+    console.log("----------------------formattedTransactionsData----", JSON.stringify(formattedTransactionsData));
+
+    await oThis._insertDataInTransactionLogs(formattedTransactionsData);
+
+    await oThis._settleBalancesInDb(balanceAdjustmentMap);
+
+    await oThis._claimCompletedStatus(doClaimTransferEventData);
+
+  },
+
+  /**
+   * decode events. returns map with key as txHash and value as array of decoded events
+   *
+   * @returns {promise<result>}
+   */
+  _decodeTransactionEvents: async function (txHashEventsMap) {
+    const oThis = this
+    ;
+
+    logger.info('starting _decodeTransactionEvents');
+
+    // Decode events from AbiDecoder
+    let txHashDecodedEventsMap = {}
+      , txHashes = Object.keys(txHashEventsMap)
+    ;
+
+    console.log("-1-------txHashes--", JSON.stringify(txHashes));
+    for (let i = 0; i < txHashes.length; i++) {
+      let txHash = txHashes[i];
+      console.log("-2-------txHash--", JSON.stringify(txHash));
+      txHashDecodedEventsMap[txHash] = abiDecoder.decodeLogs(txHashEventsMap[txHash]);
+    }
+
+    console.log("-1-------txHashDecodedEventsMap--", JSON.stringify(txHashDecodedEventsMap));
+    logger.info('completed _decodeTransactionEvents');
+
+    return txHashDecodedEventsMap;
+  },
+
+
+  /**
    * Update transaction logs table
    */
   updateTransactionLogs: async function () {
@@ -332,7 +485,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     for (var clientId in oThis.clientIdWiseDataToUpdate) {
       const clientTxData = oThis.clientIdWiseDataToUpdate[clientId]
-        , txLogObj = new TransactionLogModel({
+        , txLogObj = new transactionLogModelDdb({
         client_id: clientId,
         ddb_service: ddbServiceObj,
         auto_scaling: autoscalingServiceObj
@@ -516,7 +669,407 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     }
 
     return eventData;
+  },
+
+
+  /**
+   * computes balance adjustment map. returns map with key as contract address and value as a map
+   * which has key as user_eth_address and value as amount to be adjusted
+   *
+   * @returns {promise<result>}
+   */
+  _computeBalanceAdjustments: async function (txHashDecodedEventsMap, erc20ContractAddressesData) {
+    const oThis = this
+    ;
+
+    logger.info('starting _computeBalanceAdjustments');
+
+    let balanceAdjustmentMap = {}
+      , txHashTransferEventsMap = {}
+      , affectedAddresses = []
+      , doClaimTransferEventData = []
+      , txHashes = Object.keys(txHashDecodedEventsMap)
+    ;
+
+    for (let k = 0; k < txHashes.length; k++) {
+
+      let txHash = txHashes[k];
+
+      let decodedEventsMap = txHashDecodedEventsMap[txHash]
+        , transferEvents = []
+      ;
+
+      for (let i = 0; i < decodedEventsMap.length; i++) {
+
+        let decodedEventData = decodedEventsMap[i]
+          , contractAddress = decodedEventData.address.toLowerCase()
+        ;
+
+        let fromAddr = null
+          , toAddr = null
+          , valueStr = null
+          , contractUuid = null
+          , claimDone = false;
+        ;
+
+        for (let j = 0; j < decodedEventData.events.length; j++) {
+          let eventData = decodedEventData.events[j];
+          switch (eventData.name) {
+            case "_from": //case "_staker":
+              fromAddr = eventData.value.toLowerCase();
+              break;
+            case "_to": //case "_beneficiary":
+              toAddr = eventData.value.toLowerCase();
+              break;
+            case "_value":
+            case "_amount":
+              valueStr = eventData.value;
+              break;
+            case "_uuid":
+              contractUuid = eventData.value.toLowerCase();
+              break;
+          }
+        }
+
+        //This identifies that balance is transfered from erc20 address(fromAddr) to reserve address(toAddr) on claim success.
+        if(contractAddress == fromAddr){
+          const erc20AddrData = erc20ContractAddressesData[contractAddress];
+          if(erc20AddrData.client_id){
+            doClaimTransferEventData.push({client_id: erc20AddrData.client_id, transaction_hash: txHash});
+            claimDone = true;
+          }
+        }
+
+        if (contractUuid) {
+          // it is not an transfer event but is a mint event
+          if (contractUuid === oThis.StPrimeContractUuid) {
+            // for St prime uuid do not settle balances
+            continue;
+          } else {
+            let cacheObj = new Erc20ContractUuidCacheKlass({uuids: [contractUuid]})
+              , cacheFetchRsp = await cacheObj.fetch()
+            ;
+            if (cacheFetchRsp.isFailure()) {
+              return Promise.reject(cacheFetchRsp)
+            }
+            let erc20ContractUuidsData = cacheFetchRsp.data;
+            // overridr contractAddress of ostutility contract with that of erc 20 address of this token
+            contractAddress = erc20ContractUuidsData[contractUuid]['token_erc20_address'].toLowerCase();
+            switch (decodedEventData.name) {
+              case "ProcessedMint":
+                toAddr = contractAddress;
+                break;
+              case "RevertedMint":
+                fromAddr = contractAddress;
+                break;
+              default:
+                return Promise.reject(responseHelper.error({
+                  internal_error_identifier: 'e_drdm_ads_2',
+                  api_error_identifier: 'unhandled_catch_response',
+                  debug_options: {}
+                }));
+                break;
+            }
+          }
+        }
+
+        balanceAdjustmentMap[contractAddress] = balanceAdjustmentMap[contractAddress] || {};
+        let valueBn = new BigNumber(valueStr);
+
+        if (fromAddr) {
+          balanceAdjustmentMap[contractAddress][fromAddr] = balanceAdjustmentMap[contractAddress][fromAddr] || {settledBalance: new BigNumber('0'), unSettledDebit: new BigNumber('0')};
+          balanceAdjustmentMap[contractAddress][fromAddr].settledBalance = balanceAdjustmentMap[contractAddress][fromAddr].settledBalance.minus(valueBn);
+          if(!claimDone){
+            balanceAdjustmentMap[contractAddress][fromAddr].unSettledDebit = balanceAdjustmentMap[contractAddress][fromAddr].unSettledDebit.minus(valueBn);
+          }
+          affectedAddresses.push(fromAddr);
+        }
+
+        if (toAddr) {
+          balanceAdjustmentMap[contractAddress][toAddr] = balanceAdjustmentMap[contractAddress][toAddr] || {settledBalance: new BigNumber('0'), unSettledDebit: new BigNumber('0')};
+          balanceAdjustmentMap[contractAddress][toAddr].settledBalance = balanceAdjustmentMap[contractAddress][toAddr].settledBalance.plus(valueBn);
+          affectedAddresses.push(toAddr);
+        }
+
+        // for mit events we would mark staker addr as from / to and wouldn't settle this entry in DB (as out of thin air)
+        transferEvents.push({
+          from_address: fromAddr || oThis.ZeroXAddress,
+          to_address: toAddr || oThis.ZeroXAddress,
+          amount_in_wei: valueStr
+        });
+
+      }
+
+      txHashTransferEventsMap[txHash] = transferEvents;
+
+      // uniq!
+      affectedAddresses = affectedAddresses.filter(function (item, pos) {
+        return affectedAddresses.indexOf(item) == pos;
+      });
+
+    }
+
+    logger.info('completed _computeBalanceAdjustments');
+
+    return {
+      balanceAdjustmentMap: balanceAdjustmentMap,
+      txHashTransferEventsMap: txHashTransferEventsMap,
+      affectedAddresses: affectedAddresses,
+      doClaimTransferEventData: doClaimTransferEventData
+    };
+
+  },
+
+  /**
+   * from all the data we have fetched till now, format it to a format which could be directly inserted in DDB.
+   *
+   * @returns {promise<result>}
+   */
+  _fetchFormattedTransactionsForMigration: async function (params) {
+
+    console.log("-1111--------------------params---", JSON.stringify(params));
+    logger.info('starting _fetchFormattedTransactionsForMigration');
+
+    let blockNoDetails = params['blockNoDetailsMap']
+      , txHashToTxReceiptMap = params['txHashToTxReceiptMap']
+      , erc20ContractAddressesData = params['erc20ContractAddressesData']
+      , txHashTransferEventsMap = params['txHashTransferEventsMap']
+      , affectedAddresses = params['affectedAddresses']
+      , addressUuidMap = {}
+      , formattedTransactionsData = {}
+      , completeStatus = parseInt(new TransactionLogModel().invertedStatuses[transactionLogConst.completeStatus])
+      , failedStatus = parseInt(new TransactionLogModel().invertedStatuses[transactionLogConst.failedStatus])
+      , tokenTransferType = parseInt(new TransactionLogModel().invertedTransactionTypes[transactionLogConst.extenralTokenTransferTransactionType])
+    ;
+
+    console.log("-2222--------------------addressUuidMap---", JSON.stringify(addressUuidMap));
+    if (affectedAddresses.length > 0) {
+      let dbRows = await new ManagedAddressModel().getByEthAddresses(affectedAddresses);
+      for (let i = 0; i < dbRows.length; i++) {
+        let dbRow = dbRows[i];
+        addressUuidMap[dbRow['ethereum_address'].toLowerCase()] = dbRow['uuid'];
+      }
+    }
+
+    console.log("-3333--------------------addressUuidMap---", JSON.stringify(addressUuidMap));
+      let txHashes = Object.keys(txHashTransferEventsMap);
+
+      for (let i = 0; i < txHashes.length; i++) {
+
+        let txHash = txHashes[i]
+          , txFormattedData = {}
+          , txDataFromChain = txHashToTxReceiptMap[txHash]
+        ;
+
+        let contractAddress = txDataFromChain.logs[0].address
+          , erc20ContractAddressData = erc20ContractAddressesData[contractAddress.toLowerCase()]
+        ;
+
+        if (!erc20ContractAddressData) {
+          // as we are also processing mint events, they wouldn't have client id.
+          // they should only be used to adjust balances but not insert here
+          continue;
+        }
+
+        txFormattedData = {
+          transaction_hash: txHash,
+          transaction_uuid: uuid.v4(),
+          transaction_type: tokenTransferType,
+          block_number: txDataFromChain['blockNumber'],
+          client_id: parseInt(erc20ContractAddressData['client_id']),
+          client_token_id: parseInt(erc20ContractAddressData['client_token_id']),
+          token_symbol: erc20ContractAddressData['symbol'],
+          gas_used: txDataFromChain['gasUsed'],
+          status: (parseInt(txDataFromChain.status, 16) == 1) ? completeStatus : failedStatus,
+          created_at: blockNoDetails['timestamp'],
+          updated_at: blockNoDetails['timestamp'],
+          from_address: txDataFromChain['from'],
+          to_address: txDataFromChain['to']
+        };
+
+        let fromUuid = addressUuidMap[txDataFromChain['from'].toLowerCase()];
+        if (!commonValidator.isVarNull(fromUuid)) {
+          txFormattedData['from_uuid'] = fromUuid
+        }
+
+        let toUuid = addressUuidMap[txDataFromChain['to'].toLowerCase()];
+        if (!commonValidator.isVarNull(toUuid)) {
+          txFormattedData['to_uuid'] = toUuid
+        }
+
+
+        if (txHashTransferEventsMap[txHash]) {
+          txFormattedData['transfer_events'] = txHashTransferEventsMap[txHash];
+          for (let j = 0; j < txFormattedData['transfer_events'].length; j++) {
+            let event_data = txFormattedData['transfer_events'][j];
+            let fromUuid = addressUuidMap[event_data['from_address']];
+            if (!commonValidator.isVarNull(fromUuid)) {
+              event_data['from_uuid'] = fromUuid
+            }
+            let toUuid = addressUuidMap[event_data['to_address']];
+            if (!commonValidator.isVarNull(toUuid)) {
+              event_data['to_uuid'] = toUuid
+            }
+          }
+        }
+
+        // group data by client_ids so that they can be batch inserted in ddb
+        formattedTransactionsData[txFormattedData['client_id']] = formattedTransactionsData[txFormattedData['client_id']] || [];
+
+        formattedTransactionsData[txFormattedData['client_id']].push(txFormattedData);
+
+      }
+
+    logger.info('completed _fetchFormattedTransactionsForMigration');
+
+    return Promise.resolve(formattedTransactionsData);
+  },
+
+  /**
+   * bulk create records in DDB
+   *
+   * @returns {promise<result>}
+   */
+  _insertDataInTransactionLogs: async function (formattedTransactionsData) {
+    const oThis = this;
+
+    logger.info('starting _insertDataInTransactionLogs');
+
+    let clientIds = Object.keys(formattedTransactionsData)
+    ;
+
+    for (let k = 0; k < clientIds.length; k++) {
+
+      let clientId = clientIds[k]
+        , dataToInsert = formattedTransactionsData[clientId]
+      ;
+
+      logger.info(`starting _insertDataInTransactionLogs clientId : ${clientId} length : ${dataToInsert.length}`);
+
+      let rsp = await new transactionLogModelDdb({
+        client_id: clientId,
+        ddb_service: ddbServiceObj,
+        auto_scaling: autoscalingServiceObj
+      }).batchPutItem(dataToInsert, 10);
+
+    }
+
+    logger.info('completed _insertDataInTransactionLogs');
+
+    return Promise.resolve({});
+
+  },
+
+  /**
+   * settle balances in DB
+   *
+   * @returns {promise<result>}
+   */
+  _settleBalancesInDb: async function (balanceAdjustmentMap) {
+
+    const oThis = this;
+
+    logger.info('starting _settleBalancesInDb');
+
+    let erc20ContractAddresses = Object.keys(balanceAdjustmentMap);
+
+    for (let k = 0; k < erc20ContractAddresses.length; k++) {
+
+      let erc20ContractAddress = erc20ContractAddresses[k];
+
+      let userBalancesSettlementsData = balanceAdjustmentMap[erc20ContractAddress]
+        , tokenalanceModelObj = new tokenBalanceModelDdb({
+          erc20_contract_address: erc20ContractAddress,
+          chain_id: chainInteractionConstants.UTILITY_CHAIN_ID,
+          ddb_service: ddbServiceObj,
+          auto_scaling: autoscalingServiceObj
+        })
+        , promises = []
+        , userAddresses = Object.keys(userBalancesSettlementsData)
+      ;
+
+      for (var l = 0; l < userAddresses.length; l++) {
+
+        let userAddress = userAddresses[l]
+          , settledAmountDelta = userBalancesSettlementsData[userAddress].settledBalance
+          , unsettledDebitDelta = userBalancesSettlementsData[userAddress].unSettledDebit || '0'
+        ;
+
+        promises.push(tokenalanceModelObj.update({
+          settle_amount: settledAmountDelta.toString(10),
+          un_settled_debit_amount: unsettledDebitDelta.toString(10),
+          ethereum_address: userAddress
+        }).catch(oThis.catchHandlingFunction));
+
+      }
+
+      await Promise.all(promises);
+
+    }
+
+    logger.info('completed _settleBalancesInDb');
+
+    return Promise.resolve({});
+
+  },
+
+  /**
+   * if claim event found raise one RMQ event. Which will mark stake_and_mint for bt completed.
+   *
+   * @returns {object}
+   */
+  _claimCompletedStatus: async function (doClaimTransferEventData) {
+    const oThis = this
+    ;
+
+    logger.info('starting _claimCompletedStatus for -- ', JSON.stringify(doClaimTransferEventData));
+
+    for(var i=0; i<doClaimTransferEventData.length; i++){
+
+      // fire settled_balance event to mark bt stake_and_mint process done.
+      const notificationData = {
+          topics: [notificationTopics.settleTokenBalanceOnUcDone],
+          publisher: 'OST',
+          message: {
+            kind: 'info',
+            payload: {
+              client_id: doClaimTransferEventData[i].client_id,
+              status: 'settle_token_balance_on_uc_done',
+              transaction_hash: doClaimTransferEventData[i].transaction_hash
+            }
+          }
+      };
+
+      const publishEventResp = await openSTNotification.publishEvent.perform(notificationData);
+      console.log("------------------------publishEventResp-", JSON.stringify(publishEventResp));
+
+    }
+
+    logger.info('Done _claimCompletedStatus');
+
+  },
+
+  /**
+   * generic function to handle catch blocks
+   *
+   * @returns {object}
+   */
+  catchHandlingFunction: async function (error) {
+    if (responseHelper.isCustomResult(error)) {
+      logger.error(error.toHash());
+      return error;
+    } else {
+      logger.error(`${__filename}::perform::catch`);
+      logger.error(error);
+      return responseHelper.error({
+        internal_error_identifier: 'e_drdm_mdfctb_2',
+        api_error_identifier: 'something_went_wrong',
+        debug_options: {},
+        error_config: errorConfig
+      });
+    }
   }
+
 };
 
 const usageDemo = function () {
