@@ -609,7 +609,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       , allTransferEventsVars = []
     ;
 
-    let addressesToFetch = [];
+    // let addressesToFetch = [];
 
     for (var i = 0; i < decodedEvents.length; i++) {
       if (decodedEvents[i].name == 'AirdropPayment') {
@@ -639,13 +639,13 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     console.log("---------------------------allTransferEventsVars------", JSON.stringify(allTransferEventsVars));
 
-    let managedAddressResults = await new ManagedAddressesModel().getByEthAddresses(addressesToFetch);
+    // let managedAddressResults = await new ManagedAddressesModel().getByEthAddresses(addressesToFetch);
 
     let addressToUuidMap = {};
 
-    for (let i = 0; i < managedAddressResults.length; i++) {
-      addressToUuidMap[managedAddressResults[i].ethereum_address.toLowerCase()] = managedAddressResults[i].uuid;
-    }
+    // for (let i = 0; i < managedAddressResults.length; i++) {
+    //   addressToUuidMap[managedAddressResults[i].ethereum_address.toLowerCase()] = managedAddressResults[i].uuid;
+    // }
 
 
     for (var i = 0; i < allTransferEventsVars.length; i++) {
