@@ -18,12 +18,12 @@ let scanParams =  {
 };
 
 
-function CheckDynamoESData(  ) {
+function CheckTransactionLogESData(  ) {
     const oThis =  this;
 }
 
 
-CheckDynamoESData.prototype = {
+CheckTransactionLogESData.prototype = {
 
     getTableName: function (  ) {
         return scanParams[ "TableName" ];
@@ -88,7 +88,7 @@ CheckDynamoESData.prototype = {
             esSearchQuery   = oThis.getSearchQuerey( dynamoRecordIds );
             oThis.searchRecords( esSearchQuery ).then(function ( response ) {
                 resolve( "Got search results");
-                logger.win("ES result for ", dynamoRecords.join(' , ') );
+                logger.win("ES result were successfully found for ids - ", dynamoRecordIds.join(' , ') );
                 logger.debug("ES Response"  ,JSON.stringify( response ));
                 oThis.validateESDataForIds( response , dynamoRecordIds);
             }).catch( function ( reason ) {
@@ -166,9 +166,9 @@ CheckDynamoESData.prototype = {
                 }
             }
             if( hasID ){
-                logger.win("ES record for id " + dynamoDBItemIds[dynamoDBCnt] + " was not successfully!");
+                logger.win("ES record for id " + dynamoDBItemIds[dynamoDBCnt] + " successfully!");
             }else {
-                logger.error("ES record for id " + dynamoDBItemIds[dynamoDBCnt] + " was not found");
+                logger.error("ES record for id " + dynamoDBItemIds[dynamoDBCnt] + " not found");
             }
         }
     }
@@ -176,8 +176,8 @@ CheckDynamoESData.prototype = {
 
 };
 
-var checkDynamoESObj = new CheckDynamoESData();
-checkDynamoESObj.getDynamoDBData();
+const CheckTransactionLogESObj = new CheckTransactionLogESData();
+CheckTransactionLogESObj.getDynamoDBData();
 
 
 
