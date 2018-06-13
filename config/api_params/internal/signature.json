@@ -177,6 +177,10 @@
   "fetch_transaction_details": {
     "mandatory":[
       {
+        "parameter": "client_id",
+        "error_identifier": "missing_client_id"
+      },
+      {
         "parameter": "transaction_uuids",
         "error_identifier": "missing_transaction_uuids"
       }

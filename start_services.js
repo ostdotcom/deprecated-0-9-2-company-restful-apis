@@ -155,13 +155,13 @@ StartServicesKlass.prototype = {
       + " >> " + homeAbsolutePath + "/openst-setup/logs/start_airdrop.log";
     servicesList.push(cmd);
     oThis._asyncCommand(cmd);
-
+/*
     logger.step("** Starting SAAS App");
     var cmd = "node app.js"
       + " >> " + homeAbsolutePath + "/openst-setup/logs/node_app.log";
     servicesList.push(cmd);
     oThis._asyncCommand(cmd);
-
+*/
     logger.win("\n** Congratulation! All services are up and running. \n" +
       "NOTE: We will keep monitoring the services, and notify you if any service stops.");
 

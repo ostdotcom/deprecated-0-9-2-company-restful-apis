@@ -13,6 +13,7 @@ const rootPrefix = '../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
+  , autoScalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
 ;
 
 /**
@@ -103,7 +104,8 @@ GetTransactionsService.prototype = {
 
     let transactionFetchRespone = await new OSTStorage.TransactionLogModel({
       client_id: oThis.clientId,
-      ddb_service: ddbServiceObj
+      ddb_service: ddbServiceObj,
+      auto_scaling: autoScalingServiceObj
     }).batchGetItem([oThis.transactionUuid]);
 
     let transactionLogData = transactionFetchRespone.data[oThis.transactionUuid];

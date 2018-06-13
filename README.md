@@ -52,6 +52,8 @@
 > java -Djava.library.path=~/dynamodb_local_latest/DynamoDBLocal_lib/ -jar ~/dynamodb_local_latest/DynamoDBLocal.jar -sharedDb -dbPath ~/openst-setup/logs/ 
 ```
 
+* Do dynamo DB initialization as per 'executables/ddb_related_data_migrations/readme.md'
+
 * Setup Platform
 ```
 > node tools/setup/platform/deploy.js

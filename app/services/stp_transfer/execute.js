@@ -24,6 +24,7 @@ const rootPrefix = '../../..'
   , notificationTopics = require(rootPrefix + '/lib/global_constant/notification_topics')
   , commonValidator = require(rootPrefix + '/lib/validators/common')
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
+  , autoScalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
 ;
 
 /**
@@ -97,7 +98,8 @@ ExecuteSTPTransferService.prototype = {
 
     let dbResponse = await new OSTStorage.TransactionLogModel({
       client_id: oThis.clientId,
-      ddb_service: ddbServiceObj
+      ddb_service: ddbServiceObj,
+      auto_scaling: autoScalingServiceObj
     }).batchGetItem([oThis.transactionUuid]);
 
     if (!dbResponse.data) {
@@ -279,7 +281,8 @@ ExecuteSTPTransferService.prototype = {
 
     let insertedRec = await new OSTStorage.TransactionLogModel({
       client_id: oThis.clientId,
-      ddb_service: ddbServiceObj
+      ddb_service: ddbServiceObj,
+      auto_scaling: autoScalingServiceObj
     }).updateItem(dataToInsert);
 
     if (!insertedRec.data) {

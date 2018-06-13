@@ -22,6 +22,7 @@ const rootPrefix = '../../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , ActionEntityFormatterKlass = require(rootPrefix +'/lib/formatter/entities/latest/action')
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
+  , autoScalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
 ;
 
 const GetTransactionDetailKlass = function (params) {
@@ -29,6 +30,7 @@ const GetTransactionDetailKlass = function (params) {
 
   const oThis = this;
 
+  oThis.clientId = params.client_id;
   oThis.transactionUuids = params.transaction_uuids || [];
 
   oThis.response = {};
@@ -109,7 +111,8 @@ GetTransactionDetailKlass.prototype = {
 
     let transactionFetchRespone = await new OSTStorage.TransactionLogModel({
       client_id: oThis.clientId,
-      ddb_service: ddbServiceObj
+      ddb_service: ddbServiceObj,
+      auto_scaling: autoScalingServiceObj,
     }).batchGetItem(oThis.transactionUuids);
 
     let transactionLogRecordsHash = transactionFetchRespone.data;

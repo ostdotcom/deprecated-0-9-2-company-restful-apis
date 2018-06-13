@@ -9,6 +9,7 @@ const rootPrefix = '../../..'
   , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
+  , autoScalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
 ;
 
 /**
@@ -99,7 +100,8 @@ GetStPTransferService.prototype = {
 
     let transactionLogResponse = await new OSTStorage.TransactionLogModel({
       client_id: oThis.client_id,
-      ddb_service: ddbServiceObj
+      ddb_service: ddbServiceObj,
+      auto_scaling: autoScalingServiceObj
     }).batchGetItem([oThis.transactionUuid]);
 
     if (!transactionLogResponse.data[oThis.transactionUuid]) {

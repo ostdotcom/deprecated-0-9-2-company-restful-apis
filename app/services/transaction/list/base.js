@@ -11,6 +11,7 @@ const rootPrefix = '../../../..'
   , esSearchServiceObject = elasticSearchLibManifest.services.transactionLog
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
   , transactionLogModel = require(rootPrefix + '/app/models/transaction_log')
+  , autoScalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
 ;
 
 const Base = function(params) {
@@ -236,7 +237,8 @@ Base.prototype = {
 
     let transactionFetchRespone = await new OSTStorage.TransactionLogModel({
       client_id: oThis.clientId,
-      ddb_service: ddbServiceObj
+      ddb_service: ddbServiceObj,
+      auto_scaling: autoScalingServiceObj,
     }).batchGetItem(oThis.transactionUuids);
 
     // if no records found, return error.
