@@ -70,6 +70,7 @@ CheckTransactionLogESData.prototype = {
             oThis.dynamoDataBatch++;
             oThis.validateDynamoDBData( LastEvaluatedObj);
         }else {
+            logger.info("DynamoDB data validation for table " + oThis.getTableName() + " complete!");
             oThis.dynamoDataBatch = 0;
         }
     },
@@ -88,8 +89,7 @@ CheckTransactionLogESData.prototype = {
             esSearchQuery   = oThis.getSearchQuerey( dynamoRecordIds );
             oThis.searchRecords( esSearchQuery ).then(function ( response ) {
                 resolve( "Got search results");
-                logger.win("ES result were successfully found for ids - ", dynamoRecordIds.join(' , ') );
-                logger.debug("ES Response"  ,JSON.stringify( response ));
+                logger.debug("Dynamo DB ids "+ dynamoRecordIds.join(' , ') +" ES Response"  ,JSON.stringify( response ));
                 oThis.validateESDataForIds( response , dynamoRecordIds);
             }).catch( function ( reason ) {
                 reject(reason);
@@ -159,7 +159,7 @@ CheckTransactionLogESData.prototype = {
 
         for( dynamoDBCnt = 0 ; dynamoDBCnt < dynamoDBLen ;  dynamoDBCnt ++ ){
             hasID = false;
-            for( esCnt = 0 ;  esCnt < esLen ; esLen++ ){
+            for( esCnt = 0 ;  esCnt < esLen ; esCnt++ ){
                 if( esTransactionLogs[esCnt]['id'] ==  dynamoDBItemIds[dynamoDBCnt]){
                     hasID = true;
                     break;
