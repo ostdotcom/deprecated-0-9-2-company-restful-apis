@@ -7,7 +7,6 @@ const rootPrefix         = "../.."
 
 ;
 
-const tableNames = ['s_sb_transaction_logs_shard_001' , 's_sb_transaction_logs_shard_002'];
 const Limit = 20;
 
 let scanParams =  {
