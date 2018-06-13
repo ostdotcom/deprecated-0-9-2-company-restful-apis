@@ -30,7 +30,7 @@ CheckTransactionLogESData.prototype = {
     },
 
     dynamoDataBatch : 0,
-    getDynamoDBData: function( LastEvaluatedKey  ){
+    validateDynamoDBData: function( LastEvaluatedKey  ){
         var oThis = this
         ;
 
@@ -177,7 +177,7 @@ CheckTransactionLogESData.prototype = {
 };
 
 const CheckTransactionLogESObj = new CheckTransactionLogESData();
-CheckTransactionLogESObj.getDynamoDBData();
+CheckTransactionLogESObj.validateDynamoDBData();
 
 
 
