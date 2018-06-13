@@ -114,6 +114,7 @@ const GetTransactionListForUser = {
       boolFilters.push({'terms': {"status": oThis.statusesIntArray}});
     }
 
+    // https://www.elastic.co/guide/en/elasticsearch/guide/current/bool-query.html
     filteringParams['query']['bool']['filter'] = boolFilters;
 
     Object.assign(filteringParams, oThis._getPaginationParams());

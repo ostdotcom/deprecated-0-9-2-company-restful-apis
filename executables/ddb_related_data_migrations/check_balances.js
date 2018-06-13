@@ -5,7 +5,7 @@ const openStPlatform = require('@openstfoundation/openst-platform')
 ;
 
 const rootPrefix = '../..'
-    , getBrandedTokenBalanceKlass = openStPlatform.services.balance.brandedToken
+    , getBrandedTokenBalanceKlass = openStPlatform.services.balance.brandedTokenFromChain
     , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
     , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
     , TokenBalanceModel = openStorage.TokenBalanceModel
@@ -139,8 +139,7 @@ CheckBalances.prototype = {
         let promise = new getBrandedTokenBalanceKlass({
           address: batchedDbRows[i]['ethereum_address'],
           erc20_address: erc20_address,
-          use_cache: 0
-        }).perform()
+        }).perform();
         promises.push(promise);
       }
 

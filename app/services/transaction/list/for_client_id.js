@@ -85,6 +85,7 @@ const GetTransactionListForClient = {
       boolFilters.push({"terms": { "id" : oThis.idsFilterArr }});
     }
 
+    // https://www.elastic.co/guide/en/elasticsearch/guide/current/bool-query.html
     filteringParams['query']['bool'] = {"filter": boolFilters};
 
     Object.assign(filteringParams, oThis._getPaginationParams());
