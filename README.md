@@ -46,6 +46,12 @@
 > echo "export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform" >> ~/.bash_profile
 ```
 
+* Delete the Dynamo DB data file if exists
+* Start Dynamo DB
+```
+> java -Djava.library.path=~/dynamodb_local_latest/DynamoDBLocal_lib/ -jar ~/dynamodb_local_latest/DynamoDBLocal.jar -sharedDb -dbPath ~/openst-setup/logs/ 
+```
+
 * Setup Platform
 ```
 > node tools/setup/platform/deploy.js
@@ -96,7 +102,7 @@ export OST_UTILITY_PRICE_ORACLES='{}'
 
 > vim $HOME/openst-setup/openst_env_vars.sh
 # 3rd party contract address
-export OST_UTILITY_PRICE_ORACLES='{"OST":{"USD":"0xA8A5fadFdDc4D1987Cd303296B7964834178e661"}}'
+export OST_UTILITY_PRICE_ORACLES='{"OST":{"USD":"0xE0376bC44B785BbbF3e9B7188b20434762e330cE"}}'
 ```
 
 * Setup Workers Contract
@@ -107,7 +113,7 @@ export OST_UTILITY_PRICE_ORACLES='{"OST":{"USD":"0xA8A5fadFdDc4D1987Cd303296B796
 
 > vim $HOME/openst-setup/openst_env_vars.sh
 # 3rd party contract address
-export OST_UTILITY_WORKERS_CONTRACT_ADDRESS='0xEBF2d9f14a4c072862530fD46ea48C0b466E3d1D'
+export OST_UTILITY_WORKERS_CONTRACT_ADDRESS='0xf178479CCc9b48435Ec85Df4f933df5D62771EC3'
 ```
 
 * Run openST Payments migrations
@@ -186,7 +192,7 @@ Use the file path in the following command:
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> node ./executables/block_scanner/for_tx_status_and_balance_sync.js 1 datafilePath
+> node ./executables/block_scanner/for_tx_status_and_balance_sync.js 1 ~/openst-setup/logs/block_scanner.data
 ```
 
 * Start worker to process events
