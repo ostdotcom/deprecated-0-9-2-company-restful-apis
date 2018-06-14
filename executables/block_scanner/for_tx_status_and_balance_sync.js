@@ -644,7 +644,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     let addressToUuidMap = {};
 
     for (let i = 0; i < managedAddressResults.length; i++) {
-      addressToUuidMap[managedAddressResults[i].ethereum_address] = managedAddressResults[i].uuid;
+      addressToUuidMap[managedAddressResults[i].ethereum_address.toLowerCase()] = managedAddressResults[i].uuid;
     }
 
 
