@@ -42,7 +42,7 @@ const transactionLogModelDdb = openStorage.TransactionLogModel
 
 abiDecoder.addABI(coreAbis.airdrop);
 abiDecoder.addABI(coreAbis.brandedToken);
-abiDecoder.addABI(coreAbis.openSTUtility);
+// abiDecoder.addABI(coreAbis.openSTUtility);
 
 const BlockScannerForTxStatusAndBalanceSync = function (params) {
   const oThis = this
@@ -64,6 +64,10 @@ const BlockScannerForTxStatusAndBalanceSync = function (params) {
 
   oThis.tokenTransferKind = new TransactionMeta().invertedKinds[transactionLogConst.tokenTransferTransactionType];
   oThis.stpTransferKind = new TransactionMeta().invertedKinds[transactionLogConst.stpTransferTransactionType];
+
+  oThis.failedTxStatus = new TransactionLogModel().invertedStatuses[transactionLogConst.failedStatus];
+  oThis.completeTxStatus = new TransactionLogModel().invertedStatuses[transactionLogConst.completeStatus];
+
 };
 
 BlockScannerForTxStatusAndBalanceSync.prototype = {
@@ -315,6 +319,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         console.log("------4----oThis.txHashToTxReceiptMap---", JSON.stringify(oThis.txHashToTxReceiptMap));
         console.log("------4----oThis.tokenTransferTxHashesMap---", JSON.stringify(oThis.tokenTransferTxHashesMap));
         for (var txUuid in batchGetItemData) {
+
           let txHash = oThis.knownTxUuidToTxHashMap[txUuid];
           let txReceipt = oThis.txHashToTxReceiptMap[txHash];
 
@@ -346,10 +351,13 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           toUpdateFields.transfer_events = eventData.transfer_events;
           toUpdateFields.post_receipt_process_params = null;
           toUpdateFields.gas_used = txReceipt.gasUsed;
-          toUpdateFields.status = parseInt(txReceipt.status, 16);
+          toUpdateFields.block_number = txReceipt.blockNumber;
+          toUpdateFields.status = parseInt(txReceipt.status, 16) == 1 ? oThis.completeTxStatus : oThis.failedTxStatus;
 
-          oThis.clientIdWiseDataToUpdate[clientId].push(toUpdateFields);
+          oThis.clientIdWiseDataToUpdate[clientId].push(Object.assign(batchGetItemData[txUuid], toUpdateFields));
+
         }
+
       }
       console.log('----------------------oThis.clientIdWiseDataToUpdate-', clientId, JSON.stringify(oThis.clientIdWiseDataToUpdate));
     }
@@ -401,12 +409,12 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           , eventSignature = txReceiptLogElement.topics[0]
           , isKnownBTContract = erc20ContractAddressesData[contractAddress]
           , isTransferEvent = (eventSignature === oThis.TransferEventSignature)
-          , isUtilityContract = (oThis.OpenSTUtilityContractAddr === contractAddress)
-          , isProcessedMintEvent = (eventSignature === oThis.ProcessedMintEventSignature)
-          , isRevertedMintEvent = (eventSignature === oThis.RevertedMintEventSignature)
+          // , isUtilityContract = (oThis.OpenSTUtilityContractAddr === contractAddress)
+          // , isProcessedMintEvent = (eventSignature === oThis.ProcessedMintEventSignature)
+          // , isRevertedMintEvent = (eventSignature === oThis.RevertedMintEventSignature)
         ;
 
-        if((isKnownBTContract && isTransferEvent) || (isUtilityContract && (isProcessedMintEvent || isRevertedMintEvent))){
+        if((isKnownBTContract && isTransferEvent)) { //|| (isUtilityContract && (isProcessedMintEvent || isRevertedMintEvent))){
           txHashToShortListedEventsMap[txHash] = txHashToShortListedEventsMap[txHash] || [];
           txHashToShortListedEventsMap[txHash].push(txReceiptLogElement);
         }
@@ -420,7 +428,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     let balanceAdjustmentMap = balanceAdjustmentRsp['balanceAdjustmentMap']
       , txHashTransferEventsMap = balanceAdjustmentRsp['txHashTransferEventsMap']
       , affectedAddresses = balanceAdjustmentRsp['affectedAddresses']
-      , doClaimTransferEventData = balanceAdjustmentRsp['doClaimTransferEventData']
+      // , doClaimTransferEventData = balanceAdjustmentRsp['doClaimTransferEventData']
     ;
     console.log("----------------------balanceAdjustmentMap----", JSON.stringify(balanceAdjustmentMap));
     console.log("----------------------txHashTransferEventsMap----", JSON.stringify(txHashTransferEventsMap));
@@ -442,7 +450,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     await oThis._settleBalancesInDb(balanceAdjustmentMap);
 
-    await oThis._claimCompletedStatus(doClaimTransferEventData);
+    // await oThis._claimCompletedStatus(doClaimTransferEventData);
 
   },
 
@@ -608,11 +616,11 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         airdropPaymentEventVars = decodedEvents[i].events;
       }
       if (decodedEvents[i].name == 'Transfer') {
-        //
         allTransferEventsVars.push(decodedEvents[i].events);
-
-        if (['_from', '_to'].includes(decodedEvents[i].event.name)) {
-          addressesToFetch.push(transferEventVars[j].value);
+        for (var j = 0; j < decodedEvents[i].events.length; j ++) {
+          if (['_from',  '_to'].includes(decodedEvents[i].events[j].name)) {
+            addressesToFetch.push(decodedEvents[i].events[j].value);
+          }
         }
       }
     }
@@ -687,7 +695,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     let balanceAdjustmentMap = {}
       , txHashTransferEventsMap = {}
       , affectedAddresses = []
-      , doClaimTransferEventData = []
+      // , doClaimTransferEventData = []
       , txHashes = Object.keys(txHashDecodedEventsMap)
     ;
 
@@ -708,8 +716,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         let fromAddr = null
           , toAddr = null
           , valueStr = null
-          , contractUuid = null
-          , claimDone = false;
+          // , contractUuid = null
+          // , claimDone = false;
         ;
 
         for (let j = 0; j < decodedEventData.events.length; j++) {
@@ -722,56 +730,56 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
               toAddr = eventData.value.toLowerCase();
               break;
             case "_value":
-            case "_amount":
+            // case "_amount":
               valueStr = eventData.value;
               break;
-            case "_uuid":
-              contractUuid = eventData.value.toLowerCase();
-              break;
+            // case "_uuid":
+            //   contractUuid = eventData.value.toLowerCase();
+            //   break;
           }
         }
 
         //This identifies that balance is transfered from erc20 address(fromAddr) to reserve address(toAddr) on claim success.
-        if(contractAddress == fromAddr){
-          const erc20AddrData = erc20ContractAddressesData[contractAddress];
-          if(erc20AddrData.client_id){
-            doClaimTransferEventData.push({client_id: erc20AddrData.client_id, transaction_hash: txHash});
-            claimDone = true;
-          }
-        }
+        // if(contractAddress == fromAddr){
+        //   const erc20AddrData = erc20ContractAddressesData[contractAddress];
+        //   if(erc20AddrData.client_id){
+        //     doClaimTransferEventData.push({client_id: erc20AddrData.client_id, transaction_hash: txHash});
+        //     claimDone = true;
+        //   }
+        // }
 
-        if (contractUuid) {
-          // it is not an transfer event but is a mint event
-          if (contractUuid === oThis.StPrimeContractUuid) {
-            // for St prime uuid do not settle balances
-            continue;
-          } else {
-            let cacheObj = new Erc20ContractUuidCacheKlass({uuids: [contractUuid]})
-              , cacheFetchRsp = await cacheObj.fetch()
-            ;
-            if (cacheFetchRsp.isFailure()) {
-              return Promise.reject(cacheFetchRsp)
-            }
-            let erc20ContractUuidsData = cacheFetchRsp.data;
-            // overridr contractAddress of ostutility contract with that of erc 20 address of this token
-            contractAddress = erc20ContractUuidsData[contractUuid]['token_erc20_address'].toLowerCase();
-            switch (decodedEventData.name) {
-              case "ProcessedMint":
-                toAddr = contractAddress;
-                break;
-              case "RevertedMint":
-                fromAddr = contractAddress;
-                break;
-              default:
-                return Promise.reject(responseHelper.error({
-                  internal_error_identifier: 'e_drdm_ads_2',
-                  api_error_identifier: 'unhandled_catch_response',
-                  debug_options: {}
-                }));
-                break;
-            }
-          }
-        }
+        // if (contractUuid) {
+        //   // it is not an transfer event but is a mint event
+        //   if (contractUuid === oThis.StPrimeContractUuid) {
+        //     // for St prime uuid do not settle balances
+        //     continue;
+        //   } else {
+        //     let cacheObj = new Erc20ContractUuidCacheKlass({uuids: [contractUuid]})
+        //       , cacheFetchRsp = await cacheObj.fetch()
+        //     ;
+        //     if (cacheFetchRsp.isFailure()) {
+        //       return Promise.reject(cacheFetchRsp)
+        //     }
+        //     let erc20ContractUuidsData = cacheFetchRsp.data;
+        //     // overridr contractAddress of ostutility contract with that of erc 20 address of this token
+        //     contractAddress = erc20ContractUuidsData[contractUuid]['token_erc20_address'].toLowerCase();
+        //     switch (decodedEventData.name) {
+        //       case "ProcessedMint":
+        //         toAddr = contractAddress;
+        //         break;
+        //       case "RevertedMint":
+        //         fromAddr = contractAddress;
+        //         break;
+        //       default:
+        //         return Promise.reject(responseHelper.error({
+        //           internal_error_identifier: 'e_drdm_ads_2',
+        //           api_error_identifier: 'unhandled_catch_response',
+        //           debug_options: {}
+        //         }));
+        //         break;
+        //     }
+        //   }
+        // }
 
         balanceAdjustmentMap[contractAddress] = balanceAdjustmentMap[contractAddress] || {};
         let valueBn = new BigNumber(valueStr);
@@ -779,9 +787,9 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         if (fromAddr) {
           balanceAdjustmentMap[contractAddress][fromAddr] = balanceAdjustmentMap[contractAddress][fromAddr] || {settledBalance: new BigNumber('0'), unSettledDebit: new BigNumber('0')};
           balanceAdjustmentMap[contractAddress][fromAddr].settledBalance = balanceAdjustmentMap[contractAddress][fromAddr].settledBalance.minus(valueBn);
-          if(!claimDone){
-            balanceAdjustmentMap[contractAddress][fromAddr].unSettledDebit = balanceAdjustmentMap[contractAddress][fromAddr].unSettledDebit.minus(valueBn);
-          }
+          // if(!claimDone){
+          //   balanceAdjustmentMap[contractAddress][fromAddr].unSettledDebit = balanceAdjustmentMap[contractAddress][fromAddr].unSettledDebit.minus(valueBn);
+          // }
           affectedAddresses.push(fromAddr);
         }
 
@@ -815,7 +823,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       balanceAdjustmentMap: balanceAdjustmentMap,
       txHashTransferEventsMap: txHashTransferEventsMap,
       affectedAddresses: affectedAddresses,
-      doClaimTransferEventData: doClaimTransferEventData
+      // doClaimTransferEventData: doClaimTransferEventData
     };
 
   },
@@ -1018,36 +1026,36 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    *
    * @returns {object}
    */
-  _claimCompletedStatus: async function (doClaimTransferEventData) {
-    const oThis = this
-    ;
-
-    logger.info('starting _claimCompletedStatus for -- ', JSON.stringify(doClaimTransferEventData));
-
-    for(var i=0; i<doClaimTransferEventData.length; i++){
-
-      // fire settled_balance event to mark bt stake_and_mint process done.
-      const notificationData = {
-          topics: [notificationTopics.settleTokenBalanceOnUcDone],
-          publisher: 'OST',
-          message: {
-            kind: 'info',
-            payload: {
-              client_id: doClaimTransferEventData[i].client_id,
-              status: 'settle_token_balance_on_uc_done',
-              transaction_hash: doClaimTransferEventData[i].transaction_hash
-            }
-          }
-      };
-
-      const publishEventResp = await openSTNotification.publishEvent.perform(notificationData);
-      console.log("------------------------publishEventResp-", JSON.stringify(publishEventResp));
-
-    }
-
-    logger.info('Done _claimCompletedStatus');
-
-  },
+  // _claimCompletedStatus: async function (doClaimTransferEventData) {
+  //   const oThis = this
+  //   ;
+  //
+  //   logger.info('starting _claimCompletedStatus for -- ', JSON.stringify(doClaimTransferEventData));
+  //
+  //   for(var i=0; i<doClaimTransferEventData.length; i++){
+  //
+  //     // fire settled_balance event to mark bt stake_and_mint process done.
+  //     const notificationData = {
+  //         topics: [notificationTopics.settleTokenBalanceOnUcDone],
+  //         publisher: 'OST',
+  //         message: {
+  //           kind: 'info',
+  //           payload: {
+  //             client_id: doClaimTransferEventData[i].client_id,
+  //             status: 'settle_token_balance_on_uc_done',
+  //             transaction_hash: doClaimTransferEventData[i].transaction_hash
+  //           }
+  //         }
+  //     };
+  //
+  //     const publishEventResp = await openSTNotification.publishEvent.perform(notificationData);
+  //     console.log("------------------------publishEventResp-", JSON.stringify(publishEventResp));
+  //
+  //   }
+  //
+  //   logger.info('Done _claimCompletedStatus');
+  //
+  // },
 
   /**
    * generic function to handle catch blocks
