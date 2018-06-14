@@ -781,8 +781,19 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         //   }
         // }
 
-        balanceAdjustmentMap[contractAddress] = balanceAdjustmentMap[contractAddress] || {};
+        transferEvents.push({
+          from_address: fromAddr,
+          to_address: toAddr,
+          amount_in_wei: valueStr
+        });
+
+        if(fromAddr === contractAddress) {
+          // if from == contract this tx event is then of claim by beneficiary. This was credited by platform so ignore here
+          continue;
+        }
+
         let valueBn = new BigNumber(valueStr);
+        balanceAdjustmentMap[contractAddress] = balanceAdjustmentMap[contractAddress] || {};
 
         if (fromAddr) {
           balanceAdjustmentMap[contractAddress][fromAddr] = balanceAdjustmentMap[contractAddress][fromAddr] || {settledBalance: new BigNumber('0'), unSettledDebit: new BigNumber('0')};
@@ -798,13 +809,6 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           balanceAdjustmentMap[contractAddress][toAddr].settledBalance = balanceAdjustmentMap[contractAddress][toAddr].settledBalance.plus(valueBn);
           affectedAddresses.push(toAddr);
         }
-
-        // for mit events we would mark staker addr as from / to and wouldn't settle this entry in DB (as out of thin air)
-        transferEvents.push({
-          from_address: fromAddr || oThis.ZeroXAddress,
-          to_address: toAddr || oThis.ZeroXAddress,
-          amount_in_wei: valueStr
-        });
 
       }
 
