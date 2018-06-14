@@ -15,6 +15,8 @@
     "@ostdotcom/ost-price-oracle": "1.0.2",
     "abi-decoder": "^1.1.0",
     "aws-sdk": "2.183.0",
+    "elasticsearch": "15.0.0",
+    "http-aws-es": "6.0.0",
     "bignumber.js": "4.1.0",
     "body-parser": "1.18.2",
     "cluster": "0.7.7",
