@@ -162,6 +162,8 @@ Base.prototype = {
     var oThis = this
     ;
 
+    logger.debug('filteringParams', oThis.filteringParams);
+
     let searchRsp = await esSearchServiceObject.search(oThis.filteringParams);
     if(searchRsp.isFailure()) {return Promise.reject(searchRsp)}
 

@@ -82,7 +82,7 @@ const GetTransactionListForClient = {
 
     // if transaction_uuids are passes in params, add filter on it
     if (oThis.idsFilterArr.length > 0) {
-      boolFilters.push({"terms": { "id" : oThis.idsFilterArr }});
+      boolFilters.push({"terms": { "_id" : oThis.idsFilterArr }});
     }
 
     // https://www.elastic.co/guide/en/elasticsearch/guide/current/bool-query.html
