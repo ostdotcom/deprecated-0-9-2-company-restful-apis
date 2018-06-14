@@ -343,7 +343,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
             console.log('----------------------eventData-', txHash, JSON.stringify(eventData));
             toUpdateFields = {
               commission_amount_in_wei: eventData._commissionTokenAmount,
-              bt_transfer_in_wei: eventData._tokenAmount
+              amount_in_wei: eventData._tokenAmount
             };
           }
 
