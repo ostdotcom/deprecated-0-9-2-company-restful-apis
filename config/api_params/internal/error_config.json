@@ -93,5 +93,10 @@
     "parameter": "airdropped",
     "code": "invalid",
     "message": "airdropped can be True of False"
+  },
+  "invalid_start_client_id": {
+    "parameter": "start_client_id",
+    "code": "missing",
+    "message": "Invalid start client id"
   }
 }

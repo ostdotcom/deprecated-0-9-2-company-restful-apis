@@ -30,6 +30,7 @@ define("ST_PRIME_UUID", process.env.OST_OPENSTUTILITY_ST_PRIME_UUID);
 
 // Contract addresses
 define("SIMPLE_TOKEN_CONTRACT_ADDR", process.env.OST_SIMPLE_TOKEN_CONTRACT_ADDR);
+define("OPENSTUTILITY_CONTRACT_ADDR", process.env.OST_OPENSTUTILITY_CONTRACT_ADDR);
 define("STAKER_ADDR", process.env.OST_STAKER_ADDR);
 
 const providerHostToChainKindMap = {};

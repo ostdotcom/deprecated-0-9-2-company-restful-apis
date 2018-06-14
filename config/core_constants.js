@@ -80,8 +80,7 @@ define('GENERIC_SHA_KEY', process.env.CA_GENERIC_SHA_KEY);
 // Cache data key
 define('CACHE_SHA_KEY', process.env.CR_CACHE_DATA_SHA_KEY);
 
-//define('DEBUG_ENABLED', process.env.OST_DEBUG_ENABLED);
-define('DEBUG_ENABLED', 1);
+define('DEBUG_ENABLED', process.env.OST_DEBUG_ENABLED);
 
 // Price oracle details
 var accepted_margine = {};
@@ -92,3 +91,5 @@ try {
 define('ACCEPTED_PRICE_FLUCTUATION_FOR_PAYMENT', accepted_margine);
 
 define("SHARED_MEMCACHE_KEY_PREFIX", 'ca_sa_shared_');
+
+define('DYNAMODB_TABLE_NAME_PREFIX', process.env.OS_DYNAMODB_TABLE_NAME_PREFIX ? process.env.OS_DYNAMODB_TABLE_NAME_PREFIX : '');
