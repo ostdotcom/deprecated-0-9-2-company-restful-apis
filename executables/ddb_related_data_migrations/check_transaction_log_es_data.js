@@ -7,14 +7,8 @@ const rootPrefix         = "../.."
 
 ;
 
+const tables = ['s_sb_transaction_logs_shard_001' , 's_sb_transaction_logs_shard_002'];
 const Limit = 20;
-
-let scanParams =  {
-    TableName: "s_sb_transaction_logs_shard_001",
-    Select: "SPECIFIC_ATTRIBUTES",
-    AttributesToGet: ['txu'],
-    Limit: Limit
-};
 
 
 function CheckTransactionLogESData(  ) {
@@ -24,54 +18,110 @@ function CheckTransactionLogESData(  ) {
 
 CheckTransactionLogESData.prototype = {
 
+    shardCount      : 0,
+    shardBatchCnt : 0,
+
+
+    scanParams :  {
+        TableName: null,
+        Select: "SPECIFIC_ATTRIBUTES",
+        AttributesToGet: ['txu'],
+        Limit: Limit
+    },
+
     getTableName: function (  ) {
-        return scanParams[ "TableName" ];
+        return this.scanParams[ "TableName" ];
     },
 
-    dynamoDataBatch : 0,
-    validateDynamoDBData: function( LastEvaluatedKey  ){
-        var oThis = this
+    getTableFromTables : function ( shardCount ) {
+        return tables[shardCount];
+    },
+
+    getScanParamsForTable :function ( table ) {
+        var oThis       = this,
+            scanParams  = oThis.scanParams
         ;
+        scanParams['TableName'] = table;
+        return scanParams;
+    },
 
-        if( LastEvaluatedKey ){
-            scanParams['ExclusiveStartKey'] = LastEvaluatedKey;
-        }
+    checkForESRecords: function () {
+        var oThis       =  this ,
+            shardCount  = oThis.shardCount,
+            len         = tables.length,
+            table
+        ;
+        table = oThis.getTableFromTables( shardCount );
+        if( !table ) return ;
+        oThis.validateDynamoRecordsForTable( table ).then( function (response ) {
+            if( shardCount < len ){
+                oThis.shardCount++;
+                oThis.checkForESRecords();
+            }else {
+                logger.win("SUCCESS - DynamoDB fetch for tables" + tables.join(' , ')  + " completed!" );
+            }
 
-        ddbServiceObj.scan( scanParams )
-            .then(function( response ) {
-                logger.debug("dynamoDB data ",  JSON.stringify( response ));
-                logger.win("DynamoDB fetch for " + oThis.getTableName() + " for batch " + oThis.dynamoDataBatch + " success!" );
+        }).catch( function ( reason ) {
+            logger.error(" REJECT - DynamoDB fetch for " + oThis.getTableName() + " for batch "+ oThis.shardBatchCnt+  " failed!" , reason);
+        });
+    },
 
-                let data                    = response && response.data
-                    , items                 = data.Items
-                    , LastEvaluatedObj      = data && data.LastEvaluatedKey
+    validateDynamoRecordsForTable : function ( table ) {
+        var oThis       = this,
+            scanParams  = oThis.getScanParamsForTable( table );
+        ;
+        return new Promise(function (resolve , reject ) {
+
+            function checkDynamoRecordsInES( LastEvaluatedKeyHash ) {
+
+                if( LastEvaluatedKeyHash ) {
+                    scanParams['ExclusiveStartKey'] = LastEvaluatedKeyHash;
+                }else {
+                    delete scanParams["ExclusiveStartKey"];
+                }
+
+                ddbServiceObj.scan( scanParams )
+                    .then(function( response ) {
+                        logger.debug("dynamoDB data ",  JSON.stringify( response ));
+                        logger.win(" WIN - DynamoDB fetch for " + oThis.getTableName() + " for batch " + oThis.shardBatchCnt);
+
+                        let data                    = response && response.data
+                            , items                 = data.Items
+                            , LastEvaluatedKeyHash  = data && data.LastEvaluatedKey
+                        ;
+
+                        logger.debug("LastEvaluatedKeyHash",  LastEvaluatedKeyHash);
+                        oThis.validateRecordsInES( items ).then(function ( response ) {
+                            logger.win(" WIN - ES validation for DynamoDB table " + oThis.getTableName() + " for batch " + oThis.shardBatchCnt +  " complete!" );
+                            onESValidation( LastEvaluatedKeyHash );
+                        }).catch(function ( reason) {
+                            logger.error(" ERROR - ES validation for DynamoDB table " + oThis.getTableName() + " for batch "+ oThis.shardBatchCnt +  " failed!" ,  reason);
+                            onESValidation( LastEvaluatedKeyHash );
+                        });
+                    }).catch( function ( reason ) {
+                        logger.error(" REJECT - DynamoDB fetch for " + oThis.getTableName() + " for batch "+ oThis.shardBatchCnt+  " failed!" , reason);
+                        oThis.shardBatchCnt = 0;
+                        reject( reason );
+                    });
+            }
+
+            function onESValidation( LastEvaluatedKeyHash ) {
+                var   txu                   = LastEvaluatedKeyHash && LastEvaluatedKeyHash.txu
+                    , LastEvaluatedKeyValue = dynamoDBFormatter.toString( txu );
                 ;
+                if( LastEvaluatedKeyValue ){ //Check for value present
+                    oThis.shardBatchCnt++;
+                    checkDynamoRecordsInES( LastEvaluatedKeyHash );
+                }else {
+                    oThis.shardBatchCnt = 0;
+                    resolve( "DynamoDB data validation for table " + oThis.getTableName() + " complete!" );
+                    logger.win(" WIN - DynamoDB data validation for table " + oThis.getTableName() + " complete!");
+                }
+            }
 
-                logger.debug("LastEvaluatedObj",  LastEvaluatedObj);
-                oThis.validateRecordsInES( items ).then(function ( response ) {
-                    logger.win("ES validation for DynamoDB table " + oThis.getTableName() + " for batch " + oThis.dynamoDataBatch +  " complete!" );
-                    oThis.onESValidation( LastEvaluatedObj );
-                }).catch(function ( reason) {
-                    logger.error("ES validation for DynamoDB table " + oThis.getTableName() + " for batch "+ oThis.dynamoDataBatch +  " failed!" ,  reason);
-                    oThis.onESValidation( LastEvaluatedObj );
-                });
-            }).catch( function ( reason ) {
-                logger.error("DynamoDB fetch for " + oThis.getTableName() + " for batch "+ oThis.dynamoDataBatch+  " failed!" , reason);
-            });
-    },
+            checkDynamoRecordsInES( );
 
-    onESValidation : function ( LastEvaluatedObj ) {
-        var oThis                   = this
-            , txu                   = LastEvaluatedObj && LastEvaluatedObj.txu
-            , LastEvaluatedKeyValue = dynamoDBFormatter.toString( txu );
-        ;
-        if( LastEvaluatedKeyValue ){ //Check for value present
-            oThis.dynamoDataBatch++;
-            oThis.validateDynamoDBData( LastEvaluatedObj);
-        }else {
-            logger.info("DynamoDB data validation for table " + oThis.getTableName() + " complete!");
-            oThis.dynamoDataBatch = 0;
-        }
+        });
     },
 
     validateRecordsInES : function ( dynamoRecords  ) {
@@ -98,7 +148,7 @@ CheckTransactionLogESData.prototype = {
 
     getSearchIds: function ( items ) {
         var oThis = this,
-            len = items && items.length,
+            len   = items && items.length,
             cnt ,
             id , item , itemTxu,
             ids = []
@@ -125,7 +175,6 @@ CheckTransactionLogESData.prototype = {
                     "_id": ids
                 }
             },
-            "from": 0,
             "size": Limit
         };
         logger.debug("ES querey ", JSON.stringify( querey ));
@@ -149,7 +198,7 @@ CheckTransactionLogESData.prototype = {
         ;
 
         if( dynamoDBLen && !esLen ){
-            logger.error("ES record for ids " + dynamoDBItemIds.join(' , ')+ " was not found !");
+            logger.error(" ERROR - ES record for ids " + dynamoDBItemIds.join(' , ')+ " was not found !");
         }
 
         if( !dynamoDBLen ){
@@ -165,9 +214,9 @@ CheckTransactionLogESData.prototype = {
                 }
             }
             if( hasID ){
-                logger.win("ES record for id " + dynamoDBItemIds[dynamoDBCnt] + " successfully!");
+                logger.win(" WIN - ES record for id " + dynamoDBItemIds[dynamoDBCnt] + " successfully!");
             }else {
-                logger.error("ES record for id " + dynamoDBItemIds[dynamoDBCnt] + " not found");
+                logger.error(" ERROR - ES record for id " + dynamoDBItemIds[dynamoDBCnt] + " not found");
             }
         }
     }
@@ -176,7 +225,7 @@ CheckTransactionLogESData.prototype = {
 };
 
 const CheckTransactionLogESObj = new CheckTransactionLogESData();
-CheckTransactionLogESObj.validateDynamoDBData();
+CheckTransactionLogESObj.checkForESRecords();
 
 
 
