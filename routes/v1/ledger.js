@@ -35,7 +35,9 @@ router.get('/:id', function (req, res, next) {
     delete response.data['transactionLogDDbRecords'];
     delete response.data['transactionUuids'];
 
-    for (let transactionUuid in transactionUuids) {
+    for (let i=0; i<transactionUuids.length; i++) {
+
+      let transactionUuid = transactionUuids[i];
 
       let data = transactionLogDDbRecords[transactionUuid];
       if(!data) {continue}

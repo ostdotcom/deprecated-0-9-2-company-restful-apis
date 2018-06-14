@@ -68,9 +68,11 @@ router.get('/', function (req, res, next) {
     delete response.data['transactionLogDDbRecords'];
     delete response.data['transferUuids'];
 
-    for (let transactionUuid in transferUuids) {
+    for (let i=0; i<transferUuids.length; i++) {
 
-      let data = transactionLogDDbRecords[transactionUuid];
+      let transferUuid = transferUuids[i];
+
+      let data = transactionLogDDbRecords[transferUuid];
       if(!data) {continue}
 
       let stPrimeTransferFormatter = new StPrimeTransferFormatter(data)
