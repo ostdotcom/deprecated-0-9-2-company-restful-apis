@@ -68,7 +68,7 @@ ExecuteSTPTransferService.prototype = {
           logger.error(`${__filename}::perform::catch`);
           logger.error(error);
           return responseHelper.error({
-            internal_error_identifier: 's_stp_e_1',
+            internal_error_identifier: '`s_stp_e_1`',
             api_error_identifier: 'unhandled_catch_response',
             debug_options: {}
           });
@@ -261,22 +261,17 @@ ExecuteSTPTransferService.prototype = {
     let dataToInsert = {
       client_id: oThis.clientId,
       transaction_uuid: oThis.transactionUuid,
-      block_number: null,
       transaction_type: new transactionLogModel().invertedTransactionTypes[transactionLogConst.stpTransferTransactionType],
       client_token_id: oThis.clientTokenId,
-      gas_used: null,
       gas_price: basicHelper.convertToBigNumber(
         chainInteractionConstants.UTILITY_GAS_PRICE
       ).toString(10), // converting hex to base 10
       status: new transactionLogModel().invertedStatuses[transactionLogConst.processingStatus],
       created_at: Date.now(),
-      updated_at: null,
+      updated_at: Date.now(),
       from_address: oThis.fromAddress,
       to_address: oThis.toAddress,
-      action_id: null,
-      commission_amount_in_wei: null,
-      amount_in_wei: oThis.amountInWei,
-      token_symbol: null,
+      amount_in_wei: oThis.amountInWei
     };
 
     let insertedRec = await new OSTStorage.TransactionLogModel({

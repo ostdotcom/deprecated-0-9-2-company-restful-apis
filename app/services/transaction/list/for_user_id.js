@@ -100,14 +100,6 @@ const GetTransactionListForUser = {
 
     // filter by client id , transaction type and user id
     let boolFilters = oThis._getCommonFilteringParams();
-    boolFilters.push({
-      "bool": {
-        "should": [
-          {"term": {"from_uuid": oThis.userUuid}},
-          {"term": {"to_uuid": oThis.userUuid}}
-        ]
-      }
-    });
 
     // if statuses are passes in params, add filter on it
     if (oThis.statusesIntArray.length > 0) {
@@ -116,6 +108,15 @@ const GetTransactionListForUser = {
 
     // https://www.elastic.co/guide/en/elasticsearch/guide/current/bool-query.html
     filteringParams['query']['bool']['filter'] = boolFilters;
+
+    filteringParams['query']['bool']['must'] =  {
+      "bool": {
+        "should": [
+          {"match": {"from_uuid": oThis.userUuid}},
+          {"match": {"to_uuid": oThis.userUuid}}
+        ]
+      }
+    };
 
     Object.assign(filteringParams, oThis._getPaginationParams());
 

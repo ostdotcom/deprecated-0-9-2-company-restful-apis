@@ -128,13 +128,13 @@ MigrateTransactionLogsKlass.prototype = {
     // insert in DDb
     let insertTxLogsRsp = await oThis._insertDataInTransactionLogs(clientIdTxsToMigrateMap);
     if(insertTxLogsRsp.isFailure()) {
-      console.error('insertTxLogsRspError', JSON.strinfigy(insertTxLogsRsp.toHash()));
+      console.error('insertTxLogsRspError', JSON.stringify(insertTxLogsRsp.toHash()));
       return Promise.reject(insertTxLogsRsp);
     }
 
     let verifyTxLogsRsp = await oThis._verifyDataInTransactionLogs(clientIdtxUuidsToVerify);
     if(verifyTxLogsRsp.isFailure()) {
-      console.error('verifyTxLogsRsp', JSON.strinfigy(verifyTxLogsRsp.toHash()));
+      console.error('verifyTxLogsRsp', JSON.stringify(verifyTxLogsRsp.toHash()));
       return Promise.reject(verifyTxLogsRsp);
     }
 
@@ -163,15 +163,17 @@ MigrateTransactionLogsKlass.prototype = {
     if (!commonValidator.isVarNull(existingTxData['block_number'])) { txFormattedData['block_number'] = existingTxData['block_number']}
     if (!commonValidator.isVarNull(existingTxData['gas_used'])) { txFormattedData['gas_used'] = existingTxData['gas_used']}
     if (!commonValidator.isVarNull(existingInputParams['amount_in_wei'])) {txFormattedData['amount_in_wei'] = existingInputParams['amount_in_wei']}
-    if (!commonValidator.isVarNull(existingFormattedReceipt['bt_transfer_in_wei'])) {txFormattedData['amount_in_wei'] = existingFormattedReceipt['bt_transfer_in_wei']}
     if (!commonValidator.isVarNull(existingInputParams['to_address'])) {txFormattedData['to_address'] = existingInputParams['to_address']}
     if (!commonValidator.isVarNull(existingInputParams['from_address'])) {txFormattedData['from_address'] = existingInputParams['from_address']}
     if (!commonValidator.isVarNull(existingInputParams['from_uuid'])) {txFormattedData['from_uuid'] = existingInputParams['from_uuid']}
     if (!commonValidator.isVarNull(existingInputParams['to_uuid'])) {txFormattedData['to_uuid'] = existingInputParams['to_uuid']}
     if (!commonValidator.isVarNull(existingInputParams['token_symbol'])) {txFormattedData['token_symbol'] = existingInputParams['token_symbol']}
     if (!commonValidator.isVarNull(existingInputParams['transaction_kind_id'])) {txFormattedData['action_id'] = existingInputParams['transaction_kind_id']}
+    if (!commonValidator.isVarNull(existingInputParams['amount']) && commonValidator.validateAmount(existingInputParams['amount'])) {txFormattedData['amount'] = existingInputParams['amount']}
+    if (!commonValidator.isVarNull(existingInputParams['commission_percent'])) {txFormattedData['commission_percent'] = existingInputParams['commission_percent']}
     if (!commonValidator.isVarNull(existingFormattedReceipt['code'])) {txFormattedData['error_code'] = existingFormattedReceipt['code']}
     if (!commonValidator.isVarNull(existingFormattedReceipt['commission_amount_in_wei'])) {txFormattedData['commission_amount_in_wei'] = existingFormattedReceipt['commission_amount_in_wei']}
+    if (!commonValidator.isVarNull(existingFormattedReceipt['bt_transfer_in_wei'])) {txFormattedData['amount_in_wei'] = existingFormattedReceipt['bt_transfer_in_wei']}
 
     return txFormattedData;
 
