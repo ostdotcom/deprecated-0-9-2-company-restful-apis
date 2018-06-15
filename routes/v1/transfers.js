@@ -32,6 +32,7 @@ router.post('/', function (req, res, next) {
 
     delete response.data;
 
+    response.data = {};
     response.data.result_type = 'transfer';
     response.data.transfer = stPrimeTransferFormatterResponse.data;
 

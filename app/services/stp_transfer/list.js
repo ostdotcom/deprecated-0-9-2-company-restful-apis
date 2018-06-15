@@ -258,6 +258,12 @@ ListStpTransfersService.prototype = {
     const oThis = this
     ;
 
+    let  transferLogData = {};
+
+    if (oThis.transferUuids.length === 0) {
+      return responseHelper.successWithData(transferLogData);
+    }
+
     let transactionResponse = await new OSTStorage.TransactionLogModel({
       client_id: oThis.clientId,
       ddb_service: ddbServiceObj,
