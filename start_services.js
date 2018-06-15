@@ -62,7 +62,7 @@ StartServicesKlass.prototype = {
     // servicesList.push(cmd);
     oThis._asyncCommand(cmd);
 
-    // Start RabbitMQ server
+    // Start DynamoDB server
     logger.step("** Starting DynamoDB");
     var cmd = "java -Djava.library.path=" + homeAbsolutePath + "/dynamodb_local_latest/DynamoDBLocal_lib/ -jar "
       + homeAbsolutePath + "/dynamodb_local_latest/DynamoDBLocal.jar -sharedDb -dbPath "
