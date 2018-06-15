@@ -25,14 +25,14 @@ const rootPrefix = '../..'
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
   , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
   , Erc20ContractAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address')
-  , Erc20ContractUuidCacheKlass = require(rootPrefix + '/lib/cache_multi_management/erc20_contract_uuid')
+  // , Erc20ContractUuidCacheKlass = require(rootPrefix + '/lib/cache_multi_management/erc20_contract_uuid')
   , commonValidator = require(rootPrefix + '/lib/validators/common')
   , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , PostAirdropPayKlass = openStPayments.services.airdropManager.postAirdropPay
   , ManagedAddressesModel = require(rootPrefix + '/app/models/managed_address')
-  , notificationTopics = require(rootPrefix + '/lib/global_constant/notification_topics')
+  // , notificationTopics = require(rootPrefix + '/lib/global_constant/notification_topics')
 ;
 
 const transactionLogModelDdb = openStorage.TransactionLogModel
@@ -348,7 +348,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           }
 
           toUpdateFields.transaction_uuid = txUuid;
-          toUpdateFields.transfer_events = eventData.transfer_events;
+          if(eventData.transfer_events) {toUpdateFields.transfer_events = eventData.transfer_events}
           toUpdateFields.post_receipt_process_params = null;
           toUpdateFields.gas_used = txReceipt.gasUsed;
           toUpdateFields.block_number = txReceipt.blockNumber;
