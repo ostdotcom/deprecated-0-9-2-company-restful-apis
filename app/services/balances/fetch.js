@@ -89,7 +89,7 @@ Fetch.prototype = {
     if (!basicHelper.isUuidValid(oThis.user_uuid)) {
       return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_b_f_2',
-        api_error_identifier: 'invalid_api_params',
+        api_error_identifier: 'resource_not_found',
         params_error_identifiers: ['invalid_id'],
         debug_options: {}
       }));
