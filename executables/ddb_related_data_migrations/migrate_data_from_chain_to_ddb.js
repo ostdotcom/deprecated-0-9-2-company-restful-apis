@@ -664,12 +664,12 @@ MigrateTokenBalancesKlass.prototype = {
           txFormattedData = {
             transaction_hash: txHash,
             transaction_uuid: existingTxData['transaction_uuid'],
-            transaction_type: existingTxData['transaction_type'],
+            transaction_type: existingTxData['transaction_type'] || 1,
             block_number: existingTxData['block_number'] || txDataFromChain['blockNumber'],
             client_id: parseInt(existingTxData['client_id']),
             client_token_id: existingTxData['client_token_id'],
             gas_used: existingTxData['gas_used'] || txDataFromChain['gasUsed'],
-            gas_price: existingTxData['gas_price'],
+            gas_price: existingTxData['gas_price'] || 1000000000,
             status: existingTxData['status'],
             created_at: new Date(existingTxData['created_at']).getTime(),
             updated_at: new Date(existingTxData['updated_at']).getTime()
@@ -684,7 +684,7 @@ MigrateTokenBalancesKlass.prototype = {
           if (!commonValidator.isVarNull(existingInputParams['commission_percent'])) {
             txFormattedData['commission_percent'] = existingInputParams['commission_percent']
           }
-          if (!commonValidator.isVarNull(existingInputParams['amount'])) {
+          if (!commonValidator.isVarNull(existingInputParams['amount']) && commonValidator.validateAmount(existingInputParams['amount'])) {
             txFormattedData['amount'] = existingInputParams['amount']
           }
           if (!commonValidator.isVarNull(existingInputParams['to_address'])) {
@@ -845,22 +845,43 @@ MigrateTokenBalancesKlass.prototype = {
           ddb_service: ddbServiceObj,
           auto_scaling: autoscalingServiceObj
         })
-        , promises = []
         , userAddresses = Object.keys(userBalancesSettlementsData)
       ;
 
-      for (var l = 0; l < userAddresses.length; l++) {
+      let parallelbalancesToUpdate = 25
+        , batchNo = 1
+      ;
 
-        let userAddress = userAddresses[l];
+      while (true) {
 
-        promises.push(tokenalanceModelObj.update({
-          settle_amount: userBalancesSettlementsData[userAddress].toString(10),
-          ethereum_address: userAddress
-        }).catch(oThis.catchHandlingFunction));
+        let offset = (batchNo - 1) * parallelbalancesToUpdate
+          , batcheduserAddresses = userAddresses.slice(offset, parallelbalancesToUpdate + offset)
+        ;
+
+        if (batcheduserAddresses.length === 0) break;
+
+        logger.info(`starting updating balances for batch: ${batchNo} for contract: ${erc20ContractAddress}`);
+
+        let promiseArray = [];
+
+        for (let l = 0; l < batcheduserAddresses.length; l++) {
+
+          let userAddress = batcheduserAddresses[l];
+
+          promiseArray.push(tokenalanceModelObj.update({
+            settle_amount: userBalancesSettlementsData[userAddress].toString(10),
+            ethereum_address: userAddress
+          }).catch(oThis.catchHandlingFunction));
+
+        }
+
+        await Promise.all(promiseArray);
+
+        logger.info(`updated balances for batch: ${batchNo} for contract: ${erc20ContractAddress}`);
+
+        batchNo = batchNo + 1;
 
       }
-
-      await Promise.all(promises);
 
     }
 
@@ -877,7 +898,7 @@ MigrateTokenBalancesKlass.prototype = {
    */
   catchHandlingFunction: async function (error) {
     if (responseHelper.isCustomResult(error)) {
-      logger.error(error.toHash());
+      // logger.error(error.toHash());
       return error;
     } else {
       logger.error(`${__filename}::perform::catch`);
@@ -891,7 +912,7 @@ MigrateTokenBalancesKlass.prototype = {
     }
   }
 
-}
+};
 
 const usageDemo = function () {
   logger.log('usage:', 'node ./executables/ddb_related_data_migrations/migrate_data_from_chain_to_ddb.js startBlockNo endBlockNo');
