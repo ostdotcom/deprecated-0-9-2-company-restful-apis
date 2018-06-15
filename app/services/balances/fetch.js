@@ -111,12 +111,20 @@ Fetch.prototype = {
       uuids: [oThis.user_uuid]
     }).fetch();
 
+    if (!managedAddressesCacheResponse.data[oThis.user_uuid]) {
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_b_f_3',
+        api_error_identifier: 'resource_not_found',
+        debug_options: {}
+      }));
+    }
+
     oThis.ethereumAddress = managedAddressesCacheResponse.data[oThis.user_uuid].ethereum_address;
     let clientId = managedAddressesCacheResponse.data[oThis.user_uuid].client_id;
 
     if (clientId != oThis.clientId) {
       return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_b_f_3',
+        internal_error_identifier: 's_b_f_4',
         api_error_identifier: 'resource_not_found',
         debug_options: {}
       }));

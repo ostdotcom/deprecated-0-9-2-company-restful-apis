@@ -798,6 +798,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         if (fromAddr) {
           balanceAdjustmentMap[contractAddress][fromAddr] = balanceAdjustmentMap[contractAddress][fromAddr] || {settledBalance: new BigNumber('0'), unSettledDebit: new BigNumber('0')};
           balanceAdjustmentMap[contractAddress][fromAddr].settledBalance = balanceAdjustmentMap[contractAddress][fromAddr].settledBalance.minus(valueBn);
+          // TODO: This is being happening for unrecognized, but this can happen outside SaaS also
+          balanceAdjustmentMap[contractAddress][fromAddr].unSettledDebit = balanceAdjustmentMap[contractAddress][fromAddr].unSettledDebit.minus(valueBn);
           // if(!claimDone){
           //   balanceAdjustmentMap[contractAddress][fromAddr].unSettledDebit = balanceAdjustmentMap[contractAddress][fromAddr].unSettledDebit.minus(valueBn);
           // }
