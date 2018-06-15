@@ -207,7 +207,7 @@ ListStpTransfersService.prototype = {
       "sort": [sortParams]
     };
 
-    let searchRsp = await esSearchServiceObject.search(filteringParams);
+    let searchRsp = await esSearchServiceObject.search(filteringParams, ['id']);
     if(searchRsp.isFailure()) {return Promise.reject(searchRsp)}
 
     let searchData = searchRsp.data

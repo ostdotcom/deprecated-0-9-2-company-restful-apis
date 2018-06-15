@@ -164,7 +164,7 @@ Base.prototype = {
 
     logger.debug('filteringParams', oThis.filteringParams);
 
-    let searchRsp = await esSearchServiceObject.search(oThis.filteringParams);
+    let searchRsp = await esSearchServiceObject.search(oThis.filteringParams, ['id']);
     if(searchRsp.isFailure()) {return Promise.reject(searchRsp)}
 
     let searchData = searchRsp.data
