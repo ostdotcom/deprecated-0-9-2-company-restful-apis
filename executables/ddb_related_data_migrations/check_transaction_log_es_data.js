@@ -19,8 +19,9 @@ function CheckTransactionLogESData(  ) {
 CheckTransactionLogESData.prototype = {
 
     shardCount      : 0,
-    shardBatchCnt : 0,
-
+    shardBatchCnt   : 0,
+    shardRecordCnt  : 0,
+    totalRecordCnt  : 0,
 
     scanParams :  {
         TableName: null,
@@ -54,15 +55,15 @@ CheckTransactionLogESData.prototype = {
         table = oThis.getTableFromTables( shardCount );
         if( !table ) return ;
         oThis.validateDynamoRecordsForTable( table ).then( function (response ) {
+            shardCount++;
             if( shardCount < len ){
-                oThis.shardCount++;
+                oThis.shardCount = shardCount;
                 oThis.checkForESRecords();
             }else {
-                logger.win("SUCCESS - DynamoDB fetch for tables" + tables.join(' , ')  + " completed!" );
+                logger.win("SUCCESS - DynamoDB fetch for tables" + tables.join(' , ')  + " completed with total records - " + oThis.totalRecordCnt );
             }
-
         }).catch( function ( reason ) {
-            logger.error(" REJECT - DynamoDB fetch for " + oThis.getTableName() + " for batch "+ oThis.shardBatchCnt+  " failed!" , reason);
+            logger.error(" REJECT - DynamoDB fetch for " + oThis.getTableName() + " for batch "+ oThis.shardBatchCnt +  " failed! " , reason);
         });
     },
 
@@ -80,6 +81,7 @@ CheckTransactionLogESData.prototype = {
                     delete scanParams["ExclusiveStartKey"];
                 }
 
+                oThis.shardBatchCnt++;
                 ddbServiceObj.scan( scanParams )
                     .then(function( response ) {
                         logger.debug("dynamoDB data ",  JSON.stringify( response ));
@@ -100,28 +102,34 @@ CheckTransactionLogESData.prototype = {
                         });
                     }).catch( function ( reason ) {
                         logger.error(" REJECT - DynamoDB fetch for " + oThis.getTableName() + " for batch "+ oThis.shardBatchCnt+  " failed!" , reason);
-                        oThis.shardBatchCnt = 0;
                         reject( reason );
                     });
             }
 
             function onESValidation( LastEvaluatedKeyHash ) {
-                var   txu                   = LastEvaluatedKeyHash && LastEvaluatedKeyHash.txu
-                    , LastEvaluatedKeyValue = dynamoDBFormatter.toString( txu );
+                var txu                   = LastEvaluatedKeyHash && LastEvaluatedKeyHash.txu,
+                    LastEvaluatedKeyValue = dynamoDBFormatter.toString( txu );
                 ;
                 if( LastEvaluatedKeyValue ){ //Check for value present
-                    oThis.shardBatchCnt++;
                     checkDynamoRecordsInES( LastEvaluatedKeyHash );
                 }else {
-                    oThis.shardBatchCnt = 0;
-                    resolve( "DynamoDB data validation for table " + oThis.getTableName() + " complete!" );
-                    logger.win(" WIN - DynamoDB data validation for table " + oThis.getTableName() + " complete!");
+                    logger.win(" WIN - DynamoDB data validation for table " + oThis.getTableName() + " completed with records " + oThis.shardRecordCnt );
+                    oThis.resetShardConfig();
+                    resolve( );
                 }
             }
 
             checkDynamoRecordsInES( );
 
         });
+    },
+
+    resetShardConfig: function () {
+        var oThis = this
+        ;
+        oThis.totalRecordCnt += oThis.shardRecordCnt;
+        oThis.shardBatchCnt   = 0;
+        oThis.shardRecordCnt  = 0;
     },
 
     validateRecordsInES : function ( dynamoRecords  ) {
@@ -131,15 +139,12 @@ CheckTransactionLogESData.prototype = {
         ;
 
         return new Promise(function (resolve , reject) {
-            if( !dynamoRecords ){
-                resolve();
-            }
             dynamoRecordIds = oThis.getSearchIds( dynamoRecords );
             esSearchQuery   = oThis.getSearchQuerey( dynamoRecordIds );
             oThis.searchRecords( esSearchQuery ).then(function ( response ) {
-                resolve( "Got search results");
                 logger.debug("Dynamo DB ids "+ dynamoRecordIds.join(' , ') +" ES Response"  ,JSON.stringify( response ));
                 oThis.validateESDataForIds( response , dynamoRecordIds);
+                resolve( "Got search results");
             }).catch( function ( reason ) {
                 reject(reason);
             });
@@ -183,7 +188,7 @@ CheckTransactionLogESData.prototype = {
 
     searchRecords : function ( query ) {
         logger.debug("search query", query);
-        return manifest.services.transactionLog.search( query );
+        return manifest.services.transactionLog.search( query , ['id']);
     },
 
     validateESDataForIds : function (esResponse , dynamoDBItemIds) {
@@ -219,6 +224,8 @@ CheckTransactionLogESData.prototype = {
                 logger.error(" ERROR - ES record for id " + dynamoDBItemIds[dynamoDBCnt] + " not found");
             }
         }
+
+        oThis.shardRecordCnt += dynamoDBLen;
     }
 
 
