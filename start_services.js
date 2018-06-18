@@ -124,11 +124,11 @@ StartServicesKlass.prototype = {
     servicesList.push(cmd);
     oThis._asyncCommand(cmd);
 
-    logger.step("** Starting Processor to execute transactions");
-    var cmd = "node executables/rmq_subscribers/execute_transaction.js 1"
-      + " >> " + homeAbsolutePath + "/openst-setup/logs/execute_transaction.log";
-    servicesList.push(cmd);
-    oThis._asyncCommand(cmd);
+    // logger.step("** Starting Processor to execute transactions");
+    // var cmd = "node executables/rmq_subscribers/execute_transaction.js 1"
+    //   + " >> " + homeAbsolutePath + "/openst-setup/logs/execute_transaction.log";
+    // servicesList.push(cmd);
+    // oThis._asyncCommand(cmd);
 
     logger.step("** Starting Slow Processor to execute transactions");
     var cmd = "node executables/rmq_subscribers/execute_transaction.js 2 slow"
@@ -136,16 +136,16 @@ StartServicesKlass.prototype = {
     servicesList.push(cmd);
     oThis._asyncCommand(cmd);
 
-    logger.step("** Starting Block Scanner to mark mined transactions as done");
-    var cmd = "node executables/block_scanner/for_tx_status_and_balance_sync.js 1 "
-      + homeAbsolutePath
-      + "/openst-setup/logs/block_scanner_execute_transaction.data"
-      + " >> " + homeAbsolutePath + "/openst-setup/logs/block_scanner_execute_transaction.log";
-    servicesList.push(cmd);
-    oThis._asyncCommand(cmd);
+    // logger.step("** Starting Block Scanner to mark mined transactions as done");
+    // var cmd = "node executables/block_scanner/for_tx_status_and_balance_sync.js 1 "
+    //   + homeAbsolutePath
+    //   + "/openst-setup/logs/block_scanner_execute_transaction.data"
+    //   + " >> " + homeAbsolutePath + "/openst-setup/logs/block_scanner_execute_transaction.log";
+    // servicesList.push(cmd);
+    // oThis._asyncCommand(cmd);
 
     logger.step("** Starting worker to process events");
-    var cmd = "node executables/rmq_subscribers/factory.js 1 'temp' '[\"on_boarding.#\",\"airdrop_allocate_tokens\",\"stake_and_mint.#\",\"event.stake_and_mint_processor.#\",\"airdrop.approve.contract\", \"transaction.stp_transfer\"]'"
+    var cmd = "node executables/rmq_subscribers/factory.js 1 'temp' '[\"on_boarding.#\",\"airdrop_allocate_tokens\",\"stake_and_mint.#\",\"event.stake_and_mint_processor.#\",\"event.block_scanner.#\",\"airdrop.approve.contract\", \"transaction.stp_transfer\"]'"
       + " >> " + homeAbsolutePath + "/openst-setup/logs/executables_rmq_subscribers_factory.log";
     // servicesList.push(cmd);
     oThis._asyncCommand(cmd);
@@ -156,11 +156,11 @@ StartServicesKlass.prototype = {
     servicesList.push(cmd);
     oThis._asyncCommand(cmd);
 /*
-    logger.step("** Starting SAAS App");
-    var cmd = "node app.js"
-      + " >> " + homeAbsolutePath + "/openst-setup/logs/node_app.log";
-    servicesList.push(cmd);
-    oThis._asyncCommand(cmd);
+    // logger.step("** Starting SAAS App");
+    // var cmd = "node app.js"
+    //   + " >> " + homeAbsolutePath + "/openst-setup/logs/node_app.log";
+    // servicesList.push(cmd);
+    // oThis._asyncCommand(cmd);
 */
     logger.win("\n** Congratulation! All services are up and running. \n" +
       "NOTE: We will keep monitoring the services, and notify you if any service stops.");
