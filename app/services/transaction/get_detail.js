@@ -12,7 +12,6 @@
 const OSTStorage = require('@openstfoundation/openst-storage');
 
 const rootPrefix = '../../..'
-  , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type')
   , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
@@ -38,7 +37,7 @@ const GetTransactionDetailKlass = function (params) {
   oThis.clientTokenMap = {};
   oThis.economyUserMap = {};
   oThis.transactionUuidToDataMap = {};
-  oThis.chainMaps = {};
+
 };
 
 GetTransactionDetailKlass.prototype = {
@@ -109,13 +108,13 @@ GetTransactionDetailKlass.prototype = {
     const oThis = this
     ;
 
-    let transactionFetchRespone = await new OSTStorage.TransactionLogModel({
+    let transactionFetchResponse = await new OSTStorage.TransactionLogModel({
       client_id: oThis.clientId,
       ddb_service: ddbServiceObj,
       auto_scaling: autoScalingServiceObj,
     }).batchGetItem(oThis.transactionUuids);
 
-    let transactionLogRecordsHash = transactionFetchRespone.data;
+    let transactionLogRecordsHash = transactionFetchResponse.data;
 
     if (!transactionLogRecordsHash || Object.keys(transactionLogRecordsHash).length == 0) {
       return Promise.reject(responseHelper.error({
@@ -129,7 +128,6 @@ GetTransactionDetailKlass.prototype = {
       const transactionLogRecord = transactionLogRecordsHash[transactionLog]
       ;
 
-      oThis.chainMaps[transactionLogRecord.transaction_uuid] = new TransactionLogModel().chainTypes[transactionLogRecord.chain_type]; //TODO: How to get this?
       oThis.transactionTypeMap[transactionLogRecord.action_id] = {};
       oThis.clientTokenMap[transactionLogRecord.client_token_id] = {};
 
