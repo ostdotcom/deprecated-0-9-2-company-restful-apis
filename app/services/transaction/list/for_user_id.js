@@ -60,7 +60,7 @@ const GetTransactionListForUser = {
       }));
     }
 
-    const managedAddressCacheFetchResponse = new ManagedAddressCacheKlass({'uuids': [oThis.userUuid]}).fetch();
+    const managedAddressCacheFetchResponse = await new ManagedAddressCacheKlass({'uuids': [oThis.userUuid]}).fetch();
     if (managedAddressCacheFetchResponse.isFailure()) {
       return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_t_l_fui_3',
