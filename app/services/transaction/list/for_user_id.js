@@ -4,6 +4,9 @@ const rootPrefix = '../../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , BaseKlass = require(rootPrefix + '/app/services/transaction/list/base')
   , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
+  , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
+  , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
+  , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
 
@@ -57,6 +60,28 @@ const GetTransactionListForUser = {
       }));
     }
 
+    const managedAddressCacheFetchResponse = new ManagedAddressCacheKlass({'uuids': [oThis.userUuid]}).fetch();
+    if (managedAddressCacheFetchResponse.isFailure()) {
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_t_l_fui_3',
+        api_error_identifier: 'something_went_wrong',
+        debug_options: {}
+      }));
+    }
+
+    const managedAddressCacheData = managedAddressCacheFetchResponse.data[oThis.userUuid]
+      , userAddressType = new ManagedAddressModel().invertedAddressTypes[managedAddressesConst.userAddressType]
+    ;
+
+    if (!managedAddressCacheData || managedAddressCacheData['client_id'] != oThis.clientId || managedAddressCacheData['address_type'] != userAddressType) {
+      return Promise.reject(responseHelper.paramValidationError({
+        internal_error_identifier: 's_t_l_fui_4',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_id_user'],
+        debug_options: {}
+      }));
+    }
+
     if (oThis.statusStr) {
 
       let statusesStrArray = basicHelper.commaSeperatedStrToArray(oThis.statusStr);
@@ -67,7 +92,7 @@ const GetTransactionListForUser = {
         let statusInt = statusesStrToIntMap[statusesStrArray[i].toLowerCase()];
         if (!statusInt) {
           return Promise.reject(responseHelper.paramValidationError({
-            internal_error_identifier: 's_t_l_fui_3',
+            internal_error_identifier: 's_t_l_fui_5',
             api_error_identifier: 'invalid_api_params',
             params_error_identifiers: ['invalid_status_transactions_ledger'],
             debug_options: {}
