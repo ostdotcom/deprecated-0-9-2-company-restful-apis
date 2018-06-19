@@ -391,6 +391,11 @@ ListActions.prototype = {
         const clientBrandedTokenCacheResp = await clientBrandedTokenCacheObj.fetch();
 
         oThis.clientTokens = clientBrandedTokenCacheResp.data;
+
+        // Remove extra keys
+        delete oThis.clientTokens.token_uuid;
+        delete oThis.clientTokens.reserve_managed_address_id;
+
       }
 
       if (oThis.extra_entities.includes('price_points')) {
