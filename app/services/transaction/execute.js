@@ -496,7 +496,7 @@ ExecuteTransactionService.prototype = {
    */
   _validateFromUserBalance: async function () {
     const oThis = this
-      , amount = oThis.amount ? basicHelper.convertToWei(oThis.amount) : 0
+      , amount = basicHelper.convertToWei(oThis.amount || oThis.transactionTypeRecord.currency_value)
       , commissionPercent = oThis.commissionPercent || oThis.transactionTypeRecord.commission_percent;
     ;
 
