@@ -274,6 +274,11 @@
     "code": "UNPROCESSABLE_ENTITY",
     "message": "The request was good, but nevertheless could not be processed."
   },
+  "getPriceOracle_failed": {
+    "http_code": "422",
+    "code": "UNPROCESSABLE_ENTITY",
+    "message": "The request was good, but nevertheless could not be processed."
+  },
   "could_not_set_worker": {
     "http_code": "422",
     "code": "UNPROCESSABLE_ENTITY",

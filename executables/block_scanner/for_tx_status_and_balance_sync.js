@@ -265,7 +265,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
       const txReceiptResults = await Promise.all(promiseArray);
 
-      logger.debug("-----------------999--------------txReceiptResults-", JSON.stringify(txReceiptResults));
+      logger.debug("-----------------999--------------txReceiptResults-", txReceiptResults);
 
       for (var i = 0; i < batchedTxHashes.length; i++) {
         oThis.txHashToTxReceiptMap[batchedTxHashes[i]] = txReceiptResults[i];
@@ -284,11 +284,11 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     const oThis = this
       , batchSize = 50
     ;
-    logger.debug("----------------oThis.recognizedTxUuidsGroupedByClientId---", JSON.stringify(oThis.recognizedTxUuidsGroupedByClientId));
+    logger.debug("----------------oThis.recognizedTxUuidsGroupedByClientId---", oThis.recognizedTxUuidsGroupedByClientId);
     for (var clientId in oThis.recognizedTxUuidsGroupedByClientId) {
       let txUuids = oThis.recognizedTxUuidsGroupedByClientId[clientId];
 
-      logger.debug("----------------txUuids---", JSON.stringify(txUuids));
+      logger.debug("----------------txUuids---", txUuids);
       let batchNo = 1
       ;
 
@@ -303,21 +303,21 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
         if (batchedTxUuids.length === 0) break;
 
-        logger.debug("------1----batchedTxUuids---", JSON.stringify(batchedTxUuids));
+        logger.debug("------1----batchedTxUuids---", batchedTxUuids);
         let batchGetItemResponse = await new transactionLogModelDdb({
           client_id: clientId,
           ddb_service: ddbServiceObj,
           auto_scaling: autoscalingServiceObj
         }).batchGetItem(batchedTxUuids);
 
-        logger.debug("------2----batchGetItemResponse---", JSON.stringify(batchGetItemResponse));
+        logger.debug("------2----batchGetItemResponse---", batchGetItemResponse);
         if (batchGetItemResponse.isFailure()) return Promise.reject(batchGetItemResponse);
 
         let batchGetItemData = batchGetItemResponse.data;
 
-        logger.debug("------3----oThis.knownTxUuidToTxHashMap---", JSON.stringify(oThis.knownTxUuidToTxHashMap));
-        logger.debug("------4----oThis.txHashToTxReceiptMap---", JSON.stringify(oThis.txHashToTxReceiptMap));
-        logger.debug("------4----oThis.tokenTransferTxHashesMap---", JSON.stringify(oThis.tokenTransferTxHashesMap));
+        logger.debug("------3----oThis.knownTxUuidToTxHashMap---", oThis.knownTxUuidToTxHashMap);
+        logger.debug("------4----oThis.txHashToTxReceiptMap---", oThis.txHashToTxReceiptMap);
+        logger.debug("------4----oThis.tokenTransferTxHashesMap---", oThis.tokenTransferTxHashesMap);
         for (var txUuid in batchGetItemData) {
 
           let txHash = oThis.knownTxUuidToTxHashMap[txUuid];
@@ -325,22 +325,22 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
           let toUpdateFields = {}
             , eventData= {};
-          logger.debug("------5----txHash---", txHash, '--', JSON.stringify(oThis.tokenTransferTxHashesMap[txHash]));
+          logger.debug("------5----txHash---", txHash, '--', oThis.tokenTransferTxHashesMap[txHash]);
 
           if (oThis.tokenTransferTxHashesMap[txHash]) {
             const decodedEvents = abiDecoder.decodeLogs(txReceipt.logs);
 
             if (batchGetItemData[txUuid].post_receipt_process_params) {
               const postAirdropParams = batchGetItemData[txUuid].post_receipt_process_params;
-              logger.debug("postAirdropParams--", JSON.stringify(postAirdropParams));
+              logger.debug("postAirdropParams--", postAirdropParams);
               const postAirdropPay = new PostAirdropPayKlass(postAirdropParams, decodedEvents, txReceipt.status);
               const payResp = await postAirdropPay.perform();
-              logger.debug("---payResp--", JSON.stringify(payResp));
+              logger.debug("---payResp--", payResp);
             }
 
             eventData = await oThis._getEventData(decodedEvents);
 
-            logger.debug('----------------------eventData-', txHash, JSON.stringify(eventData));
+            logger.debug('----------------------eventData-', txHash, eventData);
             toUpdateFields = {
               commission_amount_in_wei: eventData._commissionTokenAmount,
               amount_in_wei: eventData._tokenAmount
@@ -360,7 +360,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         }
 
       }
-      logger.debug('----------------------oThis.clientIdWiseDataToUpdate-', clientId, JSON.stringify(oThis.clientIdWiseDataToUpdate));
+      logger.debug('----------------------oThis.clientIdWiseDataToUpdate-', clientId, oThis.clientIdWiseDataToUpdate);
     }
   },
 
@@ -374,20 +374,20 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     ;
     let erc20ContractAddressesData = {};
 
-    logger.debug("c----------------------oThis.unRecognizedTxHashes----", JSON.stringify(oThis.unRecognizedTxHashes));
+    logger.debug("c----------------------oThis.unRecognizedTxHashes----", oThis.unRecognizedTxHashes);
 
     for(var i=0; i<oThis.unRecognizedTxHashes.length; i++){
       let txHash = oThis.unRecognizedTxHashes[i];
       let txReceipt = oThis.txHashToTxReceiptMap[txHash];
 
-      logger.debug("c----------------------txReceipt----", txHash, '--', JSON.stringify(txReceipt));
+      logger.debug("c----------------------txReceipt----", txHash, '--', txReceipt);
       for(var j=0; j<txReceipt.logs.length; j++){
         erc20Addresses.push(txReceipt.logs[j].address);
       }
 
     }
 
-    logger.debug("c----------------------erc20Addresses----", JSON.stringify(erc20Addresses));
+    logger.debug("c----------------------erc20Addresses----", erc20Addresses);
 
     if (erc20Addresses.length > 0) {
       // from these addresses create a map of addresses of which are ERC20 address
@@ -422,7 +422,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       }
     }
 
-    logger.debug("----------------------txHashToShortListedEventsMap----", JSON.stringify(txHashToShortListedEventsMap));
+    logger.debug("----------------------txHashToShortListedEventsMap----", txHashToShortListedEventsMap);
     let txHashDecodedEventsMap = await oThis._decodeTransactionEvents(txHashToShortListedEventsMap);
 
     let balanceAdjustmentRsp = await oThis._computeBalanceAdjustments(txHashDecodedEventsMap, erc20ContractAddressesData);
@@ -431,9 +431,9 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       , affectedAddresses = balanceAdjustmentRsp['affectedAddresses']
       // , doClaimTransferEventData = balanceAdjustmentRsp['doClaimTransferEventData']
     ;
-    logger.debug("----------------------balanceAdjustmentMap----", JSON.stringify(balanceAdjustmentMap));
-    logger.debug("----------------------txHashTransferEventsMap----", JSON.stringify(txHashTransferEventsMap));
-    logger.debug("----------------------affectedAddresses----", JSON.stringify(affectedAddresses));
+    logger.debug("----------------------balanceAdjustmentMap----", balanceAdjustmentMap);
+    logger.debug("----------------------txHashTransferEventsMap----", txHashTransferEventsMap);
+    logger.debug("----------------------affectedAddresses----", affectedAddresses);
 
 
     // format data to be inserted into transaction logs
@@ -445,7 +445,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       affectedAddresses: affectedAddresses
     };
     let formattedTransactionsData = await oThis._fetchFormattedTransactionsForMigration(params);
-    logger.debug("----------------------formattedTransactionsData----", JSON.stringify(formattedTransactionsData));
+    logger.debug("----------------------formattedTransactionsData----", formattedTransactionsData);
 
     await oThis._insertDataInTransactionLogs(formattedTransactionsData);
 
@@ -471,14 +471,14 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       , txHashes = Object.keys(txHashEventsMap)
     ;
 
-    logger.debug("-1-------txHashes--", JSON.stringify(txHashes));
+    logger.debug("-1-------txHashes--", txHashes);
     for (let i = 0; i < txHashes.length; i++) {
       let txHash = txHashes[i];
-      logger.debug("-2-------txHash--", JSON.stringify(txHash));
+      logger.debug("-2-------txHash--", txHash);
       txHashDecodedEventsMap[txHash] = abiDecoder.decodeLogs(txHashEventsMap[txHash]);
     }
 
-    logger.debug("-1-------txHashDecodedEventsMap--", JSON.stringify(txHashDecodedEventsMap));
+    logger.debug("-1-------txHashDecodedEventsMap--", txHashDecodedEventsMap);
     logger.info('completed _decodeTransactionEvents');
 
     return txHashDecodedEventsMap;
@@ -638,7 +638,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       }
     }
 
-    logger.debug("---------------------------allTransferEventsVars------", JSON.stringify(allTransferEventsVars));
+    logger.debug("---------------------------allTransferEventsVars------", allTransferEventsVars);
 
     let managedAddressResults = await new ManagedAddressesModel().getByEthAddresses(addressesToFetch);
 
@@ -842,7 +842,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    */
   _fetchFormattedTransactionsForMigration: async function (params) {
 
-    logger.debug("-1111--------------------params---", JSON.stringify(params));
+    logger.debug("-1111--------------------params---", params);
     logger.info('starting _fetchFormattedTransactionsForMigration');
 
     let blockNoDetails = params['blockNoDetailsMap']
@@ -857,7 +857,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       , tokenTransferType = parseInt(new TransactionLogModel().invertedTransactionTypes[transactionLogConst.extenralTokenTransferTransactionType])
     ;
 
-    logger.debug("-2222--------------------addressUuidMap---", JSON.stringify(addressUuidMap));
+    logger.debug("-2222--------------------addressUuidMap---", addressUuidMap);
     if (affectedAddresses.length > 0) {
       let dbRows = await new ManagedAddressModel().getByEthAddresses(affectedAddresses);
       for (let i = 0; i < dbRows.length; i++) {
@@ -866,7 +866,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       }
     }
 
-    logger.debug("-3333--------------------addressUuidMap---", JSON.stringify(addressUuidMap));
+    logger.debug("-3333--------------------addressUuidMap---", addressUuidMap);
       let txHashes = Object.keys(txHashTransferEventsMap);
 
       for (let i = 0; i < txHashes.length; i++) {
@@ -1037,7 +1037,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   //   const oThis = this
   //   ;
   //
-  //   logger.info('starting _claimCompletedStatus for -- ', JSON.stringify(doClaimTransferEventData));
+  //   logger.info('starting _claimCompletedStatus for -- ', doClaimTransferEventData);
   //
   //   for(var i=0; i<doClaimTransferEventData.length; i++){
   //
@@ -1056,7 +1056,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   //     };
   //
   //     const publishEventResp = await openSTNotification.publishEvent.perform(notificationData);
-  //     logger.debug("------------------------publishEventResp-", JSON.stringify(publishEventResp));
+  //     logger.debug("------------------------publishEventResp-", publishEventResp);
   //
   //   }
   //

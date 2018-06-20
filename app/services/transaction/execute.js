@@ -8,6 +8,7 @@
 
 const openSTNotification = require('@openstfoundation/openst-notification')
   , openStorage = require('@openstfoundation/openst-storage')
+  , OSTPriceOracle = require('@ostdotcom/ost-price-oracle')
   , uuid = require("uuid")
 ;
 
@@ -32,6 +33,11 @@ const rootPrefix = '../../..'
   , TransactionLogModelDdb = openStorage.TransactionLogModel
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
   , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
+  , EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance')
+  , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
+  , conversionRateConstants = require(rootPrefix + "/lib/global_constant/conversion_rates")
+  , errorConfig = basicHelper.fetchErrorConfig(apiVersions.general)
+  , priceOracle = OSTPriceOracle.priceOracle
 ;
 
 /**
@@ -65,6 +71,7 @@ const ExecuteTransactionService = function (params) {
   oThis.clientBrandedToken = null;
   oThis.toUserObj = null;
   oThis.fromUserObj = null;
+  oThis.fromUserTokenBalance = 0;
 };
 
 ExecuteTransactionService.prototype = {
@@ -110,6 +117,10 @@ ExecuteTransactionService.prototype = {
     await oThis._validateOptionallyMandatoryParams();
 
     await oThis._validateUsers();
+
+    await oThis._getSenderBalance();
+
+    await oThis._validateFromUserBalance();
 
     await oThis._createTransactionLog();
 
@@ -262,8 +273,7 @@ ExecuteTransactionService.prototype = {
     const oThis = this
     ;
 
-    if (oThis.transactionTypeRecord.currency_type ==
-      new ClientTransactionTypeModel().invertedCurrencyTypes[clientTransactionTypeConst.btCurrencyType]) {
+    if (oThis.transactionTypeRecord.currency_type == clientTransactionTypeConst.btCurrencyType) {
       if (!commonValidator.isVarNull(oThis.amount) && !commonValidator.validateBtAmount(oThis.amount)) {
         return Promise.reject(responseHelper.paramValidationError({
           internal_error_identifier: 's_t_e_22',
@@ -274,8 +284,7 @@ ExecuteTransactionService.prototype = {
       }
     }
 
-    if (oThis.transactionTypeRecord.currency_type ==
-      new ClientTransactionTypeModel().invertedCurrencyTypes[clientTransactionTypeConst.usdCurrencyType]) {
+    if (oThis.transactionTypeRecord.currency_type == clientTransactionTypeConst.usdCurrencyType) {
       if (!commonValidator.isVarNull(oThis.amount) && !commonValidator.validateUsdAmount(oThis.amount)) {
         return Promise.reject(responseHelper.paramValidationError({
           internal_error_identifier: 's_t_e_23',
@@ -316,14 +325,6 @@ ExecuteTransactionService.prototype = {
     }
 
     /* Do amount validations only above this code */
-
-    if (!commonValidator.isVarNull(oThis.amount) && oThis.transactionTypeRecord.currency_type ==
-      new ClientTransactionTypeModel().invertedCurrencyTypes[clientTransactionTypeConst.btCurrencyType]) {
-
-      oThis.amount = basicHelper.convertToWei(oThis.amount);
-      oThis.amount = basicHelper.formatWeiToString(oThis.amount);
-    }
-
     oThis.amount = !commonValidator.isVarNull(oThis.amount) ? parseFloat(oThis.amount) : null;
 
     if(oThis.transactionTypeRecord.kind == clientTransactionTypeConst.userToUserKind){
@@ -463,6 +464,91 @@ ExecuteTransactionService.prototype = {
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
+  },
+
+  /**
+   * Get From user available balance
+   *
+   * @return {promise<>}
+   */
+  _getSenderBalance: async function () {
+
+    const oThis = this;
+
+    // Fetch Airdrop Balance of users
+    const ethereumAddress = oThis.fromUserObj.ethereum_address
+      , economyUserBalance = new EconomyUserBalanceKlass({client_id: oThis.clientId, ethereum_addresses: [ethereumAddress]})
+      , userBalance = await economyUserBalance.perform()
+    ;
+
+    if(!userBalance.isFailure()){
+      oThis.fromUserTokenBalance = userBalance.data[ethereumAddress].tokenBalance;
+    }
+
+    return Promise.resolve({});
+
+  },
+
+  /**
+   * Validate from user has sufficient balance o transfer.
+   *
+   * @return {promise<>}
+   */
+  _validateFromUserBalance: async function () {
+    const oThis = this
+      , amount = basicHelper.convertToWei(oThis.amount)
+      , commissionPercent = oThis.commissionPercent || oThis.transactionTypeRecord.commission_percent;
+    ;
+
+    var transferBtAmountInWei = null;
+
+    logger.debug('---amount--', amount);
+
+    logger.debug('---oThis.transactionTypeRecord--', oThis.transactionTypeRecord);
+    if (oThis.transactionTypeRecord.currency_type == clientTransactionTypeConst.usdCurrencyType) {
+
+      // Get conversion rate
+      var priceInDecimal = await priceOracle.decimalPrice(
+        chainInteractionConstants.UTILITY_CHAIN_ID,
+        conversionRateConstants.ost_currency(),
+        conversionRateConstants.usd_currency());
+
+      if(priceInDecimal.isFailure()){
+        return Promise.reject(responseHelper.error({
+          internal_error_identifier: 's_t_e_30',
+          api_error_identifier: 'getPriceOracle_failed',
+          error_config: errorConfig
+        }));
+      }
+      logger.debug('---priceInDecimal--', priceInDecimal);
+      transferBtAmountInWei = basicHelper.convertToBigNumber(amount).div(basicHelper.convertToBigNumber(priceInDecimal.data.price));
+    }else{
+      transferBtAmountInWei = basicHelper.convertToBigNumber(amount);
+    }
+
+    logger.debug('---transferBtAmountInWei--', transferBtAmountInWei);
+
+    // Get conversion rate
+    let commissionAmount = '0';
+    if(!commonValidator.isVarNull(commissionPercent)){
+      commissionAmount = transferBtAmountInWei.mul(basicHelper.convertToBigNumber(commissionPercent).div(basicHelper.convertToBigNumber(100)));
+    }
+    logger.debug('---commissionAmount--', commissionAmount);
+    const requiredBtAmountInWei = transferBtAmountInWei.plus(basicHelper.convertToBigNumber(commissionAmount));
+
+    logger.debug('---requiredBtAmountInWei--', requiredBtAmountInWei);
+    logger.debug('---oThis.fromUserTokenBalance--', oThis.fromUserTokenBalance);
+
+    if(basicHelper.convertToBigNumber(requiredBtAmountInWei).gt(basicHelper.convertToBigNumber(oThis.fromUserTokenBalance))){
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_t_e_29',
+        api_error_identifier: 'insufficient_funds',
+        error_config: errorConfig
+      }));
+    }
+
+    return Promise.resolve();
+
   },
 
   /**
