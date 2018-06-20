@@ -581,11 +581,15 @@ ExecuteTransactionService.prototype = {
       updated_at: Date.now()
     };
 
+    let start_time = Date.now();
+
     await new TransactionLogModelDdb({
       client_id: oThis.clientId,
       ddb_service: ddbServiceObj,
       auto_scaling: autoscalingServiceObj
     }).updateItem(oThis.transactionLogData);
+
+    console.log('------- Time taken', (Date.now() - start_time)/1000);
 
     return responseHelper.successWithData({});
   },
