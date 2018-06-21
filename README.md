@@ -1,6 +1,6 @@
 # Pre Setup
 
-* Setup Company API. Instrunctions are published: https://github.com/OpenSTFoundation/company-api/blob/master/README.md
+* Setup Company API. Instructions are published: https://github.com/OpenSTFoundation/company-api/blob/master/README.md
 
 # Setup Saas
 
