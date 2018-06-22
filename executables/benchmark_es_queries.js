@@ -90,11 +90,13 @@ BenchmarkEsQueries.prototype = {
 
       // logger.log('query', query);
 
+      logger.log('start clientId', clientId);
+
       let searchRsp = await esSearchServiceObject.search(query, ['id']);
 
       let endTime =  Date.now();
 
-      logger.log('clientId', clientId, 'time ', endTime - startTime);
+      logger.log('end clientId', clientId, 'time ', endTime - startTime);
 
     }
 
