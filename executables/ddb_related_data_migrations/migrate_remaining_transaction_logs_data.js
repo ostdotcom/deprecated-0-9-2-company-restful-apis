@@ -146,10 +146,10 @@ MigrateTransactionLogsKlass.prototype = {
 
     let txFormattedData = {
       transaction_uuid: existingTxData['transaction_uuid'],
-      transaction_type: existingTxData['transaction_type'],
+      transaction_type: existingTxData['transaction_type'] || 1,
       client_id: parseInt(existingTxData['client_id']),
       client_token_id: existingTxData['client_token_id'],
-      gas_price: existingTxData['gas_price'],
+      gas_price: existingTxData['gas_price'] || 1000000000 ,
       status: existingTxData['status'],
       created_at: new Date(existingTxData['created_at']).getTime(),
       updated_at: new Date(existingTxData['updated_at']).getTime()
