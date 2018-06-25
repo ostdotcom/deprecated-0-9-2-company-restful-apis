@@ -30,6 +30,7 @@ const rootPrefix = '../..'
   , TokenBalanceModelDdb = openStorage.TokenBalanceModel
   , TransactionLogConst = openStorage.TransactionLogConst
   , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
+  , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
   , Erc20ContractAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address')
   , Erc20ContractUuidCacheKlass = require(rootPrefix + '/lib/cache_multi_management/erc20_contract_uuid')
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
@@ -178,10 +179,23 @@ MigrateTokenBalancesKlass.prototype = {
 
     let txHashShortListedEventsMap = shortListTransactionEventRsp.data['txHashShortListedEventsMap']
       , erc20ContractAddressesData = shortListTransactionEventRsp.data['erc20ContractAddressesData']
+      , affectedClientTokenIds = shortListTransactionEventRsp.data['affectedClientTokenIds']
     ;
 
     // console.log('txHashShortListedEventsMap', txHashShortListedEventsMap);
     // console.log('erc20ContractAddressesData', erc20ContractAddressesData);
+    // console.log('affectedClientTokenIds', affectedClientTokenIds);
+
+    // fetch affectedClientTokenIds data
+    let fetchAffectedClientTokenIdsDataRsp = await oThis._fetchAffectedClientTokenIdsData(affectedClientTokenIds);
+    if (fetchAffectedClientTokenIdsDataRsp.isFailure()) {
+      console.error('fetchAffectedClientTokenIdsDataRsp', JSON.stringify(fetchAffectedClientTokenIdsDataRsp.toHash()));
+      return Promise.reject(fetchAffectedClientTokenIdsDataRsp);
+    }
+
+    let affectedClientTokenIdsData = fetchAffectedClientTokenIdsDataRsp.data['affectedClientTokenIdsData'];
+
+    // console.log('affectedClientTokenIdsData', affectedClientTokenIdsData);
 
     // decode shortlisted events
     let decodeEventRsp = await oThis._decodeTransactionEvents(txHashShortListedEventsMap);
@@ -226,8 +240,10 @@ MigrateTokenBalancesKlass.prototype = {
       erc20ContractAddressesData: erc20ContractAddressesData,
       txHashTransferEventsMap: txHashTransferEventsMap,
       recognizedTxHashDataMap: recognizedTxHashDataMap,
-      affectedAddresses: affectedAddresses
+      affectedAddresses: affectedAddresses,
+      affectedClientTokenIdsData: affectedClientTokenIdsData
     };
+
     let formatDataRsp = await oThis._fetchFormattedTransactionsForMigration(params);
     if (formatDataRsp.isFailure()) {
       console.error('formatDataRsp', JSON.stringify(formatDataRsp.toHash()));
@@ -235,7 +251,7 @@ MigrateTokenBalancesKlass.prototype = {
     }
     let formattedTransactionsData = formatDataRsp.data['formattedTransactionsData'];
 
-    // console.log('formattedTransactionsData', formattedTransactionsData);
+    // console.log('formattedTransactionsData', JSON.stringify(formattedTransactionsData));
 
     let insertTxLogsRsp = await oThis._insertDataInTransactionLogs(formattedTransactionsData);
     if (insertTxLogsRsp.isFailure()) {
@@ -350,6 +366,7 @@ MigrateTokenBalancesKlass.prototype = {
     let contractAddresses = []
       , erc20ContractAddressesData = {}
       , txHashToShortListedEventsMap = {}
+      , affectedClientTokenIds = []
       , txHashes = Object.keys(txHashToTxReceiptMap)
     ;
 
@@ -384,27 +401,85 @@ MigrateTokenBalancesKlass.prototype = {
           , eventSignature = txReceiptLogElement.topics[0]
         ;
 
-        let isKnownBTContract = erc20ContractAddressesData[contractAddress];
+        let knownBTContractDetails = erc20ContractAddressesData[contractAddress];
         let isTransferEvent = eventSignature === oThis.TransferEventSignature;
         let isUtilityContract = oThis.OpenSTUtilityContractAddr === contractAddress;
         let isProcessedMintEvent = eventSignature === oThis.ProcessedMintEventSignature;
         let isRevertedMintEvent = eventSignature === oThis.RevertedMintEventSignature;
 
-        if ((isKnownBTContract && isTransferEvent) ||
+        if ((knownBTContractDetails && isTransferEvent) ||
           (isUtilityContract && (isProcessedMintEvent || isRevertedMintEvent))) {
 
           txHashToShortListedEventsMap[txHash] = txHashToShortListedEventsMap[txHash] || [];
           txHashToShortListedEventsMap[txHash].push(txReceiptLogElement);
+
         }
+
+        if (knownBTContractDetails && isTransferEvent) {
+          affectedClientTokenIds.push(knownBTContractDetails['client_token_id']);
+        }
+
       }
+
     }
+
+    // uniq!
+    affectedClientTokenIds = affectedClientTokenIds.filter(function (item, pos) {
+      return affectedClientTokenIds.indexOf(item) == pos;
+    });
 
     logger.info('completed _shortListTransactionEvents');
 
     return Promise.resolve(responseHelper.successWithData({
       txHashShortListedEventsMap: txHashToShortListedEventsMap,
-      erc20ContractAddressesData: erc20ContractAddressesData
+      erc20ContractAddressesData: erc20ContractAddressesData,
+      affectedClientTokenIds: affectedClientTokenIds
     }));
+  },
+
+  /**
+   * fetch clientTokenIdsData
+   *
+   * @returns {promise<result>}
+   */
+  _fetchAffectedClientTokenIdsData: async function (affectedClientTokenIds) {
+
+    const oThis = this
+    ;
+
+    logger.info('starting _fetchAffectedClientTokenIdsData');
+
+    let affectedClientTokenIdsData = {}
+      , managedAddressIdAddressMap = {}
+      , airdropBudgetHolderIds = []
+    ;
+
+    if (affectedClientTokenIds.length === 0) {
+      return Promise.resolve(responseHelper.successWithData({affectedClientTokenIdsData: affectedClientTokenIdsData}));
+    }
+
+    let clientBrandedTokenRows = await new ClientBrandedTokenModel().select('id,airdrop_holder_managed_address_id').where(['id IN (?)', affectedClientTokenIds]).fire();
+    for(let i=0; i<clientBrandedTokenRows.length; i++) {
+      airdropBudgetHolderIds.push(clientBrandedTokenRows[i]['airdrop_holder_managed_address_id']);
+    }
+
+    let managedAddressRows = await new ManagedAddressModel().select('id,ethereum_address').where(['id IN (?)', airdropBudgetHolderIds]).fire();
+    for(let i=0; i<managedAddressRows.length; i++) {
+      let buffer = managedAddressRows[i];
+      managedAddressIdAddressMap[buffer['id']] = buffer['ethereum_address'].toLowerCase();
+    }
+
+    for(let i=0; i<clientBrandedTokenRows.length; i++) {
+      let buffer = clientBrandedTokenRows[i];
+      affectedClientTokenIdsData[parseInt(buffer['id'])] = {
+        airdrop_holder_address: managedAddressIdAddressMap[buffer['airdrop_holder_managed_address_id']]
+      };
+    }
+
+    logger.info('completed _fetchAffectedClientTokenIdsData');
+
+    return Promise.resolve(responseHelper.successWithData({affectedClientTokenIdsData: affectedClientTokenIdsData}));
+
   },
 
   /**
@@ -602,6 +677,8 @@ MigrateTokenBalancesKlass.prototype = {
    */
   _fetchFormattedTransactionsForMigration: async function (params) {
 
+    const oThis = this;
+
     logger.info('starting _fetchFormattedTransactionsForMigration');
 
     let blockNoDetailsMap = params['blockNoDetailsMap']
@@ -611,6 +688,7 @@ MigrateTokenBalancesKlass.prototype = {
       , txHashTransferEventsMap = params['txHashTransferEventsMap']
       , recognizedTxHashDataMap = params['recognizedTxHashDataMap']
       , affectedAddresses = params['affectedAddresses']
+      , affectedClientTokenIdsData = params['affectedClientTokenIdsData']
       , addressUuidMap = {}
       , formattedTransactionsData = {}
       , completeStatus = parseInt(new TransactionLogModel().invertedStatuses[TransactionLogConst.completeStatus])
@@ -758,18 +836,34 @@ MigrateTokenBalancesKlass.prototype = {
         }
 
         if (txHashTransferEventsMap[txHash]) {
+
           txFormattedData['transfer_events'] = txHashTransferEventsMap[txHash];
+
           for (let j = 0; j < txFormattedData['transfer_events'].length; j++) {
+
             let event_data = txFormattedData['transfer_events'][j];
+
             let fromUuid = addressUuidMap[event_data['from_address']];
             if (!commonValidator.isVarNull(fromUuid)) {
               event_data['from_uuid'] = fromUuid
             }
+
             let toUuid = addressUuidMap[event_data['to_address']];
             if (!commonValidator.isVarNull(toUuid)) {
               event_data['to_uuid'] = toUuid
             }
+
+            // this is a case where contract address is getting money out of this air. ignore below steps as it wouldn't be from airdrop money
+            if(event_data['from_address'] === oThis.ZeroXAddress) {
+              continue;
+            }
+
+            if(event_data['from_address'] === affectedClientTokenIdsData[txFormattedData['client_token_id']]['airdrop_holder_address']) {
+              txFormattedData['airdrop_amount_in_wei'] = event_data['amount_in_wei']
+            }
+
           }
+
         }
 
         // group data by client_ids so that they can be batch inserted in ddb
