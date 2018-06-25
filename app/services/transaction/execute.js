@@ -106,26 +106,26 @@ ExecuteTransactionService.prototype = {
   asyncPerform: async function () {
     const oThis = this
     ;
-console.log('1');
+
     await oThis._fetchFromBtCache();
-    console.log('2');
+
     await oThis._fetchFromBtSecureCache();
-    console.log('3');
+
     await oThis._fetchFromClientTransactionTypeCache();
-    console.log('4');
+
     await oThis._validateOptionallyMandatoryParams();
-    console.log('5');
+
     await oThis._validateUsers();
-    console.log('6');
+
     await oThis._getSenderBalance();
-    console.log('7');
+
     await oThis._validateFromUserBalance();
-    console.log('8');
+
     await oThis._createTransactionLog();
-    console.log('9');
+
     // Transaction would be set in background & response would be returned with uuid.
     await oThis.enqueueTxForExecution();
-console.log('oThis.transactionLogData', oThis.transactionLogData);
+
     return Promise.resolve(responseHelper.successWithData(oThis.transactionLogData));
   },
 
