@@ -52,7 +52,7 @@ const TransactionMetaModelSpecificPrototype = {
    *
    * @return {promise}
    */
-  inserRecord: async function (record) {
+  insertRecord: async function (record) {
     const oThis = this;
 
     return oThis.insert(record).fire();

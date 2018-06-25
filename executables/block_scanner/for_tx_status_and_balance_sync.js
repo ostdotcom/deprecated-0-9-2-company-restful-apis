@@ -33,6 +33,7 @@ const rootPrefix = '../..'
 const PostAirdropPayKlass = openStPayments.services.airdropManager.postAirdropPay
   , transactionLogModelDdb = openStorage.TransactionLogModel
   , tokenBalanceModelDdb = openStorage.TokenBalanceModel
+  , StorageEntityTypesConst = openStorage.StorageEntityTypesConst
   , coreAbis = openStPlatform.abis
 ;
 
@@ -44,6 +45,7 @@ const BlockScannerForTxStatusAndBalanceSync = function (params) {
   ;
 
   oThis.filePath = params.file_path;
+  oThis.benchmarkFilePath = params.benchmark_file_path;
   oThis.currentBlock = 0;
   oThis.scannerData = {};
   oThis.interruptSignalObtained = false;
@@ -103,9 +105,12 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       try {
 
         oThis.initParams();
+        console.log("---------------------------------------------------starts------------1--", Date.now()-oThis.startTime, 'ms');
 
+        console.log("---------------------------------------------------initParams------------2--", Date.now()-oThis.startTime, 'ms');
         await oThis.refreshHighestBlock();
 
+        console.log("---------------------------------------------------refreshHighestBlock------------3--", Date.now()-oThis.startTime, 'ms');
         // return if nothing more to do, as of now.
         if (oThis.highestBlock - oThis.INTENTIONAL_BLOCK_DELAY <= oThis.scannerData.lastProcessedBlock) return oThis.schedule();
 
@@ -114,29 +119,36 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         logger.log('Current Block =', oThis.currentBlock);
 
         oThis.currentBlockInfo = await oThis.web3Provider.eth.getBlock(oThis.currentBlock);
+        console.log('block no-', oThis.currentBlock, "--------------------------------------------------get-currentBlockInfo------------4--", Date.now()-oThis.startTime, 'ms');
 
         if (!oThis.currentBlockInfo) return oThis.schedule();
 
         // categorize the transaction hashes into known (having entry in transaction meta) and unknown
         await oThis.categorizeTransactions();
 
+        console.log('block no-', oThis.currentBlock, "--------------------------------------------------categorizeTransactions------------5--", Date.now()-oThis.startTime, 'ms');
         // for all the transactions in the block, get the receipt
         await oThis.getTransactionReceipts();
+        console.log('block no-', oThis.currentBlock, "--------------------------------------------------getTransactionReceipts------------6--", Date.now()-oThis.startTime, 'ms');
 
         // construct the data to be updated for known transaction
         await oThis.generateToUpdateDataForKnownTx();
+        console.log('block no-', oThis.currentBlock, "--------------------------------------------------generateToUpdateDataForKnownTx------------7--", Date.now()-oThis.startTime, 'ms');
 
         // construct the data to be inserted for unknown transaction
         await oThis.generateToUpdateDataForUnKnownTx();
-
+        console.log('block no-', oThis.currentBlock, "--------------------------------------------------generateToUpdateDataForUnKnownTx------------8--", Date.now()-oThis.startTime, 'ms');
         await oThis.updateTransactionLogs();
-
-        if (oThis.recognizedTxHashes.length === 0) {
-          oThis.updateScannerDataFile();
-          return oThis.schedule();
-        }
+        console.log('block no-', oThis.currentBlock, "--------------------------------------------------updateTransactionLogs------------9--", Date.now()-oThis.startTime, 'ms');
 
         oThis.updateScannerDataFile();
+        console.log('block no-', oThis.currentBlock, "--------------------------------------------------updateScannerDataFile------------11--", Date.now()-oThis.startTime, 'ms');
+
+        if (oThis.recognizedTxHashes.length != 0) {
+          if (oThis.benchmarkFilePath) {
+            oThis.updateBanchmarkFile();
+          }
+        }
 
         oThis.schedule();
       } catch (err) {
@@ -167,12 +179,15 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     const oThis = this
     ;
 
+    oThis.startTime = Date.now();
     oThis.tokenTransferTxHashesMap = {};
+    oThis.txUuidToPostReceiptProcessParamsMap = {};
     oThis.recognizedTxUuidsGroupedByClientId = {};
     oThis.recognizedTxHashes = [];
     oThis.knownTxUuidToTxHashMap = {};
     oThis.txHashToTxReceiptMap = {};
-    oThis.clientIdWiseDataToUpdate = {};
+    oThis.dataToUpdate = [];
+    oThis.clientIdsMap = {};
     oThis.unRecognizedTxHashes = []
   },
 
@@ -211,6 +226,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         if (currRecord.kind == oThis.tokenTransferKind) {
           totalBtTransfers = totalBtTransfers + 1;
           oThis.tokenTransferTxHashesMap[currRecord.transaction_hash] = 1;
+          oThis.txUuidToPostReceiptProcessParamsMap[currRecord.transaction_uuid] = currRecord.post_receipt_process_params;
         } else if (currRecord.kind == oThis.stpTransferKind) {
           totalSTPTransfers = totalSTPTransfers + 1;
         } else {
@@ -279,36 +295,32 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    */
   generateToUpdateDataForKnownTx: async function () {
     const oThis = this
-      , batchSize = 50
+      , batchSize = 100
     ;
 
     for (var clientId in oThis.recognizedTxUuidsGroupedByClientId) {
       let txUuids = oThis.recognizedTxUuidsGroupedByClientId[clientId]
         , batchNo = 1
       ;
+      console.log('block no-', oThis.currentBlock, "---clientId-", clientId, "--a1------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
 
-      oThis.clientIdWiseDataToUpdate[clientId] = [];
+      oThis.clientIdsMap[clientId] = 1;
 
       while (true) {
         const offset = (batchNo - 1) * batchSize
           , batchedTxUuids = txUuids.slice(offset, batchSize + offset)
         ;
 
+        console.log('block no-', oThis.currentBlock, "---clientId-", clientId, "--batchNo-", batchNo,"--a2------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
+
         batchNo = batchNo + 1;
 
         if (batchedTxUuids.length === 0) break;
 
-        let batchGetItemResponse = await new transactionLogModelDdb({
-          client_id: clientId,
-          ddb_service: ddbServiceObj,
-          auto_scaling: autoscalingServiceObj
-        }).batchGetItem(batchedTxUuids);
+        for (var txUuidIndex=0; txUuidIndex<batchedTxUuids.length; txUuidIndex++) {
 
-        if (batchGetItemResponse.isFailure()) return Promise.reject(batchGetItemResponse);
-
-        let batchGetItemData = batchGetItemResponse.data;
-
-        for (var txUuid in batchGetItemData) {
+          let txUuid = batchedTxUuids[txUuidIndex];
+          console.log('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a3------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
 
           let txHash = oThis.knownTxUuidToTxHashMap[txUuid];
           let txReceipt = oThis.txHashToTxReceiptMap[txHash];
@@ -316,22 +328,31 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           let toUpdateFields = {}
             , eventData = {};
 
+          console.log('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a4------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
           if (oThis.tokenTransferTxHashesMap[txHash]) {
             const decodedEvents = abiDecoder.decodeLogs(txReceipt.logs);
+            console.log('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a44------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
 
-            if (batchGetItemData[txUuid].post_receipt_process_params) {
-              const postAirdropParams = batchGetItemData[txUuid].post_receipt_process_params;
+            let postAirdropParams = oThis.txUuidToPostReceiptProcessParamsMap[txUuid];
+
+            console.log('--111111111111111------postAirdropParams--', JSON.stringify(postAirdropParams));
+            if (postAirdropParams) {
+              postAirdropParams = JSON.parse(postAirdropParams);
+              console.log('--------postAirdropParams--', JSON.stringify(postAirdropParams));
               const postAirdropPay = new PostAirdropPayKlass(postAirdropParams, decodedEvents, txReceipt.status);
               await postAirdropPay.perform();
             }
 
+            console.log('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a5------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
             eventData = await oThis._getEventData(decodedEvents);
+            console.log('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a6------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
 
             toUpdateFields = {
               commission_amount_in_wei: eventData._commissionTokenAmount,
               amount_in_wei: eventData._tokenAmount
             };
           }
+          console.log('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a7------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
 
           toUpdateFields.transaction_uuid = txUuid;
           if (eventData.transfer_events) {
@@ -341,9 +362,9 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           toUpdateFields.gas_used = txReceipt.gasUsed;
           toUpdateFields.block_number = txReceipt.blockNumber;
           toUpdateFields.status = parseInt(txReceipt.status, 16) == 1 ? oThis.completeTxStatus : oThis.failedTxStatus;
+          console.log('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a8------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
 
-          // oThis.clientIdWiseDataToUpdate[clientId].push(Object.assign(batchGetItemData[txUuid], toUpdateFields));
-          oThis.clientIdWiseDataToUpdate[clientId].push(toUpdateFields);
+          oThis.dataToUpdate.push({client_id: clientId, data: toUpdateFields});
 
         }
       }
@@ -458,17 +479,58 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     const oThis = this
     ;
 
-    for (var clientId in oThis.clientIdWiseDataToUpdate) {
-      const clientTxData = oThis.clientIdWiseDataToUpdate[clientId]
-        , txLogObj = new transactionLogModelDdb({
-        client_id: clientId,
-        ddb_service: ddbServiceObj,
-        auto_scaling: autoscalingServiceObj
-      });
-      for (var i = 0; i < clientTxData.length; i++) {
-        txLogObj.updateItem(clientTxData[i]);
+    console.log('-------oThis.clientIdsMap----', JSON.stringify(oThis.clientIdsMap));
+
+    if(Object.keys(oThis.clientIdsMap) == 0) return {};
+
+    const getManagedShardResponse = await ddbServiceObj.shardManagement().getManagedShard({
+      entity_type: StorageEntityTypesConst.transactionLogEntityType,
+      identifiers: Object.keys(oThis.clientIdsMap)
+    });
+
+    console.log('-------getManagedShardResponse----', JSON.stringify(getManagedShardResponse));
+
+    if (getManagedShardResponse.isFailure()) return Promise.reject(getManagedShardResponse);
+
+    let promiseArray = []
+      , batchNo = 1
+      , dynamoQueryBatchSize = 10
+      , clientIdToTxLogModelObjectMap = {}
+    ;
+
+    while(true){
+
+      let offset = (batchNo - 1) * dynamoQueryBatchSize
+        , batchedData = oThis.dataToUpdate.slice(offset, dynamoQueryBatchSize + offset)
+      ;
+
+      if(batchedData.length == 0) break;
+
+      for(var i=0; i<batchedData.length; i++){
+        let toProcessData = batchedData[i]
+          , clientId = toProcessData.client_id
+          , shardName = getManagedShardResponse.data.items[clientId].shardName
+        ;
+
+        clientIdToTxLogModelObjectMap[clientId] = clientIdToTxLogModelObjectMap[clientId] || new transactionLogModelDdb({
+            client_id: clientId,
+            ddb_service: ddbServiceObj,
+            auto_scaling: autoscalingServiceObj,
+            shard_name: shardName
+          });
+
+        promiseArray.push(clientIdToTxLogModelObjectMap[clientId].updateItem(toProcessData.data));
+
       }
+
+      await Promise.all(promiseArray);
+
+      // Resetting batch iteration variables.
+      promiseArray = [];
+      batchNo = batchNo + 1;
+
     }
+
   },
 
   /**
@@ -549,6 +611,25 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       logger.win('* Exiting Process after interrupt signal obtained.');
       process.exit(0);
     }
+  },
+
+  /**
+   * Update executation statistics to benchmark file.
+   */
+  updateBanchmarkFile: function () {
+    const oThis = this
+    ;
+    const benchmarkData = [oThis.currentBlock, (Date.now() - oThis.startTime), oThis.currentBlockInfo.transactions.length,
+      oThis.recognizedTxHashes.length, oThis.unRecognizedTxHashes.length];
+
+    fs.appendFileSync(
+      oThis.benchmarkFilePath,
+      benchmarkData.join(',')+'\n',
+      function (err) {
+        if (err)
+          logger.error(err);
+      }
+    );
   },
 
   /**
@@ -991,6 +1072,7 @@ const ProcessLocker = new ProcessLockerKlass()
   , args = process.argv
   , processLockId = args[2]
   , datafilePath = args[3]
+  , benchmarkFilePath = args[4]
 ;
 
 ProcessLocker.canStartProcess({process_title: 'executables_block_scanner_execute_transaction' + processLockId});
@@ -1012,6 +1094,6 @@ const validateAndSanitize = function () {
 // validate and sanitize the input params
 validateAndSanitize();
 
-const blockScannerObj = new BlockScannerForTxStatusAndBalanceSync({file_path: datafilePath});
+const blockScannerObj = new BlockScannerForTxStatusAndBalanceSync({file_path: datafilePath, benchmark_file_path: benchmarkFilePath});
 blockScannerObj.registerInterruptSignalHandlers();
 blockScannerObj.init();
