@@ -136,15 +136,15 @@ StartServicesKlass.prototype = {
     servicesList.push(cmd);
     oThis._asyncCommand(cmd);
 
-    // logger.step("** Starting Block Scanner to mark mined transactions as done");
-    // var cmd = "node executables/block_scanner/for_tx_status_and_balance_sync.js 1 "
-    //   + homeAbsolutePath
-    //   + "/openst-setup/logs/block_scanner_execute_transaction.data "
-    //   + homeAbsolutePath
-    //   + "/openst-setup/logs/block_scanner_benchmark.csv "
-    //   + " >> " + homeAbsolutePath + "/openst-setup/logs/block_scanner_execute_transaction.log";
-    // servicesList.push(cmd);
-    // oThis._asyncCommand(cmd);
+    logger.step("** Starting Block Scanner to mark mined transactions as done");
+    var cmd = "node executables/block_scanner/for_tx_status_and_balance_sync.js 1 "
+      + homeAbsolutePath
+      + "/openst-setup/logs/block_scanner_execute_transaction.data "
+      + homeAbsolutePath
+      + "/openst-setup/logs/block_scanner_benchmark.csv "
+      + " >> " + homeAbsolutePath + "/openst-setup/logs/block_scanner_execute_transaction.log";
+    servicesList.push(cmd);
+    oThis._asyncCommand(cmd);
 
     logger.step("** Starting worker to process events");
     var cmd = "node executables/rmq_subscribers/factory.js 1 'temp' '[\"on_boarding.#\",\"airdrop_allocate_tokens\",\"stake_and_mint.#\",\"event.stake_and_mint_processor.#\",\"event.block_scanner.#\",\"airdrop.approve.contract\", \"transaction.stp_transfer\"]'"
