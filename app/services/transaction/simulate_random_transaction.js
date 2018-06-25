@@ -47,7 +47,7 @@ const simulateRandomTransactionKlass = function(params) {
   oThis.conversionFactor = null;
   oThis.ostUSDPrice = null;
   oThis.randomUsers = [];
-  
+
 };
 
 simulateRandomTransactionKlass.prototype = {
@@ -480,7 +480,7 @@ simulateRandomTransactionKlass.prototype = {
       transaction: transactionEntityFormatterRsp.data
     };
 
-    return Promise.resolve(apiResponseData);
+    return Promise.resolve(responseHelper.successWithData(apiResponseData));
 
   }
 
