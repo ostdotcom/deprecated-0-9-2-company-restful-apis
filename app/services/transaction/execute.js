@@ -27,7 +27,6 @@ const rootPrefix = '../../..'
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , ClientTrxRateCacheKlass = require(rootPrefix + '/lib/cache_management/client_transactions_rate_limit')
-  , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/transaction')
   , commonValidator = require(rootPrefix + '/lib/validators/common')
   , ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type')
   , TransactionLogModelDdb = openStorage.TransactionLogModel
@@ -107,36 +106,27 @@ ExecuteTransactionService.prototype = {
   asyncPerform: async function () {
     const oThis = this
     ;
-
+console.log('1');
     await oThis._fetchFromBtCache();
-
+    console.log('2');
     await oThis._fetchFromBtSecureCache();
-
+    console.log('3');
     await oThis._fetchFromClientTransactionTypeCache();
-
+    console.log('4');
     await oThis._validateOptionallyMandatoryParams();
-
+    console.log('5');
     await oThis._validateUsers();
-
+    console.log('6');
     await oThis._getSenderBalance();
-
+    console.log('7');
     await oThis._validateFromUserBalance();
-
+    console.log('8');
     await oThis._createTransactionLog();
-
+    console.log('9');
     // Transaction would be set in background & response would be returned with uuid.
     await oThis.enqueueTxForExecution();
-
-    const transactionEntityFormatter = new TransactionEntityFormatterKlass(oThis.transactionLogData)
-      , transactionEntityFormatterRsp = await transactionEntityFormatter.perform()
-    ;
-
-    const apiResponseData = {
-      result_type: 'transaction',
-      transaction: transactionEntityFormatterRsp.data
-    };
-
-    return Promise.resolve(responseHelper.successWithData(apiResponseData));
+console.log('oThis.transactionLogData', oThis.transactionLogData);
+    return Promise.resolve(responseHelper.successWithData(oThis.transactionLogData));
   },
 
   /**

@@ -1,4 +1,7 @@
-{
+"use strict";
+
+const errorConfig = {
+
   "missing_client_id": {
     "parameter": "client_id",
     "code": "missing",
@@ -234,4 +237,7 @@
     "code": "invalid",
     "message": "airdropped can be True of False"
   }
-}
+
+};
+
+module.exports = errorConfig;

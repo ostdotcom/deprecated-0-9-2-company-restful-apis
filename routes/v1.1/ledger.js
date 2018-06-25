@@ -54,7 +54,7 @@ router.get('/:id', function (req, res, next) {
 
   };
 
-  Promise.resolve(routeHelper.performer(req, res, next, getLedgerKlass, 'r_v1_l_1', null, dataFormatterFunc));
+  Promise.resolve(routeHelper.performer(req, res, next, getLedgerKlass, 'r_v1.1_l_1', null, dataFormatterFunc));
 
 });
 

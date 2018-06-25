@@ -130,6 +130,7 @@ router.post('/edit', function (req, res, next) {
 });
 
 router.post('/execute', function (req, res, next) {
+
   req.decodedParams.apiName = 'execute_transaction';
 
   const executeTransactionKlass = require(rootPrefix + '/app/services/transaction/execute');
@@ -145,14 +146,18 @@ router.post('/execute', function (req, res, next) {
 
   const dataFormatterFunc = async function(response) {
 
-    const rawData = response.data.transaction
+    console.log('data', response.data);
+
+    const rawData = response.data
         , formattedData = {
-      'transaction_uuid': rawData['id'],
+      'transaction_uuid': rawData['transaction_uuid'],
       'transaction_hash': rawData['transaction_hash'],
-      'from_uuid': rawData['from_user_id'],
-      'to_uuid': rawData['to_user_id'],
+      'from_uuid': rawData['from_uuid'],
+      'to_uuid': rawData['to_uuid'],
       'action_id': rawData['action_id']
     };
+
+    console.log('formattedData', formattedData);
 
     response.data = formattedData;
 

@@ -1,4 +1,7 @@
-{
+"use strict";
+
+const signature = {
+
   "fetch_client_stats":{
     "mandatory":[
       {
@@ -221,4 +224,7 @@
     ],
     "optional":[]
   }
-}
+
+};
+
+module.exports = signature;

@@ -14,6 +14,7 @@ const rootPrefix = "../../.."
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , BTSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
   , executeTransactionKlass = require(rootPrefix + '/app/services/transaction/execute')
+  , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/transaction')
   , EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points')
@@ -466,9 +467,20 @@ simulateRandomTransactionKlass.prototype = {
       }));
     }
 
-    var obj = new executeTransactionKlass(txParams);
-    var resp = await obj.perform();
-    return Promise.resolve(resp);
+    let obj = new executeTransactionKlass(txParams);
+    let executeTxRsp = await obj.perform();
+    if(executeTxRsp.isFailure()) {return Promise.resolve(executeTxRsp);}
+
+    const transactionEntityFormatter = new TransactionEntityFormatterKlass(executeTxRsp.data)
+      , transactionEntityFormatterRsp = await transactionEntityFormatter.perform()
+    ;
+
+    const apiResponseData = {
+      result_type: 'transaction',
+      transaction: transactionEntityFormatterRsp.data
+    };
+
+    return Promise.resolve(apiResponseData);
 
   }
 

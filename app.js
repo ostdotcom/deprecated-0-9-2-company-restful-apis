@@ -31,6 +31,7 @@ const jwtAuth = require(rootPrefix + '/lib/jwt/jwt_auth')
   , v0TransactionRoutes = require(rootPrefix + '/routes/v0/transaction_types')
   , v0ClientUsersRoutes = require(rootPrefix + '/routes/v0/client_users')
   , v1Routes = require(rootPrefix + '/routes/v1/index')
+  , v1Dot1Routes = require(rootPrefix + '/routes/v1.1/index')
   , internalRoutes = require(rootPrefix + '/routes/internal/index')
   , inputValidator = require(rootPrefix + '/lib/authentication/validate_signature')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
@@ -191,6 +192,11 @@ const appendV1Version = function(req, res, next){
   next();
 };
 
+const appendV1Dot1Version = function(req, res, next){
+  req.decodedParams.apiVersion = apiVersions.v1Dot1;
+  next();
+};
+
 // if the process is a master.
 if (cluster.isMaster) {
   // Set worker process title
@@ -273,6 +279,8 @@ if (cluster.isMaster) {
   app.use('/internal', sanitizer(), checkSystemServiceStatuses, appendRequestDebugInfo, decodeJwt, appendInternalVersion, internalRoutes);
 
   app.use('/v1', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), appendV1Version, v1Routes);
+
+  app.use('/v1.1', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), appendV1Dot1Version, v1Dot1Routes);
 
   app.use('/transaction-types', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), appendV0Version, v0TransactionRoutes);
 

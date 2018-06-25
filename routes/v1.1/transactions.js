@@ -5,11 +5,13 @@ const express = require('express')
 
 const rootPrefix = '../..'
   , routeHelper = require(rootPrefix + '/routes/helper')
-  , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/v1/transaction')
+  , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/transaction')
 ;
 
 const router = express.Router()
 ;
+
+//TODO: Try to reuse code from v1 transactions router file
 
 /**
  * @name Execute a transaction
@@ -37,15 +39,16 @@ router.post('/', function (req, res, next) {
     delete response.data;
 
     response.data = {
-      result_type: 'transaction',
-      transaction: transactionEntityFormatterRsp.data
+      result_type: 'transaction'
     };
+
+    response.data[response.result_type] = transactionEntityFormatterRsp.data;
 
   };
 
   Promise.resolve(routeHelper.performer(
     req, res, next,
-    ExecuteTransactionService, 'r_v1_t_1',
+    ExecuteTransactionService, 'r_v1.1_t_1',
     null, dataFormatterFunc)
   );
 
@@ -97,7 +100,7 @@ router.get('/', function (req, res, next) {
 
   };
 
-  Promise.resolve(routeHelper.performer(req, res, next, GetTransactionListService, 'r_v1_t_2', null, dataFormatterFunc));
+  Promise.resolve(routeHelper.performer(req, res, next, GetTransactionListService, 'r_v1.1_t_2', null, dataFormatterFunc));
 
 });
 
@@ -130,7 +133,7 @@ router.get('/:id', function (req, res, next) {
 
   };
 
-  Promise.resolve(routeHelper.performer(req, res, next, GetTransactionService, 'r_v1_t_3', null, dataFormatterFunc));
+  Promise.resolve(routeHelper.performer(req, res, next, GetTransactionService, 'r_v1.1_t_3', null, dataFormatterFunc));
 });
 
 module.exports = router;

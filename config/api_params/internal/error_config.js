@@ -1,4 +1,7 @@
-{
+"use strict";
+
+const errorConfig = {
+
   "missing_client_id": {
     "parameter": "client_id",
     "code": "missing",
@@ -99,4 +102,7 @@
     "code": "missing",
     "message": "Invalid start client id"
   }
-}
+
+};
+
+module.exports = errorConfig;

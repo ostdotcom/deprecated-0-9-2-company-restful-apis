@@ -40,19 +40,21 @@ const routeMethods = {
 
     const oThis = this
       , errorConfig = basicHelper.fetchErrorConfig(req.decodedParams.apiVersion);
-
+console.log('1.1')
     const apiParamsValidatorRsp = await new apiParamsValidator({
       api_name: req.decodedParams.apiName,
       api_version: req.decodedParams.apiVersion,
       api_params: req.decodedParams
     }).perform();
-
+    console.log('1.2')
     req.serviceParams = apiParamsValidatorRsp.data.sanitisedApiParams;
-
+    console.log('1.3')
     if (afterValidationFunc) {
+      console.log('1.4')
       req.serviceParams = await afterValidationFunc(req.serviceParams);
+      console.log('1.5')
     }
-
+    console.log('1.6')
     // TODO: temp. remove in sometime
     logger.debug('req.serviceParams', req.serviceParams);
     logger.debug('req.decodedParams', req.decodedParams);
@@ -60,6 +62,7 @@ const routeMethods = {
     var handleResponse = async function (response) {
 
       if (response.isSuccess() && dataFormatterFunc) {
+        console.log('1.7')
         // if requires this function could reformat data as per API version requirements.
         await dataFormatterFunc(response);
       }

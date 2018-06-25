@@ -13,6 +13,7 @@ const rootPrefix = '..'
   , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
   , v0ParamErrorConfig = require(rootPrefix + '/config/api_params/v0/error_config')
   , v1ParamErrorConfig = require(rootPrefix + '/config/api_params/v1/error_config')
+  , v1Dot1ParamErrorConfig = require(rootPrefix + '/config/api_params/v1.1/error_config')
   , internalParamErrorConfig = require(rootPrefix + '/config/api_params/internal/error_config')
   , apiErrorConfig = require(rootPrefix + '/config/api_params/api_error_config')
 ;
@@ -273,6 +274,8 @@ BasicHelperKlass.prototype = {
       paramErrorConfig = v0ParamErrorConfig;
     } else if (apiVersion === apiVersions.v1) {
       paramErrorConfig = v1ParamErrorConfig;
+    } else if (apiVersion === apiVersions.v1Dot1) {
+      paramErrorConfig = v1Dot1ParamErrorConfig;
     } else if (apiVersion === apiVersions.internal) {
       paramErrorConfig = internalParamErrorConfig;
     } else if (apiVersion === apiVersions.general) {
