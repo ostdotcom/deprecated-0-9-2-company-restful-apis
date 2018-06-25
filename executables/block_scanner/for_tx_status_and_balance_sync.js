@@ -11,7 +11,6 @@ const fs = require('fs')
   , openStPlatform = require('@openstfoundation/openst-platform')
   , openStPayments = require('@openstfoundation/openst-payments')
   , openStorage = require('@openstfoundation/openst-storage')
-  , openSTNotification = require('@openstfoundation/openst-notification')
   , BigNumber = require('bignumber.js')
   , uuid = require('uuid')
 ;
@@ -25,24 +24,20 @@ const rootPrefix = '../..'
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
   , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
   , Erc20ContractAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address')
-  // , Erc20ContractUuidCacheKlass = require(rootPrefix + '/lib/cache_multi_management/erc20_contract_uuid')
   , commonValidator = require(rootPrefix + '/lib/validators/common')
   , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
-  , basicHelper = require(rootPrefix + '/helpers/basic')
-  , PostAirdropPayKlass = openStPayments.services.airdropManager.postAirdropPay
   , ManagedAddressesModel = require(rootPrefix + '/app/models/managed_address')
-  // , notificationTopics = require(rootPrefix + '/lib/global_constant/notification_topics')
 ;
 
-const transactionLogModelDdb = openStorage.TransactionLogModel
+const PostAirdropPayKlass = openStPayments.services.airdropManager.postAirdropPay
+  , transactionLogModelDdb = openStorage.TransactionLogModel
   , tokenBalanceModelDdb = openStorage.TokenBalanceModel
   , coreAbis = openStPlatform.abis
 ;
 
 abiDecoder.addABI(coreAbis.airdrop);
 abiDecoder.addABI(coreAbis.brandedToken);
-// abiDecoder.addABI(coreAbis.openSTUtility);
 
 const BlockScannerForTxStatusAndBalanceSync = function (params) {
   const oThis = this
@@ -122,12 +117,16 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
         if (!oThis.currentBlockInfo) return oThis.schedule();
 
+        // categorize the transaction hashes into known (having entry in transaction meta) and unknown
         await oThis.categorizeTransactions();
 
+        // for all the transactions in the block, get the receipt
         await oThis.getTransactionReceipts();
 
+        // construct the data to be updated for known transaction
         await oThis.generateToUpdateDataForKnownTx();
 
+        // construct the data to be inserted for unknown transaction
         await oThis.generateToUpdateDataForUnKnownTx();
 
         await oThis.updateTransactionLogs();
@@ -225,9 +224,9 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         oThis.knownTxUuidToTxHashMap[currRecord.transaction_uuid] = currRecord.transaction_hash;
       }
 
-      for(var i=0; i<batchedTxHashes.length; i++){
+      for (var i = 0; i < batchedTxHashes.length; i++) {
         //if already known transaction skip here.
-        if(recognizedTxHashesMap[batchedTxHashes[i]]) continue;
+        if (recognizedTxHashesMap[batchedTxHashes[i]]) continue;
         oThis.unRecognizedTxHashes.push(batchedTxHashes[i]);
       }
 
@@ -265,8 +264,6 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
       const txReceiptResults = await Promise.all(promiseArray);
 
-      console.log("-----------------999--------------txReceiptResults-", JSON.stringify(txReceiptResults));
-
       for (var i = 0; i < batchedTxHashes.length; i++) {
         oThis.txHashToTxReceiptMap[batchedTxHashes[i]] = txReceiptResults[i];
       }
@@ -284,12 +281,10 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     const oThis = this
       , batchSize = 50
     ;
-    console.log("----------------oThis.recognizedTxUuidsGroupedByClientId---", JSON.stringify(oThis.recognizedTxUuidsGroupedByClientId));
-    for (var clientId in oThis.recognizedTxUuidsGroupedByClientId) {
-      let txUuids = oThis.recognizedTxUuidsGroupedByClientId[clientId];
 
-      console.log("----------------txUuids---", JSON.stringify(txUuids));
-      let batchNo = 1
+    for (var clientId in oThis.recognizedTxUuidsGroupedByClientId) {
+      let txUuids = oThis.recognizedTxUuidsGroupedByClientId[clientId]
+        , batchNo = 1
       ;
 
       oThis.clientIdWiseDataToUpdate[clientId] = [];
@@ -303,44 +298,35 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
         if (batchedTxUuids.length === 0) break;
 
-        console.log("------1----batchedTxUuids---", JSON.stringify(batchedTxUuids));
         let batchGetItemResponse = await new transactionLogModelDdb({
           client_id: clientId,
           ddb_service: ddbServiceObj,
           auto_scaling: autoscalingServiceObj
         }).batchGetItem(batchedTxUuids);
 
-        console.log("------2----batchGetItemResponse---", JSON.stringify(batchGetItemResponse));
         if (batchGetItemResponse.isFailure()) return Promise.reject(batchGetItemResponse);
 
         let batchGetItemData = batchGetItemResponse.data;
 
-        console.log("------3----oThis.knownTxUuidToTxHashMap---", JSON.stringify(oThis.knownTxUuidToTxHashMap));
-        console.log("------4----oThis.txHashToTxReceiptMap---", JSON.stringify(oThis.txHashToTxReceiptMap));
-        console.log("------4----oThis.tokenTransferTxHashesMap---", JSON.stringify(oThis.tokenTransferTxHashesMap));
         for (var txUuid in batchGetItemData) {
 
           let txHash = oThis.knownTxUuidToTxHashMap[txUuid];
           let txReceipt = oThis.txHashToTxReceiptMap[txHash];
 
           let toUpdateFields = {}
-            , eventData= {};
-          console.log("------5----txHash---", txHash, '--', JSON.stringify(oThis.tokenTransferTxHashesMap[txHash]));
+            , eventData = {};
 
           if (oThis.tokenTransferTxHashesMap[txHash]) {
             const decodedEvents = abiDecoder.decodeLogs(txReceipt.logs);
 
             if (batchGetItemData[txUuid].post_receipt_process_params) {
               const postAirdropParams = batchGetItemData[txUuid].post_receipt_process_params;
-              console.log("postAirdropParams--", JSON.stringify(postAirdropParams));
               const postAirdropPay = new PostAirdropPayKlass(postAirdropParams, decodedEvents, txReceipt.status);
-              const payResp = await postAirdropPay.perform();
-              console.log("---payResp--", JSON.stringify(payResp));
+              await postAirdropPay.perform();
             }
 
             eventData = await oThis._getEventData(decodedEvents);
 
-            console.log('----------------------eventData-', txHash, JSON.stringify(eventData));
             toUpdateFields = {
               commission_amount_in_wei: eventData._commissionTokenAmount,
               amount_in_wei: eventData._tokenAmount
@@ -348,18 +334,19 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           }
 
           toUpdateFields.transaction_uuid = txUuid;
-          if(eventData.transfer_events) {toUpdateFields.transfer_events = eventData.transfer_events}
+          if (eventData.transfer_events) {
+            toUpdateFields.transfer_events = eventData.transfer_events
+          }
           toUpdateFields.post_receipt_process_params = null;
           toUpdateFields.gas_used = txReceipt.gasUsed;
           toUpdateFields.block_number = txReceipt.blockNumber;
           toUpdateFields.status = parseInt(txReceipt.status, 16) == 1 ? oThis.completeTxStatus : oThis.failedTxStatus;
 
-          oThis.clientIdWiseDataToUpdate[clientId].push(Object.assign(batchGetItemData[txUuid], toUpdateFields));
+          // oThis.clientIdWiseDataToUpdate[clientId].push(Object.assign(batchGetItemData[txUuid], toUpdateFields));
+          oThis.clientIdWiseDataToUpdate[clientId].push(toUpdateFields);
 
         }
-
       }
-      console.log('----------------------oThis.clientIdWiseDataToUpdate-', clientId, JSON.stringify(oThis.clientIdWiseDataToUpdate));
     }
   },
 
@@ -368,29 +355,26 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    */
   generateToUpdateDataForUnKnownTx: async function () {
     const oThis = this
-      , erc20Addresses = []
+      , eventGeneratingContractAddresses = []
       , txHashToShortListedEventsMap = {}
     ;
-    let erc20ContractAddressesData = {};
 
-    console.log("c----------------------oThis.unRecognizedTxHashes----", JSON.stringify(oThis.unRecognizedTxHashes));
+    let erc20ContractAddressesData = {}
+    ;
 
-    for(var i=0; i<oThis.unRecognizedTxHashes.length; i++){
-      let txHash = oThis.unRecognizedTxHashes[i];
-      let txReceipt = oThis.txHashToTxReceiptMap[txHash];
+    for (var i = 0; i < oThis.unRecognizedTxHashes.length; i++) {
+      let txHash = oThis.unRecognizedTxHashes[i]
+        , txReceipt = oThis.txHashToTxReceiptMap[txHash]
+      ;
 
-      console.log("c----------------------txReceipt----", txHash, '--', JSON.stringify(txReceipt));
-      for(var j=0; j<txReceipt.logs.length; j++){
-        erc20Addresses.push(txReceipt.logs[j].address);
+      for (var j = 0; j < txReceipt.logs.length; j++) {
+        eventGeneratingContractAddresses.push(txReceipt.logs[j].address);
       }
-
     }
 
-    console.log("c----------------------erc20Addresses----", JSON.stringify(erc20Addresses));
-
-    if (erc20Addresses.length > 0) {
+    if (eventGeneratingContractAddresses.length > 0) {
       // from these addresses create a map of addresses of which are ERC20 address
-      let cacheObj = new Erc20ContractAddressCacheKlass({addresses: erc20Addresses})
+      let cacheObj = new Erc20ContractAddressCacheKlass({addresses: eventGeneratingContractAddresses})
         , cacheFetchRsp = await cacheObj.fetch()
       ;
       if (cacheFetchRsp.isFailure()) {
@@ -399,41 +383,32 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       erc20ContractAddressesData = cacheFetchRsp.data;
     }
 
-    for(var i=0; i<oThis.unRecognizedTxHashes.length; i++){
+    for (var i = 0; i < oThis.unRecognizedTxHashes.length; i++) {
       let txHash = oThis.unRecognizedTxHashes[i];
       let txReceipt = oThis.txHashToTxReceiptMap[txHash];
 
-      for(var j=0; j<txReceipt.logs.length; j++){
+      for (var j = 0; j < txReceipt.logs.length; j++) {
         let txReceiptLogElement = txReceipt.logs[j]
           , contractAddress = txReceiptLogElement.address.toLowerCase()
           , eventSignature = txReceiptLogElement.topics[0]
           , isKnownBTContract = erc20ContractAddressesData[contractAddress]
           , isTransferEvent = (eventSignature === oThis.TransferEventSignature)
-          // , isUtilityContract = (oThis.OpenSTUtilityContractAddr === contractAddress)
-          // , isProcessedMintEvent = (eventSignature === oThis.ProcessedMintEventSignature)
-          // , isRevertedMintEvent = (eventSignature === oThis.RevertedMintEventSignature)
         ;
 
-        if((isKnownBTContract && isTransferEvent)) { //|| (isUtilityContract && (isProcessedMintEvent || isRevertedMintEvent))){
+        if ((isKnownBTContract && isTransferEvent)) {
           txHashToShortListedEventsMap[txHash] = txHashToShortListedEventsMap[txHash] || [];
           txHashToShortListedEventsMap[txHash].push(txReceiptLogElement);
         }
       }
     }
 
-    console.log("----------------------txHashToShortListedEventsMap----", JSON.stringify(txHashToShortListedEventsMap));
     let txHashDecodedEventsMap = await oThis._decodeTransactionEvents(txHashToShortListedEventsMap);
 
     let balanceAdjustmentRsp = await oThis._computeBalanceAdjustments(txHashDecodedEventsMap, erc20ContractAddressesData);
     let balanceAdjustmentMap = balanceAdjustmentRsp['balanceAdjustmentMap']
       , txHashTransferEventsMap = balanceAdjustmentRsp['txHashTransferEventsMap']
       , affectedAddresses = balanceAdjustmentRsp['affectedAddresses']
-      // , doClaimTransferEventData = balanceAdjustmentRsp['doClaimTransferEventData']
     ;
-    console.log("----------------------balanceAdjustmentMap----", JSON.stringify(balanceAdjustmentMap));
-    console.log("----------------------txHashTransferEventsMap----", JSON.stringify(txHashTransferEventsMap));
-    console.log("----------------------affectedAddresses----", JSON.stringify(affectedAddresses));
-
 
     // format data to be inserted into transaction logs
     let params = {
@@ -444,14 +419,10 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       affectedAddresses: affectedAddresses
     };
     let formattedTransactionsData = await oThis._fetchFormattedTransactionsForMigration(params);
-    console.log("----------------------formattedTransactionsData----", JSON.stringify(formattedTransactionsData));
 
     await oThis._insertDataInTransactionLogs(formattedTransactionsData);
 
     await oThis._settleBalancesInDb(balanceAdjustmentMap);
-
-    // await oThis._claimCompletedStatus(doClaimTransferEventData);
-
   },
 
   /**
@@ -470,19 +441,15 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       , txHashes = Object.keys(txHashEventsMap)
     ;
 
-    console.log("-1-------txHashes--", JSON.stringify(txHashes));
     for (let i = 0; i < txHashes.length; i++) {
       let txHash = txHashes[i];
-      console.log("-2-------txHash--", JSON.stringify(txHash));
       txHashDecodedEventsMap[txHash] = abiDecoder.decodeLogs(txHashEventsMap[txHash]);
     }
 
-    console.log("-1-------txHashDecodedEventsMap--", JSON.stringify(txHashDecodedEventsMap));
     logger.info('completed _decodeTransactionEvents');
 
     return txHashDecodedEventsMap;
   },
-
 
   /**
    * Update transaction logs table
@@ -498,7 +465,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         ddb_service: ddbServiceObj,
         auto_scaling: autoscalingServiceObj
       });
-      for(var i=0; i<clientTxData.length; i++){
+      for (var i = 0; i < clientTxData.length; i++) {
         txLogObj.updateItem(clientTxData[i]);
       }
     }
@@ -598,6 +565,9 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     return Promise.resolve();
   },
 
+  /**
+   * Get event data
+   */
   _getEventData: async function (decodedEvents) {
     const eventData = {_tokenAmount: '0', _commissionTokenAmount: '0', transfer_events: []};
 
@@ -617,8 +587,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       }
       if (decodedEvents[i].name == 'Transfer') {
         allTransferEventsVars.push(decodedEvents[i].events);
-        for (var j = 0; j < decodedEvents[i].events.length; j ++) {
-          if (['_from',  '_to'].includes(decodedEvents[i].events[j].name)) {
+        for (var j = 0; j < decodedEvents[i].events.length; j++) {
+          if (['_from', '_to'].includes(decodedEvents[i].events[j].name)) {
             addressesToFetch.push(decodedEvents[i].events[j].value);
           }
         }
@@ -637,7 +607,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       }
     }
 
-    console.log("---------------------------allTransferEventsVars------", JSON.stringify(allTransferEventsVars));
+    logger.debug("---------------------------allTransferEventsVars------", allTransferEventsVars);
 
     let managedAddressResults = await new ManagedAddressesModel().getByEthAddresses(addressesToFetch);
 
@@ -653,7 +623,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
       let transferEvent = {};
 
-      for (var j = 0; j < transferEventVars.length; j ++) {
+      for (var j = 0; j < transferEventVars.length; j++) {
         if (transferEventVars[j].name == '_from') {
           transferEvent.from_address = transferEventVars[j].value;
           if (addressToUuidMap[transferEvent.from_address]) {
@@ -695,7 +665,6 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     let balanceAdjustmentMap = {}
       , txHashTransferEventsMap = {}
       , affectedAddresses = []
-      // , doClaimTransferEventData = []
       , txHashes = Object.keys(txHashDecodedEventsMap)
     ;
 
@@ -716,8 +685,6 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         let fromAddr = null
           , toAddr = null
           , valueStr = null
-          // , contractUuid = null
-          // , claimDone = false;
         ;
 
         for (let j = 0; j < decodedEventData.events.length; j++) {
@@ -730,56 +697,10 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
               toAddr = eventData.value.toLowerCase();
               break;
             case "_value":
-            // case "_amount":
               valueStr = eventData.value;
               break;
-            // case "_uuid":
-            //   contractUuid = eventData.value.toLowerCase();
-            //   break;
           }
         }
-
-        //This identifies that balance is transfered from erc20 address(fromAddr) to reserve address(toAddr) on claim success.
-        // if(contractAddress == fromAddr){
-        //   const erc20AddrData = erc20ContractAddressesData[contractAddress];
-        //   if(erc20AddrData.client_id){
-        //     doClaimTransferEventData.push({client_id: erc20AddrData.client_id, transaction_hash: txHash});
-        //     claimDone = true;
-        //   }
-        // }
-
-        // if (contractUuid) {
-        //   // it is not an transfer event but is a mint event
-        //   if (contractUuid === oThis.StPrimeContractUuid) {
-        //     // for St prime uuid do not settle balances
-        //     continue;
-        //   } else {
-        //     let cacheObj = new Erc20ContractUuidCacheKlass({uuids: [contractUuid]})
-        //       , cacheFetchRsp = await cacheObj.fetch()
-        //     ;
-        //     if (cacheFetchRsp.isFailure()) {
-        //       return Promise.reject(cacheFetchRsp)
-        //     }
-        //     let erc20ContractUuidsData = cacheFetchRsp.data;
-        //     // overridr contractAddress of ostutility contract with that of erc 20 address of this token
-        //     contractAddress = erc20ContractUuidsData[contractUuid]['token_erc20_address'].toLowerCase();
-        //     switch (decodedEventData.name) {
-        //       case "ProcessedMint":
-        //         toAddr = contractAddress;
-        //         break;
-        //       case "RevertedMint":
-        //         fromAddr = contractAddress;
-        //         break;
-        //       default:
-        //         return Promise.reject(responseHelper.error({
-        //           internal_error_identifier: 'e_drdm_ads_2',
-        //           api_error_identifier: 'unhandled_catch_response',
-        //           debug_options: {}
-        //         }));
-        //         break;
-        //     }
-        //   }
-        // }
 
         transferEvents.push({
           from_address: fromAddr,
@@ -787,7 +708,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           amount_in_wei: valueStr
         });
 
-        if(fromAddr === contractAddress) {
+        if (fromAddr === contractAddress) {
           // if from == contract this tx event is then of claim by beneficiary. This was credited by platform so ignore here
           continue;
         }
@@ -796,7 +717,10 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         balanceAdjustmentMap[contractAddress] = balanceAdjustmentMap[contractAddress] || {};
 
         if (fromAddr) {
-          balanceAdjustmentMap[contractAddress][fromAddr] = balanceAdjustmentMap[contractAddress][fromAddr] || {settledBalance: new BigNumber('0'), unSettledDebit: new BigNumber('0')};
+          balanceAdjustmentMap[contractAddress][fromAddr] = balanceAdjustmentMap[contractAddress][fromAddr] || {
+            settledBalance: new BigNumber('0'),
+            unSettledDebit: new BigNumber('0')
+          };
           balanceAdjustmentMap[contractAddress][fromAddr].settledBalance = balanceAdjustmentMap[contractAddress][fromAddr].settledBalance.minus(valueBn);
           // TODO: This is being happening for unrecognized, but this can happen outside SaaS also
           balanceAdjustmentMap[contractAddress][fromAddr].unSettledDebit = balanceAdjustmentMap[contractAddress][fromAddr].unSettledDebit.minus(valueBn);
@@ -807,7 +731,10 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         }
 
         if (toAddr) {
-          balanceAdjustmentMap[contractAddress][toAddr] = balanceAdjustmentMap[contractAddress][toAddr] || {settledBalance: new BigNumber('0'), unSettledDebit: new BigNumber('0')};
+          balanceAdjustmentMap[contractAddress][toAddr] = balanceAdjustmentMap[contractAddress][toAddr] || {
+            settledBalance: new BigNumber('0'),
+            unSettledDebit: new BigNumber('0')
+          };
           balanceAdjustmentMap[contractAddress][toAddr].settledBalance = balanceAdjustmentMap[contractAddress][toAddr].settledBalance.plus(valueBn);
           affectedAddresses.push(toAddr);
         }
@@ -841,7 +768,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    */
   _fetchFormattedTransactionsForMigration: async function (params) {
 
-    console.log("-1111--------------------params---", JSON.stringify(params));
+    logger.debug("-1111--------------------params---", params);
     logger.info('starting _fetchFormattedTransactionsForMigration');
 
     let blockNoDetails = params['blockNoDetailsMap']
@@ -853,10 +780,11 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       , formattedTransactionsData = {}
       , completeStatus = parseInt(new TransactionLogModel().invertedStatuses[transactionLogConst.completeStatus])
       , failedStatus = parseInt(new TransactionLogModel().invertedStatuses[transactionLogConst.failedStatus])
-      , tokenTransferType = parseInt(new TransactionLogModel().invertedTransactionTypes[transactionLogConst.extenralTokenTransferTransactionType])
+      ,
+      tokenTransferType = parseInt(new TransactionLogModel().invertedTransactionTypes[transactionLogConst.extenralTokenTransferTransactionType])
     ;
 
-    console.log("-2222--------------------addressUuidMap---", JSON.stringify(addressUuidMap));
+    logger.debug("-2222--------------------addressUuidMap---", addressUuidMap);
     if (affectedAddresses.length > 0) {
       let dbRows = await new ManagedAddressModel().getByEthAddresses(affectedAddresses);
       for (let i = 0; i < dbRows.length; i++) {
@@ -865,74 +793,74 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       }
     }
 
-    console.log("-3333--------------------addressUuidMap---", JSON.stringify(addressUuidMap));
-      let txHashes = Object.keys(txHashTransferEventsMap);
+    logger.debug("-3333--------------------addressUuidMap---", addressUuidMap);
+    let txHashes = Object.keys(txHashTransferEventsMap);
 
-      for (let i = 0; i < txHashes.length; i++) {
+    for (let i = 0; i < txHashes.length; i++) {
 
-        let txHash = txHashes[i]
-          , txFormattedData = {}
-          , txDataFromChain = txHashToTxReceiptMap[txHash]
-        ;
+      let txHash = txHashes[i]
+        , txFormattedData = {}
+        , txDataFromChain = txHashToTxReceiptMap[txHash]
+      ;
 
-        let contractAddress = txDataFromChain.logs[0].address
-          , erc20ContractAddressData = erc20ContractAddressesData[contractAddress.toLowerCase()]
-        ;
+      let contractAddress = txDataFromChain.logs[0].address
+        , erc20ContractAddressData = erc20ContractAddressesData[contractAddress.toLowerCase()]
+      ;
 
-        if (!erc20ContractAddressData) {
-          // as we are also processing mint events, they wouldn't have client id.
-          // they should only be used to adjust balances but not insert here
-          continue;
-        }
+      if (!erc20ContractAddressData) {
+        // as we are also processing mint events, they wouldn't have client id.
+        // they should only be used to adjust balances but not insert here
+        continue;
+      }
 
-        txFormattedData = {
-          transaction_hash: txHash,
-          transaction_uuid: uuid.v4(),
-          transaction_type: tokenTransferType,
-          block_number: txDataFromChain['blockNumber'],
-          client_id: parseInt(erc20ContractAddressData['client_id']),
-          client_token_id: parseInt(erc20ContractAddressData['client_token_id']),
-          token_symbol: erc20ContractAddressData['symbol'],
-          gas_used: txDataFromChain['gasUsed'],
-          status: (parseInt(txDataFromChain.status, 16) == 1) ? completeStatus : failedStatus,
-          created_at: blockNoDetails['timestamp'],
-          updated_at: blockNoDetails['timestamp'],
-          from_address: txDataFromChain['from'],
-          to_address: txDataFromChain['to']
-        };
+      txFormattedData = {
+        transaction_hash: txHash,
+        transaction_uuid: uuid.v4(),
+        transaction_type: tokenTransferType,
+        block_number: txDataFromChain['blockNumber'],
+        client_id: parseInt(erc20ContractAddressData['client_id']),
+        client_token_id: parseInt(erc20ContractAddressData['client_token_id']),
+        token_symbol: erc20ContractAddressData['symbol'],
+        gas_used: txDataFromChain['gasUsed'],
+        status: (parseInt(txDataFromChain.status, 16) == 1) ? completeStatus : failedStatus,
+        created_at: blockNoDetails['timestamp'],
+        updated_at: blockNoDetails['timestamp'],
+        from_address: txDataFromChain['from'],
+        to_address: txDataFromChain['to']
+      };
 
-        let fromUuid = addressUuidMap[txDataFromChain['from'].toLowerCase()];
-        if (!commonValidator.isVarNull(fromUuid)) {
-          txFormattedData['from_uuid'] = fromUuid
-        }
+      let fromUuid = addressUuidMap[txDataFromChain['from'].toLowerCase()];
+      if (!commonValidator.isVarNull(fromUuid)) {
+        txFormattedData['from_uuid'] = fromUuid
+      }
 
-        let toUuid = addressUuidMap[txDataFromChain['to'].toLowerCase()];
-        if (!commonValidator.isVarNull(toUuid)) {
-          txFormattedData['to_uuid'] = toUuid
-        }
+      let toUuid = addressUuidMap[txDataFromChain['to'].toLowerCase()];
+      if (!commonValidator.isVarNull(toUuid)) {
+        txFormattedData['to_uuid'] = toUuid
+      }
 
 
-        if (txHashTransferEventsMap[txHash]) {
-          txFormattedData['transfer_events'] = txHashTransferEventsMap[txHash];
-          for (let j = 0; j < txFormattedData['transfer_events'].length; j++) {
-            let event_data = txFormattedData['transfer_events'][j];
-            let fromUuid = addressUuidMap[event_data['from_address']];
-            if (!commonValidator.isVarNull(fromUuid)) {
-              event_data['from_uuid'] = fromUuid
-            }
-            let toUuid = addressUuidMap[event_data['to_address']];
-            if (!commonValidator.isVarNull(toUuid)) {
-              event_data['to_uuid'] = toUuid
-            }
+      if (txHashTransferEventsMap[txHash]) {
+        txFormattedData['transfer_events'] = txHashTransferEventsMap[txHash];
+        for (let j = 0; j < txFormattedData['transfer_events'].length; j++) {
+          let event_data = txFormattedData['transfer_events'][j];
+          let fromUuid = addressUuidMap[event_data['from_address']];
+          if (!commonValidator.isVarNull(fromUuid)) {
+            event_data['from_uuid'] = fromUuid
+          }
+          let toUuid = addressUuidMap[event_data['to_address']];
+          if (!commonValidator.isVarNull(toUuid)) {
+            event_data['to_uuid'] = toUuid
           }
         }
-
-        // group data by client_ids so that they can be batch inserted in ddb
-        formattedTransactionsData[txFormattedData['client_id']] = formattedTransactionsData[txFormattedData['client_id']] || [];
-
-        formattedTransactionsData[txFormattedData['client_id']].push(txFormattedData);
-
       }
+
+      // group data by client_ids so that they can be batch inserted in ddb
+      formattedTransactionsData[txFormattedData['client_id']] = formattedTransactionsData[txFormattedData['client_id']] || [];
+
+      formattedTransactionsData[txFormattedData['client_id']].push(txFormattedData);
+
+    }
 
     logger.info('completed _fetchFormattedTransactionsForMigration');
 
@@ -1026,42 +954,6 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     return Promise.resolve({});
 
   },
-
-  /**
-   * if claim event found raise one RMQ event. Which will mark stake_and_mint for bt completed.
-   *
-   * @returns {object}
-   */
-  // _claimCompletedStatus: async function (doClaimTransferEventData) {
-  //   const oThis = this
-  //   ;
-  //
-  //   logger.info('starting _claimCompletedStatus for -- ', JSON.stringify(doClaimTransferEventData));
-  //
-  //   for(var i=0; i<doClaimTransferEventData.length; i++){
-  //
-  //     // fire settled_balance event to mark bt stake_and_mint process done.
-  //     const notificationData = {
-  //         topics: [notificationTopics.settleTokenBalanceOnUcDone],
-  //         publisher: 'OST',
-  //         message: {
-  //           kind: 'info',
-  //           payload: {
-  //             client_id: doClaimTransferEventData[i].client_id,
-  //             status: 'settle_token_balance_on_uc_done',
-  //             transaction_hash: doClaimTransferEventData[i].transaction_hash
-  //           }
-  //         }
-  //     };
-  //
-  //     const publishEventResp = await openSTNotification.publishEvent.perform(notificationData);
-  //     console.log("------------------------publishEventResp-", JSON.stringify(publishEventResp));
-  //
-  //   }
-  //
-  //   logger.info('Done _claimCompletedStatus');
-  //
-  // },
 
   /**
    * generic function to handle catch blocks

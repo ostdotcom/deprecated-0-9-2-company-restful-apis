@@ -237,11 +237,16 @@ Base.prototype = {
       return responseHelper.successWithData(transactionLogData);
     }
 
+    let start_time = Date.now();
+
     let transactionFetchRespone = await new OSTStorage.TransactionLogModel({
       client_id: oThis.clientId,
       ddb_service: ddbServiceObj,
       auto_scaling: autoScalingServiceObj,
     }).batchGetItem(oThis.transactionUuids);
+
+
+    console.log('-------Transaction list time taken', (Date.now() - start_time)/1000);
 
     // if no records found, return error.
     if (!transactionFetchRespone.data) {
