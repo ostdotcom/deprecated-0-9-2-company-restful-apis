@@ -5,6 +5,7 @@ const express = require('express')
 
 const rootPrefix = '../..'
   , routeHelper = require(rootPrefix + '/routes/helper')
+  , BalanceFormatter = require(rootPrefix + '/lib/formatter/entities/latest/balance')
 ;
 
 const router = express.Router()
@@ -25,7 +26,18 @@ router.get('/:id', function (req, res, next) {
   req.decodedParams.apiName = 'get_balance';
   req.decodedParams.id = req.params.id;
 
-  Promise.resolve(routeHelper.performer(req, res, next, getBalanceKlass, 'r_v1_b_1'));
+  const dataFormatterFunc = async function(response) {
+    let balanceFormatter = new BalanceFormatter(response.data);
+    let balanceFormatterResponse = await balanceFormatter.perform();
+
+    delete response.data;
+
+    response.data = {};
+    response.data.result_type = 'balances';
+    response.data.balances = balanceFormatterResponse.data;
+  };
+
+  Promise.resolve(routeHelper.performer(req, res, next, getBalanceKlass, 'r_v1_b_1', null, dataFormatterFunc));
 });
 
 module.exports = router;

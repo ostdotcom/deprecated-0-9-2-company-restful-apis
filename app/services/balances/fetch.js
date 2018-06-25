@@ -152,11 +152,9 @@ Fetch.prototype = {
       ethereum_addresses: [oThis.ethereumAddress]
     }).perform();
 
-    let finalResponse = {};
-    finalResponse.available_balance = economyUserBalanceResponse.data[oThis.ethereumAddress].availableBalance.toString(10);
-    finalResponse.airdropped_balance = economyUserBalanceResponse.data[oThis.ethereumAddress].balanceAirdropAmount.toString(10);
+    let balanceData = economyUserBalanceResponse.data[oThis.ethereumAddress];
 
-    return responseHelper.successWithData(finalResponse);
+    return responseHelper.successWithData(balanceData);
   }
 
 };
