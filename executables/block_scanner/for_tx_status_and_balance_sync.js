@@ -105,12 +105,12 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       try {
 
         oThis.initParams();
-        console.log("---------------------------------------------------starts------------1--", Date.now()-oThis.startTime, 'ms');
+        logger.debug("---------------------------------------------------starts------------1--", Date.now()-oThis.startTime, 'ms');
 
-        console.log("---------------------------------------------------initParams------------2--", Date.now()-oThis.startTime, 'ms');
+        logger.debug("---------------------------------------------------initParams------------2--", Date.now()-oThis.startTime, 'ms');
         await oThis.refreshHighestBlock();
 
-        console.log("---------------------------------------------------refreshHighestBlock------------3--", Date.now()-oThis.startTime, 'ms');
+        logger.debug("---------------------------------------------------refreshHighestBlock------------3--", Date.now()-oThis.startTime, 'ms');
         // return if nothing more to do, as of now.
         if (oThis.highestBlock - oThis.INTENTIONAL_BLOCK_DELAY <= oThis.scannerData.lastProcessedBlock) return oThis.schedule();
 
@@ -119,30 +119,30 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         logger.log('Current Block =', oThis.currentBlock);
 
         oThis.currentBlockInfo = await oThis.web3Provider.eth.getBlock(oThis.currentBlock);
-        console.log('block no-', oThis.currentBlock, "--------------------------------------------------get-currentBlockInfo------------4--", Date.now()-oThis.startTime, 'ms');
+        logger.debug('block no-', oThis.currentBlock, "--------------------------------------------------get-currentBlockInfo------------4--", Date.now()-oThis.startTime, 'ms');
 
         if (!oThis.currentBlockInfo) return oThis.schedule();
 
         // categorize the transaction hashes into known (having entry in transaction meta) and unknown
         await oThis.categorizeTransactions();
 
-        console.log('block no-', oThis.currentBlock, "--------------------------------------------------categorizeTransactions------------5--", Date.now()-oThis.startTime, 'ms');
+        logger.debug('block no-', oThis.currentBlock, "--------------------------------------------------categorizeTransactions------------5--", Date.now()-oThis.startTime, 'ms');
         // for all the transactions in the block, get the receipt
         await oThis.getTransactionReceipts();
-        console.log('block no-', oThis.currentBlock, "--------------------------------------------------getTransactionReceipts------------6--", Date.now()-oThis.startTime, 'ms');
+        logger.debug('block no-', oThis.currentBlock, "--------------------------------------------------getTransactionReceipts------------6--", Date.now()-oThis.startTime, 'ms');
 
         // construct the data to be updated for known transaction
         await oThis.generateToUpdateDataForKnownTx();
-        console.log('block no-', oThis.currentBlock, "--------------------------------------------------generateToUpdateDataForKnownTx------------7--", Date.now()-oThis.startTime, 'ms');
+        logger.debug('block no-', oThis.currentBlock, "--------------------------------------------------generateToUpdateDataForKnownTx------------7--", Date.now()-oThis.startTime, 'ms');
 
         // construct the data to be inserted for unknown transaction
         await oThis.generateToUpdateDataForUnKnownTx();
-        console.log('block no-', oThis.currentBlock, "--------------------------------------------------generateToUpdateDataForUnKnownTx------------8--", Date.now()-oThis.startTime, 'ms');
+        logger.debug('block no-', oThis.currentBlock, "--------------------------------------------------generateToUpdateDataForUnKnownTx------------8--", Date.now()-oThis.startTime, 'ms');
         await oThis.updateTransactionLogs();
-        console.log('block no-', oThis.currentBlock, "--------------------------------------------------updateTransactionLogs------------9--", Date.now()-oThis.startTime, 'ms');
+        logger.debug('block no-', oThis.currentBlock, "--------------------------------------------------updateTransactionLogs------------9--", Date.now()-oThis.startTime, 'ms');
 
         oThis.updateScannerDataFile();
-        console.log('block no-', oThis.currentBlock, "--------------------------------------------------updateScannerDataFile------------11--", Date.now()-oThis.startTime, 'ms');
+        logger.debug('block no-', oThis.currentBlock, "--------------------------------------------------updateScannerDataFile------------11--", Date.now()-oThis.startTime, 'ms');
 
         if (oThis.recognizedTxHashes.length != 0) {
           if (oThis.benchmarkFilePath) {
@@ -188,7 +188,10 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     oThis.txHashToTxReceiptMap = {};
     oThis.dataToUpdate = [];
     oThis.clientIdsMap = {};
-    oThis.unRecognizedTxHashes = []
+    oThis.unRecognizedTxHashes = [];
+    oThis.txHashToDecodedEventsMap = {};
+    oThis.addressToDetailsMap = {};
+
   },
 
   /**
@@ -217,6 +220,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
       const batchedTxLogRecords = await new TransactionMeta().getByTransactionHash(batchedTxHashes);
 
+      logger.debug('---------------batchedTxLogRecords-----', JSON.stringify(batchedTxLogRecords));
       for (var i = 0; i < batchedTxLogRecords.length; i++) {
 
         const currRecord = batchedTxLogRecords[i];
@@ -298,11 +302,13 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       , batchSize = 100
     ;
 
+    await oThis.collectDecodedEvents();
+
     for (var clientId in oThis.recognizedTxUuidsGroupedByClientId) {
       let txUuids = oThis.recognizedTxUuidsGroupedByClientId[clientId]
         , batchNo = 1
       ;
-      console.log('block no-', oThis.currentBlock, "---clientId-", clientId, "--a1------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
+      logger.debug('block no-', oThis.currentBlock, "---clientId-", clientId, "--a1------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
 
       oThis.clientIdsMap[clientId] = 1;
 
@@ -311,7 +317,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           , batchedTxUuids = txUuids.slice(offset, batchSize + offset)
         ;
 
-        console.log('block no-', oThis.currentBlock, "---clientId-", clientId, "--batchNo-", batchNo,"--a2------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
+        logger.debug('block no-', oThis.currentBlock, "---clientId-", clientId, "--batchNo-", batchNo,"--a2------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
 
         batchNo = batchNo + 1;
 
@@ -320,7 +326,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         for (var txUuidIndex=0; txUuidIndex<batchedTxUuids.length; txUuidIndex++) {
 
           let txUuid = batchedTxUuids[txUuidIndex];
-          console.log('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a3------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
+          logger.debug('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a3------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
 
           let txHash = oThis.knownTxUuidToTxHashMap[txUuid];
           let txReceipt = oThis.txHashToTxReceiptMap[txHash];
@@ -328,31 +334,33 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           let toUpdateFields = {}
             , eventData = {};
 
-          console.log('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a4------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
+          logger.debug('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a4------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
           if (oThis.tokenTransferTxHashesMap[txHash]) {
-            const decodedEvents = abiDecoder.decodeLogs(txReceipt.logs);
-            console.log('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a44------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
+            const decodedEvents = oThis.txHashToDecodedEventsMap[txHash];
+            logger.debug('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a44------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
 
+            logger.debug('--111111111111111------oThis.txUuidToPostReceiptProcessParamsMap--', JSON.stringify(oThis.txUuidToPostReceiptProcessParamsMap));
             let postAirdropParams = oThis.txUuidToPostReceiptProcessParamsMap[txUuid];
 
-            console.log('--111111111111111------postAirdropParams--', JSON.stringify(postAirdropParams));
+            logger.debug('--111111111111111------postAirdropParams--', JSON.stringify(postAirdropParams));
             if (postAirdropParams) {
               postAirdropParams = JSON.parse(postAirdropParams);
-              console.log('--------postAirdropParams--', JSON.stringify(postAirdropParams));
+              logger.debug('--------postAirdropParams--', JSON.stringify(postAirdropParams));
               const postAirdropPay = new PostAirdropPayKlass(postAirdropParams, decodedEvents, txReceipt.status);
               await postAirdropPay.perform();
             }
 
-            console.log('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a5------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
+            logger.debug('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a5------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
             eventData = await oThis._getEventData(decodedEvents);
-            console.log('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a6------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
+            logger.debug('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a6------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
 
             toUpdateFields = {
               commission_amount_in_wei: eventData._commissionTokenAmount,
-              amount_in_wei: eventData._tokenAmount
+              amount_in_wei: eventData._tokenAmount,
+              airdrop_amount_in_wei: eventData._airdropUsed
             };
           }
-          console.log('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a7------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
+          logger.debug('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a7------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
 
           toUpdateFields.transaction_uuid = txUuid;
           if (eventData.transfer_events) {
@@ -362,13 +370,58 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           toUpdateFields.gas_used = txReceipt.gasUsed;
           toUpdateFields.block_number = txReceipt.blockNumber;
           toUpdateFields.status = parseInt(txReceipt.status, 16) == 1 ? oThis.completeTxStatus : oThis.failedTxStatus;
-          console.log('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a8------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
+          logger.debug('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a8------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
 
           oThis.dataToUpdate.push({client_id: clientId, data: toUpdateFields});
 
         }
       }
     }
+  },
+
+  /**
+   * Collect decoded events of all transactions.
+   */
+  collectDecodedEvents: async function () {
+    const oThis = this;
+
+    let addressesToFetch = [];
+
+    for (var clientId in oThis.recognizedTxUuidsGroupedByClientId) {
+      let txUuids = oThis.recognizedTxUuidsGroupedByClientId[clientId];
+      for (var txUuidsInd = 0; txUuidsInd<txUuids.length; txUuidsInd++) {
+
+        let txUuid = txUuids[txUuidsInd]
+          , txHash = oThis.knownTxUuidToTxHashMap[txUuid]
+          , txReceipt = oThis.txHashToTxReceiptMap[txHash]
+        ;
+
+        if (oThis.tokenTransferTxHashesMap[txHash]) {
+          let decodedEvents = abiDecoder.decodeLogs(txReceipt.logs);
+          oThis.txHashToDecodedEventsMap[txHash] = decodedEvents;
+
+          for (var i = 0; i < decodedEvents.length; i++) {
+            if (decodedEvents[i].name == 'Transfer') {
+              for (var j = 0; j < decodedEvents[i].events.length; j++) {
+                if (['_from', '_to'].includes(decodedEvents[i].events[j].name)) {
+                  addressesToFetch.push(decodedEvents[i].events[j].value);
+                }
+              }
+            }
+          }
+
+        }
+      }
+    }
+
+    if(addressesToFetch.length > 0){
+      const managedAddressResults = await new ManagedAddressesModel().getByEthAddresses(addressesToFetch);
+
+      for (let i = 0; i < managedAddressResults.length; i++) {
+        oThis.addressToDetailsMap[managedAddressResults[i].ethereum_address.toLowerCase()] = managedAddressResults[i];
+      }
+    }
+
   },
 
   /**
@@ -479,7 +532,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     const oThis = this
     ;
 
-    console.log('-------oThis.clientIdsMap----', JSON.stringify(oThis.clientIdsMap));
+    logger.debug('-------oThis.clientIdsMap----', JSON.stringify(oThis.clientIdsMap));
 
     if(Object.keys(oThis.clientIdsMap) == 0) return {};
 
@@ -488,7 +541,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       identifiers: Object.keys(oThis.clientIdsMap)
     });
 
-    console.log('-------getManagedShardResponse----', JSON.stringify(getManagedShardResponse));
+    logger.debug('-------oThis.dataToUpdate----', JSON.stringify(oThis.dataToUpdate));
 
     if (getManagedShardResponse.isFailure()) return Promise.reject(getManagedShardResponse);
 
@@ -650,7 +703,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    * Get event data
    */
   _getEventData: async function (decodedEvents) {
-    const eventData = {_tokenAmount: '0', _commissionTokenAmount: '0', transfer_events: []};
+    const oThis = this;
+    const eventData = {_tokenAmount: '0', _commissionTokenAmount: '0', _airdropUsed: '0', transfer_events: []};
 
     if (!decodedEvents || decodedEvents.length === 0) {
       return eventData;
@@ -660,24 +714,16 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       , allTransferEventsVars = []
     ;
 
-    let addressesToFetch = [];
-
     for (var i = 0; i < decodedEvents.length; i++) {
       if (decodedEvents[i].name == 'AirdropPayment') {
         airdropPaymentEventVars = decodedEvents[i].events;
       }
       if (decodedEvents[i].name == 'Transfer') {
         allTransferEventsVars.push(decodedEvents[i].events);
-        for (var j = 0; j < decodedEvents[i].events.length; j++) {
-          if (['_from', '_to'].includes(decodedEvents[i].events[j].name)) {
-            addressesToFetch.push(decodedEvents[i].events[j].value);
-          }
-        }
       }
     }
 
     airdropPaymentEventVars = airdropPaymentEventVars || [];
-
     for (var i = 0; i < airdropPaymentEventVars.length; i++) {
       if (airdropPaymentEventVars[i].name == '_commissionTokenAmount') {
         eventData._commissionTokenAmount = airdropPaymentEventVars[i].value;
@@ -686,18 +732,13 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       if (airdropPaymentEventVars[i].name == '_tokenAmount') {
         eventData._tokenAmount = airdropPaymentEventVars[i].value;
       }
+
+      if (airdropPaymentEventVars[i].name == '_airdropUsed') {
+        eventData._airdropUsed = airdropPaymentEventVars[i].value;
+      }
     }
 
     logger.debug("---------------------------allTransferEventsVars------", allTransferEventsVars);
-
-    let managedAddressResults = await new ManagedAddressesModel().getByEthAddresses(addressesToFetch);
-
-    let addressToUuidMap = {};
-
-    for (let i = 0; i < managedAddressResults.length; i++) {
-      addressToUuidMap[managedAddressResults[i].ethereum_address.toLowerCase()] = managedAddressResults[i].uuid;
-    }
-
 
     for (var i = 0; i < allTransferEventsVars.length; i++) {
       let transferEventVars = allTransferEventsVars[i];
@@ -707,15 +748,15 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       for (var j = 0; j < transferEventVars.length; j++) {
         if (transferEventVars[j].name == '_from') {
           transferEvent.from_address = transferEventVars[j].value;
-          if (addressToUuidMap[transferEvent.from_address]) {
-            transferEvent.from_uuid = addressToUuidMap[transferEvent.from_address];
+          if (oThis.addressToDetailsMap[transferEvent.from_address.toLowerCase()]) {
+            transferEvent.from_uuid = oThis.addressToDetailsMap[transferEvent.from_address.toLowerCase()].uuid;
           }
         }
 
         if (transferEventVars[j].name == '_to') {
           transferEvent.to_address = transferEventVars[j].value;
-          if (addressToUuidMap[transferEvent.to_address]) {
-            transferEvent.to_uuid = addressToUuidMap[transferEvent.to_address];
+          if (oThis.addressToDetailsMap[transferEvent.to_address.toLowerCase()]) {
+            transferEvent.to_uuid = oThis.addressToDetailsMap[transferEvent.to_address.toLowerCase()].uuid;
           }
         }
 
