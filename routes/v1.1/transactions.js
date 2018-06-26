@@ -39,10 +39,9 @@ router.post('/', function (req, res, next) {
     delete response.data;
 
     response.data = {
-      result_type: 'transaction'
+      result_type: 'transaction',
+      transaction: transactionEntityFormatterRsp.data
     };
-
-    response.data[response.result_type] = transactionEntityFormatterRsp.data;
 
   };
 

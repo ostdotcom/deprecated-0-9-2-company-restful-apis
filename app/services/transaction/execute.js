@@ -487,7 +487,7 @@ ExecuteTransactionService.prototype = {
   _validateFromUserBalance: async function () {
     const oThis = this
       , amount = basicHelper.convertToWei(oThis.amount || oThis.transactionTypeRecord.currency_value)
-      , commissionPercent = oThis.commissionPercent || oThis.transactionTypeRecord.commission_percent;
+      , commissionPercent = oThis.commissionPercent || oThis.transactionTypeRecord.commission_percent
     ;
 
     var transferBtAmountInWei = null;
