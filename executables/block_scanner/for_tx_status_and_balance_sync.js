@@ -220,7 +220,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
       const batchedTxLogRecords = await new TransactionMeta().getByTransactionHash(batchedTxHashes);
 
-      logger.debug('---------------batchedTxLogRecords-----', JSON.stringify(batchedTxLogRecords));
+      logger.debug('---------------batchedTxLogRecords-----', batchedTxLogRecords);
       for (var i = 0; i < batchedTxLogRecords.length; i++) {
 
         const currRecord = batchedTxLogRecords[i];
@@ -339,13 +339,13 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
             const decodedEvents = oThis.txHashToDecodedEventsMap[txHash];
             logger.debug('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a44------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
 
-            logger.debug('--111111111111111------oThis.txUuidToPostReceiptProcessParamsMap--', JSON.stringify(oThis.txUuidToPostReceiptProcessParamsMap));
+            logger.debug('--111111111111111------oThis.txUuidToPostReceiptProcessParamsMap--', oThis.txUuidToPostReceiptProcessParamsMap);
             let postAirdropParams = oThis.txUuidToPostReceiptProcessParamsMap[txUuid];
 
-            logger.debug('--111111111111111------postAirdropParams--', JSON.stringify(postAirdropParams));
+            logger.debug('--111111111111111------postAirdropParams--', postAirdropParams);
             if (postAirdropParams) {
               postAirdropParams = JSON.parse(postAirdropParams);
-              logger.debug('--------postAirdropParams--', JSON.stringify(postAirdropParams));
+              logger.debug('--------postAirdropParams--', postAirdropParams);
               const postAirdropPay = new PostAirdropPayKlass(postAirdropParams, decodedEvents, txReceipt.status);
               await postAirdropPay.perform();
             }
@@ -532,7 +532,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     const oThis = this
     ;
 
-    logger.debug('-------oThis.clientIdsMap----', JSON.stringify(oThis.clientIdsMap));
+    logger.debug('-------oThis.clientIdsMap----', oThis.clientIdsMap);
 
     if(Object.keys(oThis.clientIdsMap) == 0) return {};
 
@@ -541,7 +541,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       identifiers: Object.keys(oThis.clientIdsMap)
     });
 
-    logger.debug('-------oThis.dataToUpdate----', JSON.stringify(oThis.dataToUpdate));
+    logger.debug('-------oThis.dataToUpdate----', oThis.dataToUpdate);
 
     if (getManagedShardResponse.isFailure()) return Promise.reject(getManagedShardResponse);
 
