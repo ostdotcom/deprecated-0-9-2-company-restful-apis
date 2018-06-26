@@ -192,7 +192,7 @@ ListStpTransfersService.prototype = {
 
     // if transaction_uuids are passes in params, add filter on it
     if (oThis.idsFilterArr.length > 0) {
-      boolFilters.push({"terms": { "id" : oThis.idsFilterArr }});
+      boolFilters.push({"terms": { "_id" : oThis.idsFilterArr }});
     }
 
     let sortParams = {};
