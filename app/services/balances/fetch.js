@@ -11,7 +11,6 @@ const rootPrefix = '../../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , ManagedAddressesCache = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
-  , ClientBrandedTokenCache = require(rootPrefix + '/lib/cache_management/client_branded_token')
   , EconomyUserBalance = require(rootPrefix + '/lib/economy_user_balance')
 ;
 
@@ -129,13 +128,6 @@ Fetch.prototype = {
         debug_options: {}
       }));
     }
-
-
-    let clientBrandedTokenCacheResponse = await new ClientBrandedTokenCache({
-      clientId: oThis.clientId
-    }).fetch();
-
-    oThis.erc20ContractAddress = clientBrandedTokenCacheResponse.data.token_erc20_address;
 
   },
 

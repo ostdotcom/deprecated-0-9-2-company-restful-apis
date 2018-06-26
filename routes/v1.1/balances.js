@@ -33,8 +33,8 @@ router.get('/:id', function (req, res, next) {
     delete response.data;
 
     response.data = {};
-    response.data.result_type = 'balances';
-    response.data.balances = balanceFormatterResponse.data;
+    response.data.result_type = 'balance';
+    response.data.balance = balanceFormatterResponse.data;
   };
 
   Promise.resolve(routeHelper.performer(req, res, next, getBalanceKlass, 'r_v1_b_1', null, dataFormatterFunc));
