@@ -268,10 +268,3 @@ NOTE: Create the file if not present.
 ```
 
 * Don't forget to start the cronjobs. 
-
-* Sometimes, you might face an issue during coin minting because of airdrop manager. Run the following command in another terminal to mitigate the issue:
-```bash
-> source $HOME/openst-setup/openst_env_vars.sh
-> source set_env_vars.sh
-> node executables/rmq_subscribers/start_airdrop.js
-```
