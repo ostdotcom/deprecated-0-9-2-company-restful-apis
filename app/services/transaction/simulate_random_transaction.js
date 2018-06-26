@@ -40,8 +40,8 @@ const simulateRandomTransactionKlass = function(params) {
 
   oThis.clientBrandedToken = {};
   oThis.randomTrxTypes = [];
-  oThis.maxTxTypesToAttempt = 50;
-  oThis.maxUsersToAttempt = 250;
+  oThis.maxTxTypesToAttempt = 15;
+  oThis.maxUsersToAttempt = 90;
   oThis.maxUserBtBalance = 0;
 
   oThis.conversionFactor = null;
