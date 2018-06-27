@@ -104,7 +104,7 @@ BenchmarkEsQueries.prototype = {
 
 };
 
-let clientIds = [1104,1555,1539,1222,1129,3223,1339,3244,1001,1054, 2402, 1584, 1092,3219,3218,1123, 3216,3215, 1152, 1357];
+let clientIds = [1104,1555,1539,1222,1129,3223,1339,3244,1001,1054, 2402, 1584, 1092,3219,3218,1123, 3216,3215, 1152, 1357,1104,1555,1539,1222,1129,3223,1339,3244,1558,1684,1121,1208,1053,3295,1313,1141,1164,1766,1686,3232,1551,2317,1087,1429,1857,1456,3229,1333,3252,2209,1083,1100,3279,3254];
 
 const usageDemo = function () {
   logger.log('usage:', 'node ./executables/benchmark_es_queries.js parallelQueriesCount');
@@ -117,7 +117,7 @@ const args = process.argv
 const validateAndSanitize = function () {
 
   if (!commonValidator.isVarInteger(parallelQueriesCount)) {
-    logger.error('parallelQueriesCount is NOT valid in the arguments. INT max 15');
+    logger.error('parallelQueriesCount is NOT valid in the arguments. INT max 45');
     usageDemo();
     process.exit(1);
   }
