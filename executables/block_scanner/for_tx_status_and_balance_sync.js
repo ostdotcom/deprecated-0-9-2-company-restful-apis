@@ -105,12 +105,10 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       try {
 
         oThis.initParams();
-        logger.debug("---------------------------------------------------starts------------1--", Date.now()-oThis.startTime, 'ms');
 
-        logger.debug("---------------------------------------------------initParams------------2--", Date.now()-oThis.startTime, 'ms');
         await oThis.refreshHighestBlock();
 
-        logger.debug("---------------------------------------------------refreshHighestBlock------------3--", Date.now()-oThis.startTime, 'ms');
+        if (oThis.benchmarkFilePath) oThis.granularTimeTaken.push('refreshHighestBlock-'+(Date.now()-oThis.startTime)+'ms');
         // return if nothing more to do, as of now.
         if (oThis.highestBlock - oThis.INTENTIONAL_BLOCK_DELAY <= oThis.scannerData.lastProcessedBlock) return oThis.schedule();
 
@@ -119,34 +117,36 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         logger.log('Current Block =', oThis.currentBlock);
 
         oThis.currentBlockInfo = await oThis.web3Provider.eth.getBlock(oThis.currentBlock);
-        logger.debug('block no-', oThis.currentBlock, "--------------------------------------------------get-currentBlockInfo------------4--", Date.now()-oThis.startTime, 'ms');
+        if (oThis.benchmarkFilePath) oThis.granularTimeTaken.push('eth.getBlock-'+(Date.now()-oThis.startTime)+'ms');
 
         if (!oThis.currentBlockInfo) return oThis.schedule();
 
         // categorize the transaction hashes into known (having entry in transaction meta) and unknown
         await oThis.categorizeTransactions();
 
-        logger.debug('block no-', oThis.currentBlock, "--------------------------------------------------categorizeTransactions------------5--", Date.now()-oThis.startTime, 'ms');
+        if (oThis.benchmarkFilePath) oThis.granularTimeTaken.push('categorizeTransactions-'+(Date.now()-oThis.startTime)+'ms');
         // for all the transactions in the block, get the receipt
         await oThis.getTransactionReceipts();
-        logger.debug('block no-', oThis.currentBlock, "--------------------------------------------------getTransactionReceipts------------6--", Date.now()-oThis.startTime, 'ms');
+        if (oThis.benchmarkFilePath) oThis.granularTimeTaken.push('getTransactionReceipts-'+(Date.now()-oThis.startTime)+'ms');
 
         // construct the data to be updated for known transaction
         await oThis.generateToUpdateDataForKnownTx();
-        logger.debug('block no-', oThis.currentBlock, "--------------------------------------------------generateToUpdateDataForKnownTx------------7--", Date.now()-oThis.startTime, 'ms');
+        if (oThis.benchmarkFilePath) oThis.granularTimeTaken.push('generateToUpdateDataForKnownTx-'+(Date.now()-oThis.startTime)+'ms');
 
         // construct the data to be inserted for unknown transaction
         await oThis.generateToUpdateDataForUnKnownTx();
-        logger.debug('block no-', oThis.currentBlock, "--------------------------------------------------generateToUpdateDataForUnKnownTx------------8--", Date.now()-oThis.startTime, 'ms');
+        if (oThis.benchmarkFilePath) oThis.granularTimeTaken.push('generateToUpdateDataForUnKnownTx-'+(Date.now()-oThis.startTime)+'ms');
+
         await oThis.updateTransactionLogs();
-        logger.debug('block no-', oThis.currentBlock, "--------------------------------------------------updateTransactionLogs------------9--", Date.now()-oThis.startTime, 'ms');
+        if (oThis.benchmarkFilePath) oThis.granularTimeTaken.push('updateTransactionLogs-'+(Date.now()-oThis.startTime)+'ms');
 
         oThis.updateScannerDataFile();
-        logger.debug('block no-', oThis.currentBlock, "--------------------------------------------------updateScannerDataFile------------11--", Date.now()-oThis.startTime, 'ms');
+        if (oThis.benchmarkFilePath) oThis.granularTimeTaken.push('updateScannerDataFile-'+(Date.now()-oThis.startTime)+'ms');
 
         if (oThis.recognizedTxHashes.length != 0) {
           if (oThis.benchmarkFilePath) {
             oThis.updateBanchmarkFile();
+            oThis.granularTimeTaken.push('updateBanchmarkFile-'+(Date.now()-oThis.startTime)+'ms');
           }
         }
 
@@ -191,6 +191,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     oThis.unRecognizedTxHashes = [];
     oThis.txHashToDecodedEventsMap = {};
     oThis.addressToDetailsMap = {};
+
+    oThis.granularTimeTaken = []
 
   },
 
@@ -299,7 +301,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    */
   generateToUpdateDataForKnownTx: async function () {
     const oThis = this
-      , batchSize = 100
+      , batchSize = 25
     ;
 
     await oThis.collectDecodedEvents();
@@ -308,16 +310,14 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       let txUuids = oThis.recognizedTxUuidsGroupedByClientId[clientId]
         , batchNo = 1
       ;
-      logger.debug('block no-', oThis.currentBlock, "---clientId-", clientId, "--a1------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
 
       oThis.clientIdsMap[clientId] = 1;
 
       while (true) {
         const offset = (batchNo - 1) * batchSize
           , batchedTxUuids = txUuids.slice(offset, batchSize + offset)
+          , promiseArray = []
         ;
-
-        logger.debug('block no-', oThis.currentBlock, "---clientId-", clientId, "--batchNo-", batchNo,"--a2------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
 
         batchNo = batchNo + 1;
 
@@ -326,7 +326,6 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         for (var txUuidIndex=0; txUuidIndex<batchedTxUuids.length; txUuidIndex++) {
 
           let txUuid = batchedTxUuids[txUuidIndex];
-          logger.debug('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a3------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
 
           let txHash = oThis.knownTxUuidToTxHashMap[txUuid];
           let txReceipt = oThis.txHashToTxReceiptMap[txHash];
@@ -334,10 +333,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           let toUpdateFields = {}
             , eventData = {};
 
-          logger.debug('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a4------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
           if (oThis.tokenTransferTxHashesMap[txHash]) {
             const decodedEvents = oThis.txHashToDecodedEventsMap[txHash];
-            logger.debug('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a44------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
 
             logger.debug('--111111111111111------oThis.txUuidToPostReceiptProcessParamsMap--', oThis.txUuidToPostReceiptProcessParamsMap);
             let postAirdropParams = oThis.txUuidToPostReceiptProcessParamsMap[txUuid];
@@ -345,22 +342,17 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
             logger.debug('--111111111111111------postAirdropParams--', postAirdropParams);
             if (postAirdropParams) {
               postAirdropParams = JSON.parse(postAirdropParams);
-              logger.debug('--------postAirdropParams--', postAirdropParams);
               const postAirdropPay = new PostAirdropPayKlass(postAirdropParams, decodedEvents, txReceipt.status);
-              await postAirdropPay.perform();
+              promiseArray.push(postAirdropPay.perform());
             }
 
-            logger.debug('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a5------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
             eventData = await oThis._getEventData(decodedEvents);
-            logger.debug('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a6------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
-
             toUpdateFields = {
               commission_amount_in_wei: eventData._commissionTokenAmount,
               amount_in_wei: eventData._tokenAmount,
               airdrop_amount_in_wei: eventData._airdropUsed
             };
           }
-          logger.debug('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a7------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
 
           toUpdateFields.transaction_uuid = txUuid;
           if (eventData.transfer_events) {
@@ -370,11 +362,12 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           toUpdateFields.gas_used = txReceipt.gasUsed;
           toUpdateFields.block_number = txReceipt.blockNumber;
           toUpdateFields.status = parseInt(txReceipt.status, 16) == 1 ? oThis.completeTxStatus : oThis.failedTxStatus;
-          logger.debug('block no-', oThis.currentBlock, "---clientId-", clientId, "--txUuid-", txUuid,"--a8------------------------------------------------------------6--", Date.now()-oThis.startTime, 'ms');
 
           oThis.dataToUpdate.push({client_id: clientId, data: toUpdateFields});
 
         }
+        await Promise.all(promiseArray);
+
       }
     }
   },
@@ -547,7 +540,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     let promiseArray = []
       , batchNo = 1
-      , dynamoQueryBatchSize = 10
+      , dynamoQueryBatchSize = 20
       , clientIdToTxLogModelObjectMap = {}
     ;
 
@@ -672,12 +665,12 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   updateBanchmarkFile: function () {
     const oThis = this
     ;
-    const benchmarkData = [oThis.currentBlock, (Date.now() - oThis.startTime), oThis.currentBlockInfo.transactions.length,
+    const benchmarkData = [oThis.currentBlock, oThis.currentBlockInfo.transactions.length,
       oThis.recognizedTxHashes.length, oThis.unRecognizedTxHashes.length];
 
     fs.appendFileSync(
       oThis.benchmarkFilePath,
-      benchmarkData.join(',')+'\n',
+      benchmarkData.concat(oThis.granularTimeTaken).join(',')+'\n',
       function (err) {
         if (err)
           logger.error(err);
