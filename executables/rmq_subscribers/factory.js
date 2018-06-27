@@ -38,6 +38,7 @@ const ProcessLocker = new ProcessLockerKlass()
 var topicsToSubscribeArray = null
 ;
 
+// validate and sanitize the command line arguments
 const validateAndSanitize = function () {
   if(!processLockId) {
     logger.error('Process Lock id NOT passed in the arguments.');
@@ -76,9 +77,9 @@ const validateAndSanitize = function () {
 // validate and sanitize the input params
 validateAndSanitize();
 
-const queueName = 'executables_rmq_subscribers_factory_' + queueSuffix;
-
 ProcessLocker.canStartProcess({process_title: 'executables_rmq_subscribers_factory' + processLockId});
+
+const queueName = 'executables_rmq_subscribers_factory_' + queueSuffix;
 
 const topicPerformers = {};
 topicPerformers[notificationTopics.onBoardingPropose] = require(rootPrefix + '/lib/on_boarding/propose.js');

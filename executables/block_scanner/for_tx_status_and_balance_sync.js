@@ -5,6 +5,56 @@
  *
  * @module executables/block_scanner/for_tx_status_and_balance_sync
  */
+
+const rootPrefix = '../..'
+;
+
+const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker')
+  , ProcessLocker = new ProcessLockerKlass()
+;
+
+// command line arguments
+const args = process.argv
+  , processLockId = args[2]
+  , datafilePath = args[3]
+  , benchmarkFilePath = args[4]
+;
+
+// usage demo
+const usageDemo = function () {
+  logger.log('usage:', 'node ./executables/block_scanner/for_tx_status_and_balance_sync.js processLockId datafilePath [benchmarkFilePath]');
+  logger.log('* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.');
+  logger.log('* datafilePath is the path to the file which is storing the last block scanned info.');
+  logger.log('* benchmarkFilePath is the path to the file which is storing the benchmarking info.');
+};
+
+// validate and sanitize the command line arguments
+const validateAndSanitize = function () {
+  if (!processLockId) {
+    logger.error('Process Lock id NOT passed in the arguments.');
+    usageDemo();
+    process.exit(1);
+  }
+
+  if (!datafilePath) {
+    logger.error('Data file path is NOT passed in the arguments.');
+    usageDemo();
+    process.exit(1);
+  }
+
+  if (!benchmarkFilePath) {
+    logger.error('Benchmark file path is NOT passed in the arguments.');
+    usageDemo();
+    process.exit(1);
+  }
+};
+
+// validate and sanitize the input params
+validateAndSanitize();
+
+// check if another process with the same title is running
+ProcessLocker.canStartProcess({process_title: 'executables_block_scanner_execute_transaction' + processLockId});
+
 const fs = require('fs')
   , Web3 = require('web3')
   , abiDecoder = require('abi-decoder')
@@ -15,8 +65,7 @@ const fs = require('fs')
   , uuid = require('uuid')
 ;
 
-const rootPrefix = '../..'
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , TransactionMeta = require(rootPrefix + '/app/models/transaction_meta')
@@ -1134,41 +1183,6 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   }
 
 };
-
-const usageDemo = function () {
-  logger.log('usage:', 'node ./executables/block_scanner/for_tx_status_and_balance_sync.js processLockId datafilePath');
-  logger.log('* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.');
-  logger.log('* datafilePath is the path to the file which is storing the last block scanned info.');
-};
-
-const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker')
-;
-
-const ProcessLocker = new ProcessLockerKlass()
-  , args = process.argv
-  , processLockId = args[2]
-  , datafilePath = args[3]
-  , benchmarkFilePath = args[4]
-;
-
-ProcessLocker.canStartProcess({process_title: 'executables_block_scanner_execute_transaction' + processLockId});
-
-const validateAndSanitize = function () {
-  if (!processLockId) {
-    logger.error('Process Lock id NOT passed in the arguments.');
-    usageDemo();
-    process.exit(1);
-  }
-
-  if (!datafilePath) {
-    logger.error('Data file path is NOT passed in the arguments.');
-    usageDemo();
-    process.exit(1);
-  }
-};
-
-// validate and sanitize the input params
-validateAndSanitize();
 
 const blockScannerObj = new BlockScannerForTxStatusAndBalanceSync({file_path: datafilePath, benchmark_file_path: benchmarkFilePath});
 blockScannerObj.registerInterruptSignalHandlers();
