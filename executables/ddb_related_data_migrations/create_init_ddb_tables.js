@@ -1,11 +1,11 @@
 'use strict';
 
 const rootPrefix = '../..'
-    , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-    , responseHelper = require(rootPrefix + '/lib/formatter/response')
-    , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
-    , shardMgmtObj = ddbServiceObj.shardManagement()
-    , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
+  , shardMgmtObj = ddbServiceObj.shardManagement()
+  , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
 ;
 
 /**
@@ -34,19 +34,19 @@ CreateInitDdbTables.prototype = {
     ;
 
     return oThis.asyncPerform()
-        .catch(function (error) {
-          if (responseHelper.isCustomResult(error)) {
-            return error;
-          } else {
-            logger.error(`${__filename}::perform::catch`);
-            logger.error(error);
-            return responseHelper.error({
-              internal_error_identifier: 'e_drdm_cs_1',
-              api_error_identifier: 'unhandled_catch_response',
-              debug_options: {}
-            });
-          }
-        });
+      .catch(function (error) {
+        if (responseHelper.isCustomResult(error)) {
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+          return responseHelper.error({
+            internal_error_identifier: 'e_drdm_cs_1',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
+        }
+      });
   },
 
   /**
@@ -54,7 +54,7 @@ CreateInitDdbTables.prototype = {
    *
    * @returns {promise}
    */
-  asyncPerform: async function() {
+  asyncPerform: async function () {
 
     const oThis = this
     ;
@@ -67,4 +67,10 @@ CreateInitDdbTables.prototype = {
 };
 
 const object = new CreateInitDdbTables({});
-object.perform().then(function(a) {console.log(JSON.stringify(a.toHash())); process.exit(1)}).catch(function(a) {console.log(JSON.stringify(a)); process.exit(1)});
+object.perform().then(function (a) {
+  console.log(a.toHash());
+  process.exit(1)
+}).catch(function (a) {
+  console.log(a);
+  process.exit(1)
+});

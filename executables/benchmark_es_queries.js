@@ -129,9 +129,9 @@ validateAndSanitize();
 
 const obj = new BenchmarkEsQueries({client_ids: clientIds.slice(0, parallelQueriesCount)});
 obj.perform().then(function (a) {
-  logger.log(JSON.stringify(a.toHash()));
+  logger.log(a.toHash());
   process.exit(1)
 }).catch(function (a) {
-  logger.log(JSON.stringify(a));
+  logger.log(a);
   process.exit(1)
 });

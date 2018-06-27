@@ -4,11 +4,11 @@ const OSTStorage = require('@openstfoundation/openst-storage')
 ;
 
 const rootPrefix = '../..'
-    , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-    , responseHelper = require(rootPrefix + '/lib/formatter/response')
-    , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
-    , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
-    , coreConstants = require(rootPrefix + '/config/core_constants')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
+  , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
+  , coreConstants = require(rootPrefix + '/config/core_constants')
 ;
 
 /**
@@ -40,19 +40,19 @@ CreateShards.prototype = {
     ;
 
     return oThis.asyncPerform()
-        .catch(function (error) {
-          if (responseHelper.isCustomResult(error)) {
-            return error;
-          } else {
-            logger.error(`${__filename}::perform::catch`);
-            logger.error(error);
-            return responseHelper.error({
-              internal_error_identifier: 'e_drdm_cs_1',
-              api_error_identifier: 'unhandled_catch_response',
-              debug_options: {}
-            });
-          }
-        });
+      .catch(function (error) {
+        if (responseHelper.isCustomResult(error)) {
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+          return responseHelper.error({
+            internal_error_identifier: 'e_drdm_cs_1',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
+        }
+      });
   },
 
   /**
@@ -60,7 +60,7 @@ CreateShards.prototype = {
    *
    * @returns {promise}
    */
-  asyncPerform: async function() {
+  asyncPerform: async function () {
 
     const oThis = this
     ;
@@ -83,10 +83,13 @@ CreateShards.prototype = {
     const oThis = this
     ;
 
-    for (let index = 1; index <= oThis.tokenBalancesShardCount; index++ ) {
+    for (let index = 1; index <= oThis.tokenBalancesShardCount; index++) {
       logger.info('starting to create tokenBalancesShard : ', index);
       let shardName = coreConstants.DYNAMODB_TABLE_NAME_PREFIX + 'token_balances_shard_00' + index;
-      let createRsp = await new OSTStorage.TokenBalanceModel({ddb_service: ddbServiceObj, auto_scaling: autoscalingServiceObj}).createAndRegisterShard(shardName);
+      let createRsp = await new OSTStorage.TokenBalanceModel({
+        ddb_service: ddbServiceObj,
+        auto_scaling: autoscalingServiceObj
+      }).createAndRegisterShard(shardName);
       if (createRsp.isFailure()) {
         return Promise.reject(createRsp);
       }
@@ -106,10 +109,13 @@ CreateShards.prototype = {
     const oThis = this
     ;
 
-    for (let index = 1; index <= oThis.transactionLogShardCount; index++ ) {
+    for (let index = 1; index <= oThis.transactionLogShardCount; index++) {
       logger.info('starting to create transactionLogShard : ', index);
       let shardName = coreConstants.DYNAMODB_TABLE_NAME_PREFIX + 'transaction_logs_shard_00' + index;
-      let createRsp = await new OSTStorage.TransactionLogModel({ddb_service: ddbServiceObj, auto_scaling: autoscalingServiceObj}).createAndRegisterShard(shardName);
+      let createRsp = await new OSTStorage.TransactionLogModel({
+        ddb_service: ddbServiceObj,
+        auto_scaling: autoscalingServiceObj
+      }).createAndRegisterShard(shardName);
       if (createRsp.isFailure()) {
         return Promise.reject(createRsp);
       }
@@ -122,4 +128,10 @@ CreateShards.prototype = {
 };
 
 const object = new CreateShards({});
-object.perform().then(function(a) {console.log(JSON.stringify(a.toHash())); process.exit(1)}).catch(function(a) {console.log(JSON.stringify(a)); process.exit(1)});
+object.perform().then(function (a) {
+  console.log(a.toHash());
+  process.exit(1)
+}).catch(function (a) {
+  console.log(a);
+  process.exit(1)
+});

@@ -110,7 +110,7 @@ MigrateTokenBalancesKlass.prototype = {
 
       if (batchedBlockNumbers.length === 0) break;
 
-      logger.info(`starting processing for batch: ${batchNo} with block numbers ${JSON.stringify(batchedBlockNumbers)}`);
+      logger.info(`starting processing for batch: ${batchNo} with block numbers ${batchedBlockNumbers}`);
 
       await oThis._processBlocks(batchedBlockNumbers);
 
@@ -148,7 +148,7 @@ MigrateTokenBalancesKlass.prototype = {
     // fetch transaction hashes
     let fetchBlockDetailsRsp = await oThis._fetchBlockDetails(blockNumbers);
     if (fetchBlockDetailsRsp.isFailure()) {
-      console.error('fetchBlockDetailsRsp', JSON.stringify(fetchBlockDetailsRsp.toHash()));
+      console.error('fetchBlockDetailsRsp', fetchBlockDetailsRsp.toHash());
       return Promise.reject(fetchBlockDetailsRsp);
     }
 
@@ -162,7 +162,7 @@ MigrateTokenBalancesKlass.prototype = {
     // fetch transaction receipts
     let fetchTransactionReceiptRsp = await oThis._fetchTransactionReceipts(batchBlockTxHashes);
     if (fetchTransactionReceiptRsp.isFailure()) {
-      console.error('fetchTransactionReceiptRsp', JSON.stringify(fetchTransactionReceiptRsp.toHash()));
+      console.error('fetchTransactionReceiptRsp', fetchTransactionReceiptRsp.toHash());
       return Promise.reject(fetchTransactionReceiptRsp);
     }
 
@@ -173,7 +173,7 @@ MigrateTokenBalancesKlass.prototype = {
     // fetch transactions to shortlisted events map
     let shortListTransactionEventRsp = await oThis._shortListTransactionEvents(txHashToTxReceiptMap);
     if (shortListTransactionEventRsp.isFailure()) {
-      console.error('shortListTransactionEventRsp', JSON.stringify(shortListTransactionEventRsp.toHash()));
+      console.error('shortListTransactionEventRsp', shortListTransactionEventRsp.toHash());
       return Promise.reject(shortListTransactionEventRsp);
     }
 
@@ -189,7 +189,7 @@ MigrateTokenBalancesKlass.prototype = {
     // fetch affectedClientTokenIds data
     let fetchAffectedClientTokenIdsDataRsp = await oThis._fetchAffectedClientTokenIdsData(affectedClientTokenIds);
     if (fetchAffectedClientTokenIdsDataRsp.isFailure()) {
-      console.error('fetchAffectedClientTokenIdsDataRsp', JSON.stringify(fetchAffectedClientTokenIdsDataRsp.toHash()));
+      console.error('fetchAffectedClientTokenIdsDataRsp', fetchAffectedClientTokenIdsDataRsp.toHash());
       return Promise.reject(fetchAffectedClientTokenIdsDataRsp);
     }
 
@@ -200,7 +200,7 @@ MigrateTokenBalancesKlass.prototype = {
     // decode shortlisted events
     let decodeEventRsp = await oThis._decodeTransactionEvents(txHashShortListedEventsMap);
     if (decodeEventRsp.isFailure()) {
-      console.error('decodeEventRsp', JSON.stringify(decodeEventRsp.toHash()));
+      console.error('decodeEventRsp', decodeEventRsp.toHash());
       return Promise.reject(decodeEventRsp);
     }
 
@@ -211,7 +211,7 @@ MigrateTokenBalancesKlass.prototype = {
     // iterate over decoded events to create a map of adjustments which would be made to balances
     let balanceAdjustmentRsp = await oThis._computeBalanceAdjustments(txHashDecodedEventsMap);
     if (balanceAdjustmentRsp.isFailure()) {
-      console.error('balanceAdjustmentRsp', JSON.stringify(balanceAdjustmentRsp.toHash()));
+      console.error('balanceAdjustmentRsp', balanceAdjustmentRsp.toHash());
       return Promise.reject(balanceAdjustmentRsp);
     }
 
@@ -226,7 +226,7 @@ MigrateTokenBalancesKlass.prototype = {
     // fetch recognized transactions map
     let fetchRecognizedTransactionRsp = await oThis._fetchRecognizedTransactionDetails(batchBlockTxHashes);
     if (fetchRecognizedTransactionRsp.isFailure()) {
-      console.error('fetchRecognizedTransactionRsp', JSON.stringify(fetchRecognizedTransactionRsp.toHash()));
+      console.error('fetchRecognizedTransactionRsp', fetchRecognizedTransactionRsp.toHash());
       return Promise.reject(fetchRecognizedTransactionRsp);
     }
     let recognizedTxHashDataMap = fetchRecognizedTransactionRsp.data['recognizedTxHashDataMap'];
@@ -246,7 +246,7 @@ MigrateTokenBalancesKlass.prototype = {
 
     let formatDataRsp = await oThis._fetchFormattedTransactionsForMigration(params);
     if (formatDataRsp.isFailure()) {
-      console.error('formatDataRsp', JSON.stringify(formatDataRsp.toHash()));
+      console.error('formatDataRsp', formatDataRsp.toHash());
       return Promise.reject(formatDataRsp);
     }
     let formattedTransactionsData = formatDataRsp.data['formattedTransactionsData'];
@@ -255,13 +255,13 @@ MigrateTokenBalancesKlass.prototype = {
 
     let insertTxLogsRsp = await oThis._insertDataInTransactionLogs(formattedTransactionsData);
     if (insertTxLogsRsp.isFailure()) {
-      console.error('insertTxLogsRspError', JSON.stringify(insertTxLogsRsp.toHash()));
+      console.error('insertTxLogsRspError', insertTxLogsRsp.toHash());
       return Promise.reject(insertTxLogsRsp);
     }
 
     let settleBalancesRsp = await oThis._settleBalancesInDb(balanceAdjustmentMap);
     if (settleBalancesRsp.isFailure()) {
-      console.error('settleBalancesRspError', JSON.stringify(settleBalancesRsp.toHash()));
+      console.error('settleBalancesRspError', settleBalancesRsp.toHash());
       return Promise.reject(settleBalancesRsp);
     }
 
@@ -280,7 +280,7 @@ MigrateTokenBalancesKlass.prototype = {
       , txHashes = []
     ;
 
-    logger.info(`starting to fetch data for blocknumbers ${JSON.stringify(blockNumbers)}`);
+    logger.info(`starting to fetch data for blocknumbers ${blockNumbers}`);
 
     for (let index = 0; index < blockNumbers.length; index++) {
       promiseArray.push(oThis.web3Provider.eth.getBlock(blockNumbers[index]));
@@ -288,7 +288,7 @@ MigrateTokenBalancesKlass.prototype = {
 
     let promiseResponses = await Promise.all(promiseArray);
 
-    logger.info(`fetched txHashes for blocknumbers ${JSON.stringify(blockNumbers)}`);
+    logger.info(`fetched txHashes for blocknumbers ${blockNumbers}`);
 
     for (let index = 0; index < blockNumbers.length; index++) {
       let blockDetail = promiseResponses[index];
@@ -330,7 +330,7 @@ MigrateTokenBalancesKlass.prototype = {
 
       if (batchedTxHashes.length === 0) break;
 
-      logger.info(`starting to fetch receipts for batch: ${batchNo} with txHashes ${JSON.stringify(batchedTxHashes)}`);
+      logger.info(`starting to fetch receipts for batch: ${batchNo} with txHashes ${batchedTxHashes}`);
 
       let promiseArray = [];
 
@@ -1035,4 +1035,11 @@ const validateAndSanitize = function () {
 validateAndSanitize();
 
 const obj = new MigrateTokenBalancesKlass({start_block_no: startBlockNo, end_block_no: endBlockNo});
-obj.perform().then(function(a) {console.log(JSON.stringify(a.toHash())); process.exit(1)}).catch(function(a) {console.log(JSON.stringify(a)); process.exit(1)});
+obj.perform().then(
+  function(a) {
+    console.log(a.toHash());
+    process.exit(1)
+  }).catch(function(a) {
+    console.log(a);
+    process.exit(1)
+  });

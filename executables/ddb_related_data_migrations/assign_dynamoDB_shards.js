@@ -198,4 +198,4 @@ AssignShards.prototype = {
 };
 
 const object = new AssignShards({start_client_id: 1000});
-object.perform().then(function(a) {console.log(JSON.stringify(a.toHash())); process.exit(0)}).catch(function(a) {console.log(JSON.stringify(a)); process.exit(1)});
+object.perform().then(function(a) {console.log(a.toHash()); process.exit(0)}).catch(function(a) {console.log(a); process.exit(1)});

@@ -200,7 +200,7 @@ AddAirdropAmountToExistingDDBData.prototype = {
       for(let i=0; i<promiseResponses.length; i++) {
         if(promiseResponses[i].isFailure()) {
           logger.error('_updateWithRetry failed row', rowsToUpdate[i]);
-          logger.error('_updateWithRetry error', JSON.stringify(promiseResponses[i].toHash()));
+          logger.error('_updateWithRetry error', promiseResponses[i].toHash());
           rowsToRetry.push(rowsToUpdate[i]);
         }
       }
@@ -295,10 +295,10 @@ validateAndSanitize();
 
 const object = new AddAirdropAmountToExistingDDBData({shard_name: shardName});
 object.perform().then(function (a) {
-  console.log(JSON.stringify(a.toHash()));
+  console.log(a.toHash());
   process.exit(0)
 }).catch(function (a) {
-  console.error(JSON.stringify(a));
+  console.error(a);
   process.exit(1)
 });
 

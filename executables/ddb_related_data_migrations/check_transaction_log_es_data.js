@@ -84,7 +84,7 @@ CheckTransactionLogESData.prototype = {
                 oThis.shardBatchCnt++;
                 ddbServiceObj.scan( scanParams )
                     .then(function( response ) {
-                        logger.debug("dynamoDB data ",  JSON.stringify( response ));
+                        logger.debug("dynamoDB data ",  response);
                         logger.win(" WIN - DynamoDB fetch for " + oThis.getTableName() + " for batch " + oThis.shardBatchCnt);
 
                         let data                    = response && response.data
@@ -142,7 +142,7 @@ CheckTransactionLogESData.prototype = {
             dynamoRecordIds = oThis.getSearchIds( dynamoRecords );
             esSearchQuery   = oThis.getSearchQuerey( dynamoRecordIds );
             oThis.searchRecords( esSearchQuery ).then(function ( response ) {
-                logger.debug("Dynamo DB ids "+ dynamoRecordIds.join(' , ') +" ES Response"  ,JSON.stringify( response ));
+                logger.debug("Dynamo DB ids "+ dynamoRecordIds.join(' , ') +" ES Response"  , response);
                 oThis.validateESDataForIds( response , dynamoRecordIds);
                 resolve( "Got search results");
             }).catch( function ( reason ) {
@@ -182,7 +182,7 @@ CheckTransactionLogESData.prototype = {
             },
             "size": Limit
         };
-        logger.debug("ES querey ", JSON.stringify( querey ));
+        logger.debug("ES querey ",  querey);
         return querey;
     },
 

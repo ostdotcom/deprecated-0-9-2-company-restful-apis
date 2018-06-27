@@ -34,12 +34,12 @@ InsertESTransactionLog.prototype = {
             ;
             if( !records || records.length == 0 ){
                 logger.error("ERROR - no records found for ids - " + recordIds.join() + " in dynamo DB" );
-                logger.debug("Dynamo DB response" ,  JSON.stringify(response));
+                logger.debug("Dynamo DB response" ,  response);
                 return false;
             }
             manifest.services.transactionLog.bulk( eventName , records ).then(function ( response ) {
                 logger.win( "Success - records update in ES." );
-                logger.debug( "Success - records update in ES.", JSON.stringify(response) );
+                logger.debug( "Success - records update in ES.", response);
             }).catch(function ( error ) {
                 logger.error( "Failed - records update in ES.", error );
             });

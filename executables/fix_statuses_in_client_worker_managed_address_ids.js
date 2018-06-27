@@ -79,7 +79,7 @@ FixStatusKlass.prototype = {
       }
 
       if(idsToUpdate.length > 0) {
-        console.log('idsToUpdate', JSON.stringify(idsToUpdate));
+        console.log('idsToUpdate', idsToUpdate);
         // await new ClientWorkerManagedAddressIdModel().markStatusInActive(idsToUpdate);
       }
 
