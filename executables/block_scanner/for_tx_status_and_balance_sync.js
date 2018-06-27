@@ -60,7 +60,7 @@ const fs = require('fs')
   , abiDecoder = require('abi-decoder')
   , openStPlatform = require('@openstfoundation/openst-platform')
   , openStPayments = require('@openstfoundation/openst-payments')
-  , openStorage = require('@openstfoundation/openst-storage')
+  , openSTStorage = require('@openstfoundation/openst-storage')
   , BigNumber = require('bignumber.js')
   , uuid = require('uuid')
 ;
@@ -81,9 +81,9 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
 const PostAirdropPayKlass = openStPayments.services.airdropManager.postAirdropPay
-  , transactionLogModelDdb = openStorage.TransactionLogModel
-  , tokenBalanceModelDdb = openStorage.TokenBalanceModel
-  , StorageEntityTypesConst = openStorage.StorageEntityTypesConst
+  , transactionLogModelDdb = openSTStorage.TransactionLogModel
+  , tokenBalanceModelDdb = openSTStorage.TokenBalanceModel
+  , StorageEntityTypesConst = openSTStorage.StorageEntityTypesConst
   , coreAbis = openStPlatform.abis
 ;
 
@@ -131,12 +131,23 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     const oThis = this
     ;
 
-    oThis.web3Provider = new Web3(chainInteractionConstants.UTILITY_GETH_WS_PROVIDER);
-
     // Read this from a file
     oThis.scannerData = JSON.parse(fs.readFileSync(oThis.filePath).toString());
 
+    oThis.warmUpWeb3Pool();
+
     oThis.checkForNewBlocks();
+  },
+
+  /**
+   * Warm up web3 pool
+   */
+  warmUpWeb3Pool: function () {
+    let web3PoolSize = chainInteractionConstants.WEB3_POOL_SIZE;
+
+    for(var i = 0; i < web3PoolSize; i ++) {
+      web3InteractFactory.getInstance('utility');
+    }
   },
 
   /**
@@ -776,7 +787,9 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     const oThis = this
     ;
 
-    oThis.highestBlock = await oThis.web3Provider.eth.getBlockNumber();
+    let web3Interact = web3InteractFactory.getInstance('utility');
+
+    oThis.highestBlock = await web3Interact.getBlockNumber();
 
     logger.win('* Obtained highest block:', oThis.highestBlock);
 
