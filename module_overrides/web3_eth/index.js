@@ -246,7 +246,7 @@ const Derived = function () {
         };
 
         const onReject = function () {
-          logger.error(JSON.stringify(arguments));
+          logger.error(arguments);
           // hackedReturnedPromiEvent.reject.apply(hackedReturnedPromiEvent, arguments);
         };
 

@@ -128,13 +128,13 @@ MigrateTransactionLogsKlass.prototype = {
     // insert in DDb
     let insertTxLogsRsp = await oThis._insertDataInTransactionLogs(clientIdTxsToMigrateMap);
     if(insertTxLogsRsp.isFailure()) {
-      console.error('insertTxLogsRspError', JSON.stringify(insertTxLogsRsp.toHash()));
+      console.error('insertTxLogsRspError', insertTxLogsRsp.toHash());
       return Promise.reject(insertTxLogsRsp);
     }
 
     let verifyTxLogsRsp = await oThis._verifyDataInTransactionLogs(clientIdtxUuidsToVerify);
     if(verifyTxLogsRsp.isFailure()) {
-      console.error('verifyTxLogsRsp', JSON.stringify(verifyTxLogsRsp.toHash()));
+      console.error('verifyTxLogsRsp', verifyTxLogsRsp.toHash());
       return Promise.reject(verifyTxLogsRsp);
     }
 
@@ -294,5 +294,11 @@ const validateAndSanitize = function () {
 validateAndSanitize();
 
 const obj = new MigrateTransactionLogsKlass({start_id: startId, end_id: endId});
-obj.perform().then(function(a) {console.log(JSON.stringify(a.toHash())); process.exit(1)}).catch(function(a) {console.log(JSON.stringify(a)); process.exit(1)});
+obj.perform().then(function(a) {
+  logger.log(a.toHash());
+  process.exit(1)
+}).catch(function(a) {
+  logger.log(a);
+  process.exit(1)
+});
 
