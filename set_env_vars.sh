@@ -81,3 +81,5 @@ export CR_ACCEPTED_PRICE_FLUCTUATION_FOR_PAYMENT='{"OST":{"USD": "10000000000000
 
 # Elastic Search details
 export CR_ES_HOST='http://localhost:9200'
+
+export OST_WEB3_POOL_SIZE=10

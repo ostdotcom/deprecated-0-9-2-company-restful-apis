@@ -28,6 +28,7 @@ const rootPrefix = '../..'
   , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
   , ManagedAddressesModel = require(rootPrefix + '/app/models/managed_address')
+  , web3InteractFactory = require(rootPrefix + '/lib/web3/interact/rpc_interact')
 ;
 
 const PostAirdropPayKlass = openStPayments.services.airdropManager.postAirdropPay
@@ -116,7 +117,9 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
         logger.log('Current Block =', oThis.currentBlock);
 
-        oThis.currentBlockInfo = await oThis.web3Provider.eth.getBlock(oThis.currentBlock);
+        let web3Interact = web3InteractFactory.getInstance('utility');
+
+        oThis.currentBlockInfo = await web3Interact.getBlock(oThis.currentBlock);
         if (oThis.benchmarkFilePath) oThis.granularTimeTaken.push('eth.getBlock-'+(Date.now()-oThis.startTime)+'ms');
 
         if (!oThis.currentBlockInfo) return oThis.schedule();
@@ -260,36 +263,51 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     return Promise.resolve();
   },
 
+  getTxReceiptsForBatch: async function (batchedTxHashes) {
+    let promiseArray = []
+      , web3Interact = web3InteractFactory.getInstance('utility')
+    ;
+
+    for (var i = 0; i < batchedTxHashes.length; i++) {
+      promiseArray.push(web3Interact.getReceipt(batchedTxHashes[i]))
+    }
+
+    const txReceiptResults = await Promise.all(promiseArray);
+
+    for (var i = 0; i < batchedTxHashes.length; i++) {
+      oThis.txHashToTxReceiptMap[batchedTxHashes[i]] = txReceiptResults[i];
+    }
+
+    return Promise.resolve();
+  },
+
   /**
    * Get transaction receipt
    */
   getTransactionReceipts: async function () {
     const oThis = this
-      , batchSize = 100
     ;
 
-    let batchNo = 1;
+    let batchNo = 1
+      , web3PoolSize = chainInteractionConstants.WEB3_POOL_SIZE
+      , loadPerConnection = parseInt(oThis.currentBlockInfo.transactions / web3PoolSize) + 1
+      , promiseArray = []
+    ;
 
     while (true) {
-      const offset = (batchNo - 1) * batchSize
-        , batchedTxHashes = oThis.currentBlockInfo.transactions.slice(offset, batchSize + offset)
-        , promiseArray = []
+      const offset = (batchNo - 1) * loadPerConnection
+        , batchedTxHashes = oThis.currentBlockInfo.transactions.slice(offset, loadPerConnection + offset)
       ;
 
       batchNo = batchNo + 1;
 
       if (batchedTxHashes.length === 0) break;
 
-      for (var i = 0; i < batchedTxHashes.length; i++) {
-        promiseArray.push(oThis.web3Provider.eth.getTransactionReceipt(batchedTxHashes[i]))
-      }
+      promiseArray.push(oThis.getTxReceiptsForBatch(batchedTxHashes))
 
-      const txReceiptResults = await Promise.all(promiseArray);
-
-      for (var i = 0; i < batchedTxHashes.length; i++) {
-        oThis.txHashToTxReceiptMap[batchedTxHashes[i]] = txReceiptResults[i];
-      }
     }
+
+    await Promise.all(promiseArray);
 
     logger.win('* Fetching Tx Receipts DONE');
 
