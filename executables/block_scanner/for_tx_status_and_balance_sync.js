@@ -132,6 +132,9 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         await oThis.getTransactionReceipts();
         if (oThis.benchmarkFilePath) oThis.granularTimeTaken.push('getTransactionReceipts-'+(Date.now()-oThis.startTime)+'ms');
 
+        await oThis.collectDecodedEvents();
+        if (oThis.benchmarkFilePath) oThis.granularTimeTaken.push('collectDecodedEvents-'+(Date.now()-oThis.startTime)+'ms');
+
         // construct the data to be updated for known transaction
         await oThis.generateToUpdateDataForKnownTx();
         if (oThis.benchmarkFilePath) oThis.granularTimeTaken.push('generateToUpdateDataForKnownTx-'+(Date.now()-oThis.startTime)+'ms');
@@ -264,6 +267,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   },
 
   getTxReceiptsForBatch: async function (batchedTxHashes) {
+    const oThis = this;
+
     let promiseArray = []
       , web3Interact = web3InteractFactory.getInstance('utility')
     ;
@@ -290,9 +295,11 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     let batchNo = 1
       , web3PoolSize = chainInteractionConstants.WEB3_POOL_SIZE
-      , loadPerConnection = parseInt(oThis.currentBlockInfo.transactions / web3PoolSize) + 1
+      , loadPerConnection = parseInt(oThis.currentBlockInfo.transactions.length / web3PoolSize) + 1
       , promiseArray = []
     ;
+
+    if (loadPerConnection < 5) loadPerConnection = oThis.currentBlockInfo.transactions.length;
 
     while (true) {
       const offset = (batchNo - 1) * loadPerConnection
@@ -319,10 +326,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    */
   generateToUpdateDataForKnownTx: async function () {
     const oThis = this
-      , batchSize = 25
+      , batchSize = 20
     ;
-
-    await oThis.collectDecodedEvents();
 
     for (var clientId in oThis.recognizedTxUuidsGroupedByClientId) {
       let txUuids = oThis.recognizedTxUuidsGroupedByClientId[clientId]
@@ -399,8 +404,9 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     let addressesToFetch = [];
 
     for (var clientId in oThis.recognizedTxUuidsGroupedByClientId) {
+
       let txUuids = oThis.recognizedTxUuidsGroupedByClientId[clientId];
-      for (var txUuidsInd = 0; txUuidsInd<txUuids.length; txUuidsInd++) {
+      for (var txUuidsInd = 0; txUuidsInd < txUuids.length; txUuidsInd++) {
 
         let txUuid = txUuids[txUuidsInd]
           , txHash = oThis.knownTxUuidToTxHashMap[txUuid]
@@ -426,11 +432,29 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     }
 
     if(addressesToFetch.length > 0){
-      const managedAddressResults = await new ManagedAddressesModel().getByEthAddresses(addressesToFetch);
+      //uniq addressesToFetch array.
+      const uSet = new Set(addressesToFetch)
+        , qBatchSize = 100;
+      addressesToFetch = [...uSet];
 
-      for (let i = 0; i < managedAddressResults.length; i++) {
-        oThis.addressToDetailsMap[managedAddressResults[i].ethereum_address.toLowerCase()] = managedAddressResults[i];
+      let batchNo = 1;
+
+      while (true) {
+        const offset = (batchNo - 1) * qBatchSize
+          , addressesToFetchSet = addressesToFetch.slice(offset, qBatchSize + offset)
+        ;
+
+        batchNo = batchNo + 1;
+
+        if (addressesToFetchSet.length === 0) break;
+
+        const managedAddressResults = await new ManagedAddressesModel().getByEthAddresses(addressesToFetchSet);
+
+        for (let i = 0; i < managedAddressResults.length; i++) {
+          oThis.addressToDetailsMap[managedAddressResults[i].ethereum_address.toLowerCase()] = managedAddressResults[i];
+        }
       }
+
     }
 
   },
@@ -558,7 +582,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     let promiseArray = []
       , batchNo = 1
-      , dynamoQueryBatchSize = 20
+      , dynamoQueryBatchSize = 50
       , clientIdToTxLogModelObjectMap = {}
     ;
 
