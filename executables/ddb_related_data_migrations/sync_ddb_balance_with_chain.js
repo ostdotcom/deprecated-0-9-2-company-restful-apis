@@ -5,9 +5,7 @@ const openStPlatform = require('@openstfoundation/openst-platform')
 ;
 
 const rootPrefix = '../..'
-    , getBrandedTokenBalanceKlass = openStPlatform.services.balance.brandedToken
-    , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
-    , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
+    , getBrandedTokenBalanceKlass = openStPlatform.services.balance.brandedTokenFromChain
     , TokenBalanceModel = openStorage.TokenBalanceModel
     , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
     , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
