@@ -386,7 +386,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    */
   generateToUpdateDataForKnownTx: async function () {
     const oThis = this
-      , batchSize = 20
+      , batchSize = 500
     ;
 
     for (var clientId in oThis.recognizedTxUuidsGroupedByClientId) {
@@ -642,7 +642,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     let promiseArray = []
       , batchNo = 1
-      , dynamoQueryBatchSize = 50
+      , dynamoQueryBatchSize = 500
       , clientIdToTxLogModelObjectMap = {}
     ;
 
