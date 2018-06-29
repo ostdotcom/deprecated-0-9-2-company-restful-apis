@@ -108,6 +108,15 @@ GetTransactionDetailKlass.prototype = {
     const oThis = this
     ;
 
+    if (typeof oThis.transactionUuids != (typeof [])) {
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_t_gd_2',
+        api_error_identifier: 'invalid_api_params',
+        params_error_identifiers: ['invalid_id'],
+        debug_options: {}
+      }));
+    }
+
     let transactionFetchResponse = await new OSTStorage.TransactionLogModel({
       client_id: oThis.clientId,
       ddb_service: ddbServiceObj,
