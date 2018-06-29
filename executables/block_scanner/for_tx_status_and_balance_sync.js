@@ -41,12 +41,7 @@ const validateAndSanitize = function () {
     usageDemo();
     process.exit(1);
   }
-
-  if (!benchmarkFilePath) {
-    logger.error('Benchmark file path is NOT passed in the arguments.');
-    usageDemo();
-    process.exit(1);
-  }
+  
 };
 
 // validate and sanitize the input params
