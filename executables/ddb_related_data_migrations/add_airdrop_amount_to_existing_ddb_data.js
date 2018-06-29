@@ -130,7 +130,6 @@ AddAirdropAmountToExistingDDBData.prototype = {
       let item = items[i]
         , txUuid = dynamoDBFormatter.toString( item.txu )
         , clientTokenId = dynamoDBFormatter.toNumber( item.cti )
-        , clientId = dynamoDBFormatter.toNumber( item.ci )
         , transferEvents = ((item.te || {}).L) || []
       ;
 
@@ -149,7 +148,7 @@ AddAirdropAmountToExistingDDBData.prototype = {
           rowsToUpdate.push(
             {
               transaction_uuid: txUuid,
-              airdrop_amount_in_wei: dynamoDBFormatter.toNumber(transferEvent.M.aiw)
+              airdrop_amount_in_wei: dynamoDBFormatter.toBN(transferEvent.M.aiw).toString(10)
             }
           );
 
@@ -176,42 +175,25 @@ AddAirdropAmountToExistingDDBData.prototype = {
 
     logger.info('starting _updateDataInTransactionLogs');
 
-    let attemptCount = 1;
+    let promises = [];
 
-    while (true) {
+    for (let k=0; k<rowsToUpdate.length; k++) {
+      // console.log(JSON.stringify(rowsToUpdate[k]));
+      promises.push(
+        new TransactionLogModelDdb({
+          shard_name: oThis.shardName,
+          ddb_service: ddbServiceObj,
+          auto_scaling: autoscalingServiceObj
+        }).updateItem(rowsToUpdate[k])
+      );
+    }
 
-      let promises = []
-        , promiseResponses = []
-        , rowsToRetry = []
-      ;
+    let promiseResponses = await Promise.all(promises);
 
-      for (let k=0; k<rowsToUpdate.length; k++) {
-        promises.push(
-          new TransactionLogModelDdb({
-            shard_name: oThis.shardName,
-            ddb_service: ddbServiceObj,
-            auto_scaling: autoscalingServiceObj
-          }).updateItem(rowsToUpdate[k])
-        );
+    for(let i=0; i<promiseResponses.length; i++) {
+      if(promiseResponses[i].isFailure()) {
+        return Promise.reject(promiseResponses[i]);
       }
-
-      promiseResponses = await Promise.all(promises);
-
-      for(let i=0; i<promiseResponses.length; i++) {
-        if(promiseResponses[i].isFailure()) {
-          logger.error('_updateWithRetry failed row', rowsToUpdate[i]);
-          logger.error('_updateWithRetry error', JSON.stringify(promiseResponses[i].toHash()));
-          rowsToRetry.push(rowsToUpdate[i]);
-        }
-      }
-
-      if(rowsToRetry.length === 0) {break}
-
-      console.error(`_updateWithRetry attemptNo: ${attemptCount} will have to retry ${rowsToRetry.length} out of ${rowsToUpdate.length}`);
-
-      rowsToUpdate = rowsToRetry;
-      attemptCount += 1;
-
     }
 
     logger.info('completed _updateDataInTransactionLogs');
