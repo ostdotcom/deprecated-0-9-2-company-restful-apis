@@ -38,8 +38,14 @@ nohup node executables/ddb_related_data_migrations/migrate_remaining_transaction
 node executables/ddb_related_data_migrations/check_balances.js
 ```
 
-9. For data already populated in DDB, add airdrop_amount_in_wei to it 
+9. For data already populated in transaction_logs DDB, add airdrop_amount_in_wei to it 
 
 ``` node.js
 nohup node executables/ddb_related_data_migrations/add_airdrop_amount_to_existing_ddb_data.js shardName &> nohup3.out&
+```
+
+10. For data already populated in token balances DDB, add pessimistic_balance to it 
+
+``` node.js
+nohup node executables/ddb_related_data_migrations/add_pessimistic_settled_balance_to_existing_ddb_data.js shardName &> nohup4.out&
 ```
