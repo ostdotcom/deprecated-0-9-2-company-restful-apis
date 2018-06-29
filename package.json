@@ -9,7 +9,7 @@
     "@openstfoundation/openst-base": "0.9.1",
     "@openstfoundation/openst-cache": "1.0.4",
     "@openstfoundation/openst-notification": "1.0.2",
-    "@openstfoundation/openst-payments": "1.0.8-beta.14",
+    "@openstfoundation/openst-payments": "1.0.8",
     "@openstfoundation/openst-platform": "0.9.4",
     "@openstfoundation/openst-storage": "1.0.0",
     "@ostdotcom/ost-price-oracle": "1.0.3",
