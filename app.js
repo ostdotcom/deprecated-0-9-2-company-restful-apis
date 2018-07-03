@@ -236,7 +236,11 @@ if (cluster.isMaster) {
       cluster.fork();
     }
   });
-
+  // Exception caught
+  process.on('uncaughtException', function(err) {
+    logger.notify('app_crash_1', 'app server exited unexpectedly. Reason: ', err);
+    process.exit(1);
+  });
   // When someone try to kill the master process
   // kill <master process id>
   process.on('SIGTERM', function() {
