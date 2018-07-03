@@ -6,6 +6,7 @@ const rootPrefix = ".."
   , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
   , commonValidator = require(rootPrefix +  '/lib/validators/common')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
 ;
 
 const BenchmarkEsQueries = function (params) {
@@ -62,6 +63,8 @@ BenchmarkEsQueries.prototype = {
     }
 
     await Promise.all(promises);
+
+    return Promise.resolve(responseHelper.successWithData({}));
 
   },
 
