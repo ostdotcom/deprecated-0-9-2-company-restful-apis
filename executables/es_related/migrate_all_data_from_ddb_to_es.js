@@ -4,7 +4,7 @@ const rootPrefix = "../.."
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , dynamoDBFormatter = require(rootPrefix + '/lib/elasticsearch/helpers/dynamo_formatters')
-  , InsertInESKlass = require(rootPrefix + '/executables/ddb_related_data_migrations/insert_es_transaction_log')
+  , InsertInESKlass = require(rootPrefix + '/executables/es_related/insert_from_transaction_log_ddb_to_es')
   , insertInESobj = new InsertInESKlass()
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , commonValidator = require(rootPrefix +  '/lib/validators/common')
@@ -118,7 +118,7 @@ MigrateDataFromDDbToES.prototype = {
 };
 
 const usageDemo = function () {
-  logger.log('usage:', 'node ./executables/ddb_related_data_migrations/migrate_all_data_from_ddb_to_es.js shardName');
+  logger.log('usage:', 'node ./executables/es_related/migrate_all_data_from_ddb_to_es.js shardName');
 };
 
 const args = process.argv

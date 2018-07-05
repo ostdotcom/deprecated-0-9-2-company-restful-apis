@@ -1,6 +1,6 @@
 "use strict";
 
-const rootPrefix = ".."
+const rootPrefix = "../.."
   , elasticSearchLibManifest = require(rootPrefix + '/lib/elasticsearch/manifest')
   , esSearchServiceObject = elasticSearchLibManifest.services.transactionLog
   , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
@@ -82,11 +82,11 @@ BenchmarkEsQueries.prototype = {
         "query": {
           "bool": {
             "filter": [
-              {"term": {"client_id": clientId}},
+              {"term": {"client_id": 1103}},
               {"term": {"type": "1"}},
-              {"terms": {"status": [1,2]}}
-            ],
-            "must": {"bool": {"should": [{"match": {"from_uuid": dbRow['uuid']}}, {"match": {"to_uuid": dbRow['uuid']}}]}}
+              {"terms": {"status": [1,2]}},
+              {"bool": {"should": [{"match": {"from_uuid": "e3e80622-f15a-424d-ab66-b16bffb9c2e3"}}, {"match": {"to_uuid": "25ec395d-00a5-487a-b5a2-c9a992c7a8f0"}}]}}
+            ]
           }
         }, "from": 0, "size": 10, "sort": [{"created_at": "desc"}]
       };
@@ -110,7 +110,7 @@ BenchmarkEsQueries.prototype = {
 let clientIds = [1104,1555,1539,1222,1129,3223,1339,3244,1001,1054, 2402, 1584, 1092,3219,3218,1123, 3216,3215, 1152, 1357,1104,1555,1539,1222,1129,3223,1339,3244,1558,1684,1121,1208,1053,3295,1313,1141,1164,1766,1686,3232,1551,2317,1087,1429,1857,1456,3229,1333,3252,2209,1083,1100,3279,3254];
 
 const usageDemo = function () {
-  logger.log('usage:', 'node ./executables/benchmark_es_queries.js parallelQueriesCount');
+  logger.log('usage:', 'node ./executables/es_related/benchmark_select_queries.js parallelQueriesCount');
 };
 
 const args = process.argv
