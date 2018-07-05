@@ -9,7 +9,10 @@ const rootPrefix = "../.."
   , elasticSearchLibManifest = require(rootPrefix +  '/lib/elasticsearch/manifest')
   , esSearchServiceObject = elasticSearchLibManifest.services.transactionLog
   , basicHelper = require(rootPrefix + '/helpers/basic')
+  , dynamoDBFormatter = require(rootPrefix + '/lib/elasticsearch/helpers/dynamo_formatters')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
+  , transactionLogModel = require(rootPrefix + '/app/models/transaction_log')
 ;
 
 function CopyDataFromEsToEsBenchmark(params) {
@@ -17,7 +20,8 @@ function CopyDataFromEsToEsBenchmark(params) {
   const oThis = this;
 
   oThis.startTimestamp = params['start_timestamp'];
-  oThis.batchNumber = 0;
+  oThis.batchNumber = 1;
+  oThis.lastProcessedCreatedAt = null;
 
 }
 
@@ -59,6 +63,10 @@ CopyDataFromEsToEsBenchmark.prototype = {
     ;
 
     await oThis._fetchRecordsFromEs();
+
+    return Promise.resolve(responseHelper.successWithData({
+      lastProcessedCreatedAt: oThis.lastProcessedCreatedAt
+    }));
 
   },
 
@@ -103,7 +111,15 @@ CopyDataFromEsToEsBenchmark.prototype = {
     logger.info('Preparing Data for ES');
 
     for (let i=0; i<items.length; i++) {
-      dataToInsert.push(oThis._convertEsDataToDdbData(items[i]));
+      let esData = items[i];
+      if (esData['status'] === new transactionLogModel().invertedStatuses[transactionLogConst.waitingForMiningStatus]) {
+        return Promise.reject(responseHelper.error({
+          internal_error_identifier: 'es_r_cdfeteb_2',
+          api_error_identifier: 'data_not_found',
+          debug_options: esData
+        }));
+      }
+      dataToInsert.push(oThis._convertEsDataToDdbData(esData));
     }
 
     logger.info('Inserting Data in ES');
@@ -113,6 +129,8 @@ CopyDataFromEsToEsBenchmark.prototype = {
     if(insertRsp.isFailure()) {
       return Promise.reject(insertRsp);
     }
+
+    oThis.lastProcessedCreatedAt = dynamoDBFormatter.toNumber(dataToInsert[dataToInsert.length-1]['ca']);
 
   },
 
