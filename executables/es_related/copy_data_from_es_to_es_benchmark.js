@@ -78,7 +78,7 @@ CopyDataFromEsToEsBenchmark.prototype = {
 
     query = query || oThis._getQueryParams();
 
-    logger.step("search query", query);
+    logger.debug("search query", query);
 
     let searchRsp = await esSearchServiceObject.search(query);
 
@@ -108,7 +108,7 @@ CopyDataFromEsToEsBenchmark.prototype = {
 
     let dataToInsert = [];
 
-    logger.info('Preparing Data for ES');
+    logger.step('Preparing Data for ES');
 
     for (let i=0; i<items.length; i++) {
       let esData = items[i];
@@ -122,7 +122,7 @@ CopyDataFromEsToEsBenchmark.prototype = {
       dataToInsert.push(oThis._convertEsDataToDdbData(esData));
     }
 
-    logger.info('Inserting Data in ES');
+    logger.step('Inserting Data in ES');
 
     let insertRsp = await esSearchServiceObject.bulk('INSERT', dataToInsert);
 
@@ -131,6 +131,8 @@ CopyDataFromEsToEsBenchmark.prototype = {
     }
 
     oThis.lastProcessedCreatedAt = dynamoDBFormatter.toNumber(dataToInsert[dataToInsert.length-1]['ca']);
+
+    logger.step('oThis.lastProcessedCreatedAt', oThis.lastProcessedCreatedAt);
 
   },
 
