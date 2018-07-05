@@ -5,7 +5,6 @@ const rootPrefix = '../..'
   , util = require(rootPrefix + '/lib/util')
   , ModelBaseKlass = require(rootPrefix + '/app/models/base')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
-  , clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop')
   , bitWiseHelperKlass = require(rootPrefix + '/helpers/bitwise_operations')
   , commonValidator = require(rootPrefix +  '/lib/validators/common')
 ;

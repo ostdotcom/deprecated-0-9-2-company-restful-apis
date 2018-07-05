@@ -6,8 +6,6 @@
  * @module app/services/stp_transfer/execute
  */
 
-const OSTStorage = require('@openstfoundation/openst-storage');
-
 const openSTNotification = require('@openstfoundation/openst-notification')
   , uuid = require("uuid")
 ;
@@ -96,7 +94,7 @@ ExecuteSTPTransferService.prototype = {
     // Transaction would be set in background & response would be returned with uuid.
     await oThis.enqueueTxForExecution();
 
-    let dbResponse = await new OSTStorage.TransactionLogModel({
+    let dbResponse = await new transactionLogModel({
       client_id: oThis.clientId,
       ddb_service: ddbServiceObj,
       auto_scaling: autoScalingServiceObj
@@ -261,12 +259,12 @@ ExecuteSTPTransferService.prototype = {
     let dataToInsert = {
       client_id: oThis.clientId,
       transaction_uuid: oThis.transactionUuid,
-      transaction_type: new transactionLogModel().invertedTransactionTypes[transactionLogConst.stpTransferTransactionType],
+      transaction_type: transactionLogConst.invertedTransactionTypes[transactionLogConst.stpTransferTransactionType],
       client_token_id: oThis.clientTokenId,
       gas_price: basicHelper.convertToBigNumber(
         chainInteractionConstants.UTILITY_GAS_PRICE
       ).toString(10), // converting hex to base 10
-      status: new transactionLogModel().invertedStatuses[transactionLogConst.processingStatus],
+      status: transactionLogConst.invertedStatuses[transactionLogConst.processingStatus],
       created_at: Date.now(),
       updated_at: Date.now(),
       from_address: oThis.fromAddress,
@@ -274,7 +272,7 @@ ExecuteSTPTransferService.prototype = {
       amount_in_wei: oThis.amountInWei
     };
 
-    let insertedRec = await new OSTStorage.TransactionLogModel({
+    let insertedRec = await new transactionLogModel({
       client_id: oThis.clientId,
       ddb_service: ddbServiceObj,
       auto_scaling: autoScalingServiceObj

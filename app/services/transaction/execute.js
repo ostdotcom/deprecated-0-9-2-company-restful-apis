@@ -7,7 +7,6 @@
  */
 
 const openSTNotification = require('@openstfoundation/openst-notification')
-  , openStorage = require('@openstfoundation/openst-storage')
   , OSTPriceOracle = require('@ostdotcom/ost-price-oracle')
   , uuid = require("uuid")
 ;
@@ -28,7 +27,6 @@ const rootPrefix = '../../..'
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , ClientTrxRateCacheKlass = require(rootPrefix + '/lib/cache_management/client_transactions_rate_limit')
   , commonValidator = require(rootPrefix + '/lib/validators/common')
-  , TransactionLogModelDdb = openStorage.TransactionLogModel
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
   , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
   , EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance')
@@ -555,7 +553,7 @@ ExecuteTransactionService.prototype = {
       transaction_uuid: oThis.transactionUuid,
       client_id: oThis.clientId,
       client_token_id: oThis.clientBrandedToken.id,
-      transaction_type: new transactionLogModel().invertedTransactionTypes[transactionLogConst.tokenTransferTransactionType],
+      transaction_type: transactionLogConst.invertedTransactionTypes[transactionLogConst.tokenTransferTransactionType],
       amount: oThis.amount,
       from_address: oThis.fromUserObj.ethereum_address,
       from_uuid: oThis.fromUuid,
@@ -565,14 +563,14 @@ ExecuteTransactionService.prototype = {
       action_id: oThis.actionId,
       commission_percent: oThis.commissionPercent,
       gas_price: basicHelper.convertToBigNumber(chainInteractionConstants.UTILITY_GAS_PRICE).toString(10),
-      status: new transactionLogModel().invertedStatuses[transactionLogConst.processingStatus],
+      status: transactionLogConst.invertedStatuses[transactionLogConst.processingStatus],
       created_at: Date.now(),
       updated_at: Date.now()
     };
 
     let start_time = Date.now();
 
-    await new TransactionLogModelDdb({
+    await new transactionLogModel({
       client_id: oThis.clientId,
       ddb_service: ddbServiceObj,
       auto_scaling: autoscalingServiceObj

@@ -9,19 +9,17 @@
  * @module app/services/transaction/get_detail
  */
 
-const OSTStorage = require('@openstfoundation/openst-storage');
-
 const rootPrefix = '../../..'
   , ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type')
   , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
   , UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/user')
-  , basicHelper = require(rootPrefix + '/helpers/basic')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , ActionEntityFormatterKlass = require(rootPrefix +'/lib/formatter/entities/latest/action')
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
   , autoScalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
+  , transactionLogModel = require(rootPrefix + '/app/models/transaction_log')
 ;
 
 const GetTransactionDetailKlass = function (params) {
@@ -117,7 +115,7 @@ GetTransactionDetailKlass.prototype = {
       }));
     }
 
-    let transactionFetchResponse = await new OSTStorage.TransactionLogModel({
+    let transactionFetchResponse = await new transactionLogModel({
       client_id: oThis.clientId,
       ddb_service: ddbServiceObj,
       auto_scaling: autoScalingServiceObj,
