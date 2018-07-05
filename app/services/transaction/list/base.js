@@ -216,7 +216,6 @@ Base.prototype = {
 
     var oThis = this;
     return [
-      {"term": {"client_id": oThis.clientId}}, // filter by client id
       {"term": {"type": new transactionLogModel().invertedTransactionTypes[transactionLogConst.tokenTransferTransactionType]}} // filter by transaction type
     ];
 
