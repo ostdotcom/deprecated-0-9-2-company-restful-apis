@@ -12,7 +12,7 @@ const dbName = "saas_transaction_" + coreConstants.SUB_ENVIRONMENT + "_" + coreC
 const kinds = {
   '1': transactionLogConst.tokenTransferTransactionType,
   '2': transactionLogConst.stpTransferTransactionType,
-  '3': transactionLogConst.extenralTokenTransferTransactionType
+  '3': transactionLogConst.externalTokenTransferTransactionType
 };
 
 const invertedKinds = util.invert(kinds);

@@ -36,7 +36,6 @@ const rootPrefix = '../..'
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
   , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
   , commonValidator = require(rootPrefix + '/lib/validators/common')
-  , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
 
 const MigrateTokenBalancesKlass = function (params) {
@@ -694,7 +693,7 @@ MigrateTokenBalancesKlass.prototype = {
       , completeStatus = parseInt(new TransactionLogModel().invertedStatuses[TransactionLogConst.completeStatus])
       , failedStatus = parseInt(new TransactionLogModel().invertedStatuses[TransactionLogConst.failedStatus])
       ,
-      tokenTransferType = parseInt(new TransactionLogModel().invertedTransactionTypes[TransactionLogConst.extenralTokenTransferTransactionType])
+      tokenTransferType = parseInt(new TransactionLogModel().invertedTransactionTypes[TransactionLogConst.externalTokenTransferTransactionType])
       ,
       stpTransferTransactionType = parseInt(new TransactionLogModel().invertedTransactionTypes[TransactionLogConst.stpTransferTransactionType])
     ;

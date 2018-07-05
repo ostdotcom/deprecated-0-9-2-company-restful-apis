@@ -28,7 +28,6 @@ const rootPrefix = '../../..'
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
   , ClientTrxRateCacheKlass = require(rootPrefix + '/lib/cache_management/client_transactions_rate_limit')
   , commonValidator = require(rootPrefix + '/lib/validators/common')
-  , ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type')
   , TransactionLogModelDdb = openStorage.TransactionLogModel
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
   , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')

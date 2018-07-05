@@ -994,8 +994,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       , formattedTransactionsData = {}
       , completeStatus = parseInt(new TransactionLogModel().invertedStatuses[transactionLogConst.completeStatus])
       , failedStatus = parseInt(new TransactionLogModel().invertedStatuses[transactionLogConst.failedStatus])
-      ,
-      tokenTransferType = parseInt(new TransactionLogModel().invertedTransactionTypes[transactionLogConst.extenralTokenTransferTransactionType])
+      , tokenTransferType = parseInt(new TransactionLogModel().invertedTransactionTypes[transactionLogConst.externalTokenTransferTransactionType])
     ;
 
     logger.debug("-2222--------------------addressUuidMap---", addressUuidMap);
