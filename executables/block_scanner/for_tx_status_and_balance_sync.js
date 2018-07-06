@@ -1131,7 +1131,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       let erc20ContractAddress = erc20ContractAddresses[k];
 
       let userBalancesSettlementsData = balanceAdjustmentMap[erc20ContractAddress]
-        , tokenalanceModelObj = new tokenBalanceModelDdb({
+        , tokenBalanceModelObj = new tokenBalanceModelDdb({
           erc20_contract_address: erc20ContractAddress,
           chain_id: chainInteractionConstants.UTILITY_CHAIN_ID,
           ddb_service: ddbServiceObj,
@@ -1148,7 +1148,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           , unsettledDebitDelta = userBalancesSettlementsData[userAddress].unSettledDebit || '0'
         ;
 
-        promises.push(tokenalanceModelObj.update({
+        promises.push(tokenBalanceModelObj.update({
           settle_amount: settledAmountDelta.toString(10),
           un_settled_debit_amount: unsettledDebitDelta.toString(10),
           ethereum_address: userAddress

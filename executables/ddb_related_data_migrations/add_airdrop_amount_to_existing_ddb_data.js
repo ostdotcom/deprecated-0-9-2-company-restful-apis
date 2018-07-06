@@ -11,7 +11,7 @@ const rootPrefix = "../.."
   , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
   , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , commonValidator = require(rootPrefix +  '/lib/validators/common')
+  , commonValidator = require(rootPrefix + '/lib/validators/common')
 ;
 
 const Limit = 20;
@@ -280,4 +280,3 @@ object.perform().then(function (a) {
   console.error(a);
   process.exit(1)
 });
-
