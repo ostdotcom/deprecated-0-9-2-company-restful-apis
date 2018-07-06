@@ -9,7 +9,6 @@ const rootPrefix = "../.."
   , elasticSearchLibManifest = require(rootPrefix +  '/lib/elasticsearch/manifest')
   , esSearchServiceObject = elasticSearchLibManifest.services.transactionLog
   , basicHelper = require(rootPrefix + '/helpers/basic')
-  , dynamoDBFormatter = require(rootPrefix + '/lib/elasticsearch/helpers/dynamo_formatters')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
   , transactionLogModel = require(rootPrefix + '/app/models/transaction_log')
@@ -90,8 +89,19 @@ CopyDataFromEsToEsBenchmark.prototype = {
     await oThis._processBatchOfItems(searchRspData[searchRspData.result_type]);
 
     if ( searchRsp.success && searchRsp.data.meta.has_next_page ) {
+
       oThis.batchNumber += 1;
-      return oThis._fetchRecordsFromEs( searchRsp.data.meta.next_page_payload );
+
+      query['query'] = {
+        "range": {
+          "created_at": {
+            "gte": oThis.lastProcessedCreatedAt
+          }
+        }
+      };
+
+      return oThis._fetchRecordsFromEs( query );
+
     }
 
   },
@@ -119,6 +129,7 @@ CopyDataFromEsToEsBenchmark.prototype = {
           debug_options: esData
         }));
       }
+      oThis.lastProcessedCreatedAt = esData['created_at'];
       dataToInsert.push(oThis._convertEsDataToDdbData(esData));
     }
 
@@ -129,8 +140,6 @@ CopyDataFromEsToEsBenchmark.prototype = {
     if(insertRsp.isFailure()) {
       return Promise.reject(insertRsp);
     }
-
-    oThis.lastProcessedCreatedAt = dynamoDBFormatter.toNumber(dataToInsert[dataToInsert.length-1]['ca']);
 
     logger.step('oThis.lastProcessedCreatedAt', oThis.lastProcessedCreatedAt);
 
@@ -214,7 +223,7 @@ CopyDataFromEsToEsBenchmark.prototype = {
 
     let queryParams = {
       "from": 0,
-      "size": 1,
+      "size": 5000,
       "sort": [{"created_at": "asc"}]
     };
 
