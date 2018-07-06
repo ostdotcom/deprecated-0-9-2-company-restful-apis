@@ -71,7 +71,7 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , transactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
   , ManagedAddressesModel = require(rootPrefix + '/app/models/managed_address')
-  , web3InteractFactory = require(rootPrefix + '/lib/web3/interact/rpc_interact')
+  , web3InteractFactory = require(rootPrefix + '/lib/web3/interact/ws_interact')
   , DynamoEntityTypesConst = require(rootPrefix + '/lib/global_constant/dynamodb_entity_types')
 ;
 
