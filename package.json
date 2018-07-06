@@ -6,12 +6,12 @@
     "start": "node app.js"
   },
   "dependencies": {
-    "@openstfoundation/openst-base": "0.9.1",
-    "@openstfoundation/openst-cache": "1.0.4",
-    "@openstfoundation/openst-notification": "1.0.2",
-    "@openstfoundation/openst-payments": "1.0.8",
-    "@openstfoundation/openst-platform": "0.9.4",
-    "@openstfoundation/openst-storage": "1.0.0",
+    "@openstfoundation/openst-base": "0.9.2-beta.1",
+    "@openstfoundation/openst-cache": "1.0.5-beta.1",
+    "@openstfoundation/openst-notification": "1.0.3-beta.1",
+    "@openstfoundation/openst-payments": "1.0.9-beta.1",
+    "@openstfoundation/openst-platform": "0.9.5-beta.1",
+    "@openstfoundation/openst-storage": "1.0.1-beta.1",
     "@ostdotcom/ost-price-oracle": "1.0.3",
     "abi-decoder": "^1.1.0",
     "aws-sdk": "2.263.1",
