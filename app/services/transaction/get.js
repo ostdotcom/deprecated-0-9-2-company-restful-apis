@@ -6,14 +6,13 @@
  * @module app/services/transaction/get
  */
 
-const OSTStorage = require('@openstfoundation/openst-storage');
-
 const rootPrefix = '../../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
   , autoScalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
+  , transactionLogModel = require(rootPrefix + '/app/models/transaction_log')
 ;
 
 /**
@@ -102,13 +101,13 @@ GetTransactionsService.prototype = {
     const oThis = this
     ;
 
-    let transactionFetchRespone = await new OSTStorage.TransactionLogModel({
+    let transactionFetchResponse = await new transactionLogModel({
       client_id: oThis.clientId,
       ddb_service: ddbServiceObj,
       auto_scaling: autoScalingServiceObj
     }).batchGetItem([oThis.transactionUuid]);
 
-    let transactionLogData = transactionFetchRespone.data[oThis.transactionUuid];
+    let transactionLogData = transactionFetchResponse.data[oThis.transactionUuid];
 
     // if no records found, return error.
     if (!transactionLogData) {

@@ -83,12 +83,12 @@ define('CACHE_SHA_KEY', process.env.CR_CACHE_DATA_SHA_KEY);
 define('DEBUG_ENABLED', process.env.OST_DEBUG_ENABLED);
 
 // Price oracle details
-var accepted_margine = {};
+var accepted_margin = {};
 try {
-  accepted_margine = JSON.parse(process.env.CR_ACCEPTED_PRICE_FLUCTUATION_FOR_PAYMENT);
+  accepted_margin = JSON.parse(process.env.CR_ACCEPTED_PRICE_FLUCTUATION_FOR_PAYMENT);
 } catch(err) {
 }
-define('ACCEPTED_PRICE_FLUCTUATION_FOR_PAYMENT', accepted_margine);
+define('ACCEPTED_PRICE_FLUCTUATION_FOR_PAYMENT', accepted_margin);
 
 define("SHARED_MEMCACHE_KEY_PREFIX", 'ca_sa_shared_');
 

@@ -1,20 +1,17 @@
 "use strict";
 
-const openStorage = require('@openstfoundation/openst-storage');
-
 const rootPrefix = "../.."
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
   , dynamoDBFormatter = require(rootPrefix + '/lib/elasticsearch/helpers/dynamo_formatters')
-  , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
-  , TransactionLogModelDdb = openStorage.TransactionLogModel
-  , TransactionLogConst = openStorage.TransactionLogConst
-  , stpTransferTransactionType = parseInt(new TransactionLogModel().invertedTransactionTypes[TransactionLogConst.stpTransferTransactionType])
+  , transactionLogModel = require(rootPrefix + '/app/models/transaction_log')
+  , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
+  , stpTransferTransactionType = parseInt(transactionLogConst.invertedTransactionTypes[transactionLogConst.stpTransferTransactionType])
   , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
   , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , commonValidator = require(rootPrefix +  '/lib/validators/common')
+  , commonValidator = require(rootPrefix + '/lib/validators/common')
 ;
 
 const Limit = 20;
@@ -180,7 +177,7 @@ AddAirdropAmountToExistingDDBData.prototype = {
     for (let k=0; k<rowsToUpdate.length; k++) {
       // console.log(JSON.stringify(rowsToUpdate[k]));
       promises.push(
-        new TransactionLogModelDdb({
+        new transactionLogModel({
           shard_name: oThis.shardName,
           ddb_service: ddbServiceObj,
           auto_scaling: autoscalingServiceObj
@@ -283,4 +280,3 @@ object.perform().then(function (a) {
   console.error(a);
   process.exit(1)
 });
-

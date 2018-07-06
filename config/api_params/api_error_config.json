@@ -338,6 +338,21 @@
     "http_code": "500",
     "code": "SOMETHING_WENT_WRONG",
     "message": "Something went wrong"
+  },
+  "ddb_batch_write_failed": {
+    "http_code": "422",
+    "code": "UNPROCESSABLE_ENTITY",
+    "message": "DDB Batch PUT failed for some or all entries."
+  },
+  "ddb_batch_get_failed": {
+    "http_code": "422",
+    "code": "UNPROCESSABLE_ENTITY",
+    "message": "DDB Batch GET failed for some or all entries."
+  },
+  "invalid_balance": {
+    "http_code": "422",
+    "code": "UNPROCESSABLE_ENTITY",
+    "message": "Invalid balance was obtained."
   }
 
 }

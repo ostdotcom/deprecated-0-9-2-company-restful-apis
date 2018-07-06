@@ -1,12 +1,10 @@
 "use strict";
 
-const OSTStorage = require('@openstfoundation/openst-storage');
-
 const rootPrefix = '../../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
-  , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
+  , transactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
   , autoScalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
@@ -98,7 +96,7 @@ GetStPTransferService.prototype = {
     const oThis = this
     ;
 
-    let transactionLogResponse = await new OSTStorage.TransactionLogModel({
+    let transactionLogResponse = await new transactionLogModel({
       client_id: oThis.client_id,
       ddb_service: ddbServiceObj,
       auto_scaling: autoScalingServiceObj
@@ -122,7 +120,7 @@ GetStPTransferService.prototype = {
       }));
     }
 
-    let transactionLogType = new TransactionLogModel().transactionTypes[transactionLog.transaction_type];
+    let transactionLogType = transactionLogConst.transactionTypes[transactionLog.transaction_type];
 
     if (transactionLogType != transactionLogConst.stpTransferTransactionType) {
       return Promise.reject(responseHelper.error({

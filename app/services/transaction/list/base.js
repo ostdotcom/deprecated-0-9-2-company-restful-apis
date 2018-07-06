@@ -1,7 +1,5 @@
 "use strict";
 
-const OSTStorage = require('@openstfoundation/openst-storage');
-
 const rootPrefix = '../../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
@@ -217,7 +215,7 @@ Base.prototype = {
     var oThis = this;
     return [
       {"term": {"client_id": oThis.clientId}}, // filter by client id
-      {"term": {"type": new transactionLogModel().invertedTransactionTypes[transactionLogConst.tokenTransferTransactionType]}} // filter by transaction type
+      {"term": {"type": transactionLogConst.invertedTransactionTypes[transactionLogConst.tokenTransferTransactionType]}} // filter by transaction type
     ];
 
   },
@@ -239,7 +237,7 @@ Base.prototype = {
 
     let start_time = Date.now();
 
-    let transactionFetchRespone = await new OSTStorage.TransactionLogModel({
+    let transactionFetchResponse = await new transactionLogModel({
       client_id: oThis.clientId,
       ddb_service: ddbServiceObj,
       auto_scaling: autoScalingServiceObj,
@@ -249,7 +247,7 @@ Base.prototype = {
     console.log('-------Transaction list time taken', (Date.now() - start_time)/1000);
 
     // if no records found, return error.
-    if (!transactionFetchRespone.data) {
+    if (!transactionFetchResponse.data) {
       return Promise.reject(responseHelper.error({
         internal_error_identifier: 's_t_l_b_2',
         api_error_identifier: 'data_not_found',
@@ -257,7 +255,7 @@ Base.prototype = {
       }));
     }
 
-    transactionLogData = transactionFetchRespone.data;
+    transactionLogData = transactionFetchResponse.data;
 
     return responseHelper.successWithData(transactionLogData);
 
