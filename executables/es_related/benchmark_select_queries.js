@@ -4,6 +4,7 @@ const rootPrefix = "../.."
   , elasticSearchLibManifest = require(rootPrefix + '/lib/elasticsearch/manifest')
   , esSearchServiceObject = elasticSearchLibManifest.services.transactionLog
   , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
   , commonValidator = require(rootPrefix +  '/lib/validators/common')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
@@ -14,6 +15,7 @@ const BenchmarkEsQueries = function (params) {
   const oThis = this;
 
   oThis.clientIds = params.client_ids;
+  oThis.parallelQueriesCount = params.parallel_count;
 
 };
 
@@ -54,54 +56,100 @@ BenchmarkEsQueries.prototype = {
     const oThis = this
     ;
 
-    let promises = [];
+    let dbRows = await new ManagedAddressModel().select('id, uuid').where(['client_id IN (?)', oThis.clientIds]).fire();
+    let uuids = [];
 
-    for(let i=0; i<oThis.clientIds.length; i++) {
-
-      promises.push(oThis.benchMarkForClient(oThis.clientIds[i]));
-
+    for(let i=0; i<dbRows.length; i++) {
+      uuids.push(dbRows[i]['uuid']);
     }
 
-    await Promise.all(promises);
+    let batchNo = 1;
+
+    while (true) {
+
+      const offset = (batchNo - 1) * oThis.parallelQueriesCount
+        , batchedUuids = uuids.slice(offset, oThis.parallelQueriesCount + offset)
+      ;
+
+      if (batchedUuids.length === 0) break;
+
+      logger.info(`starting processing for batch: ${batchNo}`);
+
+      let batchStartTime = Date.now();
+
+      await oThis._benchMarkForUuids(batchedUuids);
+
+      logger.info(`batchTime: ${batchNo} ${Date.now() - batchStartTime} ms`);
+
+      batchNo = batchNo + 1;
+
+    }
 
     return Promise.resolve(responseHelper.successWithData({}));
 
   },
 
-  benchMarkForClient: async function (clientId) {
+  _benchMarkForUuids: async function (uuids) {
 
-    let dbRows = await new ManagedAddressModel().select('id, uuid').where({client_id: clientId}).fire();
+    let promiseResolvers = [];
 
-    for (let i = 0; i < dbRows.length; i++) {
+    for (let i = 0; i < uuids.length; i++) {
 
-      let dbRow = dbRows[0]
-        , startTime = Date.now()
+      let startTime = Date.now()
       ;
 
       let query = {
         "query": {
           "bool": {
             "filter": [
-              {"term": {"client_id": 1103}},
               {"term": {"type": "1"}},
-              {"terms": {"status": [1,2]}},
-              {"bool": {"should": [{"match": {"from_uuid": "e3e80622-f15a-424d-ab66-b16bffb9c2e3"}}, {"match": {"to_uuid": "25ec395d-00a5-487a-b5a2-c9a992c7a8f0"}}]}}
+              // {"terms": {"status": [1,2]}},
+              {
+                "match": {
+                  "query_uuid": {
+                    "query": uuids[i],
+                    "fuzziness": 0,
+                    "fuzzy_transpositions": false
+                  }
+                }
+              }
             ]
           }
-        }, "from": 0, "size": 10, "sort": [{"created_at": "desc"}]
+        },
+        "from": 0,
+        "size": 10
       };
 
       // logger.log('query', query);
 
-      logger.log('start clientId', clientId);
+      let promise = new Promise(async function (onResolve, onReject) {
 
-      let searchRsp = await esSearchServiceObject.search(query, ['id']);
+        await esSearchServiceObject.search( query , ['id'] )
+          .then( function ( searchRsp ) {
 
-      let endTime =  Date.now();
+            let endTime =  Date.now();
 
-      logger.log('end clientId', clientId, 'time ', endTime - startTime);
+            // logger.log('searchRsp', searchRsp.data);
+
+            logger.log(`searchbyuuid, ${uuids[i]}, startTime: ${startTime}, endTime: ${endTime}, timeTaken: [${endTime - startTime}] ms`);
+
+            onResolve();
+
+          })
+          .catch( function ( reason ) {
+            logger.error("search reject reason", reason);
+            onReject(reason);
+          });
+
+      });
+
+      promiseResolvers.push(promise);
 
     }
+
+    await Promise.all(promiseResolvers);
+
+    return responseHelper.successWithData({});
 
   }
 
@@ -130,7 +178,7 @@ const validateAndSanitize = function () {
 // validate and sanitize the input params
 validateAndSanitize();
 
-const obj = new BenchmarkEsQueries({client_ids: clientIds.slice(0, parallelQueriesCount)});
+const obj = new BenchmarkEsQueries({client_ids: basicHelper.shuffleArray(clientIds), parallel_count: parallelQueriesCount});
 obj.perform().then(function (a) {
   logger.log(a.toHash());
   process.exit(1)
