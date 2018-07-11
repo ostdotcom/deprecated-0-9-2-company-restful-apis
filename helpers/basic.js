@@ -292,7 +292,7 @@ BasicHelperKlass.prototype = {
   },
 
   /**
-   * Convert a common seperated string to array
+   * Convert a common separated string to array
    *
    * @param {String} str
    *

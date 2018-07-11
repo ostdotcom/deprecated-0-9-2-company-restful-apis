@@ -1,360 +1,648 @@
-"use strict";
+/**
+ * Transaction Log Model
+ *
+ * @module lib/models/transaction_log
+ *
+ */
+
+const openSTStorage = require('@openstfoundation/openst-storage');
 
 const rootPrefix = '../..'
-  , coreConstants = require(rootPrefix + '/config/core_constants')
+  , ShardedBaseModel = openSTStorage.ShardedBaseModel
   , util = require(rootPrefix + '/lib/util')
-  , ModelBaseKlass = require(rootPrefix + '/app/models/base')
-  , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , DynamodbEntityTypesConst = require(rootPrefix + '/lib/global_constant/dynamodb_entity_types')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
+  , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
+  , errorConfig = basicHelper.fetchErrorConfig(apiVersions.general)
 ;
 
-const dbName = "saas_transaction_" + coreConstants.SUB_ENVIRONMENT + "_" + coreConstants.ENVIRONMENT
-
-  , statuses = {
-    '1': transactionLogConst.processingStatus,
-    '2': transactionLogConst.completeStatus,
-    '3': transactionLogConst.failedStatus,
-    '4': transactionLogConst.waitingForMiningStatus
+const longToShortNamesMap = {
+    transaction_hash: 'txh',
+    transaction_uuid: 'txu',
+    transaction_type: 'tt',
+    block_number: 'bn',
+    client_id: 'ci',
+    client_token_id: 'cti',
+    gas_used: 'gu',
+    gas_price: 'gp',
+    status: 's',
+    created_at: 'ca',
+    updated_at: 'ua',
+    from_uuid: 'fu',
+    to_uuid: 'tu',
+    action_id: 'ai',
+    token_symbol: 'ts',
+    post_receipt_process_params: 'prpp',
+    commission_amount_in_wei: 'caiw',
+    commission_percent: 'cp',
+    amount_in_wei: 'aiw',
+    amount: 'a',
+    airdrop_amount_in_wei: 'amiw',
+    to_address: 'ta',
+    from_address: 'fa',
+    transfer_events: 'te',
+    error_code: 'ec'
   }
-  , chainTypes = {
-    '1': transactionLogConst.valueChainType,
-    '2': transactionLogConst.utilityChainType
-  }
-  , transactionTypes = {
-    '1': transactionLogConst.tokenTransferTransactionType,
-    '2': transactionLogConst.stpTransferTransactionType,
-    '3': transactionLogConst.extenralTokenTransferTransactionType
-  }
-  , invertedStatuses = util.invert(statuses)
-  , invertedChainTypes = util.invert(chainTypes)
-  , invertedTransactionTypes = util.invert(transactionTypes)
-
+  , shortToLongNamesMap = util.invert(longToShortNamesMap)
 ;
 
-const TransactionLogKlass = function () {
-  ModelBaseKlass.call(this, {dbName: dbName});
+/**
+ * Transaction Log Model
+ *
+ * @constructor
+ */
+const TransactionLogModel = function (params) {
+  const oThis = this
+  ;
+
+  oThis.clientId = params.client_id;
+  oThis.shardName = params.shard_name || null;
+
+  oThis.entityType = DynamodbEntityTypesConst.transactionLogEntityType;
+
+  ShardedBaseModel.call(oThis, params);
+
 };
 
-TransactionLogKlass.prototype = Object.create(ModelBaseKlass.prototype);
+TransactionLogModel.prototype = Object.create(ShardedBaseModel.prototype);
 
-const TransactionLogKlassPrototype = {
+const transactionLogModelSpecificPrototype = {
 
-  tableName: 'transaction_logs',
+  shortToLongNamesMap: shortToLongNamesMap,
 
-  statuses: statuses,
-
-  invertedStatuses: invertedStatuses,
-
-  chainTypes: chainTypes,
-
-  invertedChainTypes: invertedChainTypes,
-
-  transactionTypes: transactionTypes,
-
-  invertedTransactionTypes: invertedTransactionTypes,
-
-  enums: {
-    'status': {
-      val: statuses,
-      inverted: invertedStatuses
-    },
-    'chain_type': {
-      val: chainTypes,
-      inverted: invertedChainTypes
-    },
-    'transaction_type': {
-      val: transactionTypes,
-      inverted: invertedTransactionTypes
-    }
-  },
+  longToShortNamesMap: longToShortNamesMap,
 
   /**
-   * Insert One record in DB
+   * NOTE: This would override the existing document (if any) with the keys being passed
+   * bulk create / update items in DDB
    *
-   * @param {Object} data - hash containing data for a row which is to be inserted
+   * @params {array} rawData
+   * @params {Integer} unprocessedItemsRetryCount - Retry count for unprocessed Items
    *
-   * @return {promise<object>}
+   * @return {promise<result>}
    */
-  insertRecord: function(data){
+  batchPutItem: async function (rawData, unprocessedItemsRetryCount) {
 
-    const oThis = this;
+    const oThis = this
+      , batchPutLimit = 25
+      , parallelPromisesCount = 15
+    ;
 
-    data = oThis._shortenDataForInsert(data);
-
-    return oThis.insert(data).fire();
-
-  },
-
-  /**
-   * Update One record in DB
-   *
-   * @param {number} - id to be updated
-   * @param {Object} dataToUpdate - hash containing data for a row which is to be inserted
-   *
-   * @return {promise<object>}
-   */
-  updateRecord: async function (idToUpdate, dataToUpdate) {
-
-    const oThis = this;
-
-    var dataCopy = util.clone(dataToUpdate);
-
-    if (dataCopy.input_params) {
-      dataCopy.input_params = oThis._shortenInputParams(dataCopy.input_params);
-      dataCopy.input_params = JSON.stringify(dataCopy.input_params);
+    if (!unprocessedItemsRetryCount) {
+      unprocessedItemsRetryCount = 0;
     }
 
-    if (dataCopy.formatted_receipt) {
-      dataCopy.formatted_receipt = oThis._shortenFormattedReceipt(dataCopy.formatted_receipt);
-      dataCopy.formatted_receipt = JSON.stringify(dataCopy.formatted_receipt);
+    await oThis._getShard();
+
+    let dataBatchNo = 1
+      , formattedErrorCount = 1
+      , allPromisesData = []
+    ;
+
+    while (true) {
+
+      const offset = (dataBatchNo - 1) * batchPutLimit
+        , batchedrawData = rawData.slice(offset, batchPutLimit + offset)
+        , batchedFormattedData = []
+      ;
+
+      for (let i = 0; i < batchedrawData.length; i++) {
+        let rowData = batchedrawData[i];
+        batchedFormattedData.push({
+          PutRequest: {
+            Item: oThis._formatDataForPutItem(rowData)
+          }
+        });
+      }
+
+      if (batchedrawData.length > 0) {
+        let batchPutParams = {RequestItems: {}};
+        batchPutParams.RequestItems[oThis.shardName] = batchedFormattedData;
+
+        allPromisesData.push(batchPutParams);
+      }
+
+      if (allPromisesData.length == parallelPromisesCount || (batchedrawData.length == 0 && allPromisesData.length > 0)) {
+
+        logger.info(`batchPutItem clientId : ${oThis.clientId} batch : ${dataBatchNo}`);
+
+        let batchedPromisesData = [];
+
+        for (let i=0; i<allPromisesData.length; i++) {
+          // retry count is set to 10 as of now
+          batchedPromisesData.push(oThis.ddbServiceObj.batchWriteItem(allPromisesData[i], unprocessedItemsRetryCount));
+        }
+
+        let promiseResponses = await Promise.all(batchedPromisesData);
+
+        for (let i = 0; i < promiseResponses.length; i++) {
+          if (promiseResponses[i].isFailure()) {
+            logger.error(`error batchPutItem clientId : ${oThis.clientId} batch : ${formattedErrorCount} error : ${promiseResponses[i].toHash()}`);
+            return Promise.reject(promiseResponses[i]);
+          } else {
+            let unprocessedItems = promiseResponses[i].data.UnprocessedItems;
+            if (Object.keys(unprocessedItems).length > 0) {
+              logger.error(`error batchPutItem clientId : ${oThis.clientId} batch : ${formattedErrorCount} unprocessedItems : ${unprocessedItems[oThis.shardName].length}`);
+              return Promise.reject(responseHelper.error({
+                internal_error_identifier:"l_m_tl_1",
+                api_error_identifier: "ddb_batch_write_failed",
+                debug_options: {
+                  unProcessedCount: unprocessedItems[oThis.shardName].length
+                  //, unProcessedItems: unprocessedItems[oThis.shardName]
+                },
+                error_config: errorConfig
+              }));
+            }
+          }
+          formattedErrorCount += 1;
+        }
+
+        // empty the batch promise data
+        allPromisesData = [];
+
+      }
+
+      dataBatchNo = dataBatchNo + 1;
+
+      if (batchedrawData.length === 0) break;
+
     }
 
-    return oThis.update(dataCopy).where({id: idToUpdate}).fire();
+    return Promise.resolve(responseHelper.successWithData({}));
 
   },
 
   /**
+   * batch get items from DDB
    *
-   * @param [Array] uuids - Array of Transaction uuids
-   * @return {Promise<>}
-   */
-  getByTransactionUuid: async function (uuids) {
-    const oThis = this;
-    const dbRecords = await oThis.select('*').where(['transaction_uuid IN (?)', uuids]).fire();
-    return oThis._formatDbRecords(dbRecords);
-  },
-
-  /**
+   * @params {array} uuidsToFetch
+   * @params {Integer} unprocessedKeysRetryCount - Retry count for unprocessed Keys
    *
-   * @param transaction_hashes - Array of Transaction hash
-   * @return {Promise<>}
+   * @return {promise<result>}
    */
-  getByTransactionHash: async function (transaction_hashes) {
+  batchGetItem: async function (uuidsToFetch, unprocessedKeysRetryCount, fieldsToFetch) {
+
     const oThis = this;
-    const dbRecords = await oThis.select(['id', 'transaction_hash', 'transaction_uuid', 'process_uuid', 'status', 'input_params', 'transaction_type']).
-              where(['transaction_hash IN (?)', transaction_hashes]).fire();
-    return oThis._formatDbRecords(dbRecords);
+
+    if (!unprocessedKeysRetryCount) {
+      unprocessedKeysRetryCount = 0;
+    }
+
+    await oThis._getShard();
+
+    let getKeys = []
+      , shortNameForTxUuid = oThis.shortNameFor('transaction_uuid');
+
+    for (let i = 0; i < uuidsToFetch.length; i++) {
+      let buffer = {};
+      buffer[shortNameForTxUuid] = {S: uuidsToFetch[i]};
+      getKeys.push(buffer);
+    }
+
+    let bachGetParams = {RequestItems: {}};
+    bachGetParams.RequestItems[oThis.shardName] = {Keys: getKeys, ConsistentRead: true };
+
+    if(fieldsToFetch) {
+
+      let projectionExpressionArr = [];
+
+      for(var i=0; i<fieldsToFetch.length; i++){
+        let shortFieldName = oThis.shortNameFor(fieldsToFetch[i]);
+        if(!shortFieldName) continue;
+
+        projectionExpressionArr.push(shortFieldName)
+      }
+
+      if(projectionExpressionArr.length > 0){
+        //transaction_uuid is mandatory to have in fetch list.
+        if(projectionExpressionArr.indexOf(shortNameForTxUuid) == -1){
+          projectionExpressionArr.push(shortNameForTxUuid);
+        }
+        let projectionExpression = projectionExpressionArr.join(',');
+
+        bachGetParams.RequestItems[oThis.shardName]['ProjectionExpression'] = projectionExpression;
+      }
+
+    }
+
+    let batchGetRsp = await oThis.ddbServiceObj.batchGetItem(bachGetParams, unprocessedKeysRetryCount);
+
+    if (batchGetRsp.isFailure()) {
+      return Promise.reject(batchGetRsp);
+    }
+
+    let unprocessedKeys = batchGetRsp.data.UnprocessedKeys;
+    if (Object.keys(unprocessedKeys).length > 0) {
+      let unprocessedKeysLength = unprocessedKeys[oThis.shardName]['Keys'].length;
+      logger.error(`batchGetItem clientId : ${oThis.clientId} UnprocessedKeys : ${unprocessedKeysLength}`);
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier:"l_m_tl_2",
+        api_error_identifier: "ddb_batch_get_failed",
+        debug_options: {unProcessedCount: unprocessedKeysLength},
+        error_config: errorConfig
+      }));
+    }
+
+    let dbRows = batchGetRsp.data.Responses[oThis.shardName]
+      , formattedDbRows = {}
+    ;
+
+    for (let i = 0; i < dbRows.length; i++) {
+      let formattedDbRow = oThis._formatDataForGetItem(dbRows[i]);
+      formattedDbRows[formattedDbRow['transaction_uuid']] = formattedDbRow;
+    }
+
+    return Promise.resolve(responseHelper.successWithData(formattedDbRows));
+
   },
 
   /**
+   * Update given items of transaction log record.
    *
-   * @param transaction_hashes - Array of Transaction hash
-   * @return {Promise<>}
-   */
-  getAllColumnsByTransactionHash: async function (transaction_hashes) {
-    const oThis = this;
-    const dbRecords = await oThis.select('*').where(['transaction_hash IN (?)', transaction_hashes]).fire();
-    return oThis._formatDbRecords(dbRecords);
-  },
-
-  /**
+   * @params {Object} params - Parameters
    *
-   * @return {Promise<>}
+   * @return {promise<result>}
    */
-  getByRange: async function (startId, endId, pageLimit, offset) {
-    const oThis = this;
-    const dbRecords = await oThis.select('*').where(['id >= ? AND id <= ?', startId, endId]).limit(pageLimit).offset(offset).fire();
-    return oThis._formatDbRecords(dbRecords);
+  updateItem: async function(params) {
+
+    const oThis = this
+      , expressionAttributeValues = {}
+      , updateExpression = []
+    ;
+
+    const keyObj = oThis._keyObj({transaction_uuid: params['transaction_uuid']});
+    const updateData = oThis._formatDataForPutItem(params);
+
+    for(var i in updateData) {
+      if(keyObj[i]) continue;
+
+      expressionAttributeValues[':' + i] = updateData[i];
+      updateExpression.push(i + '=:' + i);
+    }
+
+    if(updateExpression.length == 0){
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 'm_tb_set_1',
+        api_error_identifier: "invalid_balance",
+        debug_options: {},
+        error_config: errorConfig
+      }))
+    }
+
+    await oThis._getShard();
+
+    const txLogsParams = {
+      TableName: oThis.shardName,
+      Key: oThis._keyObj({transaction_uuid: params['transaction_uuid']}),
+      UpdateExpression: "SET "+ updateExpression.join(','),
+      ExpressionAttributeValues: expressionAttributeValues,
+      ReturnValues: "NONE"
+    };
+
+    const updateResponse = await oThis.ddbServiceObj.updateItem(txLogsParams, 10);
+
+    return Promise.resolve(responseHelper.successWithData(updateResponse));
   },
 
   /**
-   * @param ids - Array of Ids
-   * @return {Promise<>}
-   */
-  getById: async function (ids) {
-    const oThis = this;
-    const dbRecords = await oThis.select('*').
-              where(['id IN (?)', ids]).fire();
-    return oThis._formatDbRecords(dbRecords);
-  },
-
-  /**
-   * @param clientId - client id
-   * @param kind - kind
-   * @param paginationParams - pagination params
-   * @param filters - filters
+   * Shard Identifier
    *
-   * @return {promise}
+   * @return {string}
    */
-  getList: async function (clientId, kind, paginationParams, filters, options) {
+  _shardIdentifier: function () {
+    // This method is used in base class
     const oThis = this
     ;
 
-    // following is to support both string and int values for kind
-    if (!(kind > 0)) {
-      kind = oThis.invertedTransactionTypes[kind]
-    }
+    return oThis.clientId;
+  },
 
-    let limit = paginationParams.limit
-      , offset = paginationParams.offset
-      , orderBy = paginationParams.orderBy
-      , order = paginationParams.order
+  /**
+   * Create table params
+   *
+   * @return {object}
+   */
+  _createTableParams: function (shardName) {
+    // This method is used in base class
+    const oThis = this
     ;
 
-    let query = oThis.select('*').where(['client_id = ? AND transaction_type = ?', clientId, kind])
-      .limit(limit).offset(offset).order_by(`${orderBy} ${order}`);
-
-    if(filters.id && filters.id.length > 0) {
-      query.where(['transaction_uuid IN (?)', filters.id]);
-    }
-
-    const dbRecords = await query.fire();
-
-    return oThis._formatDbRecords(dbRecords);
+    return {
+      TableName: shardName,
+      KeySchema: [
+        {
+          AttributeName: oThis.shortNameFor('transaction_uuid'),
+          KeyType: "HASH"
+        }
+      ],
+      AttributeDefinitions: [
+        {AttributeName: oThis.shortNameFor('transaction_uuid'), AttributeType: "S"}
+      ],
+      ProvisionedThroughput: {
+        ReadCapacityUnits: 1,
+        WriteCapacityUnits: 1
+      },
+      SSESpecification: {
+        Enabled: false
+      },
+    };
   },
 
   /**
-   * Handles logic of shortening Data that goes in db
+   * Primary key of the table.
    *
-   * @private
-   * @param data - data which needs to be shortened
-   * @return {Object}
+   * @return {object}
    */
-  _shortenDataForInsert: function (data) {
+  _keyObj: function (params) {
+
+    const oThis = this
+      , keyObj = {}
+    ;
+
+    keyObj[oThis.shortNameFor('transaction_uuid')] = {S: params['transaction_uuid'].toLowerCase()};
+
+    return keyObj;
+
+  },
+
+  /**
+   * NOTE: Only send keys which are to be inserted in DB. DO NOT send keys with null values
+   * Format data for putItem
+   *
+   * @return {object}
+   */
+  _formatDataForPutItem: function (rowData) {
 
     const oThis = this;
 
-    var dataCopy = util.clone(data);
+    let formattedRowData = oThis._keyObj(rowData);
 
-    if (!dataCopy.input_params) {
-      dataCopy.input_params = '{}';
-    } else {
-      dataCopy.input_params = oThis._shortenInputParams(dataCopy.input_params);
-      dataCopy.input_params = JSON.stringify(dataCopy.input_params);
+    // TODO: Handle these column here
+    // post_receipt_process_params: 'prpp',
+
+    if (rowData.hasOwnProperty('transaction_hash')) {
+      formattedRowData[oThis.shortNameFor('transaction_hash')] = {S: rowData['transaction_hash'].toLowerCase()};
     }
 
-    if (!dataCopy.formatted_receipt) {
-      dataCopy.formatted_receipt = '{}';
-    } else {
-      dataCopy.formatted_receipt = oThis._shortenFormattedReceipt(dataCopy.formatted_receipt);
-      dataCopy.formatted_receipt = JSON.stringify(dataCopy.formatted_receipt);
+    if (rowData.hasOwnProperty('block_number')) {
+      formattedRowData[oThis.shortNameFor('block_number')] = {N: rowData['block_number'].toString()};
     }
 
-    return dataCopy;
+    if (rowData.hasOwnProperty('transaction_type')) {
+      formattedRowData[oThis.shortNameFor('transaction_type')] = {N: rowData['transaction_type'].toString()};
+    }
+
+    if (rowData.hasOwnProperty('client_id')) {
+      formattedRowData[oThis.shortNameFor('client_id')] = {N: rowData['client_id'].toString()};
+    }
+
+    if (rowData.hasOwnProperty('client_token_id')) {
+      formattedRowData[oThis.shortNameFor('client_token_id')] = {N: rowData['client_token_id'].toString()};
+    }
+
+    if (rowData.hasOwnProperty('gas_used')) {
+      formattedRowData[oThis.shortNameFor('gas_used')] = {N: rowData['gas_used'].toString()};
+    }
+
+    if (rowData.hasOwnProperty('gas_price')) {
+      formattedRowData[oThis.shortNameFor('gas_price')] = {N: rowData['gas_price'].toString()};
+    }
+
+    if (rowData.hasOwnProperty('status')) {
+      formattedRowData[oThis.shortNameFor('status')] = {N: rowData['status'].toString()};
+    }
+
+    if (rowData.hasOwnProperty('created_at')) {
+      formattedRowData[oThis.shortNameFor('created_at')] = {N: rowData['created_at'].toString()};
+    }
+
+    if (rowData.hasOwnProperty('updated_at')) {
+      formattedRowData[oThis.shortNameFor('updated_at')] = {N: rowData['updated_at'].toString()};
+    }
+
+    if (rowData.hasOwnProperty('from_uuid')) {
+      formattedRowData[oThis.shortNameFor('from_uuid')] = {S: rowData['from_uuid']};
+    }
+
+    if (rowData.hasOwnProperty('to_uuid')) {
+      formattedRowData[oThis.shortNameFor('to_uuid')] = {S: rowData['to_uuid']};
+    }
+
+    if (rowData.hasOwnProperty('action_id')) {
+      formattedRowData[oThis.shortNameFor('action_id')] = {N: rowData['action_id'].toString()};
+    }
+
+    if (rowData.hasOwnProperty('commission_amount_in_wei')) {
+      formattedRowData[oThis.shortNameFor('commission_amount_in_wei')] = {N: rowData['commission_amount_in_wei'].toString()};
+    }
+
+    if (rowData.hasOwnProperty('commission_percent') && !isNaN(parseFloat(rowData['commission_percent']))) {
+      formattedRowData[oThis.shortNameFor('commission_percent')] = {N: rowData['commission_percent'].toString()};
+    }
+
+    if (rowData.hasOwnProperty('amount_in_wei')) {
+      formattedRowData[oThis.shortNameFor('amount_in_wei')] = {N: rowData['amount_in_wei'].toString()};
+    }
+
+    if (rowData.hasOwnProperty('airdrop_amount_in_wei') && rowData['airdrop_amount_in_wei'] != null) {
+      formattedRowData[oThis.shortNameFor('airdrop_amount_in_wei')] = {N: rowData['airdrop_amount_in_wei'].toString()};
+    }
+
+    if (rowData.hasOwnProperty('amount') && rowData['amount'] != null) {
+      formattedRowData[oThis.shortNameFor('amount')] = {N: rowData['amount'].toString()};
+    }
+
+    if (rowData.hasOwnProperty('token_symbol')) {
+      formattedRowData[oThis.shortNameFor('token_symbol')] = {S: rowData['token_symbol']};
+    }
+
+    if (rowData.hasOwnProperty('to_address')) {
+      formattedRowData[oThis.shortNameFor('to_address')] = {S: rowData['to_address']};
+    }
+
+    if (rowData.hasOwnProperty('from_address')) {
+      formattedRowData[oThis.shortNameFor('from_address')] = {S: rowData['from_address']};
+    }
+
+    if (rowData.hasOwnProperty('error_code')) {
+      formattedRowData[oThis.shortNameFor('error_code')] = {S: rowData['error_code']};
+    }
+
+    if (rowData.hasOwnProperty('post_receipt_process_params')) {
+      formattedRowData[oThis.shortNameFor('post_receipt_process_params')] = {S: JSON.stringify(rowData['post_receipt_process_params'] || {})};
+    }
+
+    if (rowData.hasOwnProperty('transfer_events')) {
+      let formattedEventsData = [];
+      for (var j = 0; j < rowData['transfer_events'].length; j++) {
+        let event_data = rowData['transfer_events'][j]
+          , formattedEventData = {}
+        ;
+        if (event_data.hasOwnProperty('from_uuid')) {
+          formattedEventData[oThis.shortNameFor('from_uuid')] = {S: event_data['from_uuid']};
+        }
+        if (event_data.hasOwnProperty('to_uuid')) {
+          formattedEventData[oThis.shortNameFor('to_uuid')] = {S: event_data['to_uuid']};
+        }
+        formattedEventData[oThis.shortNameFor('from_address')] = {S: event_data['from_address']};
+        formattedEventData[oThis.shortNameFor('to_address')] = {S: event_data['to_address']};
+        formattedEventData[oThis.shortNameFor('amount_in_wei')] = {N: event_data['amount_in_wei'].toString()};
+        formattedEventsData.push({M: formattedEventData});
+      }
+      formattedRowData[oThis.shortNameFor('transfer_events')] = {L: formattedEventsData};
+    }
+
+    return formattedRowData;
 
   },
 
   /**
-   * Handles logic of formatting Db Data
+   * Formatted Data from Get Item (this elongates short keys)
    *
-   * @private
-   * @param dbRecords - Array of dbRecords
-   * @return {Promise<>}
+   * @return {object}
    */
-  _formatDbRecords: function (dbRecords) {
+  _formatDataForGetItem: function (rowData) {
 
     const oThis = this;
 
-    var fDbRecords = []
-        , dbRecord = null;
+    let formattedRowData = {'transaction_uuid': rowData[oThis.shortNameFor('transaction_uuid')]['S']};
 
-    for(var i=0; i<dbRecords.length; i++) {
+    if (rowData.hasOwnProperty(oThis.shortNameFor('transaction_hash'))) {
+      formattedRowData['transaction_hash'] = rowData[oThis.shortNameFor('transaction_hash')]['S'];
+    }
 
-      dbRecord = dbRecords[i];
+    if (rowData.hasOwnProperty(oThis.shortNameFor('block_number'))) {
+      formattedRowData['block_number'] = parseInt(rowData[oThis.shortNameFor('block_number')]['N']);
+    }
 
-      if (dbRecord.input_params) {
-        dbRecord.input_params = JSON.parse(dbRecord.input_params);
-        dbRecord.input_params = oThis._elongateInputParams(dbRecord.input_params);
-      } else {
-        dbRecord.input_params = {};
+    if (rowData.hasOwnProperty(oThis.shortNameFor('transaction_type'))) {
+      formattedRowData['transaction_type'] = parseInt(rowData[oThis.shortNameFor('transaction_type')]['N']);
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('client_id'))) {
+      formattedRowData['client_id'] = parseInt(rowData[oThis.shortNameFor('client_id')]['N']);
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('client_id'))) {
+      formattedRowData['client_id'] = parseInt(rowData[oThis.shortNameFor('client_id')]['N']);
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('client_token_id'))) {
+      formattedRowData['client_token_id'] = parseInt(rowData[oThis.shortNameFor('client_token_id')]['N']);
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('gas_used'))) {
+      formattedRowData['gas_used'] = rowData[oThis.shortNameFor('gas_used')]['N'];
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('gas_price'))) {
+      formattedRowData['gas_price'] = rowData[oThis.shortNameFor('gas_price')]['N'];
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('status'))) {
+      formattedRowData['status'] = parseInt(rowData[oThis.shortNameFor('status')]['N']);
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('created_at'))) {
+      formattedRowData['created_at'] = parseInt(rowData[oThis.shortNameFor('created_at')]['N']);
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('updated_at'))) {
+      formattedRowData['updated_at'] = parseInt(rowData[oThis.shortNameFor('updated_at')]['N']);
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('from_uuid'))) {
+      formattedRowData['from_uuid'] = rowData[oThis.shortNameFor('from_uuid')]['S'];
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('to_uuid'))) {
+      formattedRowData['to_uuid'] = rowData[oThis.shortNameFor('to_uuid')]['S'];
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('action_id'))) {
+      formattedRowData['action_id'] = parseInt(rowData[oThis.shortNameFor('action_id')]['N']);
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('commission_percent'))) {
+      formattedRowData['commission_percent'] = parseInt(rowData[oThis.shortNameFor('commission_percent')]['N']);
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('commission_amount_in_wei'))) {
+      formattedRowData['commission_amount_in_wei'] = rowData[oThis.shortNameFor('commission_amount_in_wei')]['N'];
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('amount_in_wei'))) {
+      formattedRowData['amount_in_wei'] = rowData[oThis.shortNameFor('amount_in_wei')]['N'];
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('airdrop_amount_in_wei'))) {
+      formattedRowData['airdrop_amount_in_wei'] = rowData[oThis.shortNameFor('airdrop_amount_in_wei')]['N'];
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('amount'))) {
+      formattedRowData['amount'] = rowData[oThis.shortNameFor('amount')]['N'];
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('token_symbol'))) {
+      formattedRowData['token_symbol'] = rowData[oThis.shortNameFor('token_symbol')]['S'];
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('to_address'))) {
+      formattedRowData['to_address'] = rowData[oThis.shortNameFor('to_address')]['S'];
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('from_address'))) {
+      formattedRowData['from_address'] = rowData[oThis.shortNameFor('from_address')]['S'];
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('error_code'))) {
+      formattedRowData['error_code'] = rowData[oThis.shortNameFor('error_code')]['S'];
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('post_receipt_process_params'))) {
+      formattedRowData['post_receipt_process_params'] = JSON.parse(rowData[oThis.shortNameFor('post_receipt_process_params')]['S'] || '{}');
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('transfer_events'))) {
+
+      let formattedTransferEventsData = []
+        , rawTransferEventsData = rowData[oThis.shortNameFor('transfer_events')]['L']
+      ;
+
+      for (let i = 0; i < rawTransferEventsData.length; i++) {
+
+        let buffer = rawTransferEventsData[i]['M']
+          , formattedBuffer = {}
+        ;
+
+        formattedBuffer['from_address'] = buffer[oThis.shortNameFor('from_address')]['S'];
+        formattedBuffer['to_address'] = buffer[oThis.shortNameFor('to_address')]['S'];
+        formattedBuffer['amount_in_wei'] = buffer[oThis.shortNameFor('amount_in_wei')]['N'];
+
+        if (buffer.hasOwnProperty(oThis.shortNameFor('from_uuid'))) {
+          formattedBuffer['from_uuid'] = buffer[oThis.shortNameFor('from_uuid')]['S'];
+        }
+
+        if (buffer.hasOwnProperty(oThis.shortNameFor('to_uuid'))) {
+          formattedBuffer['to_uuid'] = buffer[oThis.shortNameFor('to_uuid')]['S'];
+        }
+
+        formattedTransferEventsData.push(formattedBuffer);
+
       }
 
-      if (dbRecord.formatted_receipt) {
-        dbRecord.formatted_receipt = JSON.parse(dbRecord.formatted_receipt);
-        dbRecord.formatted_receipt = oThis._elongateFormattedReceipt(dbRecord.formatted_receipt);
-      } else {
-        dbRecord.formatted_receipt = {};
-      }
-
-      fDbRecords.push(dbRecord);
+      formattedRowData['transfer_events'] = formattedTransferEventsData;
 
     }
 
-    return Promise.resolve(fDbRecords);
+    return formattedRowData;
 
-  },
-
-  /**
-   * Handles logic of shorting input param keys
-   *
-   * @private
-   * @param elongatedInputParams - Hash with keys which need to be shortened
-   * @return {Object}
-   */
-  _shortenInputParams: function (elongatedInputParams) {
-    let shortenedInputParams = {};
-    shortenedInputParams.fu = elongatedInputParams.from_uuid;
-    shortenedInputParams.tu = elongatedInputParams.to_uuid;
-    shortenedInputParams.tk = elongatedInputParams.transaction_kind;
-    shortenedInputParams.tki = elongatedInputParams.transaction_kind_id;
-    shortenedInputParams.ts = elongatedInputParams.token_symbol;
-    shortenedInputParams.prpp = elongatedInputParams.postReceiptProcessParams;
-    shortenedInputParams.cp = elongatedInputParams.commission_percent;
-    shortenedInputParams.a = elongatedInputParams.amount;
-    shortenedInputParams.aiw = elongatedInputParams.amount_in_wei;
-    shortenedInputParams.ta = elongatedInputParams.to_address;
-    shortenedInputParams.fa = elongatedInputParams.from_address;
-    return shortenedInputParams;
-  },
-
-  /**
-   * Handles logic of elongating input param keys
-   *
-   * @private
-   * @param shortInputParams - Hash with keys which need to be elongated
-   * @return {Object}
-   */
-  _elongateInputParams: function (shortInputParams) {
-    let elongatedInputParams = {};
-    // TODO: After migrating remove support for long keys
-    elongatedInputParams.from_uuid = shortInputParams.from_uuid || shortInputParams.fu;
-    elongatedInputParams.to_uuid = shortInputParams.to_uuid || shortInputParams.tu;
-    elongatedInputParams.transaction_kind = shortInputParams.transaction_kind || shortInputParams.tk;
-    elongatedInputParams.transaction_kind_id = shortInputParams.transaction_kind_id || shortInputParams.tki;
-    elongatedInputParams.token_symbol = shortInputParams.token_symbol || shortInputParams.ts;
-    elongatedInputParams.postReceiptProcessParams = shortInputParams.prpp;
-    elongatedInputParams.commission_percent = shortInputParams.cp;
-    elongatedInputParams.amount = shortInputParams.a;
-    elongatedInputParams.amount_in_wei = shortInputParams.aiw;
-    elongatedInputParams.to_address = shortInputParams.ta;
-    elongatedInputParams.from_address = shortInputParams.fa;
-    return elongatedInputParams;
-  },
-
-  /**
-   * Handles logic of shorting formatted receipt keys
-   *
-   * @private
-   * @param elongatedFormattedReceipt - Hash with keys which need to be shortened
-   * @return {Object}
-   */
-  _shortenFormattedReceipt: function (elongatedFormattedReceipt) {
-    var shortenedFormattedReceipt = {};
-    shortenedFormattedReceipt.caiw = elongatedFormattedReceipt.commission_amount_in_wei;
-    shortenedFormattedReceipt.btiw = elongatedFormattedReceipt.bt_transfer_in_wei;
-    // error related data. this is temp as would move out to error_code later.
-    shortenedFormattedReceipt.e_c = elongatedFormattedReceipt.code;
-    shortenedFormattedReceipt.e_m = elongatedFormattedReceipt.msg;
-    return shortenedFormattedReceipt;
-  },
-
-  /**
-   * Handles logic of elongating formatted receipt keys
-   *
-   * @private
-   * @param shortFormattedReceipt - Hash with keys which need to be elongated
-   * @return {Object}
-   */
-  _elongateFormattedReceipt: function (shortFormattedReceipt) {
-    var elongatedFormattedReceipt = {};
-    elongatedFormattedReceipt.commission_amount_in_wei = shortFormattedReceipt.commission_amount_in_wei || shortFormattedReceipt.caiw;
-    elongatedFormattedReceipt.bt_transfer_in_wei = shortFormattedReceipt.bt_transfer_in_wei || shortFormattedReceipt.btiw;
-    elongatedFormattedReceipt.code = shortFormattedReceipt.code || shortFormattedReceipt.e_c;
-    elongatedFormattedReceipt.msg = shortFormattedReceipt.msg || shortFormattedReceipt.e_m;
-    return elongatedFormattedReceipt;
   }
 
 };
 
-Object.assign(TransactionLogKlass.prototype, TransactionLogKlassPrototype);
+Object.assign(TransactionLogModel.prototype, transactionLogModelSpecificPrototype);
 
-module.exports = TransactionLogKlass;
+module.exports = TransactionLogModel;

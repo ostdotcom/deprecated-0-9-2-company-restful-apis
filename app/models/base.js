@@ -1,10 +1,8 @@
 "use strict";
 
 const rootPrefix = '../..'
-  , util = require(rootPrefix + '/lib/util')
   , MysqlQueryKlass = require(rootPrefix + '/lib/query_builders/mysql')
   , mysqlWrapper = require(rootPrefix + "/lib/mysql_wrapper")
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
@@ -25,7 +23,7 @@ const ModelBaseKlassPrototype = {
     return mysqlWrapper.getPoolFor(this.dbName, 'master');
   },
 
-  // get read connection
+  // on write connection
   onWriteConnection: function () {
     return mysqlWrapper.getPoolFor(this.dbName, 'master');
   },
