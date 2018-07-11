@@ -103,21 +103,17 @@ BenchmarkEsQueries.prototype = {
           "bool": {
             "filter": [
               {"term": {"type": "1"}},
-              // {"terms": {"status": [1,2]}},
-              {
-                "match": {
-                  "query_uuid": {
-                    "query": uuids[i],
-                    "fuzziness": 0,
-                    "fuzzy_transpositions": false
-                  }
+              {"query_string" : {
+                  "query": `(${uuids[i]}) AND ((1) OR (2))`,
+                  "fields": ["query_uuid"]
                 }
               }
             ]
           }
         },
         "from": 0,
-        "size": 10
+        "size": 10,
+        "sort": [{"created_at": "desc"}]
       };
 
       // logger.log('query', query);
