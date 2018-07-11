@@ -197,6 +197,12 @@ const appendV1Dot1Version = function(req, res, next){
   next();
 };
 
+const killMasterIfAllWorkersDied = function () {
+  if(onlineWorker==0){
+    console.log('Killing master as all workers are died.');
+    process.exit(1);}
+};
+
 // if the process is a master.
 if (cluster.isMaster) {
   // Set worker process title
@@ -214,15 +220,19 @@ if (cluster.isMaster) {
   cluster.on('listening', function(worker, address) {
     logger.info(`[worker-${worker.id} ] is listening to ${address.port}`);
   });
-
+  var onlineWorker=0;
   // Worker came online. Will start listening shortly
   cluster.on('online', function(worker) {
     logger.info(`[worker-${worker.id}] is online`);
+    // when a worker comes online, increment the online worker count
+    onlineWorker = onlineWorker + 1;
   });
 
   //  Called when all workers are disconnected and handles are closed.
   cluster.on('disconnect', function(worker) {
     logger.notify('a_3', `[worker-${worker.id}] is disconnected`);
+    // when a worker disconnects, decrement the online worker count
+    onlineWorker = onlineWorker - 1;
   });
 
   // When any of the workers die the cluster module will emit the 'exit' event.
@@ -236,13 +246,18 @@ if (cluster.isMaster) {
       cluster.fork();
     }
   });
-
+  // Exception caught
+  process.on('uncaughtException', function(err) {
+    logger.notify('app_crash_1', 'app server exited unexpectedly. Reason: ', err);
+    process.exit(1);
+  });
   // When someone try to kill the master process
   // kill <master process id>
   process.on('SIGTERM', function() {
     for (var id in cluster.workers) {
       cluster.workers[id].exitedAfterDisconnect = true;
     }
+    setInterval(killMasterIfAllWorkersDied, 10);
     cluster.disconnect(function() {
       logger.info('Master received SIGTERM. Killing/disconnecting it.');
     });
