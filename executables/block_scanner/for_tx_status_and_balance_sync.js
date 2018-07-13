@@ -437,7 +437,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           toUpdateFields.post_receipt_process_params = null;
           toUpdateFields.gas_used = txReceipt.gasUsed;
           toUpdateFields.block_number = txReceipt.blockNumber;
-          toUpdateFields.status = parseInt(txReceipt.status, 16) == 1 ? oThis.completeTxStatus : oThis.failedTxStatus;
+          toUpdateFields.status = txReceipt.status ? oThis.completeTxStatus : oThis.failedTxStatus;
 
           oThis.dataToUpdate.push({client_id: clientId, data: toUpdateFields});
 
@@ -1033,7 +1033,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         client_token_id: parseInt(erc20ContractAddressData['client_token_id']),
         token_symbol: erc20ContractAddressData['symbol'],
         gas_used: txDataFromChain['gasUsed'],
-        status: (parseInt(txDataFromChain.status, 16) == 1) ? completeStatus : failedStatus,
+        status: txDataFromChain.status ? completeStatus : failedStatus,
         created_at: blockNoDetails['timestamp'],
         updated_at: blockNoDetails['timestamp'],
         from_address: txDataFromChain['from'],
