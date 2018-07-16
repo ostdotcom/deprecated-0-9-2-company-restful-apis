@@ -116,7 +116,9 @@ CopyDataFromEsToEsBenchmark.prototype = {
     const oThis = this
     ;
 
-    let dataToInsert = [];
+    let dataToInsert = []
+      , localLastProcessedCreatedAt = null
+    ;
 
     logger.step('Preparing Data for ES');
 
@@ -129,7 +131,7 @@ CopyDataFromEsToEsBenchmark.prototype = {
           debug_options: esData
         }));
       }
-      oThis.lastProcessedCreatedAt = esData['created_at'];
+      localLastProcessedCreatedAt = esData['created_at'];
       dataToInsert.push(oThis._convertEsDataToDdbData(esData));
     }
 
@@ -140,6 +142,8 @@ CopyDataFromEsToEsBenchmark.prototype = {
     if(insertRsp.isFailure()) {
       return Promise.reject(insertRsp);
     }
+
+    oThis.lastProcessedCreatedAt = localLastProcessedCreatedAt;
 
     logger.step('oThis.lastProcessedCreatedAt', oThis.lastProcessedCreatedAt);
 
@@ -155,11 +159,14 @@ CopyDataFromEsToEsBenchmark.prototype = {
       "tt": {"N": esData['type']},
       "txu": {"S": esData['id']},
       "ci": {"N": esData['client_id']},
-      "ai": {"N": esData['action_id']},
       "ua": {"N": esData['updated_at']},
       "s": {"N": esData['status']},
       "ca": {"N": esData['created_at']}
     };
+
+    if (esData['action_id']) {
+      ddbData['ai'] = {"N": esData['action_id']};
+    }
 
     if (esData['transaction_hash']) {
       ddbData['txh'] = {"S": esData['transaction_hash']};
@@ -187,28 +194,6 @@ CopyDataFromEsToEsBenchmark.prototype = {
 
     if (esData['amount_in_base_currency']) {
       ddbData['aiw'] = {"N": basicHelper.convertToWei(esData['amount_in_base_currency'])};
-    }
-
-    if (esData['transfer_events']) {
-      let transfer_events = [];
-      for(let i=0; i<esData['transfer_events'].length; i++) {
-        let transferEvent = esData['transfer_events'][i];
-        let buffer = {
-          "fa": {"S": transferEvent['from_address']},
-          "ta": {"S": transferEvent['to_address']},
-          "aiw": {"N": basicHelper.convertToWei(transferEvent['amount_in_base_currency'])}
-        };
-        if (transferEvent['from_uuid']) {
-          buffer['fu'] = {"S": transferEvent['from_uuid']};
-        }
-        if (transferEvent['to_uuid']) {
-          buffer['tu'] = {"S": transferEvent['to_uuid']};
-        }
-        transfer_events.push({
-          "M": buffer
-        })
-      }
-      ddbData['te'] = {"L": transfer_events};
     }
 
     logger.debug(ddbData);
