@@ -126,7 +126,20 @@ const GetTransactionListForUser = {
 
     // if statuses are passes in params, add filter on it
     if (oThis.statusesIntArray.length > 0) {
-      boolFilters.push({'terms': {"status": oThis.statusesIntArray}});
+      let statusSubQuery = `(${oThis.statusesIntArray.join(' OR ')})`;
+      boolFilters.push({
+        "query_string" : {
+          "query": `( ${oThis.userUuid}) AND ${statusSubQuery} )`,
+          "fields": ["query_str"]
+        }
+      })
+    } else {
+      boolFilters.push({
+        "query_string" : {
+          "query": `(${oThis.userUuid}))`,
+          "fields": ["query_str"]
+        }
+      })
     }
 
     // https://www.elastic.co/guide/en/elasticsearch/guide/current/bool-query.html
