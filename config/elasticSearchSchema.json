@@ -1,0 +1,62 @@
+{
+  "settings": {
+    "index": {
+      "sort.field": "created_at",
+      "sort.order": "desc",
+      "number_of_replicas" : 2
+    }
+  },
+  "mappings": {
+    "_doc": {
+      "_doc": {
+        "properties": {
+          "action_id": {
+            "type": "integer"
+          },
+          "amount_in_base_currency": {
+            "type": "scaled_float",
+            "scaling_factor": 100000
+          },
+          "client_id": {
+            "type": "integer"
+          },
+          "has_commission": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "integer"
+          },
+          "from_uuid": {
+            "type": "keyword",
+            "copy_to": "query_str"
+          },
+          "id": {
+            "type": "keyword"
+          },
+          "status": {
+            "type": "byte",
+            "copy_to": "query_str"
+          },
+          "to_uuid": {
+            "type": "keyword",
+            "copy_to": "query_str"
+          },
+          "transaction_hash": {
+            "type": "keyword"
+          },
+          "type": {
+            "type": "byte"
+          },
+          "updated_at": {
+            "type": "integer",
+            "index": false
+          },
+          "query_str": {
+            "type": "text",
+            "analyzer": "whitespace"
+          }
+        }
+      }
+    }
+  }
+}
