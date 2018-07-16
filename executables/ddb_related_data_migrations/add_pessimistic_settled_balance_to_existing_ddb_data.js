@@ -1,7 +1,6 @@
 "use strict";
 
 const openStorage = require('@openstfoundation/openst-storage')
-  , BigNumber = require('bignumber.js')
 ;
 
 const rootPrefix = "../.."

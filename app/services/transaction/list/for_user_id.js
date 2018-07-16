@@ -3,7 +3,7 @@
 const rootPrefix = '../../../..'
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
   , BaseKlass = require(rootPrefix + '/app/services/transaction/list/base')
-  , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
+  , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
   , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
   , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
@@ -84,7 +84,7 @@ const GetTransactionListForUser = {
 
       let statusesStrArray = basicHelper.commaSeperatedStrToArray(oThis.statusStr);
 
-      let statusesStrToIntMap = new TransactionLogModel().invertedStatuses;
+      let statusesStrToIntMap = transactionLogConst.invertedStatuses;
 
       for (var i = 0; i < statusesStrArray.length; i++) {
         let statusInt = statusesStrToIntMap[statusesStrArray[i].toLowerCase()];

@@ -6,8 +6,6 @@
  * @module app/services/stp_transfer/list
  */
 
-const OSTStorage = require('@openstfoundation/openst-storage');
-
 const rootPrefix = '../../..'
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , responseHelper = require(rootPrefix + '/lib/formatter/response')
@@ -187,7 +185,7 @@ ListStpTransfersService.prototype = {
     // https://www.elastic.co/guide/en/elasticsearch/guide/current/bool-query.html
     let boolFilters = [
       {"term": {"client_id": oThis.clientId}}, // filter by client id
-      {"term": {"type": new transactionLogModel().invertedTransactionTypes[transactionLogConst.stpTransferTransactionType]}} // filter by transaction type
+      {"term": {"type": transactionLogConst.invertedTransactionTypes[transactionLogConst.stpTransferTransactionType]}} // filter by transaction type
     ];
 
     // if transaction_uuids are passes in params, add filter on it
@@ -264,7 +262,7 @@ ListStpTransfersService.prototype = {
       return responseHelper.successWithData(transferLogData);
     }
 
-    let transactionResponse = await new OSTStorage.TransactionLogModel({
+    let transactionResponse = await new transactionLogModel({
       client_id: oThis.clientId,
       ddb_service: ddbServiceObj,
       auto_scaling: autoScalingServiceObj,
