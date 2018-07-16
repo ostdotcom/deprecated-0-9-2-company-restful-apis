@@ -10,8 +10,6 @@ const rootPrefix = '../../../..'
   , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
 
-const BaseKlassProto = BaseKlass.prototype;
-
 /**
  * @constructor
  *
