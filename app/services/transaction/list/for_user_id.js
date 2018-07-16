@@ -129,14 +129,14 @@ const GetTransactionListForUser = {
       let statusSubQuery = `(${oThis.statusesIntArray.join(' OR ')})`;
       boolFilters.push({
         "query_string" : {
-          "query": `( ${oThis.userUuid}) AND ${statusSubQuery} )`,
+          "query": `( ${oThis.userUuid} AND ${statusSubQuery} )`,
           "fields": ["query_str"]
         }
       })
     } else {
       boolFilters.push({
         "query_string" : {
-          "query": `(${oThis.userUuid}))`,
+          "query": `(${oThis.userUuid})`,
           "fields": ["query_str"]
         }
       })
@@ -144,15 +144,6 @@ const GetTransactionListForUser = {
 
     // https://www.elastic.co/guide/en/elasticsearch/guide/current/bool-query.html
     filteringParams['query']['bool']['filter'] = boolFilters;
-
-    filteringParams['query']['bool']['must'] =  {
-      "bool": {
-        "should": [
-          {"match": {"from_uuid": oThis.userUuid}},
-          {"match": {"to_uuid": oThis.userUuid}}
-        ]
-      }
-    };
 
     Object.assign(filteringParams, oThis._getPaginationParams());
 
