@@ -132,14 +132,14 @@ const GetTransactionListForUser = {
       boolFilters.push({
         "query_string" : {
           "query": `( ${oThis.userUuid}) AND ${statusSubQuery} )`,
-          "fields": ["query_uuid"]
+          "fields": ["query_str"]
         }
       })
     } else {
       boolFilters.push({
         "query_string" : {
           "query": `(${oThis.userUuid}))`,
-          "fields": ["query_uuid"]
+          "fields": ["query_str"]
         }
       })
     }

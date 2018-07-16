@@ -105,7 +105,7 @@ BenchmarkEsQueries.prototype = {
               {"term": {"type": "1"}},
               {"query_string" : {
                   "query": `(${uuids[i]}) AND ((1) OR (2))`,
-                  "fields": ["query_uuid"]
+                  "fields": ["query_str"]
                 }
               }
             ]
