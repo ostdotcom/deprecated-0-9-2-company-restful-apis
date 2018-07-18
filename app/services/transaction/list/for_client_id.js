@@ -80,6 +80,8 @@ const GetTransactionListForClient = {
 
     let boolFilters = oThis._getCommonFilteringParams();
 
+    boolFilters.push({"term": {"client_id": oThis.clientId}}); // filter by client id
+
     // if transaction_uuids are passes in params, add filter on it
     if (oThis.idsFilterArr.length > 0) {
       boolFilters.push({"terms": { "_id" : oThis.idsFilterArr }});
