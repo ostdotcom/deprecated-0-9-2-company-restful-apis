@@ -570,19 +570,23 @@ const transactionLogModelSpecificPrototype = {
     }
 
     if (rowData.hasOwnProperty(oThis.shortNameFor('commission_amount_in_wei'))) {
-      formattedRowData['commission_amount_in_wei'] = rowData[oThis.shortNameFor('commission_amount_in_wei')]['N'];
+      //formattedRowData['commission_amount_in_wei'] = rowData[oThis.shortNameFor('commission_amount_in_wei')]['N'];
+      formattedRowData['commission_amount_in_wei'] = new BigNumber(rowData[oThis.shortNameFor('commission_amount_in_wei')]['N']).toString(10);
     }
 
     if (rowData.hasOwnProperty(oThis.shortNameFor('amount_in_wei'))) {
-      formattedRowData['amount_in_wei'] = rowData[oThis.shortNameFor('amount_in_wei')]['N'];
+      //formattedRowData['amount_in_wei'] = rowData[oThis.shortNameFor('amount_in_wei')]['N'];
+      formattedRowData['amount_in_wei'] = new BigNumber(rowData[oThis.shortNameFor('amount_in_wei')]['N']).toString(10);
     }
 
     if (rowData.hasOwnProperty(oThis.shortNameFor('airdrop_amount_in_wei'))) {
-      formattedRowData['airdrop_amount_in_wei'] = rowData[oThis.shortNameFor('airdrop_amount_in_wei')]['N'];
+      //formattedRowData['airdrop_amount_in_wei'] = rowData[oThis.shortNameFor('airdrop_amount_in_wei')]['N'];
+      formattedRowData['airdrop_amount_in_wei'] = new BigNumber(rowData[oThis.shortNameFor('airdrop_amount_in_wei')]['N']).toString(10);
     }
 
     if (rowData.hasOwnProperty(oThis.shortNameFor('amount'))) {
-      formattedRowData['amount'] = rowData[oThis.shortNameFor('amount')]['N'];
+      //formattedRowData['amount'] = rowData[oThis.shortNameFor('amount')]['N'];
+      formattedRowData['amount'] = new BigNumber(rowData[oThis.shortNameFor('amount')]['N']).toString(10);
     }
 
     if (rowData.hasOwnProperty(oThis.shortNameFor('token_symbol'))) {
@@ -619,7 +623,8 @@ const transactionLogModelSpecificPrototype = {
 
         formattedBuffer['from_address'] = buffer[oThis.shortNameFor('from_address')]['S'];
         formattedBuffer['to_address'] = buffer[oThis.shortNameFor('to_address')]['S'];
-        formattedBuffer['amount_in_wei'] = buffer[oThis.shortNameFor('amount_in_wei')]['N'];
+        //formattedBuffer['amount_in_wei'] = buffer[oThis.shortNameFor('amount_in_wei')]['N'];
+        formattedBuffer['amount_in_wei'] = new BigNumber(buffer[oThis.shortNameFor('amount_in_wei')]['N']).toString(10);
 
         if (buffer.hasOwnProperty(oThis.shortNameFor('from_uuid'))) {
           formattedBuffer['from_uuid'] = buffer[oThis.shortNameFor('from_uuid')]['S'];
