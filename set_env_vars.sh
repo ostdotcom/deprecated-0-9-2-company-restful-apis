@@ -57,6 +57,8 @@ export OS_AUTOSCALING_ENDPOINT='http://localhost:8000'
 export OS_AUTOSCALING_SSL_ENABLED='0'
 export OS_AUTOSCALING_LOGGING_ENABLED='0'
 export OS_DYNAMODB_TABLE_NAME_PREFIX='d_pk_'
+
+#To be added in staging
 export OS_DAX_API_VERSION = '2017-04-19'
 export OS_DAX_ACCESS_KEY_ID = 'x'
 export OS_DAX_SECRET_ACCESS_KEY = 'x'
