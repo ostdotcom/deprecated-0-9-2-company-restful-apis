@@ -51,7 +51,6 @@ validateAndSanitize();
 ProcessLocker.canStartProcess({process_title: 'executables_block_scanner_execute_transaction' + processLockId});
 
 const fs = require('fs')
-  , Web3 = require('web3')
   , abiDecoder = require('abi-decoder')
   , openStPlatform = require('@openstfoundation/openst-platform')
   , openStPayments = require('@openstfoundation/openst-payments')
@@ -69,16 +68,15 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
   , Erc20ContractAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address')
   , commonValidator = require(rootPrefix + '/lib/validators/common')
-  , TransactionLogModel = require(rootPrefix + '/app/models/transaction_log')
+  , transactionLogModel = require(rootPrefix + '/app/models/transaction_log')
   , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
   , ManagedAddressesModel = require(rootPrefix + '/app/models/managed_address')
-  , web3InteractFactory = require(rootPrefix + '/lib/web3/interact/rpc_interact')
+  , web3InteractFactory = require(rootPrefix + '/lib/web3/interact/ws_interact')
+  , DynamoEntityTypesConst = require(rootPrefix + '/lib/global_constant/dynamodb_entity_types')
 ;
 
 const PostAirdropPayKlass = openStPayments.services.airdropManager.postAirdropPay
-  , transactionLogModelDdb = openSTStorage.TransactionLogModel
   , tokenBalanceModelDdb = openSTStorage.TokenBalanceModel
-  , StorageEntityTypesConst = openSTStorage.StorageEntityTypesConst
   , coreAbis = openStPlatform.abis
 ;
 
@@ -107,8 +105,8 @@ const BlockScannerForTxStatusAndBalanceSync = function (params) {
   oThis.tokenTransferKind = new TransactionMeta().invertedKinds[transactionLogConst.tokenTransferTransactionType];
   oThis.stpTransferKind = new TransactionMeta().invertedKinds[transactionLogConst.stpTransferTransactionType];
 
-  oThis.failedTxStatus = new TransactionLogModel().invertedStatuses[transactionLogConst.failedStatus];
-  oThis.completeTxStatus = new TransactionLogModel().invertedStatuses[transactionLogConst.completeStatus];
+  oThis.failedTxStatus = transactionLogConst.invertedStatuses[transactionLogConst.failedStatus];
+  oThis.completeTxStatus = transactionLogConst.invertedStatuses[transactionLogConst.completeStatus];
 
 };
 
@@ -439,7 +437,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           toUpdateFields.post_receipt_process_params = null;
           toUpdateFields.gas_used = txReceipt.gasUsed;
           toUpdateFields.block_number = txReceipt.blockNumber;
-          toUpdateFields.status = parseInt(txReceipt.status, 16) == 1 ? oThis.completeTxStatus : oThis.failedTxStatus;
+          toUpdateFields.status = txReceipt.status ? oThis.completeTxStatus : oThis.failedTxStatus;
 
           oThis.dataToUpdate.push({client_id: clientId, data: toUpdateFields});
 
@@ -627,7 +625,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     if(Object.keys(oThis.clientIdsMap) == 0) return {};
 
     const getManagedShardResponse = await ddbServiceObj.shardManagement().getManagedShard({
-      entity_type: StorageEntityTypesConst.transactionLogEntityType,
+      entity_type: DynamoEntityTypesConst.transactionLogEntityType,
       identifiers: Object.keys(oThis.clientIdsMap)
     });
 
@@ -655,7 +653,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           , shardName = getManagedShardResponse.data.items[clientId].shardName
         ;
 
-        clientIdToTxLogModelObjectMap[clientId] = clientIdToTxLogModelObjectMap[clientId] || new transactionLogModelDdb({
+        clientIdToTxLogModelObjectMap[clientId] = clientIdToTxLogModelObjectMap[clientId] || new transactionLogModel({
             client_id: clientId,
             ddb_service: ddbServiceObj,
             auto_scaling: autoscalingServiceObj,
@@ -992,10 +990,9 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       , affectedAddresses = params['affectedAddresses']
       , addressUuidMap = {}
       , formattedTransactionsData = {}
-      , completeStatus = parseInt(new TransactionLogModel().invertedStatuses[transactionLogConst.completeStatus])
-      , failedStatus = parseInt(new TransactionLogModel().invertedStatuses[transactionLogConst.failedStatus])
-      ,
-      tokenTransferType = parseInt(new TransactionLogModel().invertedTransactionTypes[transactionLogConst.extenralTokenTransferTransactionType])
+      , completeStatus = parseInt(transactionLogConst.invertedStatuses[transactionLogConst.completeStatus])
+      , failedStatus = parseInt(transactionLogConst.invertedStatuses[transactionLogConst.failedStatus])
+      , tokenTransferType = parseInt(transactionLogConst.invertedTransactionTypes[transactionLogConst.externalTokenTransferTransactionType])
     ;
 
     logger.debug("-2222--------------------addressUuidMap---", addressUuidMap);
@@ -1036,7 +1033,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         client_token_id: parseInt(erc20ContractAddressData['client_token_id']),
         token_symbol: erc20ContractAddressData['symbol'],
         gas_used: txDataFromChain['gasUsed'],
-        status: (parseInt(txDataFromChain.status, 16) == 1) ? completeStatus : failedStatus,
+        status: txDataFromChain.status ? completeStatus : failedStatus,
         created_at: blockNoDetails['timestamp'],
         updated_at: blockNoDetails['timestamp'],
         from_address: txDataFromChain['from'],
@@ -1102,7 +1099,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
       logger.info(`starting _insertDataInTransactionLogs clientId : ${clientId} length : ${dataToInsert.length}`);
 
-      let rsp = await new transactionLogModelDdb({
+      let rsp = await new transactionLogModel({
         client_id: clientId,
         ddb_service: ddbServiceObj,
         auto_scaling: autoscalingServiceObj
@@ -1134,7 +1131,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       let erc20ContractAddress = erc20ContractAddresses[k];
 
       let userBalancesSettlementsData = balanceAdjustmentMap[erc20ContractAddress]
-        , tokenalanceModelObj = new tokenBalanceModelDdb({
+        , tokenBalanceModelObj = new tokenBalanceModelDdb({
           erc20_contract_address: erc20ContractAddress,
           chain_id: chainInteractionConstants.UTILITY_CHAIN_ID,
           ddb_service: ddbServiceObj,
@@ -1151,7 +1148,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           , unsettledDebitDelta = userBalancesSettlementsData[userAddress].unSettledDebit || '0'
         ;
 
-        promises.push(tokenalanceModelObj.update({
+        promises.push(tokenBalanceModelObj.update({
           settle_amount: settledAmountDelta.toString(10),
           un_settled_debit_amount: unsettledDebitDelta.toString(10),
           ethereum_address: userAddress
