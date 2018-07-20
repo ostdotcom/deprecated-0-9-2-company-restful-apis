@@ -16,6 +16,7 @@ const rootPrefix = '../..'
   , basicHelper = require(rootPrefix + '/helpers/basic')
   , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
   , errorConfig = basicHelper.fetchErrorConfig(apiVersions.general)
+  , BigNumber = require('bignumber.js');
 ;
 
 const longToShortNamesMap = {
