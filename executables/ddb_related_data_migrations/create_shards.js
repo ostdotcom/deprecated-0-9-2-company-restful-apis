@@ -1,16 +1,14 @@
 'use strict';
 
-const OSTStorage = require('@openstfoundation/openst-storage')
-;
+const OSTStorage = require('@openstfoundation/openst-storage');
 
-const rootPrefix = '../..'
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
-  , autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
-  , transactionLogModel = require(rootPrefix + '/app/models/transaction_log')
-  , coreConstants = require(rootPrefix + '/config/core_constants')
-;
+const rootPrefix = '../..',
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service'),
+  autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service'),
+  transactionLogModel = require(rootPrefix + '/app/models/transaction_log'),
+  coreConstants = require(rootPrefix + '/config/core_constants');
 
 /**
  *
@@ -19,41 +17,35 @@ const rootPrefix = '../..'
  * @constructor
  *
  */
-const CreateShards = function (params) {
-
-  const oThis = this
-  ;
+const CreateShards = function(params) {
+  const oThis = this;
 
   oThis.tokenBalancesShardCount = 2;
   oThis.transactionLogShardCount = 2;
-
 };
 
 CreateShards.prototype = {
-
   /**
    * Perform
    *
    * @return {promise}
    */
-  perform: function () {
-    const oThis = this
-    ;
+  perform: function() {
+    const oThis = this;
 
-    return oThis.asyncPerform()
-      .catch(function (error) {
-        if (responseHelper.isCustomResult(error)) {
-          return error;
-        } else {
-          logger.error(`${__filename}::perform::catch`);
-          logger.error(error);
-          return responseHelper.error({
-            internal_error_identifier: 'e_drdm_cs_1',
-            api_error_identifier: 'unhandled_catch_response',
-            debug_options: {}
-          });
-        }
-      });
+    return oThis.asyncPerform().catch(function(error) {
+      if (responseHelper.isCustomResult(error)) {
+        return error;
+      } else {
+        logger.error(`${__filename}::perform::catch`);
+        logger.error(error);
+        return responseHelper.error({
+          internal_error_identifier: 'e_drdm_cs_1',
+          api_error_identifier: 'unhandled_catch_response',
+          debug_options: {}
+        });
+      }
+    });
   },
 
   /**
@@ -61,17 +53,14 @@ CreateShards.prototype = {
    *
    * @returns {promise}
    */
-  asyncPerform: async function () {
-
-    const oThis = this
-    ;
+  asyncPerform: async function() {
+    const oThis = this;
 
     await oThis.createTokenBalancesShards();
 
     await oThis.createTransactionLogShards();
 
     return Promise.resolve(responseHelper.successWithData({}));
-
   },
 
   /**
@@ -79,10 +68,8 @@ CreateShards.prototype = {
    *
    * @returns {promise}
    */
-  createTokenBalancesShards: async function () {
-
-    const oThis = this
-    ;
+  createTokenBalancesShards: async function() {
+    const oThis = this;
 
     for (let index = 1; index <= oThis.tokenBalancesShardCount; index++) {
       logger.info('starting to create tokenBalancesShard : ', index);
@@ -97,7 +84,6 @@ CreateShards.prototype = {
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
-
   },
 
   /**
@@ -105,10 +91,8 @@ CreateShards.prototype = {
    *
    * @returns {promise}
    */
-  createTransactionLogShards: async function () {
-
-    const oThis = this
-    ;
+  createTransactionLogShards: async function() {
+    const oThis = this;
 
     for (let index = 1; index <= oThis.transactionLogShardCount; index++) {
       logger.info('starting to create transactionLogShard : ', index);
@@ -123,16 +107,17 @@ CreateShards.prototype = {
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
-
   }
-
 };
 
 const object = new CreateShards({});
-object.perform().then(function (a) {
-  console.log(a.toHash());
-  process.exit(1)
-}).catch(function (a) {
-  console.log(a);
-  process.exit(1)
-});
+object
+  .perform()
+  .then(function(a) {
+    console.log(a.toHash());
+    process.exit(1);
+  })
+  .catch(function(a) {
+    console.log(a);
+    process.exit(1);
+  });

@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * Refill ST PRIME to required client addresses
@@ -15,25 +15,22 @@
  * @module executables/fund_addresses/by_reserve/st_prime
  */
 
-const rootPrefix = '../../..'
-;
+const rootPrefix = '../../..';
 
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
 
 // Load Packages
-const FundClientAddressKlass = require(rootPrefix + '/app/services/address/fund_client_address')
-  , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-;
+const FundClientAddressKlass = require(rootPrefix + '/app/services/address/fund_client_address'),
+  ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
 /**
  * constructor for fund addresses with ST PRIME from Reserve address
  *
  * @constructor
  */
-const FundUsersWithSTPrimeFromReserveKlass = function () {
-};
+const FundUsersWithSTPrimeFromReserveKlass = function() {};
 
 FundUsersWithSTPrimeFromReserveKlass.prototype = {
   /**
@@ -41,15 +38,14 @@ FundUsersWithSTPrimeFromReserveKlass.prototype = {
    *
    * @return {promise<result>}
    */
-  perform: function () {
+  perform: function() {
     const oThis = this;
 
-    return oThis.asyncPerform()
-      .catch(function (error) {
-        logger.error(`${__filename}::perform::catch`);
-        logger.error(error);
-        process.exit(1);
-      });
+    return oThis.asyncPerform().catch(function(error) {
+      logger.error(`${__filename}::perform::catch`);
+      logger.error(error);
+      process.exit(1);
+    });
   },
 
   /**
@@ -57,9 +53,8 @@ FundUsersWithSTPrimeFromReserveKlass.prototype = {
    *
    * @return {promise<result>}
    */
-  asyncPerform: async function () {
-    const batchSize = 100
-    ;
+  asyncPerform: async function() {
+    const batchSize = 100;
 
     var pageNo = 1;
 
@@ -83,7 +78,7 @@ FundUsersWithSTPrimeFromReserveKlass.prototype = {
 
         logger.step('* Funding ST prime for client id:', clientId);
 
-        await new FundClientAddressKlass({client_id: clientId}).perform();
+        await new FundClientAddressKlass({ client_id: clientId }).perform();
 
         logger.win('* DONE with ST prime funding for client id:', clientId);
       }

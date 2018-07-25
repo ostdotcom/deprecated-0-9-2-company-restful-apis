@@ -1,14 +1,13 @@
-"use strict";
+'use strict';
 
-const rootPrefix = '../../..'
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
-  , transactionLogModel = require(rootPrefix + '/app/models/transaction_log')
-  , basicHelper = require(rootPrefix + '/helpers/basic')
-  , ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service')
-  , autoScalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service')
-;
+const rootPrefix = '../../..',
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log'),
+  transactionLogModel = require(rootPrefix + '/app/models/transaction_log'),
+  basicHelper = require(rootPrefix + '/helpers/basic'),
+  ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service'),
+  autoScalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service');
 
 /**
  * @constructor
@@ -17,9 +16,8 @@ const rootPrefix = '../../..'
  * @param {number} params.client_id (mandatory) - client id
  * @param {string} params.id (mandatory) - uuid of the transfer to fetch info for
  */
-const GetStPTransferService = function (params) {
-  const oThis = this
-  ;
+const GetStPTransferService = function(params) {
+  const oThis = this;
 
   oThis.transactionUuid = params.id;
   oThis.client_id = params.client_id;
@@ -31,24 +29,23 @@ GetStPTransferService.prototype = {
    *
    * @return {promise<result>}
    */
-  perform: function () {
+  perform: function() {
     const oThis = this;
 
-    return oThis.asyncPerform()
-      .catch(function (error) {
-        if (responseHelper.isCustomResult(error)) {
-          return error;
-        } else {
-          logger.error(`${__filename}::perform::catch`);
-          logger.error(error);
+    return oThis.asyncPerform().catch(function(error) {
+      if (responseHelper.isCustomResult(error)) {
+        return error;
+      } else {
+        logger.error(`${__filename}::perform::catch`);
+        logger.error(error);
 
-          return responseHelper.error({
-            internal_error_identifier: 's_stpt_g_1',
-            api_error_identifier: 'unhandled_catch_response',
-            debug_options: {}
-          });
-        }
-      });
+        return responseHelper.error({
+          internal_error_identifier: 's_stpt_g_1',
+          api_error_identifier: 'unhandled_catch_response',
+          debug_options: {}
+        });
+      }
+    });
   },
 
   /**
@@ -56,14 +53,12 @@ GetStPTransferService.prototype = {
    *
    * @return {promise<result>}
    */
-  asyncPerform: async function () {
-    const oThis = this
-    ;
+  asyncPerform: async function() {
+    const oThis = this;
 
     await oThis._validateId();
 
     return oThis._fetchRecord();
-
   },
 
   /**
@@ -72,15 +67,16 @@ GetStPTransferService.prototype = {
    * @return {promise<result>}
    */
   _validateId: async function() {
-    const oThis = this
-    ;
+    const oThis = this;
 
     if (!basicHelper.isUuidValid(oThis.transactionUuid)) {
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_stpt_g_2',
-        api_error_identifier: 'data_not_found',
-        debug_options: {}
-      }));
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 's_stpt_g_2',
+          api_error_identifier: 'data_not_found',
+          debug_options: {}
+        })
+      );
     }
 
     return responseHelper.successWithData({});
@@ -92,9 +88,8 @@ GetStPTransferService.prototype = {
    *
    * @return {promise<result>}
    */
-  _fetchRecord: async function () {
-    const oThis = this
-    ;
+  _fetchRecord: async function() {
+    const oThis = this;
 
     let transactionLogResponse = await new transactionLogModel({
       client_id: oThis.client_id,
@@ -103,36 +98,41 @@ GetStPTransferService.prototype = {
     }).batchGetItem([oThis.transactionUuid]);
 
     if (!transactionLogResponse.data[oThis.transactionUuid]) {
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_stpt_g_3',
-        api_error_identifier: 'data_not_found',
-        debug_options: {}
-      }));
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 's_stpt_g_3',
+          api_error_identifier: 'data_not_found',
+          debug_options: {}
+        })
+      );
     }
 
     let transactionLog = transactionLogResponse.data[oThis.transactionUuid];
 
     if (oThis.client_id != transactionLog.client_id) {
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_stpt_g_4',
-        api_error_identifier: 'data_not_found',
-        debug_options: {}
-      }));
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 's_stpt_g_4',
+          api_error_identifier: 'data_not_found',
+          debug_options: {}
+        })
+      );
     }
 
     let transactionLogType = transactionLogConst.transactionTypes[transactionLog.transaction_type];
 
     if (transactionLogType != transactionLogConst.stpTransferTransactionType) {
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_stpt_g_5',
-        api_error_identifier: 'data_not_found',
-        debug_options: {}
-      }));
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 's_stpt_g_5',
+          api_error_identifier: 'data_not_found',
+          debug_options: {}
+        })
+      );
     }
 
     return responseHelper.successWithData(transactionLog);
   }
-
 };
 
 module.exports = GetStPTransferService;

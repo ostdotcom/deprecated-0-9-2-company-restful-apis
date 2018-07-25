@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 /*
  * Custom Middleware for Express:
  *
@@ -10,8 +10,8 @@ const uuid = require('uuid');
 
 module.exports = function(options) {
   return function(req, res, next) {
-    req.id = options.worker_id + ":" + uuid.v4();
+    req.id = options.worker_id + ':' + uuid.v4();
     req.startTime = process.hrtime();
     next();
-  }
+  };
 };

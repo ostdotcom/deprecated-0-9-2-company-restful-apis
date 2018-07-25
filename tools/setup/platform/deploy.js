@@ -1,7 +1,7 @@
-"use strict";
+'use strict';
 
 //Always Include Module overrides First
-const rootPrefix = "../../..";
+const rootPrefix = '../../..';
 require(rootPrefix + '/module_overrides/index');
 
 /**
@@ -12,39 +12,35 @@ require(rootPrefix + '/module_overrides/index');
  *
  */
 
-const generateInternalAddressesKlass = require(rootPrefix + '/tools/setup/platform/generate_internal_addresses')
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , openStSetupPerformer = require(rootPrefix + '/node_modules/@openstfoundation/openst-platform/tools/setup/performer')
-  ;
+const generateInternalAddressesKlass = require(rootPrefix + '/tools/setup/platform/generate_internal_addresses'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  openStSetupPerformer = require(rootPrefix + '/node_modules/@openstfoundation/openst-platform/tools/setup/performer');
 
 /**
  * Set up platform
  *
  * @constructor
  */
-const DeployPlatformKlass = function () {};
+const DeployPlatformKlass = function() {};
 
 DeployPlatformKlass.prototype = {
-
   /**
    * Set up platform
    *
    * @return {Promise<void>}
    */
-  perform: async function(){
+  perform: async function() {
+    var generateAddressObj = new generateInternalAddressesKlass({ addresses_count: 15 }),
+      addressesArr = await generateAddressObj.perform();
 
-    var generateAddressObj = new generateInternalAddressesKlass({addresses_count: 15})
-      , addressesArr = await generateAddressObj.perform();
-
-    if(!addressesArr || addressesArr.length <= 0){
-      logger.info("* Address generation failed *");
+    if (!addressesArr || addressesArr.length <= 0) {
+      logger.info('* Address generation failed *');
       process.exit(0);
     }
 
-    await openStSetupPerformer.perform("all", {pre_generated_addresses: addressesArr});
+    await openStSetupPerformer.perform('all', { pre_generated_addresses: addressesArr });
 
     process.exit(0);
-
   }
 };
 

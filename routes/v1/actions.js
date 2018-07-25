@@ -1,14 +1,11 @@
-"use strict";
+'use strict';
 
-const express = require('express')
-;
+const express = require('express');
 
-const rootPrefix = '../..'
-  , routeHelper = require(rootPrefix + '/routes/helper')
-;
+const rootPrefix = '../..',
+  routeHelper = require(rootPrefix + '/routes/helper');
 
-const router = express.Router()
-;
+const router = express.Router();
 
 /**
  * Create an Action
@@ -32,22 +29,19 @@ const router = express.Router()
  *                                                              if 'arbitrary_commission' is 'False', a 'commission'
  *                                                              must be set here.
  */
-router.post('/', function (req, res, next) {
-
+router.post('/', function(req, res, next) {
   req.decodedParams.apiName = 'create_new_action';
   const newTransactionKlass = require(rootPrefix + '/app/services/transaction_kind/add_new');
 
   const dataFormatterFunc = async function(response) {
-
     delete response.data.extra_entities;
   };
 
-  Promise.resolve(routeHelper.performer(req, res, next, newTransactionKlass, 'r_v1_a_1', null , dataFormatterFunc));
+  Promise.resolve(routeHelper.performer(req, res, next, newTransactionKlass, 'r_v1_a_1', null, dataFormatterFunc));
 });
 
 /* Update action */
-router.post('/:id', function (req, res, next) {
-
+router.post('/:id', function(req, res, next) {
   req.decodedParams.apiName = 'update_action';
 
   req.decodedParams.id = req.params.id;
@@ -58,8 +52,7 @@ router.post('/:id', function (req, res, next) {
 });
 
 /* Get list of actions */
-router.get('/', function (req, res, next) {
-
+router.get('/', function(req, res, next) {
   req.decodedParams.apiName = 'list_actions';
 
   const transactionListKlass = require(rootPrefix + '/app/services/transaction_kind/list');
@@ -68,8 +61,7 @@ router.get('/', function (req, res, next) {
 });
 
 /* Get an action by id */
-router.get('/:id', function (req, res, next) {
-
+router.get('/:id', function(req, res, next) {
   req.decodedParams.apiName = 'get_action';
 
   req.decodedParams.id = req.params.id;

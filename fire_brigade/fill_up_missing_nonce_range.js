@@ -1,13 +1,9 @@
-const rootPrefix = '..'
-  , nonceHelperKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_helper')
-  , logger = require(rootPrefix + "/lib/logger/custom_console_logger")
-  , FillUpMissingNonceKlass = require(rootPrefix + '/fire_brigade/fill_up_missing_nonce');
-;
-
-
+const rootPrefix = '..',
+  nonceHelperKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_helper'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  FillUpMissingNonceKlass = require(rootPrefix + '/fire_brigade/fill_up_missing_nonce');
 const FillUpMissingNonceRange = function(toAddress, chainKind) {
-  const oThis = this
-  ;
+  const oThis = this;
   oThis.nonceHelper = new nonceHelperKlass();
   oThis.toAddress = toAddress.toLowerCase();
   oThis.chainKind = chainKind;
@@ -17,50 +13,46 @@ const FillUpMissingNonceRange = function(toAddress, chainKind) {
 };
 
 FillUpMissingNonceRange.prototype = {
-
   perform: async function() {
-    const oThis = this
-    ;
+    const oThis = this;
 
-    const clearQueuedResponse = await oThis.nonceHelper.clearAllMissingNonce(oThis.chainKind, oThis ,oThis.fillNonce);
+    const clearQueuedResponse = await oThis.nonceHelper.clearAllMissingNonce(oThis.chainKind, oThis, oThis.fillNonce);
     if (clearQueuedResponse.isFailure()) {
-      logger.error("Unable to clear queued transactions: ", clearQueuedResponse);
+      logger.error('Unable to clear queued transactions: ', clearQueuedResponse);
     } else {
-      logger.win("Cleared queued transactions successfully: ", clearQueuedResponse);
+      logger.win('Cleared queued transactions successfully: ', clearQueuedResponse);
     }
   },
-  
-  fillNonce: function (address, nonce) {
-    const oThis = this
-      , params = {}
-    ;
-    params["from_address"] = address.toLowerCase();
-    params["to_address"] = oThis.toAddress;
-    params["chain_kind"] = oThis.chainKind;
-    params["missing_nonce"] = parseInt(nonce);
+
+  fillNonce: function(address, nonce) {
+    const oThis = this,
+      params = {};
+    params['from_address'] = address.toLowerCase();
+    params['to_address'] = oThis.toAddress;
+    params['chain_kind'] = oThis.chainKind;
+    params['missing_nonce'] = parseInt(nonce);
 
     oThis.addToBatchProcess(params);
-
   },
 
-  addToBatchProcess: function (object) {
+  addToBatchProcess: function(object) {
     const oThis = this;
     oThis.allPendingTasks.push(object);
     if (oThis.isProccessing == false) {
       oThis.isProccessing = true;
       oThis.batchProcess();
     }
-    logger.info("------oThis.allPendingTasks.length: ",oThis.allPendingTasks.length);
+    logger.info('------oThis.allPendingTasks.length: ', oThis.allPendingTasks.length);
   },
 
-  batchProcess: async function () {
+  batchProcess: async function() {
     const oThis = this;
     const batchSize = 100;
     while (oThis.currentIndex < oThis.allPendingTasks.length) {
       const allPromises = new Array();
-      for (var count = 0; count < batchSize && oThis.currentIndex < oThis.allPendingTasks.length ; count ++) {
+      for (var count = 0; count < batchSize && oThis.currentIndex < oThis.allPendingTasks.length; count++) {
         const params = oThis.allPendingTasks[oThis.currentIndex];
-        const promiseObject = new Promise(async function (onResolve, onReject) {
+        const promiseObject = new Promise(async function(onResolve, onReject) {
           const fullUpNonceObject = new FillUpMissingNonceKlass(params);
           await fullUpNonceObject.perform();
           onResolve();
@@ -70,15 +62,13 @@ FillUpMissingNonceRange.prototype = {
       }
 
       await Promise.all(allPromises);
-      logger.log("=======================Batch complete======================");
+      logger.log('=======================Batch complete======================');
     }
     oThis.isProccessing = false;
   }
-
 };
 
 module.exports = FillUpMissingNonceRange;
-
 
 /*
 

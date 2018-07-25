@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * Refill ETH to required service addresses
@@ -17,8 +17,7 @@
  *
  * @module executables/fund_addresses/by_utility_chain_owner/eth
  */
-const rootPrefix = '../../..'
-;
+const rootPrefix = '../../..';
 
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
@@ -27,44 +26,40 @@ require(rootPrefix + '/module_overrides/index');
 const openStPlatform = require('@openstfoundation/openst-platform');
 
 // Load Packages
-const chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , basicHelper = require(rootPrefix + '/helpers/basic')
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-;
+const chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  basicHelper = require(rootPrefix + '/helpers/basic'),
+  responseHelper = require(rootPrefix + '/lib/formatter/response');
 
 /**
  * constructor for fund addresses with ETH
  *
  * @constructor
  */
-const FundUsersWithEthFromUtilityChainOwnerKlass = function () {};
+const FundUsersWithEthFromUtilityChainOwnerKlass = function() {};
 
 FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
-
   /**
    * Perform
    *
    */
-  perform: async function () {
-
+  perform: async function() {
     const oThis = this;
 
     for (var i in oThis._interestedUserNames) {
       const userName = oThis._interestedUserNames[i];
 
-      const minBalanceInWei = basicHelper.convertToWei(oThis._valueChainMinBalanceFor(userName))
-        , ethereumAddress = oThis._valueChainAddressFor(userName)
-        , balanceResponse = await oThis._getEthBalance(ethereumAddress)
-      ;
+      const minBalanceInWei = basicHelper.convertToWei(oThis._valueChainMinBalanceFor(userName)),
+        ethereumAddress = oThis._valueChainAddressFor(userName),
+        balanceResponse = await oThis._getEthBalance(ethereumAddress);
 
       if (balanceResponse.isFailure()) return Promise.resolve(balanceResponse);
 
       const balanceBigNumberInWei = balanceResponse.data.balance;
 
       if (balanceBigNumberInWei.lessThan(minBalanceInWei)) {
-        logger.debug("Funding ETH to ", userName);
-        await oThis._transferEthBalance(ethereumAddress, minBalanceInWei)
+        logger.debug('Funding ETH to ', userName);
+        await oThis._transferEthBalance(ethereumAddress, minBalanceInWei);
       }
     }
 
@@ -72,9 +67,8 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
     // keep threshold for utility chain owner sufficiently high so that it is able to fund high no of refills
     const utilityChainOwnerResponse = await oThis._checkBalanceOfChainOwner();
 
-    logger.debug("Can exit now");
+    logger.debug('Can exit now');
     process.exit(0);
-
   },
 
   /**
@@ -83,27 +77,21 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
    * @returns {promise<result>}
    * @private
    */
-  _checkBalanceOfChainOwner: async function () {
-
-    const oThis = this
-      , minUCOBalanceInWei = basicHelper.convertToWei(oThis._valueChainMinBalanceFor('utilityChainOwner'))
-      , ucOwnerBalanceResponse = await oThis._getEthBalance(oThis._valueChainAddressFor('utilityChainOwner'))
-    ;
+  _checkBalanceOfChainOwner: async function() {
+    const oThis = this,
+      minUCOBalanceInWei = basicHelper.convertToWei(oThis._valueChainMinBalanceFor('utilityChainOwner')),
+      ucOwnerBalanceResponse = await oThis._getEthBalance(oThis._valueChainAddressFor('utilityChainOwner'));
 
     if (ucOwnerBalanceResponse.isFailure()) return Promise.resolve(ucOwnerBalanceResponse);
 
     const ucOwnerBalanceBigNumberInWei = ucOwnerBalanceResponse.data.balance;
 
     if (ucOwnerBalanceBigNumberInWei.lessThan(minUCOBalanceInWei)) {
-      logger.notify(
-        'e_fa_e_cboco_1',
-        'ETHER Balance Of Utility Chain Owner is LOW',
-        {
-          utiltiy_chain_owner_value_chain_address: oThis._valueChainAddressFor('utilityChainOwner'),
-          utility_chain_owner_balance_eth: basicHelper.convertToNormal(ucOwnerBalanceBigNumberInWei),
-          min_required_balance: oThis._valueChainMinBalanceFor('utilityChainOwner')
-        }
-      );
+      logger.notify('e_fa_e_cboco_1', 'ETHER Balance Of Utility Chain Owner is LOW', {
+        utiltiy_chain_owner_value_chain_address: oThis._valueChainAddressFor('utilityChainOwner'),
+        utility_chain_owner_balance_eth: basicHelper.convertToNormal(ucOwnerBalanceBigNumberInWei),
+        min_required_balance: oThis._valueChainMinBalanceFor('utilityChainOwner')
+      });
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -117,26 +105,21 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
    * @returns {promise<result>}
    * @private
    */
-  _getEthBalance: async function (ethereumAddress) {
-
-    const oThis = this
-      , fetchBalanceObj = new openStPlatform.services.balance.eth({address: ethereumAddress})
-      , balanceResponse = await fetchBalanceObj.perform()
-    ;
+  _getEthBalance: async function(ethereumAddress) {
+    const oThis = this,
+      fetchBalanceObj = new openStPlatform.services.balance.eth({ address: ethereumAddress }),
+      balanceResponse = await fetchBalanceObj.perform();
 
     if (balanceResponse.isFailure()) {
-      logger.notify(
-        'e_fa_e_ceb_1',
-        'Error in fetching balance of Address',
-        balanceResponse,
-        {ethereum_address: ethereumAddress}
-      );
+      logger.notify('e_fa_e_ceb_1', 'Error in fetching balance of Address', balanceResponse, {
+        ethereum_address: ethereumAddress
+      });
       return Promise.resolve(balanceResponse);
     }
 
     const ethBalanceBigNumber = basicHelper.convertToBigNumber(balanceResponse.data.balance);
 
-    return Promise.resolve(responseHelper.successWithData({balance: ethBalanceBigNumber}));
+    return Promise.resolve(responseHelper.successWithData({ balance: ethBalanceBigNumber }));
   },
 
   /**
@@ -148,23 +131,21 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
    * @returns {promise<result>}
    * @private
    */
-  _transferEthBalance: async function (ethereumAddress, transferAmountInWei) {
-
-    const oThis = this
-      , transferEthBalanceObj = new openStPlatform.services.transaction.transfer.eth({
+  _transferEthBalance: async function(ethereumAddress, transferAmountInWei) {
+    const oThis = this,
+      transferEthBalanceObj = new openStPlatform.services.transaction.transfer.eth({
         sender_name: 'utilityChainOwner',
         recipient_address: ethereumAddress,
         amount_in_wei: transferAmountInWei,
-        options: {returnType: 'txReceipt', tag: ''}
-      })
-    ;
+        options: { returnType: 'txReceipt', tag: '' }
+      });
 
     const transferResponse = await transferEthBalanceObj.perform();
 
     if (transferResponse.isFailure()) {
       logger.notify(
         'e_fa_e_teb_1',
-        "Error in transfer of " + transferAmountInWei + "Wei Eth to Address - " + ethereumAddress,
+        'Error in transfer of ' + transferAmountInWei + 'Wei Eth to Address - ' + ethereumAddress,
         transferResponse
       );
       return Promise.resolve(transferResponse);
@@ -181,18 +162,14 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
    * @returns {string} min balance required for the user in ether
    * @private
    */
-  _valueChainMinBalanceFor: function (name) {
-    const oThis = this
-      , nameData = oThis._valueChainData[name]
-    ;
+  _valueChainMinBalanceFor: function(name) {
+    const oThis = this,
+      nameData = oThis._valueChainData[name];
 
     if (!nameData) {
-      logger.notify(
-        'e_fa_e_vcbb_1',
-        'Invalid user name passed for getting data - ' + name
-      );
+      logger.notify('e_fa_e_vcbb_1', 'Invalid user name passed for getting data - ' + name);
 
-      throw "Invalid user name passed for getting data - " + name;
+      throw 'Invalid user name passed for getting data - ' + name;
     }
 
     return nameData.minBalance;
@@ -206,18 +183,14 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
    * @returns {string} address of the user
    * @private
    */
-  _valueChainAddressFor: function (name) {
-    const oThis = this
-      , nameData = oThis._valueChainData[name]
-    ;
+  _valueChainAddressFor: function(name) {
+    const oThis = this,
+      nameData = oThis._valueChainData[name];
 
     if (!nameData) {
-      logger.notify(
-        'e_fa_e_vcaf_1',
-        'Invalid user name passed for getting data - ' + name
-      );
+      logger.notify('e_fa_e_vcaf_1', 'Invalid user name passed for getting data - ' + name);
 
-      throw "Invalid user name passed for getting data - " + name;
+      throw 'Invalid user name passed for getting data - ' + name;
     }
 
     return nameData.address;
@@ -231,12 +204,12 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
    * @private
    */
   _valueChainData: {
-    utilityChainOwner: {minBalance: '60', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR},
-    staker: {minBalance: '10', address: chainInteractionConstants.STAKER_ADDR},
-    redeemer: {minBalance: '10', address: chainInteractionConstants.REDEEMER_ADDR},
-    valueRegistrar: {minBalance: '10', address: chainInteractionConstants.VALUE_REGISTRAR_ADDR},
-    valueDeployer: {minBalance: '10', address: chainInteractionConstants.VALUE_DEPLOYER_ADDR},
-    valueOps: {minBalance: '10', address: chainInteractionConstants.VALUE_OPS_ADDR}
+    utilityChainOwner: { minBalance: '60', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR },
+    staker: { minBalance: '10', address: chainInteractionConstants.STAKER_ADDR },
+    redeemer: { minBalance: '10', address: chainInteractionConstants.REDEEMER_ADDR },
+    valueRegistrar: { minBalance: '10', address: chainInteractionConstants.VALUE_REGISTRAR_ADDR },
+    valueDeployer: { minBalance: '10', address: chainInteractionConstants.VALUE_DEPLOYER_ADDR },
+    valueOps: { minBalance: '10', address: chainInteractionConstants.VALUE_OPS_ADDR }
   },
 
   /**
@@ -246,14 +219,7 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
    *
    * @private
    */
-  _interestedUserNames: [
-    'staker',
-    'redeemer',
-    'valueRegistrar',
-    'valueDeployer',
-    'valueOps'
-  ]
-
+  _interestedUserNames: ['staker', 'redeemer', 'valueRegistrar', 'valueDeployer', 'valueOps']
 };
 
 // perform action

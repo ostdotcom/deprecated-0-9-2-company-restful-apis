@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * Perform basic validations
@@ -6,17 +6,15 @@
  * @module helpers/basic
  */
 
-const BigNumber = require('bignumber.js')
-;
+const BigNumber = require('bignumber.js');
 
-const rootPrefix = '..'
-  , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
-  , v0ParamErrorConfig = require(rootPrefix + '/config/api_params/v0/error_config')
-  , v1ParamErrorConfig = require(rootPrefix + '/config/api_params/v1/error_config')
-  , v1Dot1ParamErrorConfig = require(rootPrefix + '/config/api_params/v1.1/error_config')
-  , internalParamErrorConfig = require(rootPrefix + '/config/api_params/internal/error_config')
-  , apiErrorConfig = require(rootPrefix + '/config/api_params/api_error_config')
-;
+const rootPrefix = '..',
+  apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
+  v0ParamErrorConfig = require(rootPrefix + '/config/api_params/v0/error_config'),
+  v1ParamErrorConfig = require(rootPrefix + '/config/api_params/v1/error_config'),
+  v1Dot1ParamErrorConfig = require(rootPrefix + '/config/api_params/v1.1/error_config'),
+  internalParamErrorConfig = require(rootPrefix + '/config/api_params/internal/error_config'),
+  apiErrorConfig = require(rootPrefix + '/config/api_params/api_error_config');
 
 /**
  * Basic helper methods constructor
@@ -27,13 +25,12 @@ const rootPrefix = '..'
 const BasicHelperKlass = function() {};
 
 BasicHelperKlass.prototype = {
-
-  convertToNormal: function (numInWei) {
-    return this.convertToBigNumber(numInWei).div(this.convertToBigNumber(10).toPower(18))
+  convertToNormal: function(numInWei) {
+    return this.convertToBigNumber(numInWei).div(this.convertToBigNumber(10).toPower(18));
   },
 
-  convertToWei: function (num) {
-    return this.convertToBigNumber(num).mul(this.convertToBigNumber(10).toPower(18))
+  convertToWei: function(num) {
+    return this.convertToBigNumber(num).mul(this.convertToBigNumber(10).toPower(18));
   },
 
   /**
@@ -43,7 +40,7 @@ BasicHelperKlass.prototype = {
    *
    * @return {boolean}
    */
-  isWeiValid: function (amountInWei) {
+  isWeiValid: function(amountInWei) {
     const oneForMod = new BigNumber('1');
 
     // Convert amount in BigNumber
@@ -57,8 +54,13 @@ BasicHelperKlass.prototype = {
       }
     }
 
-    return (!bigNumAmount || bigNumAmount.lessThan(1) || bigNumAmount.isNaN() ||
-      !bigNumAmount.isFinite() || bigNumAmount.mod(oneForMod) != 0) ? false : true;
+    return !bigNumAmount ||
+      bigNumAmount.lessThan(1) ||
+      bigNumAmount.isNaN() ||
+      !bigNumAmount.isFinite() ||
+      bigNumAmount.mod(oneForMod) != 0
+      ? false
+      : true;
   },
 
   /**
@@ -68,7 +70,7 @@ BasicHelperKlass.prototype = {
    *
    * @return {string}
    */
-  formatWeiToString: function (amountInWei) {
+  formatWeiToString: function(amountInWei) {
     const oThis = this;
     return oThis.convertToBigNumber(amountInWei).toString(10);
   },
@@ -80,8 +82,8 @@ BasicHelperKlass.prototype = {
    *
    * @return {BigNumber}
    */
-  convertToBigNumber: function (number) {
-    return (number instanceof BigNumber) ? number : new BigNumber(number);
+  convertToBigNumber: function(number) {
+    return number instanceof BigNumber ? number : new BigNumber(number);
   },
 
   /**
@@ -91,7 +93,7 @@ BasicHelperKlass.prototype = {
    *
    * @return {BigNumber}
    */
-  convertToHex: function (number) {
+  convertToHex: function(number) {
     return '0x' + new BigNumber(number).toString(16).toUpperCase();
   },
 
@@ -102,8 +104,8 @@ BasicHelperKlass.prototype = {
    *
    * @return {boolean}
    */
-  isAddressValid: function (address) {
-    if (typeof address !== "string") {
+  isAddressValid: function(address) {
+    if (typeof address !== 'string') {
       return false;
     }
     return /^0x[0-9a-fA-F]{40}$/.test(address);
@@ -116,12 +118,12 @@ BasicHelperKlass.prototype = {
    *
    * @return {boolean}
    */
-  isBTNameValid: function (name) {
+  isBTNameValid: function(name) {
     const oThis = this;
-    if (typeof name !== "string") {
+    if (typeof name !== 'string') {
       return false;
     }
-    return (/^[a-z0-9\s]{1,}$/i).test(name) && !oThis.hasStopWords(name);
+    return /^[a-z0-9\s]{1,}$/i.test(name) && !oThis.hasStopWords(name);
   },
 
   /**
@@ -131,11 +133,11 @@ BasicHelperKlass.prototype = {
    *
    * @return {boolean}
    */
-  isTxKindNameValid: function (name) {
-    if (typeof name !== "string") {
+  isTxKindNameValid: function(name) {
+    if (typeof name !== 'string') {
       return false;
     }
-    return (/^[a-z0-9\s]{3,20}$/i).test(name);
+    return /^[a-z0-9\s]{3,20}$/i.test(name);
   },
 
   /**
@@ -145,12 +147,12 @@ BasicHelperKlass.prototype = {
    *
    * @return {boolean}
    */
-  isUserNameValid: function (name) {
+  isUserNameValid: function(name) {
     const oThis = this;
-    if (typeof name !== "string") {
+    if (typeof name !== 'string') {
       return false;
     }
-    return (/^[a-z0-9\s]{3,20}$/i).test(name);
+    return /^[a-z0-9\s]{3,20}$/i.test(name);
   },
 
   /**
@@ -160,11 +162,11 @@ BasicHelperKlass.prototype = {
    *
    * @return {boolean}
    */
-  isBTSymbolValid: function (symbol) {
-    if (typeof symbol !== "string") {
+  isBTSymbolValid: function(symbol) {
+    if (typeof symbol !== 'string') {
       return false;
     }
-    return (/^[a-z0-9]{1,}$/i).test(symbol);
+    return /^[a-z0-9]{1,}$/i.test(symbol);
   },
 
   /**
@@ -174,7 +176,7 @@ BasicHelperKlass.prototype = {
    *
    * @return {boolean}
    */
-  isBTConversionRateValid: function (conversionRate) {
+  isBTConversionRateValid: function(conversionRate) {
     if (!isNaN(conversionRate) && parseFloat(conversionRate) > 0) {
       return true;
     }
@@ -188,8 +190,8 @@ BasicHelperKlass.prototype = {
    *
    * @return {boolean}
    */
-  isUuidValid: function (uuid) {
-    if (typeof uuid !== "string") {
+  isUuidValid: function(uuid) {
+    if (typeof uuid !== 'string') {
       return false;
     }
 
@@ -203,8 +205,8 @@ BasicHelperKlass.prototype = {
    *
    * @return {boolean}
    */
-  isTokenUuidValid: function (uuid) {
-    if (typeof uuid !== "string") {
+  isTokenUuidValid: function(uuid) {
+    if (typeof uuid !== 'string') {
       return false;
     }
     return /^0x[0-9a-fA-F]{64}$/.test(uuid);
@@ -217,8 +219,8 @@ BasicHelperKlass.prototype = {
    *
    * @return {boolean}
    */
-  isEthAddressValid: function (address) {
-    if (typeof address !== "string") {
+  isEthAddressValid: function(address) {
+    if (typeof address !== 'string') {
       return false;
     }
     return /^0x[0-9a-fA-F]{40}$/.test(address);
@@ -231,8 +233,8 @@ BasicHelperKlass.prototype = {
    *
    * @return {boolean}
    */
-  hasStopWords: function (string) {
-    if (typeof string !== "string") {
+  hasStopWords: function(string) {
+    if (typeof string !== 'string') {
       return false;
     }
     var reg_ex = /\b(?:anal|anus|arse|ballsack|bitch|biatch|blowjob|blow job|bollock|bollok|boner|boob|bugger|bum|butt|buttplug|clitoris|cock|coon|crap|cunt|dick|dildo|dyke|fag|feck|fellate|fellatio|felching|fuck|f u c k|fudgepacker|fudge packer|flange|Goddamn|God damn|homo|jerk|Jew|jizz|Kike|knobend|knob end|labia|muff|nigger|nigga|penis|piss|poop|prick|pube|pussy|scrotum|sex|shit|s hit|sh1t|slut|smegma|spunk|tit|tosser|turd|twat|vagina|wank|whore|porn)\b/i;
@@ -247,7 +249,6 @@ BasicHelperKlass.prototype = {
    * @return {Array}
    */
   shuffleArray: function(array) {
-
     for (var i = array.length - 1; i >= 0; i--) {
       var j = Math.floor(Math.random() * (i + 1));
       var temp = array[i];
@@ -256,7 +257,6 @@ BasicHelperKlass.prototype = {
     }
 
     return array;
-
   },
 
   /**
@@ -266,8 +266,7 @@ BasicHelperKlass.prototype = {
    *
    * @return {object}
    */
-  fetchErrorConfig: function (apiVersion) {
-
+  fetchErrorConfig: function(apiVersion) {
     var paramErrorConfig;
 
     if (apiVersion === apiVersions.v0) {
@@ -279,16 +278,15 @@ BasicHelperKlass.prototype = {
     } else if (apiVersion === apiVersions.internal) {
       paramErrorConfig = internalParamErrorConfig;
     } else if (apiVersion === apiVersions.general) {
-      paramErrorConfig = {}
+      paramErrorConfig = {};
     } else {
-      throw "unsupported API Version " + apiVersion;
+      throw 'unsupported API Version ' + apiVersion;
     }
 
     return {
       param_error_config: paramErrorConfig,
       api_error_config: apiErrorConfig
-    }
-
+    };
   },
 
   /**
@@ -299,9 +297,7 @@ BasicHelperKlass.prototype = {
    * @return {Array}
    */
   commaSeperatedStrToArray: function(str) {
-
-    return str.split(',').map(ele => ele.trim());
-
+    return str.split(',').map((ele) => ele.trim());
   },
 
   /**
@@ -313,9 +309,8 @@ BasicHelperKlass.prototype = {
    * @return {Array}
    */
   isGreaterThanMinWei: function(str) {
-    return this.convertToBigNumber(str) >= this.convertToBigNumber(10).toPower(18)
+    return this.convertToBigNumber(str) >= this.convertToBigNumber(10).toPower(18);
   }
-
 };
 
 module.exports = new BasicHelperKlass();

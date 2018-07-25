@@ -1,14 +1,13 @@
-"use strict";
+'use strict';
 
-const rootPrefix = '../../..'
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
-  , EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance')
-  , UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/user')
-  , basicHelper = require(rootPrefix + '/helpers/basic')
-  , commonValidator = require(rootPrefix +  '/lib/validators/common')
-;
+const rootPrefix = '../../..',
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
+  EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance'),
+  UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/user'),
+  basicHelper = require(rootPrefix + '/helpers/basic'),
+  commonValidator = require(rootPrefix + '/lib/validators/common');
 
 /**
  *
@@ -24,9 +23,8 @@ const rootPrefix = '../../..'
  * @param {integer} [params.limit] - number of results to be returned on this page
  *
  */
-const listUserKlass = function (params) {
-  const oThis = this
-  ;
+const listUserKlass = function(params) {
+  const oThis = this;
 
   oThis.clientId = params.client_id;
   oThis.pageNo = params.page_no;
@@ -39,7 +37,6 @@ const listUserKlass = function (params) {
 };
 
 listUserKlass.prototype = {
-
   /**
    *
    * Perform
@@ -47,24 +44,22 @@ listUserKlass.prototype = {
    * @return {Promise<result>}
    *
    */
-  perform: function(){
-
+  perform: function() {
     const oThis = this;
 
-    return oThis.asyncPerform()
-      .catch(function(error) {
-        if (responseHelper.isCustomResult(error)){
-          return error;
-        } else {
-          logger.error(`${__filename}::perform::catch`);
-          logger.error(error);
-          return responseHelper.error({
-            internal_error_identifier: 's_cu_l_1',
-            api_error_identifier: 'unhandled_catch_response',
-            debug_options: {}
-          });
-        }
-      });
+    return oThis.asyncPerform().catch(function(error) {
+      if (responseHelper.isCustomResult(error)) {
+        return error;
+      } else {
+        logger.error(`${__filename}::perform::catch`);
+        logger.error(error);
+        return responseHelper.error({
+          internal_error_identifier: 's_cu_l_1',
+          api_error_identifier: 'unhandled_catch_response',
+          debug_options: {}
+        });
+      }
+    });
   },
 
   /**
@@ -76,8 +71,7 @@ listUserKlass.prototype = {
    * @return {Promise<result>}
    *
    */
-  asyncPerform: async function () {
-
+  asyncPerform: async function() {
     const oThis = this;
 
     await oThis.validateAndSanitize();
@@ -92,38 +86,35 @@ listUserKlass.prototype = {
       uuids: oThis.uuidsForFiltering
     });
 
-    var usersList = []
-      , ethereumAddresses = []
-      , hasMore = false;
+    var usersList = [],
+      ethereumAddresses = [],
+      hasMore = false;
 
     for (var i = 0; i < queryResponse.length; i++) {
       const object = queryResponse[i];
 
-      if (i === oThis.limit) {continue} // as we fetched limit + 1, ignore that extra one
+      if (i === oThis.limit) {
+        continue;
+      } // as we fetched limit + 1, ignore that extra one
 
       ethereumAddresses.push(object['ethereum_address']);
-
     }
 
     var balanceHashData = {};
 
     if (ethereumAddresses.length > 0) {
-
       const economyUserBalance = new EconomyUserBalanceKlass({
-            client_id: oThis.clientId,
-            ethereum_addresses: ethereumAddresses
-          })
-          , userBalancesResponse = await economyUserBalance.perform()
-      ;
+          client_id: oThis.clientId,
+          ethereum_addresses: ethereumAddresses
+        }),
+        userBalancesResponse = await economyUserBalance.perform();
 
       if (!userBalancesResponse.isFailure()) {
         balanceHashData = userBalancesResponse.data;
       }
-
     }
 
     for (var i = 0; i < queryResponse.length; i++) {
-
       const object = queryResponse[i];
 
       if (i === oThis.limit) {
@@ -147,18 +138,15 @@ listUserKlass.prototype = {
         token_balance: basicHelper.convertToNormal((balanceData || {}).tokenBalance).toString(10)
       };
 
-      const userEntityFormatter = new UserEntityFormatterKlass(userData)
-          , userEntityFormatterRsp = await userEntityFormatter.perform()
-      ;
+      const userEntityFormatter = new UserEntityFormatterKlass(userData),
+        userEntityFormatterRsp = await userEntityFormatter.perform();
 
       usersList.push(userEntityFormatterRsp.data);
-
     }
 
     let next_page_payload = {};
 
     if (hasMore) {
-
       next_page_payload = {
         order_by: oThis.orderBy,
         order: oThis.order,
@@ -169,17 +157,17 @@ listUserKlass.prototype = {
       if (!commonValidator.isVarNull(oThis.airdropped)) {
         next_page_payload.airdropped = oThis.airdropped;
       }
-
     }
 
-    return Promise.resolve(responseHelper.successWithData({
-      result_type: 'users',
-      users: usersList,
-      meta: {
-        next_page_payload: next_page_payload
-      }
-    }));
-
+    return Promise.resolve(
+      responseHelper.successWithData({
+        result_type: 'users',
+        users: usersList,
+        meta: {
+          next_page_payload: next_page_payload
+        }
+      })
+    );
   },
 
   /**
@@ -191,31 +179,35 @@ listUserKlass.prototype = {
    * @return {Promise<result>}
    *
    */
-  validateAndSanitize: async function () {
-    const oThis = this
-        , errors_object = [];
+  validateAndSanitize: async function() {
+    const oThis = this,
+      errors_object = [];
 
     let pageNoVas = commonValidator.validateAndSanitizePageNo(oThis.pageNo);
 
-    if(!pageNoVas[0]) {
-      return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_cu_l_2',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_page_no'],
-        debug_options: {}
-      }));
+    if (!pageNoVas[0]) {
+      return Promise.reject(
+        responseHelper.paramValidationError({
+          internal_error_identifier: 's_cu_l_2',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: ['invalid_page_no'],
+          debug_options: {}
+        })
+      );
     }
     oThis.pageNo = pageNoVas[1];
 
     let limitVas = commonValidator.validateAndSanitizeLimit(oThis.limit);
 
-    if(!limitVas[0]) {
-      return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_cu_l_3',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_pagination_limit'],
-        debug_options: {}
-      }));
+    if (!limitVas[0]) {
+      return Promise.reject(
+        responseHelper.paramValidationError({
+          internal_error_identifier: 's_cu_l_3',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: ['invalid_pagination_limit'],
+          debug_options: {}
+        })
+      );
     }
     oThis.limit = limitVas[1];
 
@@ -249,18 +241,18 @@ listUserKlass.prototype = {
     }
 
     if (errors_object.length > 0) {
-      return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_cu_l_4',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: errors_object,
-        debug_options: {}
-      }));
+      return Promise.reject(
+        responseHelper.paramValidationError({
+          internal_error_identifier: 's_cu_l_4',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: errors_object,
+          debug_options: {}
+        })
+      );
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
-
   }
-
 };
 
 module.exports = listUserKlass;

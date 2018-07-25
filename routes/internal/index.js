@@ -1,19 +1,16 @@
-"use strict";
+'use strict';
 
-const express = require('express')
-;
+const express = require('express');
 
-const rootPrefix = '../..'
-  , rootRoutes = require(rootPrefix + '/routes/internal/root')
-  , onBoardingRoutes = require(rootPrefix + '/routes/internal/on_boarding')
-  , stakeRoutes = require(rootPrefix + '/routes/internal/stake')
-  , clientRoutes = require(rootPrefix + '/routes/internal/client')
-  , simulatorRoutes = require(rootPrefix + '/routes/internal/simulator')
-  , clientUsersRoutes = require(rootPrefix + '/routes/internal/client_users')
-;
+const rootPrefix = '../..',
+  rootRoutes = require(rootPrefix + '/routes/internal/root'),
+  onBoardingRoutes = require(rootPrefix + '/routes/internal/on_boarding'),
+  stakeRoutes = require(rootPrefix + '/routes/internal/stake'),
+  clientRoutes = require(rootPrefix + '/routes/internal/client'),
+  simulatorRoutes = require(rootPrefix + '/routes/internal/simulator'),
+  clientUsersRoutes = require(rootPrefix + '/routes/internal/client_users');
 
-var router = express.Router()
-;
+var router = express.Router();
 
 router.use('/', rootRoutes);
 

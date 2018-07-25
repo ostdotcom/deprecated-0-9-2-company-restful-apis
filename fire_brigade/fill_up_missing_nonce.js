@@ -1,17 +1,14 @@
-const Buffer = require('safe-buffer').Buffer
-  , Tx = require('ethereumjs-tx')
-;
+const Buffer = require('safe-buffer').Buffer,
+  Tx = require('ethereumjs-tx');
 
-const rootPrefix = '..'
-  , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
-  , fetchPrivateKeyKlass = require(rootPrefix + '/lib/cache_management/address_private_key')
-  , nonceHelperKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_helper')
-  , nonceHelper = new nonceHelperKlass()
-;
+const rootPrefix = '..',
+  chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
+  fetchPrivateKeyKlass = require(rootPrefix + '/lib/cache_management/address_private_key'),
+  nonceHelperKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_helper'),
+  nonceHelper = new nonceHelperKlass();
 
 const FillUpMissingNonce = function(params) {
-  const oThis = this
-  ;
+  const oThis = this;
 
   oThis.fromAddress = params.from_address.toLowerCase();
   oThis.toAddress = params.to_address.toLowerCase();
@@ -24,8 +21,7 @@ const FillUpMissingNonce = function(params) {
 
 FillUpMissingNonce.prototype = {
   perform: async function() {
-    const oThis = this
-    ;
+    const oThis = this;
 
     await oThis.initializeRawTx();
 
@@ -34,12 +30,13 @@ FillUpMissingNonce.prototype = {
     await oThis.sendSignedTx();
   },
 
-  initializeRawTx : function() {
-    const oThis = this
-    ;
+  initializeRawTx: function() {
+    const oThis = this;
 
-    const gasPrice = (oThis.chainKind == 'value') ? chainInteractionConstants.VALUE_GAS_PRICE :
-      chainInteractionConstants.UTILITY_GAS_PRICE;
+    const gasPrice =
+      oThis.chainKind == 'value'
+        ? chainInteractionConstants.VALUE_GAS_PRICE
+        : chainInteractionConstants.UTILITY_GAS_PRICE;
 
     oThis.rawTx = {
       from: oThis.fromAddress,
@@ -53,19 +50,18 @@ FillUpMissingNonce.prototype = {
     return Promise.resolve();
   },
 
-  setPrivateKey: async function () {
-    const oThis = this
-      , fetchPrivateKeyObj = new fetchPrivateKeyKlass({'address': oThis.fromAddress})
-      , fetchPrivateKeyRsp = await fetchPrivateKeyObj.fetchDecryptedData()
-    ;
+  setPrivateKey: async function() {
+    const oThis = this,
+      fetchPrivateKeyObj = new fetchPrivateKeyKlass({ address: oThis.fromAddress }),
+      fetchPrivateKeyRsp = await fetchPrivateKeyObj.fetchDecryptedData();
 
-    if(fetchPrivateKeyRsp.isFailure()) {
+    if (fetchPrivateKeyRsp.isFailure()) {
       throw 'private key not found';
     }
 
     // get private key - this should be the private key without 0x at the beginning.
     var privateKey = fetchPrivateKeyRsp.data['private_key_d'];
-    if(privateKey.slice(0, 2).toLowerCase() === '0x'){
+    if (privateKey.slice(0, 2).toLowerCase() === '0x') {
       privateKey = privateKey.substr(2);
     }
 
@@ -74,26 +70,33 @@ FillUpMissingNonce.prototype = {
     return Promise.resolve();
   },
 
-  sendSignedTx: function () {
-    const oThis = this
-    ;
+  sendSignedTx: function() {
+    const oThis = this;
 
     const tx = new Tx(oThis.rawTx);
 
     tx.sign(oThis.privateKeyObj);
 
-    const serializedTx =  tx.serialize();
+    const serializedTx = tx.serialize();
 
-    const provider = (oThis.chainKind == 'value') ? chainInteractionConstants.VALUE_GETH_WS_PROVIDER :
-      chainInteractionConstants.UTILITY_GETH_WS_PROVIDER;
+    const provider =
+      oThis.chainKind == 'value'
+        ? chainInteractionConstants.VALUE_GETH_WS_PROVIDER
+        : chainInteractionConstants.UTILITY_GETH_WS_PROVIDER;
 
-    const  providerObj = nonceHelper.getWeb3Instance(provider, oThis.chainKind);
+    const providerObj = nonceHelper.getWeb3Instance(provider, oThis.chainKind);
 
-    return providerObj.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'))
-      .once('transactionHash', function(txHash){console.log('transaction_hash:', txHash);})
-      .once('receipt', function(receipt){console.log('receipt:', receipt);})
-      .on('error', function(error){console.log('error:', error);})
-      ;
+    return providerObj.eth
+      .sendSignedTransaction('0x' + serializedTx.toString('hex'))
+      .once('transactionHash', function(txHash) {
+        console.log('transaction_hash:', txHash);
+      })
+      .once('receipt', function(receipt) {
+        console.log('receipt:', receipt);
+      })
+      .on('error', function(error) {
+        console.log('error:', error);
+      });
   }
 };
 

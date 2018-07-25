@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * Fetch Chain Interaction Params
@@ -7,12 +7,11 @@
  *
  */
 
-const rootPrefix = '../../..'
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
-  , openStPlatform = require('@openstfoundation/openst-platform')
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-;
+const rootPrefix = '../../..',
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
+  openStPlatform = require('@openstfoundation/openst-platform'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
 /**
  * Fetch Params using which FE could interact with our chains
@@ -23,31 +22,27 @@ const rootPrefix = '../../..'
  * @param {number} params.client_id - client id for whom users are to be created.
  *
  */
-const FetchChainInteractionParams = function (params) {
-
+const FetchChainInteractionParams = function(params) {
   this.clientId = params.client_id;
-
 };
 
 FetchChainInteractionParams.prototype = {
-
-  perform: function(){
+  perform: function() {
     const oThis = this;
 
-    return oThis.asyncPerform()
-      .catch(function(error) {
-        if (responseHelper.isCustomResult(error)){
-          return error;
-        } else {
-          logger.error(`${__filename}::perform::catch`);
-          logger.error(error);
-          return responseHelper.error({
-            internal_error_identifier: 'ob_fcip_2',
-            api_error_identifier: 'unhandled_catch_response',
-            debug_options: {}
-          });
-        }
-      })
+    return oThis.asyncPerform().catch(function(error) {
+      if (responseHelper.isCustomResult(error)) {
+        return error;
+      } else {
+        logger.error(`${__filename}::perform::catch`);
+        logger.error(error);
+        return responseHelper.error({
+          internal_error_identifier: 'ob_fcip_2',
+          api_error_identifier: 'unhandled_catch_response',
+          debug_options: {}
+        });
+      }
+    });
   },
 
   /**
@@ -56,21 +51,21 @@ FetchChainInteractionParams.prototype = {
    * @return {result} - returns an object of Result
    *
    */
-  asyncPerform: function () {
-
+  asyncPerform: function() {
     const oThis = this;
 
     if (!oThis.clientId) {
-      return Promise.resolve(responseHelper.paramValidationError({
-        internal_error_identifier: 'ob_fcip_1',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['missing_client_id'],
-        debug_options: {}
-      }));
+      return Promise.resolve(
+        responseHelper.paramValidationError({
+          internal_error_identifier: 'ob_fcip_1',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: ['missing_client_id'],
+          debug_options: {}
+        })
+      );
     }
 
     var responseData = {
-
       utility_chain_id: chainInteractionConstants.UTILITY_CHAIN_ID,
       utility_chain_geth_rpc_provider: chainInteractionConstants.UTILITY_GETH_RPC_PROVIDER,
       utility_chain_geth_ws_provider: chainInteractionConstants.UTILITY_GETH_WS_PROVIDER,
@@ -79,13 +74,10 @@ FetchChainInteractionParams.prototype = {
       value_chain_geth_ws_provider: chainInteractionConstants.VALUE_GETH_WS_PROVIDER,
       simple_token_contract_addr: chainInteractionConstants.SIMPLE_TOKEN_CONTRACT_ADDR,
       staker_addr: chainInteractionConstants.STAKER_ADDR
-
     };
 
     return Promise.resolve(responseHelper.successWithData(responseData));
-
   }
-
 };
 
 module.exports = FetchChainInteractionParams;

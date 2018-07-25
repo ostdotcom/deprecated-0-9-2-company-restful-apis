@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * Refill ST Prime to client specific addresses by Reserve.
@@ -12,18 +12,17 @@
  * @module app/services/address/fund_client_address
  */
 
-const rootPrefix = '../../..'
-  , openStPlatform = require('@openstfoundation/openst-platform')
-  , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
-  , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , basicHelper = require(rootPrefix + '/helpers/basic')
-  , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
-  , ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/client_worker_managed_address_id')
-  , clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id')
-  , ClientActiveWorkerUuidCacheKlass = require(rootPrefix + '/lib/cache_management/client_active_worker_uuid')
-;
+const rootPrefix = '../../..',
+  openStPlatform = require('@openstfoundation/openst-platform'),
+  ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
+  ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  basicHelper = require(rootPrefix + '/helpers/basic'),
+  managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
+  ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/client_worker_managed_address_id'),
+  clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id'),
+  ClientActiveWorkerUuidCacheKlass = require(rootPrefix + '/lib/cache_management/client_active_worker_uuid');
 
 /**
  * constructor
@@ -32,19 +31,16 @@ const rootPrefix = '../../..'
  *
  * @constructor
  */
-const FundClientAddressKlass = function (params) {
-
+const FundClientAddressKlass = function(params) {
   const oThis = this;
   oThis.clientId = params.client_id;
 
   oThis.reserveAddrObj = null;
   oThis.airdropHolderAddrObj = null;
   oThis.workerAddrObjs = [];
-
 };
 
 FundClientAddressKlass.prototype = {
-
   /**
    * Minimum balance
    *
@@ -77,31 +73,29 @@ FundClientAddressKlass.prototype = {
    */
   _TO_TRANSFER: basicHelper.convertToWei(1),
 
-
   /**
    * perform
    *
    * @return {Result}
    */
 
-  perform: function(){
+  perform: function() {
     const oThis = this;
 
-    return oThis.asyncPerform()
-      .catch(function(error) {
-        if (responseHelper.isCustomResult(error)){
-          return error;
-        } else {
-          logger.error(`${__filename}::perform::catch`);
-          logger.error(error);
+    return oThis.asyncPerform().catch(function(error) {
+      if (responseHelper.isCustomResult(error)) {
+        return error;
+      } else {
+        logger.error(`${__filename}::perform::catch`);
+        logger.error(error);
 
-          return responseHelper.error({
-            internal_error_identifier: 's_a_fca_2',
-            api_error_identifier: 'unhandled_catch_response',
-            debug_options: {clientId: oThis.clientId}
-          });
-        }
-      });
+        return responseHelper.error({
+          internal_error_identifier: 's_a_fca_2',
+          api_error_identifier: 'unhandled_catch_response',
+          debug_options: { clientId: oThis.clientId }
+        });
+      }
+    });
   },
 
   /**
@@ -109,7 +103,7 @@ FundClientAddressKlass.prototype = {
    *
    * @return {Result}
    */
-  asyncPerform: async function () {
+  asyncPerform: async function() {
     const oThis = this;
 
     await oThis._setAddresses();
@@ -131,31 +125,33 @@ FundClientAddressKlass.prototype = {
    * @private
    */
   _setAddresses: async function() {
-
-    const oThis = this
-      , clientBrandedTokenRecords = await new ClientBrandedTokenModel().getByClientId(oThis.clientId);
+    const oThis = this,
+      clientBrandedTokenRecords = await new ClientBrandedTokenModel().getByClientId(oThis.clientId);
 
     // assuming that the last token is the only token.
-    const brandedToken = clientBrandedTokenRecords[clientBrandedTokenRecords.length - 1]
-        , existingWorkerManagedAddresses = await new ClientWorkerManagedAddressIdModel().getActiveByClientId(oThis.clientId)
-        , workerManagedAddressIds = []
-    ;
+    const brandedToken = clientBrandedTokenRecords[clientBrandedTokenRecords.length - 1],
+      existingWorkerManagedAddresses = await new ClientWorkerManagedAddressIdModel().getActiveByClientId(
+        oThis.clientId
+      ),
+      workerManagedAddressIds = [];
 
-    for(var i=0; i<existingWorkerManagedAddresses.length; i++) {
+    for (var i = 0; i < existingWorkerManagedAddresses.length; i++) {
       workerManagedAddressIds.push(existingWorkerManagedAddresses[i].managed_address_id);
     }
 
-    const reserveAddressType = new ManagedAddressModel().invertedAddressTypes[managedAddressesConst.reserveAddressType]
-        , airdropHolderAddressType = new ManagedAddressModel().invertedAddressTypes[managedAddressesConst.airdropHolderAddressType]
-        , workerAddressType = new ManagedAddressModel().invertedAddressTypes[managedAddressesConst.workerAddressType]
-    ;
+    const reserveAddressType = new ManagedAddressModel().invertedAddressTypes[managedAddressesConst.reserveAddressType],
+      airdropHolderAddressType = new ManagedAddressModel().invertedAddressTypes[
+        managedAddressesConst.airdropHolderAddressType
+      ],
+      workerAddressType = new ManagedAddressModel().invertedAddressTypes[managedAddressesConst.workerAddressType];
 
-    const managedAddresses = await new ManagedAddressModel().getByIds([
-      brandedToken.reserve_managed_address_id,
-      brandedToken.airdrop_holder_managed_address_id
-    ].concat(workerManagedAddressIds));
+    const managedAddresses = await new ManagedAddressModel().getByIds(
+      [brandedToken.reserve_managed_address_id, brandedToken.airdrop_holder_managed_address_id].concat(
+        workerManagedAddressIds
+      )
+    );
 
-    for(var i=0; i<managedAddresses.length; i++){
+    for (var i = 0; i < managedAddresses.length; i++) {
       var addressObj = managedAddresses[i];
       if (addressObj.address_type == reserveAddressType) {
         oThis.reserveAddrObj = addressObj;
@@ -167,7 +163,6 @@ FundClientAddressKlass.prototype = {
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
-
   },
 
   /**
@@ -176,51 +171,55 @@ FundClientAddressKlass.prototype = {
    * @returns {promise<result>}
    * @private
    */
-  _transferStPrimeIfNeeded: async function(){
-
+  _transferStPrimeIfNeeded: async function() {
     const oThis = this;
 
     const reservePassphraseD = 'no_password';
 
-    for(var i=0; i<oThis.workerAddrObjs.length; i++) {
-
+    for (var i = 0; i < oThis.workerAddrObjs.length; i++) {
       var workerAddrObj = oThis.workerAddrObjs[i];
 
-      if(await oThis._isTransferRequired(workerAddrObj.ethereum_address)) {
-
+      if (await oThis._isTransferRequired(workerAddrObj.ethereum_address)) {
         //transfer to worker
-        const transferBalanceResponse = await oThis._transferBalance(oThis.reserveAddrObj.ethereum_address, reservePassphraseD,
-            workerAddrObj.ethereum_address, oThis._TO_TRANSFER);
+        const transferBalanceResponse = await oThis._transferBalance(
+          oThis.reserveAddrObj.ethereum_address,
+          reservePassphraseD,
+          workerAddrObj.ethereum_address,
+          oThis._TO_TRANSFER
+        );
 
-        if(transferBalanceResponse.isSuccess()) {
+        if (transferBalanceResponse.isSuccess()) {
+          const dbObject = (await new ClientWorkerManagedAddressIdModel()
+            .select('id, properties')
+            .where({ client_id: oThis.clientId, managed_address_id: workerAddrObj.id })
+            .fire())[0];
 
-          const dbObject = (await new ClientWorkerManagedAddressIdModel().select('id, properties')
-              .where({client_id: oThis.clientId, managed_address_id: workerAddrObj.id}).fire())[0]
-          ;
-
-          let newPropertiesValue = new ClientWorkerManagedAddressIdModel()
-            .setBit(clientWorkerManagedAddressConst.hasStPrimeBalanceProperty, dbObject.properties);
+          let newPropertiesValue = new ClientWorkerManagedAddressIdModel().setBit(
+            clientWorkerManagedAddressConst.hasStPrimeBalanceProperty,
+            dbObject.properties
+          );
 
           await new ClientWorkerManagedAddressIdModel()
-            .update({properties: newPropertiesValue})
-            .where({id: dbObject.id}).fire();
+            .update({ properties: newPropertiesValue })
+            .where({ id: dbObject.id })
+            .fire();
 
-          new ClientActiveWorkerUuidCacheKlass({client_id: oThis.clientId}).clear();
-
+          new ClientActiveWorkerUuidCacheKlass({ client_id: oThis.clientId }).clear();
         }
-
       }
-
     }
 
-    if(await oThis._isTransferRequired(oThis.airdropHolderAddrObj.ethereum_address)){
+    if (await oThis._isTransferRequired(oThis.airdropHolderAddrObj.ethereum_address)) {
       //transfer to airdrop holder
-      await oThis._transferBalance(oThis.reserveAddrObj.ethereum_address, reservePassphraseD,
-          oThis.airdropHolderAddrObj.ethereum_address, oThis._TO_TRANSFER);
+      await oThis._transferBalance(
+        oThis.reserveAddrObj.ethereum_address,
+        reservePassphraseD,
+        oThis.airdropHolderAddrObj.ethereum_address,
+        oThis._TO_TRANSFER
+      );
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
-
   },
 
   /**
@@ -231,13 +230,12 @@ FundClientAddressKlass.prototype = {
    * @returns {promise<result>}
    * @private
    */
-  _checkBalanceOfReserveAddress: async function () {
-    const oThis = this
-      , ethereumAddress = oThis.reserveAddrObj.ethereum_address
-      , minReserveAddrBalanceToProceedInWei = oThis._MIN_AVAILABLE_BALANCE_RESERVE
-      , fetchBalanceObj = new openStPlatform.services.balance.simpleTokenPrime({address: ethereumAddress})
-      , balanceResponse = await fetchBalanceObj.perform()
-    ;
+  _checkBalanceOfReserveAddress: async function() {
+    const oThis = this,
+      ethereumAddress = oThis.reserveAddrObj.ethereum_address,
+      minReserveAddrBalanceToProceedInWei = oThis._MIN_AVAILABLE_BALANCE_RESERVE,
+      fetchBalanceObj = new openStPlatform.services.balance.simpleTokenPrime({ address: ethereumAddress }),
+      balanceResponse = await fetchBalanceObj.perform();
 
     if (balanceResponse.isFailure()) return Promise.resolve(balanceResponse);
 
@@ -247,12 +245,11 @@ FundClientAddressKlass.prototype = {
       return responseHelper.error({
         internal_error_identifier: 's_a_fca_1',
         api_error_identifier: 'insufficient_funds',
-        debug_options: {clientId: oThis.clientId}
+        debug_options: { clientId: oThis.clientId }
       });
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
-
   },
 
   /**
@@ -263,32 +260,27 @@ FundClientAddressKlass.prototype = {
    * @returns {promise<boolean>}
    * @private
    */
-  _isTransferRequired: async function (ethereumAddress) {
-
-    const oThis = this
-      , fetchBalanceObj = new openStPlatform.services.balance.simpleTokenPrime({address: ethereumAddress})
-      , balanceResponse = await fetchBalanceObj.perform()
-    ;
+  _isTransferRequired: async function(ethereumAddress) {
+    const oThis = this,
+      fetchBalanceObj = new openStPlatform.services.balance.simpleTokenPrime({ address: ethereumAddress }),
+      balanceResponse = await fetchBalanceObj.perform();
 
     if (balanceResponse.isFailure()) {
-      logger.notify(
-        'e_fa_e_ceb_1',
-        'Error in fetching balance of Address - ' + ethereumAddress,
-        balanceResponse,
-        {clientId: oThis.clientId, ethereum_address: ethereumAddress}
-      );
+      logger.notify('e_fa_e_ceb_1', 'Error in fetching balance of Address - ' + ethereumAddress, balanceResponse, {
+        clientId: oThis.clientId,
+        ethereum_address: ethereumAddress
+      });
 
-      throw "Error in fetching balance of Address - " + ethereumAddress;
+      throw 'Error in fetching balance of Address - ' + ethereumAddress;
     }
 
     const ethBalanceBigNumber = basicHelper.convertToBigNumber(balanceResponse.data.balance);
 
-    if(ethBalanceBigNumber.lessThan(oThis._MIN_BALANCE)){
+    if (ethBalanceBigNumber.lessThan(oThis._MIN_BALANCE)) {
       return Promise.resolve(true);
     } else {
       return Promise.resolve(false);
     }
-
   },
 
   /**
@@ -302,17 +294,15 @@ FundClientAddressKlass.prototype = {
    * @returns {promise<result>}
    * @private
    */
-  _transferBalance: async function (reserveAddress, reservePassphrase, recipientAddress, transferAmountInWei) {
-
-    const oThis = this
-        , transferParams = {
-          sender_address: reserveAddress,
-          sender_passphrase: reservePassphrase,
-          recipient_address: recipientAddress,
-          amount_in_wei: transferAmountInWei,
-          options: {returnType: 'txReceipt', tag: ''}
-        }
-    ;
+  _transferBalance: async function(reserveAddress, reservePassphrase, recipientAddress, transferAmountInWei) {
+    const oThis = this,
+      transferParams = {
+        sender_address: reserveAddress,
+        sender_passphrase: reservePassphrase,
+        recipient_address: recipientAddress,
+        amount_in_wei: transferAmountInWei,
+        options: { returnType: 'txReceipt', tag: '' }
+      };
 
     const transferSTPrimeBalanceObj = new openStPlatform.services.transaction.transfer.simpleTokenPrime(transferParams);
 
@@ -323,14 +313,13 @@ FundClientAddressKlass.prototype = {
         'e_fa_e_teb_1',
         'Error in transfer of ' + transferAmountInWei + ' Wei Eth to Address - ' + recipientAddress,
         transferResponse,
-        {clientId: oThis.clientId, ethereum_address: recipientAddress, amount_in_wei: transferAmountInWei}
+        { clientId: oThis.clientId, ethereum_address: recipientAddress, amount_in_wei: transferAmountInWei }
       );
       return Promise.resolve(transferResponse);
     }
 
     return Promise.resolve(transferResponse);
   }
-
 };
 
 module.exports = FundClientAddressKlass;

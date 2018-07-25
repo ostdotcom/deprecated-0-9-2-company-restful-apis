@@ -1,43 +1,40 @@
-"use strict";
+'use strict';
 
-const rootPrefix = '../..'
-  , coreConstants = require(rootPrefix + '/config/core_constants')
-  , util = require(rootPrefix + '/lib/util')
-  , ModelBaseKlass = require(rootPrefix + '/app/models/base')
-  , clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop')
-  , bitWiseHelperKlass = require(rootPrefix + '/helpers/bitwise_operations')
-;
+const rootPrefix = '../..',
+  coreConstants = require(rootPrefix + '/config/core_constants'),
+  util = require(rootPrefix + '/lib/util'),
+  ModelBaseKlass = require(rootPrefix + '/app/models/base'),
+  clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop'),
+  bitWiseHelperKlass = require(rootPrefix + '/helpers/bitwise_operations');
 
-const dbName = "saas_airdrop_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
-  , statuses = {
-    '1':clientAirdropConst.incompleteStatus,
-    '2':clientAirdropConst.processingStatus,
-    '3':clientAirdropConst.completeStatus,
-    '4':clientAirdropConst.failedStatus
-  }
-  , stepsComplete = {
-    '1':clientAirdropConst.usersIdentifiedStepComplete,
-    '2':clientAirdropConst.tokensTransferedStepComplete,
-    '4':clientAirdropConst.contractApprovedStepComplete,
-    '8':clientAirdropConst.allocationDoneStepComplete
-  }
-  , airdropListType = {
-    '1':clientAirdropConst.allAddressesAirdropListType,
-    '2':clientAirdropConst.neverAirdroppedAddressesAirdropListType,
-    '4':clientAirdropConst.everAirdroppedAddressesAirdropListType,
-    '8':clientAirdropConst.specificAddressesAirdropListType
-  }
-  , invertedStatuses = util.invert(statuses)
-  , invertedStepsComplete = util.invert(stepsComplete)
-  , invertedAirdropListType = util.invert(airdropListType)
-;
+const dbName = 'saas_airdrop_' + coreConstants.SUB_ENVIRONMENT + '_' + coreConstants.ENVIRONMENT,
+  statuses = {
+    '1': clientAirdropConst.incompleteStatus,
+    '2': clientAirdropConst.processingStatus,
+    '3': clientAirdropConst.completeStatus,
+    '4': clientAirdropConst.failedStatus
+  },
+  stepsComplete = {
+    '1': clientAirdropConst.usersIdentifiedStepComplete,
+    '2': clientAirdropConst.tokensTransferedStepComplete,
+    '4': clientAirdropConst.contractApprovedStepComplete,
+    '8': clientAirdropConst.allocationDoneStepComplete
+  },
+  airdropListType = {
+    '1': clientAirdropConst.allAddressesAirdropListType,
+    '2': clientAirdropConst.neverAirdroppedAddressesAirdropListType,
+    '4': clientAirdropConst.everAirdroppedAddressesAirdropListType,
+    '8': clientAirdropConst.specificAddressesAirdropListType
+  },
+  invertedStatuses = util.invert(statuses),
+  invertedStepsComplete = util.invert(stepsComplete),
+  invertedAirdropListType = util.invert(airdropListType);
 
-const ClientAirdropModel = function () {
-  const oThis = this
-  ;
+const ClientAirdropModel = function() {
+  const oThis = this;
 
   bitWiseHelperKlass.call(oThis);
-  ModelBaseKlass.call(oThis, {dbName: dbName});
+  ModelBaseKlass.call(oThis, { dbName: dbName });
 };
 
 ClientAirdropModel.prototype = Object.create(ModelBaseKlass.prototype);
@@ -57,24 +54,28 @@ const ClientAirdropModelSpecificPrototype = {
   invertedAirdropListType: invertedAirdropListType,
 
   enums: {
-    'status': {
+    status: {
       val: statuses,
       inverted: invertedStatuses
     }
   },
 
-  getById: function (id) {
-    const oThis = this
-    ;
+  getById: function(id) {
+    const oThis = this;
 
-    return oThis.select('*').where({id: id}).fire();
+    return oThis
+      .select('*')
+      .where({ id: id })
+      .fire();
   },
 
-  getByClientId: function (clientId) {
-    const oThis = this
-    ;
+  getByClientId: function(clientId) {
+    const oThis = this;
 
-    return oThis.select('*').where({client_id: clientId}).fire();
+    return oThis
+      .select('*')
+      .where({ client_id: clientId })
+      .fire();
   },
 
   /**
@@ -91,17 +92,15 @@ const ClientAirdropModelSpecificPrototype = {
    * @param {array} [params.current_statuses] - Filter of statuses to be fetched in result
    *
    */
-  getByFilterAndPaginationParams: function (params) {
+  getByFilterAndPaginationParams: function(params) {
+    const oThis = this,
+      clientId = params.client_id,
+      orderBy = params.order_by,
+      orderType = params.order,
+      airdropUuidsForFiltering = params.airdrop_uuids || [],
+      currentStatusesForFiltering = params.current_statuses;
 
-    const oThis = this
-      , clientId = params.client_id
-      , orderBy = params.order_by
-      , orderType = params.order
-      , airdropUuidsForFiltering = params.airdrop_uuids || []
-      , currentStatusesForFiltering = params.current_statuses
-    ;
-
-    let query = oThis.select(['id', 'airdrop_uuid', 'status', 'steps_complete']).where({client_id: clientId});
+    let query = oThis.select(['id', 'airdrop_uuid', 'status', 'steps_complete']).where({ client_id: clientId });
 
     if (airdropUuidsForFiltering.length > 0) {
       query.where(['airdrop_uuid IN (?)', airdropUuidsForFiltering]);
@@ -109,18 +108,21 @@ const ClientAirdropModelSpecificPrototype = {
 
     if (currentStatusesForFiltering.length > 0) {
       var qryArr = [];
-      for(var i=0; i < currentStatusesForFiltering.length; i++){
-        qryArr.push(invertedStatuses[currentStatusesForFiltering[i]])
+      for (var i = 0; i < currentStatusesForFiltering.length; i++) {
+        qryArr.push(invertedStatuses[currentStatusesForFiltering[i]]);
       }
-      query.where(["status in (?)", qryArr]);
+      query.where(['status in (?)', qryArr]);
     }
 
     let orderByStr = 'id';
-    orderByStr += (orderType.toLowerCase() == 'asc') ? ' ASC' : ' DESC';
+    orderByStr += orderType.toLowerCase() == 'asc' ? ' ASC' : ' DESC';
 
-    return query.order_by(orderByStr).limit(params.limit).offset(params.offset).fire();
-
-  },
+    return query
+      .order_by(orderByStr)
+      .limit(params.limit)
+      .offset(params.offset)
+      .fire();
+  }
 };
 
 /**
@@ -129,10 +131,10 @@ const ClientAirdropModelSpecificPrototype = {
  *
  * @return {{}}
  */
-ClientAirdropModel.prototype.setBitColumns = function () {
+ClientAirdropModel.prototype.setBitColumns = function() {
   const oThis = this;
 
-  oThis.bitColumns = {'steps_complete': invertedStepsComplete, 'airdrop_list_type': invertedAirdropListType};
+  oThis.bitColumns = { steps_complete: invertedStepsComplete, airdrop_list_type: invertedAirdropListType };
 
   return oThis.bitColumns;
 };

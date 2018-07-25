@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * This executable / script is intermediate communicator between value chain and utility chain used for the registering branded token.
@@ -10,33 +10,27 @@
  * @module executables/inter_comm/register_branded_token
  */
 
-
-const rootPrefix = '../..'
-;
+const rootPrefix = '../..';
 
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
 
+const openStPlatform = require('@openstfoundation/openst-platform');
 
-const openStPlatform = require('@openstfoundation/openst-platform')
-;
+const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  RegisterBrandedTokenInterComm = openStPlatform.services.interComm.registerBrandedToken;
 
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , RegisterBrandedTokenInterComm = openStPlatform.services.interComm.registerBrandedToken
-;
+const args = process.argv,
+  filePath = args[2];
 
-const args = process.argv
-  , filePath = args[2]
-;
-
-const registerBrandedTokenInterCommObj = new RegisterBrandedTokenInterComm({file_path: filePath});
+const registerBrandedTokenInterCommObj = new RegisterBrandedTokenInterComm({ file_path: filePath });
 registerBrandedTokenInterCommObj.registerInterruptSignalHandlers();
 registerBrandedTokenInterCommObj.init();
-logger.win("InterComm Script for Register Branded Token initiated.");
+logger.win('InterComm Script for Register Branded Token initiated.');
 
 process.on('uncaughtException', function() {
-  logger.error("Received uncaughtException");
-  setTimeout(function () {
+  logger.error('Received uncaughtException');
+  setTimeout(function() {
     process.exit(1);
-  }, 60000)
+  }, 60000);
 });

@@ -1,16 +1,12 @@
-"use strict";
+'use strict';
 
-const express = require('express')
-;
+const express = require('express');
 
-const rootPrefix = '../..'
-  , routeHelper = require(rootPrefix + '/routes/helper')
-  , BalanceFormatter = require(rootPrefix + '/lib/formatter/entities/latest/balance')
-;
+const rootPrefix = '../..',
+  routeHelper = require(rootPrefix + '/routes/helper'),
+  BalanceFormatter = require(rootPrefix + '/lib/formatter/entities/latest/balance');
 
-const router = express.Router()
-;
-
+const router = express.Router();
 
 /**
  * Get balance of user
@@ -20,8 +16,7 @@ const router = express.Router()
  * @routeparam {String} :id - User uuid
  *
  */
-router.get('/:id', function (req, res, next) {
-
+router.get('/:id', function(req, res, next) {
   const getBalanceKlass = require(rootPrefix + '/app/services/balances/fetch');
   req.decodedParams.apiName = 'get_balance';
   req.decodedParams.id = req.params.id;

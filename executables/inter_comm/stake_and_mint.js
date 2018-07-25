@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * This executable / script is intermediate communicator between value chain and utility chain used for the stake and mint.
@@ -9,34 +9,28 @@
  * @module executables/inter_comm/stake_and_mint
  */
 
-const rootPrefix = '../..'
-;
+const rootPrefix = '../..';
 
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
 
-const openStPlatform = require('@openstfoundation/openst-platform')
-;
+const openStPlatform = require('@openstfoundation/openst-platform');
 
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , StakeAndMintInterCommKlass = openStPlatform.services.interComm.stakeAndMint
-;
+const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  StakeAndMintInterCommKlass = openStPlatform.services.interComm.stakeAndMint;
 
-const args = process.argv
-  , filePath = args[2]
-;
+const args = process.argv,
+  filePath = args[2];
 
-const stakeAndMintInterCommObj = new StakeAndMintInterCommKlass({file_path: filePath});
+const stakeAndMintInterCommObj = new StakeAndMintInterCommKlass({ file_path: filePath });
 stakeAndMintInterCommObj.registerInterruptSignalHandlers();
 stakeAndMintInterCommObj.init();
 
-logger.win("InterComm Script for Stake and Mint initiated.");
-
-
+logger.win('InterComm Script for Stake and Mint initiated.');
 
 process.on('uncaughtException', function() {
-  logger.error("Received uncaughtException");
-  setTimeout(function () {
+  logger.error('Received uncaughtException');
+  setTimeout(function() {
     process.exit(1);
-  }, 60000)
+  }, 60000);
 });

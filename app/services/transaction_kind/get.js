@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  *
@@ -7,15 +7,14 @@
  * @module app/services/transaction_kind/get
  */
 
-const rootPrefix = '../../..'
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , basicHelper = require(rootPrefix + '/helpers/basic')
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type')
-  , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
-  , ActionEntityFormatterKlass = require(rootPrefix +'/lib/formatter/entities/latest/action')
-  , commonValidator = require(rootPrefix + '/lib/validators/common')
-;
+const rootPrefix = '../../..',
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  basicHelper = require(rootPrefix + '/helpers/basic'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type'),
+  clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types'),
+  ActionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/action'),
+  commonValidator = require(rootPrefix + '/lib/validators/common');
 
 /**
  * Get an action
@@ -26,43 +25,37 @@ const rootPrefix = '../../..'
  *
  * @constructor
  */
-const GetAction = function(params){
-
-  const oThis = this
-  ;
+const GetAction = function(params) {
+  const oThis = this;
 
   oThis.id = params.id;
   oThis.clientId = params.client_id;
   oThis.transactionTypes = [];
-
 };
 
 GetAction.prototype = {
-
   /**
    * perform
    *
    * @returns {promise}
    */
   perform: function() {
-    const oThis = this
-    ;
+    const oThis = this;
 
-    return oThis.asyncPerform()
-      .catch(function(error) {
-        if (responseHelper.isCustomResult(error)){
-          return error;
-        } else {
-          logger.error(`${__filename}::perform::catch`);
-          logger.error(error);
+    return oThis.asyncPerform().catch(function(error) {
+      if (responseHelper.isCustomResult(error)) {
+        return error;
+      } else {
+        logger.error(`${__filename}::perform::catch`);
+        logger.error(error);
 
-          return responseHelper.error({
-            internal_error_identifier: 's_tk_g_1',
-            api_error_identifier: 'unhandled_catch_response',
-            debug_options: {}
-          });
-        }
-      })
+        return responseHelper.error({
+          internal_error_identifier: 's_tk_g_1',
+          api_error_identifier: 'unhandled_catch_response',
+          debug_options: {}
+        });
+      }
+    });
   },
 
   /**
@@ -71,15 +64,13 @@ GetAction.prototype = {
    * @returns {promise}
    */
   asyncPerform: async function() {
-    const oThis = this
-    ;
+    const oThis = this;
 
     await oThis.validateAssignParams();
 
     await oThis.getTransactionKind();
 
     return oThis.returnResponse();
-
   },
 
   /**
@@ -88,15 +79,16 @@ GetAction.prototype = {
    * @returns {promise}
    */
   validateAssignParams: async function() {
-    const oThis = this
-    ;
+    const oThis = this;
 
-    if(isNaN(oThis.id)) {
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_tk_g_2',
-        api_error_identifier: 'data_not_found',
-        debug_options: {clientId: oThis.clientId}
-      }));
+    if (isNaN(oThis.id)) {
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 's_tk_g_2',
+          api_error_identifier: 'data_not_found',
+          debug_options: { clientId: oThis.clientId }
+        })
+      );
     }
 
     return Promise.resolve({});
@@ -107,33 +99,36 @@ GetAction.prototype = {
    *
    * @returns {promise}
    */
-  getTransactionKind: async function () {
-    const oThis = this
-    ;
+  getTransactionKind: async function() {
+    const oThis = this;
 
     const result = await new ClientTransactionTypeModel().getTransactionById({ clientTransactionId: oThis.id });
 
     oThis.result = result[0];
 
     if (!oThis.result) {
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_tk_g_3',
-        api_error_identifier: 'data_not_found',
-        debug_options: {clientId: oThis.clientId}
-      }));
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 's_tk_g_3',
+          api_error_identifier: 'data_not_found',
+          debug_options: { clientId: oThis.clientId }
+        })
+      );
     }
 
     if (oThis.result.client_id != oThis.clientId) {
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_tk_g_4',
-        api_error_identifier: 'data_not_found',
-        debug_options: {clientId: oThis.clientId}
-      }));
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 's_tk_g_4',
+          api_error_identifier: 'data_not_found',
+          debug_options: { clientId: oThis.clientId }
+        })
+      );
     }
 
-    if(result.currency_type == clientTxTypesConst.btCurrencyType) {
+    if (result.currency_type == clientTxTypesConst.btCurrencyType) {
       oThis.amount = basicHelper.formatWeiToString(basicHelper.convertToNormal(oThis.result.value_in_bt_wei));
-    }else{
+    } else {
       oThis.amount = oThis.result.value_in_usd;
     }
 
@@ -148,20 +143,19 @@ GetAction.prototype = {
    *
    * @returns {promise}
    */
-  returnResponse: async function () {
-
+  returnResponse: async function() {
     const oThis = this;
 
     let actionEntityFormatter = new ActionEntityFormatterKlass(oThis.result);
 
     let actionEntityFormatterRsp = await actionEntityFormatter.perform();
 
-    return Promise.resolve(responseHelper.successWithData(
-      {
+    return Promise.resolve(
+      responseHelper.successWithData({
         result_type: 'action',
         action: actionEntityFormatterRsp.data
-      }
-    ));
+      })
+    );
   }
 };
 

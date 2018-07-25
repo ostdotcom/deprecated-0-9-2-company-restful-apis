@@ -1,13 +1,12 @@
-"use strict";
+'use strict';
 
-const rootPrefix = '../../..'
-  , openStPlatform = require('@openstfoundation/openst-platform')
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
-  , ClientBrandedTokenSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , basicHelper = require(rootPrefix + '/helpers/basic')
-;
+const rootPrefix = '../../..',
+  openStPlatform = require('@openstfoundation/openst-platform'),
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses'),
+  ClientBrandedTokenSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  basicHelper = require(rootPrefix + '/helpers/basic');
 
 /**
  * constructor
@@ -16,8 +15,7 @@ const rootPrefix = '../../..'
  *
  * @constructor
  */
-const UtilityChainBalancesFetcherKlass = function (params) {
-
+const UtilityChainBalancesFetcherKlass = function(params) {
   const oThis = this;
 
   oThis.addressUuid = params['address_uuid'];
@@ -25,34 +23,31 @@ const UtilityChainBalancesFetcherKlass = function (params) {
   oThis.balanceTypes = params['balance_types'];
 
   oThis.address = null;
-
 };
 
 UtilityChainBalancesFetcherKlass.prototype = {
-
   /**
    * fetch data from from UC in Wei
    *
    * @return {Result}
    */
-  perform: function(){
+  perform: function() {
     const oThis = this;
 
-    return oThis.asyncPerform()
-      .catch(function(error) {
-        if (responseHelper.isCustomResult(error)){
-          return error;
-        } else {
-          logger.error(`${__filename}::perform::catch`);
-          logger.error(error);
+    return oThis.asyncPerform().catch(function(error) {
+      if (responseHelper.isCustomResult(error)) {
+        return error;
+      } else {
+        logger.error(`${__filename}::perform::catch`);
+        logger.error(error);
 
-          return responseHelper.error({
-            internal_error_identifier: 's_a_ucbf_1',
-            api_error_identifier: 'unhandled_catch_response',
-            debug_options: {}
-          });
-        }
-      });
+        return responseHelper.error({
+          internal_error_identifier: 's_a_ucbf_1',
+          api_error_identifier: 'unhandled_catch_response',
+          debug_options: {}
+        });
+      }
+    });
   },
 
   /**
@@ -60,10 +55,9 @@ UtilityChainBalancesFetcherKlass.prototype = {
    *
    * @return {Result}
    */
-  asyncPerform: async function () {
-
-    const oThis = this
-      , balanceTypes = oThis.balanceTypes;
+  asyncPerform: async function() {
+    const oThis = this,
+      balanceTypes = oThis.balanceTypes;
 
     const setAddrRsp = await oThis._setAddress();
 
@@ -71,40 +65,28 @@ UtilityChainBalancesFetcherKlass.prototype = {
       return setAddrRsp;
     }
 
-    var promiseResolvers = []
-      , balances = {};
+    var promiseResolvers = [],
+      balances = {};
 
     for (var i = 0; i < balanceTypes.length; i++) {
-
       if (oThis._nonBrandedTokenBalanceTypes().indexOf(balanceTypes[i]) >= 0) {
-
-        var promise = oThis["_fetch" + balanceTypes[i] + "Balance"].apply(oThis);
-
+        var promise = oThis['_fetch' + balanceTypes[i] + 'Balance'].apply(oThis);
       } else {
-
         var promise = oThis._fetchBrandedTokenBalance(balanceTypes[i]);
-
       }
 
       promiseResolvers.push(promise);
-
     }
 
     const promiseResolverResponses = await Promise.all(promiseResolvers);
 
     for (var i = 0; i < balanceTypes.length; i++) {
-
-      var balanceType = balanceTypes[i]
-        , response = promiseResolverResponses[i]
-        , balance = null;
+      var balanceType = balanceTypes[i],
+        response = promiseResolverResponses[i],
+        balance = null;
 
       if (response.isFailure()) {
-        logger.notify(
-          'ub_bf_1',
-          'Something Went Wrong',
-          response,
-          {clientId: oThis.clientId}
-        );
+        logger.notify('ub_bf_1', 'Something Went Wrong', response, { clientId: oThis.clientId });
       } else {
         var data = response.data;
         if (data && data.balance) {
@@ -114,11 +96,9 @@ UtilityChainBalancesFetcherKlass.prototype = {
         }
         balances[balanceType] = basicHelper.convertToNormal(balance);
       }
-
     }
 
     return Promise.resolve(responseHelper.successWithData(balances));
-
   },
 
   /**
@@ -126,8 +106,8 @@ UtilityChainBalancesFetcherKlass.prototype = {
    *
    * @return {Array}
    */
-  _nonBrandedTokenBalanceTypes: function () {
-    return ['ostPrime']
+  _nonBrandedTokenBalanceTypes: function() {
+    return ['ostPrime'];
   },
 
   /**
@@ -135,14 +115,12 @@ UtilityChainBalancesFetcherKlass.prototype = {
    *
    * @return {Promise}
    */
-  _fetchostPrimeBalance: function () {
-
+  _fetchostPrimeBalance: function() {
     const oThis = this;
 
-    const obj = new openStPlatform.services.balance.simpleTokenPrime({'address': oThis.address});
+    const obj = new openStPlatform.services.balance.simpleTokenPrime({ address: oThis.address });
 
     return obj.perform();
-
   },
 
   /**
@@ -152,11 +130,10 @@ UtilityChainBalancesFetcherKlass.prototype = {
    *
    * @return {Promise}
    */
-  _fetchBrandedTokenBalance: async function (tokenSymbol) {
-
-    const oThis = this
-      , clientBrandedTokenSecureCacheObj = new ClientBrandedTokenSecureCacheKlass({tokenSymbol: tokenSymbol})
-      , clientBrandedTokenSecureCacheRsp = await clientBrandedTokenSecureCacheObj.fetch();
+  _fetchBrandedTokenBalance: async function(tokenSymbol) {
+    const oThis = this,
+      clientBrandedTokenSecureCacheObj = new ClientBrandedTokenSecureCacheKlass({ tokenSymbol: tokenSymbol }),
+      clientBrandedTokenSecureCacheRsp = await clientBrandedTokenSecureCacheObj.fetch();
 
     if (clientBrandedTokenSecureCacheRsp.isFailure()) {
       return Promise.resolve(clientBrandedTokenSecureCacheRsp);
@@ -165,27 +142,31 @@ UtilityChainBalancesFetcherKlass.prototype = {
     const clientBrandedTokenSecureCacheData = clientBrandedTokenSecureCacheRsp.data;
 
     if (parseInt(clientBrandedTokenSecureCacheData.client_id) != parseInt(oThis.clientId)) {
-      return Promise.resolve(responseHelper.error({
-        internal_error_identifier: 's_a_ucbf_2',
-        api_error_identifier: 'unauthorized_for_other_client',
-        debug_options: {}
-      }));
+      return Promise.resolve(
+        responseHelper.error({
+          internal_error_identifier: 's_a_ucbf_2',
+          api_error_identifier: 'unauthorized_for_other_client',
+          debug_options: {}
+        })
+      );
     }
 
     if (!clientBrandedTokenSecureCacheData.token_erc20_address) {
-      return Promise.resolve(responseHelper.error({
-        internal_error_identifier: 's_a_ucbf_3',
-        api_error_identifier: 'token_contract_not_deployed',
-        debug_options: {}
-      }));
+      return Promise.resolve(
+        responseHelper.error({
+          internal_error_identifier: 's_a_ucbf_3',
+          api_error_identifier: 'token_contract_not_deployed',
+          debug_options: {}
+        })
+      );
     }
 
-    const obj = new openStPlatform.services.balance.brandedToken(
-      {'address': oThis.address, 'erc20_address': clientBrandedTokenSecureCacheData.token_erc20_address}
-    );
+    const obj = new openStPlatform.services.balance.brandedToken({
+      address: oThis.address,
+      erc20_address: clientBrandedTokenSecureCacheData.token_erc20_address
+    });
 
     return obj.perform();
-
   },
 
   /**
@@ -193,11 +174,10 @@ UtilityChainBalancesFetcherKlass.prototype = {
    *
    * @return {Promise}
    */
-  _setAddress: async function () {
-
+  _setAddress: async function() {
     const oThis = this;
 
-    const managedAddressCache = new ManagedAddressCacheKlass({'uuids': [oThis.addressUuid]});
+    const managedAddressCache = new ManagedAddressCacheKlass({ uuids: [oThis.addressUuid] });
 
     const cacheFetchResponse = await managedAddressCache.fetch();
     var response = cacheFetchResponse.data[oThis.addressUuid];
@@ -209,9 +189,7 @@ UtilityChainBalancesFetcherKlass.prototype = {
     oThis.address = response['ethereum_address'];
 
     return Promise.resolve(responseHelper.successWithData({}));
-
   }
-
 };
 
 module.exports = UtilityChainBalancesFetcherKlass;

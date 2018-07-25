@@ -1,15 +1,14 @@
 'use strict';
 
-const rootPrefix = '../..'
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , AssignShardsForClient = require(rootPrefix + '/lib/on_boarding/assign_shards')
-  , ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token')
-  , commonValidator = require(rootPrefix +  '/lib/validators/common')
-  , basicHelper = require(rootPrefix + '/helpers/basic')
-  , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
-  , errorConfig = basicHelper.fetchErrorConfig(apiVersions.internal)
-;
+const rootPrefix = '../..',
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  AssignShardsForClient = require(rootPrefix + '/lib/on_boarding/assign_shards'),
+  ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
+  commonValidator = require(rootPrefix + '/lib/validators/common'),
+  basicHelper = require(rootPrefix + '/helpers/basic'),
+  apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
+  errorConfig = basicHelper.fetchErrorConfig(apiVersions.internal);
 
 /**
  *
@@ -19,41 +18,35 @@ const rootPrefix = '../..'
  * @constructor
  *
  */
-const AssignShards = function (params) {
-
-  const oThis = this
-  ;
+const AssignShards = function(params) {
+  const oThis = this;
 
   oThis.startClientId = params.start_client_id;
   oThis.endClientId = null;
-
 };
 
 AssignShards.prototype = {
-
   /**
    * Perform
    *
    * @return {promise}
    */
-  perform: function () {
-    const oThis = this
-    ;
+  perform: function() {
+    const oThis = this;
 
-    return oThis.asyncPerform()
-      .catch(function (error) {
-        if (responseHelper.isCustomResult(error)) {
-          return error;
-        } else {
-          logger.error(`${__filename}::perform::catch`);
-          logger.error(error);
-          return responseHelper.error({
-            internal_error_identifier: 'e_drdm_ads_1',
-            api_error_identifier: 'unhandled_catch_response',
-            debug_options: {}
-          });
-        }
-      });
+    return oThis.asyncPerform().catch(function(error) {
+      if (responseHelper.isCustomResult(error)) {
+        return error;
+      } else {
+        logger.error(`${__filename}::perform::catch`);
+        logger.error(error);
+        return responseHelper.error({
+          internal_error_identifier: 'e_drdm_ads_1',
+          api_error_identifier: 'unhandled_catch_response',
+          debug_options: {}
+        });
+      }
+    });
   },
 
   /**
@@ -62,15 +55,13 @@ AssignShards.prototype = {
    * @returns {promise}
    */
   asyncPerform: async function() {
-    const oThis = this
-    ;
+    const oThis = this;
 
     await oThis._validateAndSanitize();
 
     await oThis._fetchMaxClientId();
 
     await oThis._assignShards();
-
   },
 
   /**
@@ -79,23 +70,22 @@ AssignShards.prototype = {
    * @returns {promise}
    */
 
-  _validateAndSanitize: function () {
-
-    const oThis = this
-    ;
+  _validateAndSanitize: function() {
+    const oThis = this;
 
     if (!commonValidator.isVarInteger(oThis.startClientId)) {
-      return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 'e_drdm_ads_2',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_start_client_id'],
-        error_config: errorConfig,
-        debug_options: {}
-      }));
+      return Promise.reject(
+        responseHelper.paramValidationError({
+          internal_error_identifier: 'e_drdm_ads_2',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: ['invalid_start_client_id'],
+          error_config: errorConfig,
+          debug_options: {}
+        })
+      );
     }
 
     return Promise.resolve({});
-
   },
 
   /**
@@ -104,10 +94,9 @@ AssignShards.prototype = {
    * @returns {promise}
    */
   _fetchMaxClientId: async function() {
-    const oThis = this
-    ;
+    const oThis = this;
 
-    let query = await (new ClientBrandedTokenModel())
+    let query = await new ClientBrandedTokenModel()
       .select(['client_id'])
       .where(['client_id >= ?', parseInt(oThis.startClientId)])
       .limit(1)
@@ -116,7 +105,6 @@ AssignShards.prototype = {
     let results = await query.fire();
 
     oThis.endClientId = results[0]['client_id'];
-
   },
 
   /**
@@ -124,9 +112,8 @@ AssignShards.prototype = {
    *
    * @returns {promise}
    */
-  _assignShards: async function () {
-    const oThis = this
-    ;
+  _assignShards: async function() {
+    const oThis = this;
 
     let promiseArray = [];
 
@@ -134,45 +121,39 @@ AssignShards.prototype = {
     logger.info('oThis.endClientId', oThis.endClientId);
 
     for (let id = oThis.startClientId; id <= oThis.endClientId; id = id + 10) {
+      let endId = id + 10,
+        index = 0,
+        indexToClientIdMap = {};
 
-      let endId = id + 10
-          , index = 0
-          , indexToClientIdMap = {}
-      ;
+      logger.info('starting for ids >= ', id, ' and < ', endId);
 
-      logger.info('starting for ids >= ', id , ' and < ', endId);
-
-      for (let client_id = id; client_id < endId && client_id < oThis.endClientId; client_id++ ) {
-
+      for (let client_id = id; client_id < endId && client_id < oThis.endClientId; client_id++) {
         let promise = new AssignShardsForClient({
           client_id: client_id
-        }).perform().catch(oThis.catchHandlingFunction);
+        })
+          .perform()
+          .catch(oThis.catchHandlingFunction);
 
         promiseArray.push(promise);
 
         indexToClientIdMap[index] = client_id;
         index += 1;
-
       }
 
-      logger.info('waiting for completion for ids between ', id , ' and ', endId);
+      logger.info('waiting for completion for ids between ', id, ' and ', endId);
 
       let promiseResponses = await Promise.all(promiseArray);
 
-      for (let i = 0; i < promiseResponses.length; i++ ) {
-
-        if(promiseResponses[i].isFailure()) {
+      for (let i = 0; i < promiseResponses.length; i++) {
+        if (promiseResponses[i].isFailure()) {
           logger.info('client_id failed: ', indexToClientIdMap[i], promiseResponses[i].toHash());
         }
-
       }
 
       promiseArray = [];
-
     }
 
     return Promise.resolve({});
-
   },
 
   /**
@@ -180,7 +161,7 @@ AssignShards.prototype = {
    *
    * @returns {object}
    */
-  catchHandlingFunction: async function (error) {
+  catchHandlingFunction: async function(error) {
     if (responseHelper.isCustomResult(error)) {
       return error;
     } else {
@@ -194,8 +175,16 @@ AssignShards.prototype = {
       });
     }
   }
-
 };
 
-const object = new AssignShards({start_client_id: 1000});
-object.perform().then(function(a) {console.log(a.toHash()); process.exit(0)}).catch(function(a) {console.log(a); process.exit(1)});
+const object = new AssignShards({ start_client_id: 1000 });
+object
+  .perform()
+  .then(function(a) {
+    console.log(a.toHash());
+    process.exit(0);
+  })
+  .catch(function(a) {
+    console.log(a);
+    process.exit(1);
+  });

@@ -1,25 +1,22 @@
-"use strict";
+'use strict';
 
-const openStPlatform = require('@openstfoundation/openst-platform')
-;
+const openStPlatform = require('@openstfoundation/openst-platform');
 
-const rootPrefix = '../../..'
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-;
+const rootPrefix = '../../..',
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
 /**
  * Fetch Transaction Receipt from Transaction Hash
  *
  * @module services/transaction/get_receipt
  */
-const GetReceiptKlass = function(params){
+const GetReceiptKlass = function(params) {
   const oThis = this;
 
   oThis.transactionHash = params.transaction_hash;
   oThis.chain = params.chain;
   oThis.addressToNameMap = params.address_to_name_map || {};
-
 };
 
 /**
@@ -32,47 +29,41 @@ const GetReceiptKlass = function(params){
  * @constructor
  */
 GetReceiptKlass.prototype = {
-
-  perform: function(){
+  perform: function() {
     const oThis = this;
 
-    return oThis.asyncPerform()
-      .catch(function(error) {
-        if (responseHelper.isCustomResult(error)){
-          return error;
-        } else {
-          logger.error(`${__filename}::perform::catch`);
-          logger.error(error);
+    return oThis.asyncPerform().catch(function(error) {
+      if (responseHelper.isCustomResult(error)) {
+        return error;
+      } else {
+        logger.error(`${__filename}::perform::catch`);
+        logger.error(error);
 
-          return responseHelper.error({
-            internal_error_identifier: 's_t_gr_1',
-            api_error_identifier: 'unhandled_catch_response',
-            debug_options: {}
-          });
-
-        }
-      })
+        return responseHelper.error({
+          internal_error_identifier: 's_t_gr_1',
+          api_error_identifier: 'unhandled_catch_response',
+          debug_options: {}
+        });
+      }
+    });
   },
 
-  asyncPerform: async function(){
+  asyncPerform: async function() {
     const oThis = this;
 
-    const obj = new openStPlatform.services.transaction.getReceipt(
-      {
-        transaction_hash: oThis.transactionHash,
-        chain: oThis.chain,
-        address_to_name_map: oThis.addressToNameMap
-      }
-    );
+    const obj = new openStPlatform.services.transaction.getReceipt({
+      transaction_hash: oThis.transactionHash,
+      chain: oThis.chain,
+      address_to_name_map: oThis.addressToNameMap
+    });
 
     const response = await obj.perform();
-    if(response.isSuccess()){
+    if (response.isSuccess()) {
       return Promise.resolve(responseHelper.successWithData(response.data));
     } else {
       return Promise.resolve(response);
     }
   }
-
 };
 
 module.exports = GetReceiptKlass;

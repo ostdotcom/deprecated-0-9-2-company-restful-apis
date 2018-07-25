@@ -1,37 +1,35 @@
-"use strict";
+'use strict';
 
-const rootPrefix = '../..'
-  , coreConstants = require(rootPrefix + '/config/core_constants')
-  , util = require(rootPrefix + '/lib/util')
-  , ModelBaseKlass = require(rootPrefix + '/app/models/base')
-  , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
-  , bitWiseHelperKlass = require(rootPrefix + '/helpers/bitwise_operations')
-  , commonValidator = require(rootPrefix +  '/lib/validators/common')
-;
+const rootPrefix = '../..',
+  coreConstants = require(rootPrefix + '/config/core_constants'),
+  util = require(rootPrefix + '/lib/util'),
+  ModelBaseKlass = require(rootPrefix + '/app/models/base'),
+  managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
+  bitWiseHelperKlass = require(rootPrefix + '/helpers/bitwise_operations'),
+  commonValidator = require(rootPrefix + '/lib/validators/common');
 
-const dbName = "saas_client_economy_" + coreConstants.SUB_ENVIRONMENT + "_" + coreConstants.ENVIRONMENT
-  , statuses = {'1': managedAddressesConst.activeStatus, '2': managedAddressesConst.inactiveStatus}
-  , invertedStatuses = util.invert(statuses)
-  , addressTypes = {
+const dbName = 'saas_client_economy_' + coreConstants.SUB_ENVIRONMENT + '_' + coreConstants.ENVIRONMENT,
+  statuses = { '1': managedAddressesConst.activeStatus, '2': managedAddressesConst.inactiveStatus },
+  invertedStatuses = util.invert(statuses),
+  addressTypes = {
     '1': managedAddressesConst.userAddressType,
     '2': managedAddressesConst.reserveAddressType,
     '3': managedAddressesConst.workerAddressType,
     '4': managedAddressesConst.airdropHolderAddressType,
     '5': managedAddressesConst.internalChainIndenpendentAddressType
-  }
-  , invertedAddressTypes = util.invert(addressTypes)
-  , properties = {
+  },
+  invertedAddressTypes = util.invert(addressTypes),
+  properties = {
     1: managedAddressesConst.airdropGrantProperty,
     2: managedAddressesConst.bTContractApproved
-  }
-  , invertedProperties = util.invert(properties)
-;
+  },
+  invertedProperties = util.invert(properties);
 
-const ManagedAddressModel = function () {
+const ManagedAddressModel = function() {
   const oThis = this;
 
   bitWiseHelperKlass.call(this);
-  ModelBaseKlass.call(this, {dbName: dbName});
+  ModelBaseKlass.call(this, { dbName: dbName });
 };
 
 ManagedAddressModel.prototype = Object.create(ModelBaseKlass.prototype);
@@ -53,72 +51,77 @@ const ManagedAddressKlassPrototype = {
   invertedProperties: invertedProperties,
 
   enums: {
-    'status': {
+    status: {
       val: statuses,
       inverted: invertedStatuses
     },
-    'address_type': {
+    address_type: {
       val: addressTypes,
       inverted: invertedAddressTypes
     }
   },
 
-  getByEthAddresses: function (ethAddresses) {
-    const oThis = this
-    ;
+  getByEthAddresses: function(ethAddresses) {
+    const oThis = this;
 
-    return oThis.select(['client_id', 'uuid', 'name', 'ethereum_address'])
-      .where(['ethereum_address IN (?)', ethAddresses]).fire();
+    return oThis
+      .select(['client_id', 'uuid', 'name', 'ethereum_address'])
+      .where(['ethereum_address IN (?)', ethAddresses])
+      .fire();
   },
 
-  getByEthAddressesSecure: function (ethAddresses) {
-    const oThis = this
-    ;
+  getByEthAddressesSecure: function(ethAddresses) {
+    const oThis = this;
 
-    return oThis.select(['ethereum_address', 'managed_address_salt_id', 'private_key'])
-      .where(['ethereum_address IN (?)', ethAddresses]).fire();
+    return oThis
+      .select(['ethereum_address', 'managed_address_salt_id', 'private_key'])
+      .where(['ethereum_address IN (?)', ethAddresses])
+      .fire();
   },
 
-  getByIds: function (ids) {
-    const oThis = this
-    ;
+  getByIds: function(ids) {
+    const oThis = this;
 
-    return oThis.select('*')
-      .where(['id IN (?)', ids]).fire();
+    return oThis
+      .select('*')
+      .where(['id IN (?)', ids])
+      .fire();
   },
 
-  getFilteredActiveUsersByLimitAndOffset: function (params) {
-    const oThis = this
-      , clientId = params.client_id
-      , propertyUnsetBitVal = params.property_unset_bit_value
-      , propertySetBitVal = params.property_set_bit_value
-      , uuids = params.uuids
-      , addressTypeInt = invertedAddressTypes[managedAddressesConst.userAddressType]
-      , statusInt = invertedStatuses[managedAddressesConst.activeStatus]
-    ;
+  getFilteredActiveUsersByLimitAndOffset: function(params) {
+    const oThis = this,
+      clientId = params.client_id,
+      propertyUnsetBitVal = params.property_unset_bit_value,
+      propertySetBitVal = params.property_set_bit_value,
+      uuids = params.uuids,
+      addressTypeInt = invertedAddressTypes[managedAddressesConst.userAddressType],
+      statusInt = invertedStatuses[managedAddressesConst.activeStatus];
 
-    let query = oThis.select(['id']).where({client_id: clientId, status: statusInt, address_type: addressTypeInt});
+    let query = oThis.select(['id']).where({ client_id: clientId, status: statusInt, address_type: addressTypeInt });
 
-    if(uuids){
-      query.where(["uuid in (?)", uuids]);
+    if (uuids) {
+      query.where(['uuid in (?)', uuids]);
     }
 
     if (propertyUnsetBitVal) {
       query.where(['(properties & ?) = 0', propertyUnsetBitVal]);
-    } else if (propertySetBitVal){
+    } else if (propertySetBitVal) {
       oThis.where(['(properties & ?) > 0', propertySetBitVal]);
     }
 
-    return query.limit(params.limit).offset(params.offset).order_by('id ASC').fire();
+    return query
+      .limit(params.limit)
+      .offset(params.offset)
+      .order_by('id ASC')
+      .fire();
   },
 
-  getFilteredActiveUsersCount: async function (params) {
-    const oThis = this
-      , clientId = params.client_id
-      , propertyUnsetBitVal = params.property_unset_bit_value
-      , propertySetBitVal = params.property_set_bit_value
-      , uuids = params.uuids
-    ;
+  getFilteredActiveUsersCount: async function(params) {
+    const oThis = this,
+      clientId = params.client_id,
+      propertyUnsetBitVal = params.property_unset_bit_value,
+      propertySetBitVal = params.property_set_bit_value,
+      uuids = params.uuids;
 
     oThis.select('count(1) as total_count').where({
       client_id: clientId,
@@ -126,13 +129,13 @@ const ManagedAddressKlassPrototype = {
       address_type: invertedAddressTypes[managedAddressesConst.userAddressType]
     });
 
-    if(uuids){
-      oThis.where(["uuid in (?)", uuids]);
+    if (uuids) {
+      oThis.where(['uuid in (?)', uuids]);
     }
 
     if (propertyUnsetBitVal) {
       oThis.where(['(properties & ?) = 0', propertyUnsetBitVal]);
-    } else if (propertySetBitVal){
+    } else if (propertySetBitVal) {
       oThis.where(['(properties & ?) > 0', propertySetBitVal]);
     }
 
@@ -153,14 +156,12 @@ const ManagedAddressKlassPrototype = {
    * @param {array} [params.uuids] - index to start fetching entries from
    *
    */
-  getByFilterAndPaginationParams: function (params) {
-
-    const oThis = this
-      , clientId = params.client_id
-      , orderBy = params.order_by
-      , orderType = params.order
-      , uuidsForFiltering = params.uuids || []
-    ;
+  getByFilterAndPaginationParams: function(params) {
+    const oThis = this,
+      clientId = params.client_id,
+      orderBy = params.order_by,
+      orderType = params.order,
+      uuidsForFiltering = params.uuids || [];
 
     let query = oThis.select(['id', 'name', 'uuid', 'ethereum_address']).where({
       client_id: clientId,
@@ -172,44 +173,48 @@ const ManagedAddressKlassPrototype = {
     }
 
     if (!commonValidator.isVarNull(params.airdropped)) {
-
-      if(commonValidator.isVarTrue(params.airdropped)) {
+      if (commonValidator.isVarTrue(params.airdropped)) {
         // filter for those who were airdropped
         query.where(['(properties & ?) > 0', invertedProperties[managedAddressesConst.airdropGrantProperty]]);
       } else if (commonValidator.isVarFalse(params.airdropped)) {
         // filter for those who were never airdropped
         query.where(['(properties & ?) = 0', invertedProperties[managedAddressesConst.airdropGrantProperty]]);
       }
-
     }
 
-    let orderByStr = (orderBy.toLowerCase() == 'name') ? 'name' : 'id';
-    orderByStr += (orderType.toLowerCase() == 'asc') ? ' ASC' : ' DESC';
+    let orderByStr = orderBy.toLowerCase() == 'name' ? 'name' : 'id';
+    orderByStr += orderType.toLowerCase() == 'asc' ? ' ASC' : ' DESC';
 
-    return query.order_by(orderByStr).limit(params.limit).offset(params.offset).fire();
-
+    return query
+      .order_by(orderByStr)
+      .limit(params.limit)
+      .offset(params.offset)
+      .fire();
   },
 
-  getByUuids: function (uuids) {
-    const oThis = this
-    ;
+  getByUuids: function(uuids) {
+    const oThis = this;
 
-    return oThis.select(['id', 'client_id', 'uuid', 'name', 'ethereum_address',
-      'status', 'properties', 'address_type']).where(['uuid IN (?)', uuids]).fire();
+    return oThis
+      .select(['id', 'client_id', 'uuid', 'name', 'ethereum_address', 'status', 'properties', 'address_type'])
+      .where(['uuid IN (?)', uuids])
+      .fire();
   },
 
-  getRandomActiveUsers: async function (clientId, numberOfRandomUsers, totalUsers) {
-    const oThis = this
-      , activeStatusInt = invertedStatuses[managedAddressesConst.activeStatus]
-      , userAddressTypeInt = invertedAddressTypes[managedAddressesConst.userAddressType]
-    ;
+  getRandomActiveUsers: async function(clientId, numberOfRandomUsers, totalUsers) {
+    const oThis = this,
+      activeStatusInt = invertedStatuses[managedAddressesConst.activeStatus],
+      userAddressTypeInt = invertedAddressTypes[managedAddressesConst.userAddressType];
 
-    let offset = (totalUsers - numberOfRandomUsers + 1);
-    offset = ((offset > 0) ? (Math.floor(Math.random() * offset)) : 0);
+    let offset = totalUsers - numberOfRandomUsers + 1;
+    offset = offset > 0 ? Math.floor(Math.random() * offset) : 0;
 
-    return oThis.select(['id', 'client_id', 'uuid', 'ethereum_address'])
-      .where({client_id: clientId, status: activeStatusInt, address_type: userAddressTypeInt})
-      .limit(numberOfRandomUsers).offset(offset).fire();
+    return oThis
+      .select(['id', 'client_id', 'uuid', 'ethereum_address'])
+      .where({ client_id: clientId, status: activeStatusInt, address_type: userAddressTypeInt })
+      .limit(numberOfRandomUsers)
+      .offset(offset)
+      .fire();
   },
 
   /**
@@ -218,18 +223,15 @@ const ManagedAddressKlassPrototype = {
    *
    * @return {{}}
    */
-  setBitColumns: function () {
+  setBitColumns: function() {
     const oThis = this;
 
-    oThis.bitColumns = {'properties': invertedProperties};
+    oThis.bitColumns = { properties: invertedProperties };
 
     return oThis.bitColumns;
   }
 };
 
-Object.assign(
-  ManagedAddressModel.prototype,
-  ManagedAddressKlassPrototype
-);
+Object.assign(ManagedAddressModel.prototype, ManagedAddressKlassPrototype);
 
 module.exports = ManagedAddressModel;

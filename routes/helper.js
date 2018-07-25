@@ -1,45 +1,40 @@
-"use strict";
+'use strict';
 
-const rootPrefix = '..'
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , basicHelper = require(rootPrefix + '/helpers/basic')
-  , apiParamsValidator = require(rootPrefix + '/lib/validators/api_params')
-;
+const rootPrefix = '..',
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  basicHelper = require(rootPrefix + '/helpers/basic'),
+  apiParamsValidator = require(rootPrefix + '/lib/validators/api_params');
 
 const routeMethods = {
+  performer: async function(req, res, next, CallerKlass, errorCode, afterValidationFunc, dataFormatterFunc) {
+    const oThis = this,
+      errorConfig = basicHelper.fetchErrorConfig(req.decodedParams.apiVersion);
 
-  performer: async function (req, res, next, CallerKlass, errorCode, afterValidationFunc, dataFormatterFunc) {
-
-    const oThis = this
-      , errorConfig = basicHelper.fetchErrorConfig(req.decodedParams.apiVersion)
-    ;
-
-    return oThis.asyncPerform(req, res, next, CallerKlass, afterValidationFunc, dataFormatterFunc)
-      .catch(function (error) {
+    return oThis
+      .asyncPerform(req, res, next, CallerKlass, afterValidationFunc, dataFormatterFunc)
+      .catch(function(error) {
         if (responseHelper.isCustomResult(error)) {
           error.renderResponse(res, errorConfig);
         } else {
-          logger.notify(
-            errorCode,
-            'Something went wrong',
-            error
-          );
+          logger.notify(errorCode, 'Something went wrong', error);
 
-          responseHelper.error({
-            internal_error_identifier: errorCode,
-            api_error_identifier: 'unhandled_catch_response',
-            debug_options: {}
-          }).renderResponse(res, errorConfig);
+          responseHelper
+            .error({
+              internal_error_identifier: errorCode,
+              api_error_identifier: 'unhandled_catch_response',
+              debug_options: {}
+            })
+            .renderResponse(res, errorConfig);
         }
       });
   },
 
-  asyncPerform: async function (req, res, next, CallerKlass, afterValidationFunc, dataFormatterFunc) {
+  asyncPerform: async function(req, res, next, CallerKlass, afterValidationFunc, dataFormatterFunc) {
     req.decodedParams = req.decodedParams || {};
 
-    const oThis = this
-      , errorConfig = basicHelper.fetchErrorConfig(req.decodedParams.apiVersion);
+    const oThis = this,
+      errorConfig = basicHelper.fetchErrorConfig(req.decodedParams.apiVersion);
 
     const apiParamsValidatorRsp = await new apiParamsValidator({
       api_name: req.decodedParams.apiName,
@@ -50,32 +45,26 @@ const routeMethods = {
     req.serviceParams = apiParamsValidatorRsp.data.sanitisedApiParams;
 
     if (afterValidationFunc) {
-
       req.serviceParams = await afterValidationFunc(req.serviceParams);
-
     }
 
     // TODO: temp. remove in sometime
     logger.debug('req.serviceParams', req.serviceParams);
     logger.debug('req.decodedParams', req.decodedParams);
 
-    var handleResponse = async function (response) {
-
+    var handleResponse = async function(response) {
       if (response.isSuccess() && dataFormatterFunc) {
-
         // if requires this function could reformat data as per API version requirements.
         await dataFormatterFunc(response);
       }
 
       response.renderResponse(res, errorConfig);
-
     };
 
     return new CallerKlass(req.serviceParams).perform().then(handleResponse);
-
   },
 
-  replaceKey: function (data, oldKey, newKey) {
+  replaceKey: function(data, oldKey, newKey) {
     if (!data.hasOwnProperty(oldKey)) {
       return data;
     }
@@ -86,7 +75,6 @@ const routeMethods = {
 
     return data;
   }
-
 };
 
 module.exports = routeMethods;

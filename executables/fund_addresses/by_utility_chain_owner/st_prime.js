@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * Refill ST PRIME to required service addresses
@@ -18,8 +18,7 @@
  * @module executables/fund_addresses/by_utility_chain_owner/st_prime
  */
 
-const rootPrefix = '../../..'
-;
+const rootPrefix = '../../..';
 
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
@@ -28,36 +27,32 @@ require(rootPrefix + '/module_overrides/index');
 const openStPlatform = require('@openstfoundation/openst-platform');
 
 // Load Packages
-const chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , basicHelper = require(rootPrefix + '/helpers/basic')
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-;
+const chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  basicHelper = require(rootPrefix + '/helpers/basic'),
+  responseHelper = require(rootPrefix + '/lib/formatter/response');
 
 /**
  * constructor for fund addresses with ST PRIME
  *
  * @constructor
  */
-const FundUsersWithSTPrimeFromUtilityChainOwnerKlass = function () {};
+const FundUsersWithSTPrimeFromUtilityChainOwnerKlass = function() {};
 
 FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
-
   /**
    * Perform
    *
    */
-  perform: async function () {
-
+  perform: async function() {
     const oThis = this;
 
     for (var i in oThis._interestedUserNames) {
       const userName = oThis._interestedUserNames[i];
 
-      const minBalanceInWei = basicHelper.convertToWei(oThis._utilityChainMinBalanceFor(userName))
-        , ethereumAddress = oThis._utilityChainAddressFor(userName)
-        , balanceResponse = await oThis._getSTPrimeBalance(ethereumAddress)
-      ;
+      const minBalanceInWei = basicHelper.convertToWei(oThis._utilityChainMinBalanceFor(userName)),
+        ethereumAddress = oThis._utilityChainAddressFor(userName),
+        balanceResponse = await oThis._getSTPrimeBalance(ethereumAddress);
 
       if (balanceResponse.isFailure()) return Promise.resolve(balanceResponse);
 
@@ -65,7 +60,7 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
 
       if (balanceBigNumberInWei.lessThan(minBalanceInWei)) {
         logger.debug("Funding ST' to ", userName);
-        await oThis._transferSTPrimeBalance(ethereumAddress, minBalanceInWei)
+        await oThis._transferSTPrimeBalance(ethereumAddress, minBalanceInWei);
       }
     }
 
@@ -73,9 +68,8 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
     // keep threshold for utility chain owner sufficiently high so that it is able to fund high no of refills
     const utilityChainOwnerResponse = await oThis._checkBalanceOfChainOwner();
 
-    logger.debug("Can exit now");
+    logger.debug('Can exit now');
     process.exit(0);
-
   },
 
   /**
@@ -84,27 +78,21 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
    * @returns {promise<result>}
    * @private
    */
-  _checkBalanceOfChainOwner: async function () {
-
-    const oThis = this
-      , minUCOBalanceInWei = basicHelper.convertToWei(oThis._utilityChainMinBalanceFor('utilityChainOwner'))
-      , ucOwnerBalanceResponse = await oThis._getSTPrimeBalance(oThis._utilityChainAddressFor('utilityChainOwner'))
-    ;
+  _checkBalanceOfChainOwner: async function() {
+    const oThis = this,
+      minUCOBalanceInWei = basicHelper.convertToWei(oThis._utilityChainMinBalanceFor('utilityChainOwner')),
+      ucOwnerBalanceResponse = await oThis._getSTPrimeBalance(oThis._utilityChainAddressFor('utilityChainOwner'));
 
     if (ucOwnerBalanceResponse.isFailure()) return Promise.resolve(ucOwnerBalanceResponse);
 
     const ucOwnerBalanceBigNumberInWei = ucOwnerBalanceResponse.data.balance;
 
     if (ucOwnerBalanceBigNumberInWei.lessThan(minUCOBalanceInWei)) {
-      logger.notify(
-        'e_fa_e_cboco_1',
-        'ST PRIME Balance Of Utility Chain Owner is LOW',
-        {
-          utiltiy_chain_owner_utility_chain_address: oThis._utilityChainAddressFor('utilityChainOwner'),
-          utility_chain_owner_balance_st_prime: basicHelper.convertToNormal(ucOwnerBalanceBigNumberInWei),
-          min_required_balance: oThis._utilityChainMinBalanceFor('utilityChainOwner')
-        }
-      );
+      logger.notify('e_fa_e_cboco_1', 'ST PRIME Balance Of Utility Chain Owner is LOW', {
+        utiltiy_chain_owner_utility_chain_address: oThis._utilityChainAddressFor('utilityChainOwner'),
+        utility_chain_owner_balance_st_prime: basicHelper.convertToNormal(ucOwnerBalanceBigNumberInWei),
+        min_required_balance: oThis._utilityChainMinBalanceFor('utilityChainOwner')
+      });
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -118,26 +106,21 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
    * @returns {promise<result>}
    * @private
    */
-  _getSTPrimeBalance: async function (ethereumAddress) {
-
-    const oThis = this
-      , fetchBalanceObj = new openStPlatform.services.balance.simpleTokenPrime({address: ethereumAddress})
-      , balanceResponse = await fetchBalanceObj.perform()
-    ;
+  _getSTPrimeBalance: async function(ethereumAddress) {
+    const oThis = this,
+      fetchBalanceObj = new openStPlatform.services.balance.simpleTokenPrime({ address: ethereumAddress }),
+      balanceResponse = await fetchBalanceObj.perform();
 
     if (balanceResponse.isFailure()) {
-      logger.notify(
-        'e_fa_sp_ceb_1',
-        'Error in fetching balance of Address',
-        balanceResponse,
-        {ethereum_address: ethereumAddress}
-      );
+      logger.notify('e_fa_sp_ceb_1', 'Error in fetching balance of Address', balanceResponse, {
+        ethereum_address: ethereumAddress
+      });
       return Promise.resolve(balanceResponse);
     }
 
     const stPrimeBalanceBigNumber = basicHelper.convertToBigNumber(balanceResponse.data.balance);
 
-    return Promise.resolve(responseHelper.successWithData({balance: stPrimeBalanceBigNumber}));
+    return Promise.resolve(responseHelper.successWithData({ balance: stPrimeBalanceBigNumber }));
   },
 
   /**
@@ -149,16 +132,14 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
    * @returns {promise<result>}
    * @private
    */
-  _transferSTPrimeBalance: async function (ethereumAddress, transferAmountInWei) {
-
-    const oThis = this
-      , transferSTPrimeBalanceObj = new openStPlatform.services.transaction.transfer.simpleTokenPrime({
+  _transferSTPrimeBalance: async function(ethereumAddress, transferAmountInWei) {
+    const oThis = this,
+      transferSTPrimeBalanceObj = new openStPlatform.services.transaction.transfer.simpleTokenPrime({
         sender_name: 'utilityChainOwner',
         recipient_address: ethereumAddress,
         amount_in_wei: transferAmountInWei,
-        options: {returnType: 'txReceipt', tag: ''}
-      })
-    ;
+        options: { returnType: 'txReceipt', tag: '' }
+      });
 
     const transferResponse = await transferSTPrimeBalanceObj.perform();
 
@@ -182,18 +163,14 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
    * @returns {string} min balance required for the user in ST Prime
    * @private
    */
-  _utilityChainMinBalanceFor: function (name) {
-    const oThis = this
-      , nameData = oThis._utilityChainData[name]
-    ;
+  _utilityChainMinBalanceFor: function(name) {
+    const oThis = this,
+      nameData = oThis._utilityChainData[name];
 
     if (!nameData) {
-      logger.notify(
-        'e_fa_sp_ucbb_1',
-        'Invalid user name passed for getting data - ' + name
-      );
+      logger.notify('e_fa_sp_ucbb_1', 'Invalid user name passed for getting data - ' + name);
 
-      throw "Invalid user name passed for getting data - " + name;
+      throw 'Invalid user name passed for getting data - ' + name;
     }
 
     return nameData.minBalance;
@@ -207,18 +184,14 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
    * @returns {string} address of the user
    * @private
    */
-  _utilityChainAddressFor: function (name) {
-    const oThis = this
-      , nameData = oThis._utilityChainData[name]
-    ;
+  _utilityChainAddressFor: function(name) {
+    const oThis = this,
+      nameData = oThis._utilityChainData[name];
 
     if (!nameData) {
-      logger.notify(
-        'e_fa_sp_ucaf_1',
-        'Invalid user name passed for getting data - ' + name
-      );
+      logger.notify('e_fa_sp_ucaf_1', 'Invalid user name passed for getting data - ' + name);
 
-      throw "Invalid user name passed for getting data - " + name;
+      throw 'Invalid user name passed for getting data - ' + name;
     }
 
     return nameData.address;
@@ -232,12 +205,12 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
    * @private
    */
   _utilityChainData: {
-    utilityChainOwner: {minBalance: '60', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR},
-    staker: {minBalance: '10', address: chainInteractionConstants.STAKER_ADDR},
-    redeemer: {minBalance: '10', address: chainInteractionConstants.REDEEMER_ADDR},
-    utilityRegistrar: {minBalance: '10', address: chainInteractionConstants.UTILITY_REGISTRAR_ADDR},
-    utilityDeployer: {minBalance: '10', address: chainInteractionConstants.UTILITY_DEPLOYER_ADDR},
-    utilityOps: {minBalance: '10', address: chainInteractionConstants.UTILITY_OPS_ADDR}
+    utilityChainOwner: { minBalance: '60', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR },
+    staker: { minBalance: '10', address: chainInteractionConstants.STAKER_ADDR },
+    redeemer: { minBalance: '10', address: chainInteractionConstants.REDEEMER_ADDR },
+    utilityRegistrar: { minBalance: '10', address: chainInteractionConstants.UTILITY_REGISTRAR_ADDR },
+    utilityDeployer: { minBalance: '10', address: chainInteractionConstants.UTILITY_DEPLOYER_ADDR },
+    utilityOps: { minBalance: '10', address: chainInteractionConstants.UTILITY_OPS_ADDR }
   },
 
   /**
@@ -247,14 +220,7 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
    *
    * @private
    */
-  _interestedUserNames: [
-    'staker',
-    'redeemer',
-    'utilityRegistrar',
-    'utilityDeployer',
-    'utilityOps'
-  ]
-
+  _interestedUserNames: ['staker', 'redeemer', 'utilityRegistrar', 'utilityDeployer', 'utilityOps']
 };
 
 // perform action

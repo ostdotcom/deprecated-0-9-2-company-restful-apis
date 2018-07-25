@@ -1,14 +1,13 @@
-"use strict";
+'use strict';
 
-const rootPrefix = '../../../..'
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , BaseKlass = require(rootPrefix + '/app/services/transaction/list/base')
-  , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
-  , ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses')
-  , ManagedAddressModel = require(rootPrefix + '/app/models/managed_address')
-  , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
-  , basicHelper = require(rootPrefix + '/helpers/basic')
-;
+const rootPrefix = '../../../..',
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  BaseKlass = require(rootPrefix + '/app/services/transaction/list/base'),
+  transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log'),
+  ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses'),
+  ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
+  managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
+  basicHelper = require(rootPrefix + '/helpers/basic');
 
 /**
  * @constructor
@@ -21,9 +20,8 @@ const rootPrefix = '../../../..'
  * @param {number} params.limit (optional) - Min 1, Max 100, Default 10.
  * @param {string} params.status (optional) - comma separated status(s) to filter
  */
-const GetTransactionList = function (params) {
-  var oThis = this
-  ;
+const GetTransactionList = function(params) {
+  var oThis = this;
 
   BaseKlass.apply(oThis, arguments);
 
@@ -31,57 +29,61 @@ const GetTransactionList = function (params) {
   oThis.statusStr = params.status;
 
   oThis.statusesIntArray = [];
-
 };
 
-GetTransactionList.prototype = Object.create( BaseKlass.prototype ) ;
+GetTransactionList.prototype = Object.create(BaseKlass.prototype);
 
 const GetTransactionListForUser = {
-
   /**
    * validateAndSanitize
    *
    */
-  _validateAndSanitize: async function () {
+  _validateAndSanitize: async function() {
+    var oThis = this;
 
-    var oThis = this
-    ;
-
-    await oThis._baseValidateAndSanitize.apply( oThis );
+    await oThis._baseValidateAndSanitize.apply(oThis);
 
     if (!basicHelper.isUuidValid(oThis.userUuid)) {
-      return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_t_l_fui_2',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_id_user'],
-        debug_options: {}
-      }));
+      return Promise.reject(
+        responseHelper.paramValidationError({
+          internal_error_identifier: 's_t_l_fui_2',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: ['invalid_id_user'],
+          debug_options: {}
+        })
+      );
     }
 
-    const managedAddressCacheFetchResponse = await new ManagedAddressCacheKlass({'uuids': [oThis.userUuid]}).fetch();
+    const managedAddressCacheFetchResponse = await new ManagedAddressCacheKlass({ uuids: [oThis.userUuid] }).fetch();
     if (managedAddressCacheFetchResponse.isFailure()) {
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_t_l_fui_3',
-        api_error_identifier: 'something_went_wrong',
-        debug_options: {}
-      }));
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 's_t_l_fui_3',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {}
+        })
+      );
     }
 
-    const managedAddressCacheData = managedAddressCacheFetchResponse.data[oThis.userUuid]
-      , userAddressType = new ManagedAddressModel().invertedAddressTypes[managedAddressesConst.userAddressType]
-    ;
+    const managedAddressCacheData = managedAddressCacheFetchResponse.data[oThis.userUuid],
+      userAddressType = new ManagedAddressModel().invertedAddressTypes[managedAddressesConst.userAddressType];
 
-    if (!managedAddressCacheData || managedAddressCacheData['client_id'] != oThis.clientId || managedAddressCacheData['address_type'] != userAddressType) {
-      return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_t_l_fui_4',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_id_user'],
-        debug_options: {}
-      }));
+    if (
+      !managedAddressCacheData ||
+      managedAddressCacheData['client_id'] != oThis.clientId ||
+      managedAddressCacheData['address_type'] != userAddressType
+    ) {
+      return Promise.reject(
+        responseHelper.paramValidationError({
+          internal_error_identifier: 's_t_l_fui_4',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: ['invalid_id_user'],
+          debug_options: {}
+        })
+      );
     }
 
     if (oThis.statusStr) {
-
       let statusesStrArray = basicHelper.commaSeperatedStrToArray(oThis.statusStr);
 
       let statusesStrToIntMap = transactionLogConst.invertedStatuses;
@@ -89,21 +91,21 @@ const GetTransactionListForUser = {
       for (var i = 0; i < statusesStrArray.length; i++) {
         let statusInt = statusesStrToIntMap[statusesStrArray[i].toLowerCase()];
         if (!statusInt) {
-          return Promise.reject(responseHelper.paramValidationError({
-            internal_error_identifier: 's_t_l_fui_5',
-            api_error_identifier: 'invalid_api_params',
-            params_error_identifiers: ['invalid_status_transactions_ledger'],
-            debug_options: {}
-          }));
+          return Promise.reject(
+            responseHelper.paramValidationError({
+              internal_error_identifier: 's_t_l_fui_5',
+              api_error_identifier: 'invalid_api_params',
+              params_error_identifiers: ['invalid_status_transactions_ledger'],
+              debug_options: {}
+            })
+          );
         } else {
           oThis.statusesIntArray.push(parseInt(statusInt));
         }
       }
-
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
-
   },
 
   /**
@@ -111,13 +113,12 @@ const GetTransactionListForUser = {
    *
    * @return {Promise}
    */
-  _getFilteringParams: function () {
-
+  _getFilteringParams: function() {
     var oThis = this;
 
     let filteringParams = {
-      "query": {
-        "bool": {}
+      query: {
+        bool: {}
       }
     };
 
@@ -128,18 +129,18 @@ const GetTransactionListForUser = {
     if (oThis.statusesIntArray.length > 0) {
       let statusSubQuery = `(${oThis.statusesIntArray.join(' OR ')})`;
       boolFilters.push({
-        "query_string" : {
-          "query": `( ${oThis.userUuid} AND ${statusSubQuery} )`,
-          "fields": ["query_str"]
+        query_string: {
+          query: `( ${oThis.userUuid} AND ${statusSubQuery} )`,
+          fields: ['query_str']
         }
-      })
+      });
     } else {
       boolFilters.push({
-        "query_string" : {
-          "query": `(${oThis.userUuid})`,
-          "fields": ["query_str"]
+        query_string: {
+          query: `(${oThis.userUuid})`,
+          fields: ['query_str']
         }
-      })
+      });
     }
 
     // https://www.elastic.co/guide/en/elasticsearch/guide/current/bool-query.html
@@ -150,7 +151,6 @@ const GetTransactionListForUser = {
     oThis.filteringParams = filteringParams;
 
     return Promise.resolve(responseHelper.successWithData({}));
-
   },
 
   /**
@@ -158,8 +158,7 @@ const GetTransactionListForUser = {
    *
    * @return {object}
    */
-  _getNextPagePayload: function () {
-
+  _getNextPagePayload: function() {
     var oThis = this;
 
     let payload = {
@@ -169,14 +168,14 @@ const GetTransactionListForUser = {
       limit: oThis.limit
     };
 
-    if(oThis.statusStr) {payload['status'] = oThis.statusStr}
+    if (oThis.statusStr) {
+      payload['status'] = oThis.statusStr;
+    }
 
     return payload;
-
   }
-
 };
 
-Object.assign( GetTransactionList.prototype, GetTransactionListForUser);
+Object.assign(GetTransactionList.prototype, GetTransactionListForUser);
 
 module.exports = GetTransactionList;

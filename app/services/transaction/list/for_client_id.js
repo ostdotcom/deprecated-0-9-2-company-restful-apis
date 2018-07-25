@@ -1,10 +1,9 @@
-"use strict";
+'use strict';
 
-const rootPrefix = '../../../..'
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , BaseKlass = require(rootPrefix + '/app/services/transaction/list/base')
-  , basicHelper = require(rootPrefix + '/helpers/basic')
-;
+const rootPrefix = '../../../..',
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  BaseKlass = require(rootPrefix + '/app/services/transaction/list/base'),
+  basicHelper = require(rootPrefix + '/helpers/basic');
 
 /**
  * @constructor
@@ -18,8 +17,7 @@ const rootPrefix = '../../../..'
  * @param {string} params.id (optional) - comma separated ids to filter
  */
 const GetTransactionListByClientId = function(params) {
-  var oThis = this
-  ;
+  var oThis = this;
 
   BaseKlass.apply(oThis, arguments);
 
@@ -27,40 +25,36 @@ const GetTransactionListByClientId = function(params) {
 
   oThis.offset = null;
   oThis.idsFilterArr = [];
-
 };
-
 
 GetTransactionListByClientId.prototype = Object.create(BaseKlass.prototype);
 
 const GetTransactionListForClient = {
-
   /**
    * validateAndSanitize
    *
    * @return {Promise}
    */
-  _validateAndSanitize: async function () {
+  _validateAndSanitize: async function() {
+    var oThis = this;
 
-    var oThis = this
-    ;
-
-    await oThis._baseValidateAndSanitize.apply( oThis );
+    await oThis._baseValidateAndSanitize.apply(oThis);
 
     if (oThis.idsFilterStr && oThis.idsFilterStr.length > 0) {
       oThis.idsFilterArr = basicHelper.commaSeperatedStrToArray(oThis.idsFilterStr);
       if (oThis.idsFilterArr.length > 100) {
-        return Promise.reject(responseHelper.paramValidationError({
-          internal_error_identifier: 's_t_l_fci_2',
-          api_error_identifier: 'invalid_api_params',
-          params_error_identifiers: ['invalid_id_filter'],
-          debug_options: {clientId: oThis.clientId}
-        }));
+        return Promise.reject(
+          responseHelper.paramValidationError({
+            internal_error_identifier: 's_t_l_fci_2',
+            api_error_identifier: 'invalid_api_params',
+            params_error_identifiers: ['invalid_id_filter'],
+            debug_options: { clientId: oThis.clientId }
+          })
+        );
       }
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
-
   },
 
   /**
@@ -68,34 +62,32 @@ const GetTransactionListForClient = {
    *
    * @return {Promise}
    */
-  _getFilteringParams: function () {
-
+  _getFilteringParams: function() {
     var oThis = this;
 
     let filteringParams = {
-      "query": {
-        "bool": {}
+      query: {
+        bool: {}
       }
     };
 
     let boolFilters = oThis._getCommonFilteringParams();
 
-    boolFilters.push({"term": {"client_id": oThis.clientId}}); // filter by client id
+    boolFilters.push({ term: { client_id: oThis.clientId } }); // filter by client id
 
     // if transaction_uuids are passes in params, add filter on it
     if (oThis.idsFilterArr.length > 0) {
-      boolFilters.push({"terms": { "_id" : oThis.idsFilterArr }});
+      boolFilters.push({ terms: { _id: oThis.idsFilterArr } });
     }
 
     // https://www.elastic.co/guide/en/elasticsearch/guide/current/bool-query.html
-    filteringParams['query']['bool'] = {"filter": boolFilters};
+    filteringParams['query']['bool'] = { filter: boolFilters };
 
     Object.assign(filteringParams, oThis._getPaginationParams());
 
     oThis.filteringParams = filteringParams;
 
     return Promise.resolve(responseHelper.successWithData({}));
-
   },
 
   /**
@@ -103,8 +95,7 @@ const GetTransactionListForClient = {
    *
    * @return {object}
    */
-  _getNextPagePayload: function () {
-
+  _getNextPagePayload: function() {
     var oThis = this;
 
     let payload = {
@@ -114,12 +105,12 @@ const GetTransactionListForClient = {
       limit: oThis.limit
     };
 
-    if(oThis.idsFilterStr) {payload['id'] = oThis.idsFilterStr}
+    if (oThis.idsFilterStr) {
+      payload['id'] = oThis.idsFilterStr;
+    }
 
     return payload;
-
   }
-
 };
 
 Object.assign(GetTransactionListByClientId.prototype, GetTransactionListForClient);
