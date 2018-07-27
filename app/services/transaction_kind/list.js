@@ -366,11 +366,11 @@ ListActions.prototype = {
 
     oThis.next_page_present = results.length > oThis.limit ? true : false;
 
-    let result_count = results.length;
-    if (oThis.next_page_present) result_count--;
+    if (oThis.next_page_present) {
+      results.splice(-1, 1);
+    }
 
     return Promise.resolve(results);
-
   },
 
   /**
