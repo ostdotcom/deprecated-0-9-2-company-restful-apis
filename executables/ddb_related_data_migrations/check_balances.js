@@ -167,6 +167,7 @@ CheckBalances.prototype = {
         let address = addresses[i]
           , balanceFromChain = promiseResponses[i].data.balance
           , balanceFromDdb = (balancesFromDdb[address] || {'settled_balance': '0'})['settled_balance']
+          , unsettledDebitsFromDdb = (balancesFromDdb[address] || {'unsettled_debits': '0'})['unsettled_debits']
         ;
 
         oThis.checkedAddressCount += 1;
@@ -175,6 +176,10 @@ CheckBalances.prototype = {
           mismatchAddresses.push(address);
           oThis.mismatchAddressesCount += 1;
           logger.info(`balanceMismatch : contractAddress : ${erc20_address} userAddress: ${address} : balanceFromChain : ${balanceFromChain} : balanceFromDdb : ${balanceFromDdb}`);
+        }
+
+        if (unsettledDebitsFromDdb < 0) {
+          logger.info(`negativeUnsettledDebitsFromDdb : contractAddress : ${erc20_address} userAddress: ${address} : unsettledDebitsFromDdb : ${unsettledDebitsFromDdb}`);
         }
 
       }
