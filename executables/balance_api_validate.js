@@ -25,12 +25,12 @@ ValidateBalance.prototype = {
 
       let balanceFetchResponse = await balanceFetchObj.perform();
 
-      let a = balanceFetchResponse.data.token_balance
+      let a = balanceFetchResponse.data.token_balance // available balance
         , b = balanceFetchResponse.data.airdropped_balance
-        , c = balanceFetchResponse.data.available_balance
+        , c = balanceFetchResponse.data.available_balance // token balance
       ;
 
-      if ( a+b != c ) {
+      if ( !a.isEqualTo(b.plus(c)) ) {
         if ( a && b && c) {
           fs.appendFileSync('results.txt', a + " " +  b + " " + c + " "  + uuid + ' ' + clientId +  "\n");
         }
