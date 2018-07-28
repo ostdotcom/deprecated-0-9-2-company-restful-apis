@@ -1,12 +1,14 @@
 'use strict';
 
+const express = require('express');
+
 const rootPrefix = '../..',
-  express = require('express'),
-  router = express.Router(),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
-  basicHelper = require(rootPrefix + '/helpers/basic'),
+  basicHelper = require(rootPrefix + '/helpers/basic');
+
+const router = express.Router(),
   errorConfig = basicHelper.fetchErrorConfig(apiVersions.internal);
 
 /* Elb health checker request */
