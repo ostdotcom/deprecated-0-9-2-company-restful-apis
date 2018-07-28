@@ -1,5 +1,4 @@
 const express = require('express'),
-  router = express.Router(),
   BigNumber = require('bignumber.js'),
   openStPlatform = require('@openstfoundation/openst-platform');
 
@@ -8,19 +7,21 @@ const rootPrefix = '../..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   routeHelper = require(rootPrefix + '/routes/helper'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
-  basicHelper = require(rootPrefix + '/helpers/basic'),
+  basicHelper = require(rootPrefix + '/helpers/basic');
+
+const router = express.Router(),
   errorConfig = basicHelper.fetchErrorConfig(apiVersions.internal);
 
-/* On board a branded token */
+/* Start the On-Boarding of a branded token */
 router.post('/start', function(req, res, next) {
   req.decodedParams.apiName = 'start_on_boarding';
 
   const StartOnBoardingKlass = require(rootPrefix + '/app/services/on_boarding/start');
 
-  Promise.resolve(routeHelper.performer(req, res, next, StartOnBoardingKlass, 'r_su_3'));
+  Promise.resolve(routeHelper.performer(req, res, next, StartOnBoardingKlass, 'r_ob_1'));
 });
 
-/* Grant test OST to user */
+/* Grant test OST to user - only for sandbox env */
 router.post('/grant-test-ost', function(req, res, next) {
   const performer = function() {
     const decodedParams = req.decodedParams,
@@ -43,13 +44,14 @@ router.post('/grant-test-ost', function(req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function(err) {
-    logger.notify('r_ob_3', 'Something went wrong', err);
+    let errCode = 'r_ob_2';
+    logger.notify(errCode, 'Something went wrong', err);
 
-    responseHelper.error('r_ob_3', 'Something went wrong').renderResponse(res, errorConfig);
+    responseHelper.error(errCode, 'Something went wrong').renderResponse(res, errorConfig);
   });
 });
 
-/* Grant test OST to user */
+/* Grant testnet ETH to user - only for sandbox */
 router.post('/grant-eth', function(req, res, next) {
   const performer = function() {
     const decodedParams = req.decodedParams,
@@ -72,13 +74,14 @@ router.post('/grant-eth', function(req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function(err) {
-    logger.notify('r_ob_4', 'Something went wrong', err);
+    let errCode = 'r_ob_3';
+    logger.notify(errCode, 'Something went wrong', err);
 
-    responseHelper.error('r_ob_4', 'Something went wrong').renderResponse(res, errorConfig);
+    responseHelper.error(errCode, 'Something went wrong').renderResponse(res, errorConfig);
   });
 });
 
-/* Propose a branded token */
+/* Set up a branded token - this does not have any block chain setup. This is only saving the information in DB */
 router.post('/setup-token', function(req, res, next) {
   req.decodedParams.apiName = 'setup_bt';
 

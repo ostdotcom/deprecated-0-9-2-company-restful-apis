@@ -64,16 +64,16 @@ const signature = {
         error_identifier: 'missing_client_id'
       },
       {
+        parameter: 'client_token_id',
+        error_identifier: 'missing_client_token_id'
+      },
+      {
         parameter: 'token_symbol',
         error_identifier: 'missing_token_symbol'
       },
       {
         parameter: 'stake_and_mint_params',
         error_identifier: 'missing_stake_and_mint_params'
-      },
-      {
-        parameter: 'client_token_id',
-        error_identifier: 'missing_client_token_id'
       },
       {
         parameter: 'airdrop_params',
