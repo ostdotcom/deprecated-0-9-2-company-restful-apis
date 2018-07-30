@@ -72,6 +72,11 @@ export CR_AWS_ACCESS_KEY='AKIAJUDRALNURKAVS5IQ'
 export CR_AWS_SECRET_KEY='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'
 export CR_AWS_REGION='us-east-1'
 
+# AWS ES details
+export AWS_ES_ACCESS_KEY='AKIAJUDRALNURKAVS5IQ'
+export AWS_ES_SECRET_KEY='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'
+export AWS_ES_REGION='us-east-1'
+
 # KMS details
 export CR_API_KEY_KMS_ARN='arn:aws:kms:us-east-1:604850698061:key'
 export CR_API_KEY_KMS_ID='eab8148d-fd9f-451d-9eb9-16c115645635'
