@@ -166,7 +166,7 @@ BasicHelperKlass.prototype = {
     if (typeof symbol !== 'string') {
       return false;
     }
-    return /^[a-z0-9]{1,}$/i.test(symbol);
+    return /^[a-z0-9]{3,4}$/i.test(symbol);
   },
 
   /**
