@@ -47,17 +47,20 @@ const kinds = {
 const ConfigStrategyModelSpecificPrototype = {
   tableName: 'config_strategies',
 
-  insertStrategyKind: async function(kind, params) {
+  insertStrategyKind: async function(params) {
     const oThis = this,
       configStrategyModelInstance = new ConfigStrategyModel(),
+      kind = params.kind,
+      configStrategyParams = params.config_strategy_params,
+      managedAddressSaltId = params.managed_address_salt_id,
       strategyKind = invertedKinds[kind];
 
     let isParamPresent = [];
 
-    let hashed_params = localCipher.getShaHashedText(JSON.stringify(params));
+    let hashedConfigStrategyParams = localCipher.getShaHashedText(JSON.stringify(configStrategyParams));
 
     await oThis
-      .getStrategyIdByParams(params)
+      .getStrategyIdByParams(configStrategyParams)
       .then(function(resultArray) {
         isParamPresent = resultArray;
       })
@@ -66,15 +69,15 @@ const ConfigStrategyModelSpecificPrototype = {
       });
 
     if (isParamPresent.length > 0) {
-      //If params is already present in database then id of that param is sent as the first and only element in the array.
+      //If configStrategyParams is already present in database then id of that param is sent as the first and only element in the array.
       return Promise.resolve(isParamPresent[0]);
     } else {
-      let encrypted_params = '123456sdfefhdfaygefwadn';
+      let encryptedConfigStrategyParams = '123456sdfefhdfaygefwadn';
 
       const data = {
         kind: strategyKind,
-        params: params,
-        hashed_params: hashed_params
+        params: encryptedConfigStrategyParams,
+        hashed_params: hashedConfigStrategyParams
       };
 
       const dbId = await configStrategyModelInstance.insert(data).fire();
