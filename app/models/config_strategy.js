@@ -6,12 +6,11 @@
  * @module app/models/config_strategy
  */
 
-const sortJson = require('sort-json');
-
 const rootPrefix = '../..',
   coreConstants = require(rootPrefix + '/config/core_constants'),
   ModelBaseKlass = require(rootPrefix + '/app/models/base'),
   configStartegyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
+  util = require(rootPrefix + '/lib/util'),
   localCipher = require(rootPrefix + '/lib/encryptors/local_cipher'),
   addressSaltCacheKlass = require(rootPrefix + '/lib/cache_management/managedAddressesSalt'),
   inMemoryCacheInstance = require(rootPrefix + '/lib/cache_management/engine/in_memory');
@@ -30,54 +29,93 @@ const ConfigStrategyModel = function() {
 
 ConfigStrategyModel.prototype = Object.create(ModelBaseKlass.prototype);
 
-const kind = {
-  '1': configStartegyConstants.dynamo,
-  '2': configStartegyConstants.dax,
-  '3': configStartegyConstants.redis,
-  '4': configStartegyConstants.memcached,
-  '5': configStartegyConstants.value_geth,
-  '6': configStartegyConstants.value_constants,
-  '7': configStartegyConstants.utility_geth,
-  '8': configStartegyConstants.utility_constants,
-  '9': configStartegyConstants.autoscaling,
-  '10': configStartegyConstants.es,
-  '11': configStartegyConstants.constants
-};
+const kinds = {
+    '1': configStartegyConstants.dynamo,
+    '2': configStartegyConstants.dax,
+    '3': configStartegyConstants.redis,
+    '4': configStartegyConstants.memcached,
+    '5': configStartegyConstants.value_geth,
+    '6': configStartegyConstants.value_constants,
+    '7': configStartegyConstants.utility_geth,
+    '8': configStartegyConstants.utility_constants,
+    '9': configStartegyConstants.autoscaling,
+    '10': configStartegyConstants.es,
+    '11': configStartegyConstants.constants
+  },
+  invertedKinds = util.invert(kinds);
+
 const ConfigStrategyModelSpecificPrototype = {
   tableName: 'config_strategies',
 
-  _sort: function(params) {
-    const options = { ignoreCase: true, reverse: false, depth: 1 };
-    const sorted_params = sortJson(params, options);
+  insertStrategyKind: async function(kind, params) {
+    const oThis = this,
+      configStrategyModelInstance = new ConfigStrategyModel(),
+      strategyKind = invertedKinds[kind];
 
-    return sorted_params;
+    let isParamPresent = [];
+
+    let hashed_params = localCipher.getShaHashedText(JSON.stringify(params));
+
+    await oThis
+      .getStrategyIdByParams(params)
+      .then(function(resultArray) {
+        isParamPresent = resultArray;
+      })
+      .catch(function(err) {
+        console.log('Error', err);
+      });
+
+    if (isParamPresent.length > 0) {
+      //If params is already present in database then id of that param is sent as the first and only element in the array.
+      return Promise.resolve(isParamPresent[0]);
+    } else {
+      let encrypted_params = '123456sdfefhdfaygefwadn';
+
+      const data = {
+        kind: strategyKind,
+        params: params,
+        hashed_params: hashed_params
+      };
+
+      const dbId = await configStrategyModelInstance.insert(data).fire();
+
+      return Promise.resolve(dbId.insertId);
+    }
   },
 
-  insertStrategyKind: function(kind, params) {
-    // insert into  config_strategies values ();
-    /*
-      get the plaintext
-      get the local cipher of params
+  /*
 
-    */
-    //returns strategy id autoincrement
-  },
-
-  getConfigById: function(clientId) {
+  *
+  * strategyIds : array of all strategy ids whose parameters are required.
+  *
+  * returns: hash of all the parameters retrieved from database.
+  * */
+  getConfigByIds: async function(strategyIds) {
     const oThis = this;
 
-    return oThis.select('*')``.where({ clientId: clientId }).fire();
+    if (strategyIds.length == 0) {
+      return Promise.reject('strategy ID array is empty');
+    } else {
+      var queryResult = await oThis
+        .select('params')
+        .where(['client_id IN (?)', strategyIds])
+        .fire();
+
+      console.log(queryResult);
+      queryResult = '';
+
+      return Promise.resolve();
+    }
   },
 
   getStrategyIdByParams: async function(params) {
     const oThis = this;
 
-    var sortedParams = oThis._sort(params),
-      returnValue = [];
+    var returnValue = [];
 
-    var sortedParamsHash = localCipher.getShaHashedText(JSON.stringify(sortedParams));
+    var paramsHash = localCipher.getShaHashedText(JSON.stringify(params));
 
-    let query = oThis.select('id').where({ hashed_params: sortedParamsHash });
+    let query = oThis.select('id').where({ hashed_params: paramsHash });
 
     let queryResult = await query.fire();
 
