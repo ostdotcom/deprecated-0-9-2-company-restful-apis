@@ -1,15 +1,27 @@
 'use strict';
+
+/**
+ * Model to get config strategies details.
+ *
+ * @module app/models/config_strategy
+ */
+
 const sortJson = require('sort-json');
 
 const rootPrefix = '../..',
   coreConstants = require(rootPrefix + '/config/core_constants'),
   ModelBaseKlass = require(rootPrefix + '/app/models/base'),
-  KMSWrapperKlass = require(rootPrefix + '/lib/authentication/kms_wrapper'),
   configStartegyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
-  localCipher = require(rootPrefix + '/lib/encryptors/local_cipher');
+  localCipher = require(rootPrefix + '/lib/encryptors/local_cipher'),
+  addressSaltCacheKlass = require(rootPrefix + '/lib/cache_management/managedAddressesSalt'),
+  inMemoryCacheInstance = require(rootPrefix + '/lib/cache_management/engine/in_memory');
 
 const dbName = 'saas_config_' + coreConstants.SUB_ENVIRONMENT + '_' + coreConstants.ENVIRONMENT;
 
+/**
+ * constructor
+ * @constructor
+ */
 const ConfigStrategyModel = function() {
   const oThis = this;
 
@@ -74,6 +86,47 @@ const ConfigStrategyModelSpecificPrototype = {
     }
 
     return Promise.resolve(returnValue);
+  },
+
+  /**
+   * Get Decrypted Config Strategy Salt from Cache or fetch.<br><br>
+   *
+   * @return {Promise<Result>} - returns a Promise with a decrypted salt.
+   *
+   */
+  getDecreptedSalt: async function(managedAddressSaltId) {
+    const oThis = this,
+      cacheKey = coreConstants.CONFIG_STRATEGY_SALT + '_' + managedAddressSaltId;
+
+    let configSaltResp = await inMemoryCacheInstance.get(cacheKey),
+      configSalt = configSaltResp.data.response;
+
+    if (!configSalt) {
+      const addrSaltResp = await oThis._fetchAddressSalt(managedAddressSaltId);
+      configSalt = addrSaltResp.addressSalt;
+      await inMemoryCacheInstance.set(cacheKey, configSalt);
+    }
+
+    return Promise.resolve(configSalt);
+  },
+
+  /**
+   * Fetch Decrypted Config Strategy Salt<br><br>
+   *
+   * @return {Promise<Result>} - returns a Promise with a decrypted salt.
+   *
+   */
+  _fetchAddressSalt: async function(managedAddressSaltId) {
+    const oThis = this;
+
+    var obj = new addressSaltCacheKlass({ id: managedAddressSaltId });
+    var cachedResp = await obj.fetch();
+    if (cachedResp.isFailure()) {
+      return Promise.resolve(cachedResp);
+    }
+
+    var salt = localCipher.decrypt(coreConstants.CACHE_SHA_KEY, cachedResp.data.addressSalt);
+    return Promise.resolve({ addressSalt: salt });
   }
 };
 
