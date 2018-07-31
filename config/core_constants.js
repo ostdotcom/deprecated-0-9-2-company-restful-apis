@@ -90,6 +90,8 @@ define('ACCEPTED_PRICE_FLUCTUATION_FOR_PAYMENT', accepted_margin);
 
 define('SHARED_MEMCACHE_KEY_PREFIX', 'ca_sa_shared_');
 
+define('CONFIG_STRATEGY_SALT', 'config_strategy_salt');
+
 define('DYNAMODB_TABLE_NAME_PREFIX', process.env.OS_DYNAMODB_TABLE_NAME_PREFIX
   ? process.env.OS_DYNAMODB_TABLE_NAME_PREFIX
   : '');
