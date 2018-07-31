@@ -76,8 +76,9 @@ const ConfigStrategyModelSpecificPrototype = {
 
       const data = {
         kind: strategyKind,
-        params: encryptedConfigStrategyParams,
-        hashed_params: hashedConfigStrategyParams
+        params: JSON.stringify(params),
+        managed_address_salts_id: 6006,
+        hashed_params: hashed_params
       };
 
       const dbId = await configStrategyModelInstance.insert(data).fire();
@@ -101,11 +102,14 @@ const ConfigStrategyModelSpecificPrototype = {
     } else {
       var queryResult = await oThis
         .select('params')
-        .where(['client_id IN (?)', strategyIds])
+        .where(['id IN (?)', strategyIds])
         .fire();
 
-      console.log(queryResult);
-      queryResult = '';
+      console.log('QueryResults:', queryResult);
+
+      for (var i = 0; i < queryResult.length; i++) {
+        console.log('QueryResult:', queryResult[i].params);
+      }
 
       return Promise.resolve();
     }
