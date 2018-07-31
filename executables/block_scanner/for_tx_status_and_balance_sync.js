@@ -1110,7 +1110,14 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    */
   catchHandlingFunction: async function(error) {
     if (responseHelper.isCustomResult(error)) {
-      logger.error(error.toHash());
+      const errorData = error.toDebugHash();
+      if(errorData.err.debugOptions && errorData.err.debugOptions.error &&
+        errorData.err.debugOptions.error.code != 'ConditionalCheckFailedException'){
+
+        logger.notify(errorData.err.debugOptions);
+      } else {
+        logger.error(error.toDebugHash());
+      }
       return error;
     } else {
       logger.error(`${__filename}::perform::catch`);
