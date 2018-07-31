@@ -55,7 +55,9 @@ const ConfigStrategyModelSpecificPrototype = {
       managedAddressSaltId = params.managed_address_salt_id,
       strategyKind = invertedKinds[kind];
 
-    let isParamPresent = [];
+    let isParamPresent = [],
+      salt = oThis.getDecreptedSalt(managedAddressSaltId),
+      encryptedConfigStrategyParams = localCipher.encrypt(salt, configStrategyParams);
 
     let hashedConfigStrategyParams = localCipher.getShaHashedText(JSON.stringify(configStrategyParams));
 
@@ -72,13 +74,11 @@ const ConfigStrategyModelSpecificPrototype = {
       //If configStrategyParams is already present in database then id of that param is sent as the first and only element in the array.
       return Promise.resolve(isParamPresent[0]);
     } else {
-      let encryptedConfigStrategyParams = '123456sdfefhdfaygefwadn';
-
       const data = {
         kind: strategyKind,
-        params: JSON.stringify(params),
+        params: encryptedConfigStrategyParams,
         managed_address_salts_id: 6006,
-        hashed_params: hashed_params
+        hashed_params: hashedConfigStrategyParams
       };
 
       const dbId = await configStrategyModelInstance.insert(data).fire();
@@ -106,12 +106,16 @@ const ConfigStrategyModelSpecificPrototype = {
         .fire();
 
       console.log('QueryResults:', queryResult);
-
+      let finalResult = {};
       for (var i = 0; i < queryResult.length; i++) {
-        console.log('QueryResult:', queryResult[i].params);
+        var localDecryptedParams = localCipher.decrypt(salt, queryResult[i].params);
+        var localJsonObj = JSON.parse(localDecryptedParams);
+        Object.assign(finalResult, localJsonObj);
       }
 
-      return Promise.resolve();
+      //console.log("Final",finalResult);
+
+      return Promise.resolve(finalResult);
     }
   },
 
