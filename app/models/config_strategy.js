@@ -129,7 +129,7 @@ const ConfigStrategyModelSpecificPrototype = {
   /**
    * Get Decrypted Config Strategy Salt from Cache or fetch.<br><br>
    *
-   * @return {Promise<Result>} - returns a Promise with a decrypted salt.
+   * @return {Promise<String>} - returns a Promise with a decrypted salt.
    *
    */
   getDecreptedSalt: async function(managedAddressSaltId) {
@@ -151,7 +151,7 @@ const ConfigStrategyModelSpecificPrototype = {
   /**
    * Fetch Decrypted Config Strategy Salt<br><br>
    *
-   * @return {Promise<Result>} - returns a Promise with a decrypted salt.
+   * @return {Promise<Object>} - returns a Promise with a decrypted salt.
    *
    */
   _fetchAddressSalt: async function(managedAddressSaltId) {
