@@ -10,22 +10,14 @@ function define(name, value) {
   });
 }
 
-// Balance and Cache only cache engine.
-// NOTE: Should always be redis
-// Other required connection variables will still be read from cache flavour related variables
-if (process.env.OST_CACHING_ENGINE != 'redis') {
-  throw 'SAAS and other packages need OST_CACHING_ENGINE = "redis" ENV variable for Balance and Nonce management';
-}
-define('NONCE_ONLY_CACHE_ENGINE', process.env.OST_CACHING_ENGINE);
-
 // Saas only cache engine
 // NOTE: Should always be memcached
 // Other required connection variables will still be read from cache flavour related variables
-if (process.env.CR_ONLY_CACHE_ENGINE != 'memcached') {
-  throw 'SAAS need CR_ONLY_CACHE_ENGINE = "memcached" ENV variable for custom caching';
+if (process.env.CR_ONLY_SHARED_CACHE_ENGINE != 'memcached') {
+  throw 'SAAS need CR_ONLY_SHARED_CACHE_ENGINE = "memcached" ENV variable for custom caching';
 }
-define('SAAS_ONLY_CACHE_ENGINE', process.env.CR_ONLY_CACHE_ENGINE);
-define('MEMCACHE_SERVERS', process.env.OST_MEMCACHE_SERVERS);
+define('SAAS_ONLY_SHARED_CACHE_ENGINE', process.env.CR_ONLY_SHARED_CACHE_ENGINE);
+define('SHARED_MEMCACHE_SERVERS', process.env.OST_SHARED_MEMCACHE_SERVERS);
 
 // package variables for current repo
 define('PACKAGE_NAME', packageFile.name);
