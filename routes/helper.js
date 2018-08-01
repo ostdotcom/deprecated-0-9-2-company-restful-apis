@@ -67,7 +67,8 @@ const routeMethods = {
 
     let instanceComposer = new InstanceComposer(configStrategy);
 
-    let Klass = CallerKlassGetter.apply(instanceComposer);
+    let getterMethod = instanceComposer[CallerKlassGetter];
+    let Klass = getterMethod.apply(instanceComposer);
 
     return new Klass(req.serviceParams).perform().then(handleResponse);
   },
