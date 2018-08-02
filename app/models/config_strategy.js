@@ -12,8 +12,8 @@ const rootPrefix = '../..',
   configStartegyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
   util = require(rootPrefix + '/lib/util'),
   localCipher = require(rootPrefix + '/lib/encryptors/local_cipher'),
-  addressSaltCacheKlass = require(rootPrefix + '/lib/cache_management/managedAddressesSalt'),
-  inMemoryCacheInstance = require(rootPrefix + '/lib/cache_management/engine/in_memory'),
+  //addressSaltCacheKlass = require(rootPrefix + '/lib/cache_management/managedAddressesSalt'),
+  //inMemoryCacheInstance = require(rootPrefix + '/lib/cache_management/engine/in_memory'),
   encryptorKlass = require(rootPrefix + '/lib/encryptors/addresses_encryptor');
 
 const dbName = 'saas_config_' + coreConstants.SUB_ENVIRONMENT + '_' + coreConstants.ENVIRONMENT;
@@ -51,46 +51,41 @@ const ConfigStrategyModelSpecificPrototype = {
   /*
   * inserts the config strategy params, kind, managed address salt and sha encryption of config strategy params.
   *
+  * @params
   * @return {Promise<integer>} - returns a Promise with integer of strategy id.
-  * returns: hash of all the parameters retrieved from database.
   *
   */
-  insertStrategyKind: async function(params) {
+  create: async function(kind, managedAddressSaltId, configStrategyParams) {
     const oThis = this,
-      configStrategyModelInstance = new ConfigStrategyModel(),
-      kind = params.kind,
-      configStrategyParams = params.config_strategy_params,
-      managedAddressSaltId = params.managed_address_salt_id,
-      strategyKind = invertedKinds[kind],
+      strategyKindInt = invertedKinds[kind],
       encryptorObj = new encryptorKlass({ managedAddressSaltId: managedAddressSaltId });
 
-    let isParamPresent = [],
+    let isParamPresent = null,
       configStrategyParamsString = JSON.stringify(configStrategyParams),
       encryptedConfigStrategyParams = await encryptorObj.encrypt(configStrategyParamsString),
       hashedConfigStrategyParams = localCipher.getShaHashedText(configStrategyParamsString);
 
     await oThis
-      .getStrategyIdByParams(configStrategyParams)
-      .then(function(resultArray) {
-        isParamPresent = resultArray;
+      .getByParams(configStrategyParams)
+      .then(function(result) {
+        isParamPresent = result;
       })
       .catch(function(err) {
         console.log('Error', err);
       });
 
-    if (isParamPresent.length > 0) {
+    if (isParamPresent != null) {
       //If configStrategyParams is already present in database then id of that param is sent
-      // as the first and only element in the array.
-      return Promise.resolve(isParamPresent[0]);
+      return Promise.resolve(isParamPresent);
     } else {
       const data = {
-        kind: strategyKind,
+        kind: strategyKindInt,
         params: encryptedConfigStrategyParams,
         managed_address_salts_id: managedAddressSaltId,
         hashed_params: hashedConfigStrategyParams
       };
 
-      const dbId = await configStrategyModelInstance.insert(data).fire();
+      const dbId = await oThis.insert(data).fire();
 
       return Promise.resolve(dbId.insertId);
     }
@@ -99,30 +94,30 @@ const ConfigStrategyModelSpecificPrototype = {
   /*
   * get complete ConfigStrategy hash by passing array of strategy ids.
   *
-  * @return {Promise<Hash>} - returns a Promise with an hash of config strategy.
-  * returns: hash of all the parameters retrieved from database.
+  * @return {Promise<Hash>} - returns a Promise with a flat hash of config strategy.
+  *
   *
   */
-  getConfigStrategyByIds: async function(strategyIds) {
+  getByIds: async function(ids) {
     const oThis = this;
 
-    if (strategyIds.length == 0) {
+    if (ids.length == 0) {
       return Promise.reject('strategy ID array is empty');
     } else {
-      var queryResult = await oThis
-        .select(['params', 'managed_address_salts_id'])
-        .where(['id IN (?)', strategyIds])
+      const queryResult = await oThis
+        .select(['params', 'id', 'managed_address_salts_id'])
+        .where(['id IN (?)', ids])
         .fire();
 
       let finalResult = {};
-      for (var i = 0; i < queryResult.length; i++) {
+      for (let i = 0; i < queryResult.length; i++) {
         const encryptorObj = new encryptorKlass({ managedAddressSaltId: queryResult[i].managed_address_salts_id });
-        var localDecryptedParams = await encryptorObj.decrypt(queryResult[i].params);
-        var localJsonObj = JSON.parse(localDecryptedParams);
-        Object.assign(finalResult, localJsonObj);
+        const localDecryptedParams = await encryptorObj.decrypt(queryResult[i].params);
+        const localJsonObj = JSON.parse(localDecryptedParams);
+        finalResult[kinds[queryResult[i].id]] = localJsonObj;
       }
 
-      //console.log("Final",finalResult);
+      //console.log("Final--------------",finalResult);
 
       return Promise.resolve(finalResult);
     }
@@ -134,7 +129,7 @@ const ConfigStrategyModelSpecificPrototype = {
   * @return {Promise<array>} - returns a Promise with an array containing strategy id.
   *
   */
-  getStrategyIdByParams: async function(params) {
+  getByParams: async function(params) {
     const oThis = this;
 
     var returnValue = [],
@@ -147,50 +142,10 @@ const ConfigStrategyModelSpecificPrototype = {
       returnValue.push(queryResult[0].id);
     }
 
-    return Promise.resolve(returnValue);
-  },
-
-  /**
-   * Get Decrypted Config Strategy Salt from Cache or fetch.<br><br>
-   *
-   * @return {Promise<String>} - returns a Promise with a decrypted salt.
-   *
-   */
-  getDecreptedSalt: async function(managedAddressSaltId) {
-    const oThis = this,
-      cacheKey = coreConstants.CONFIG_STRATEGY_SALT + '_' + managedAddressSaltId;
-
-    let configSaltResp = await inMemoryCacheInstance.get(cacheKey),
-      configSalt = configSaltResp.data.response;
-
-    if (!configSalt) {
-      const addrSaltResp = await oThis._fetchAddressSalt(managedAddressSaltId);
-      configSalt = addrSaltResp.addressSalt;
-      await inMemoryCacheInstance.set(cacheKey, configSalt);
-    }
-
-    return Promise.resolve(configSalt);
-  },
-
-  /**
-   * Fetch Decrypted Config Strategy Salt<br><br>
-   *
-   * @return {Promise<Object>} - returns a Promise with a decrypted salt.
-   *
-   */
-  _fetchAddressSalt: async function(managedAddressSaltId) {
-    const oThis = this;
-
-    var obj = new addressSaltCacheKlass({ id: managedAddressSaltId });
-    var cachedResp = await obj.fetch();
-    if (cachedResp.isFailure()) {
-      return Promise.resolve(cachedResp);
-    }
-
-    var salt = localCipher.decrypt(coreConstants.CACHE_SHA_KEY, cachedResp.data.addressSalt);
-    return Promise.resolve({ addressSalt: salt });
+    return Promise.resolve(returnValue[0]);
   }
 };
 
 Object.assign(ConfigStrategyModel.prototype, ConfigStrategyModelSpecificPrototype);
+
 module.exports = ConfigStrategyModel;
