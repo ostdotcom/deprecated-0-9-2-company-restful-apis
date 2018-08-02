@@ -12,8 +12,6 @@ const rootPrefix = '../..',
   configStartegyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
   util = require(rootPrefix + '/lib/util'),
   localCipher = require(rootPrefix + '/lib/encryptors/local_cipher'),
-  //addressSaltCacheKlass = require(rootPrefix + '/lib/cache_management/managedAddressesSalt'),
-  //inMemoryCacheInstance = require(rootPrefix + '/lib/cache_management/engine/in_memory'),
   encryptorKlass = require(rootPrefix + '/lib/encryptors/addresses_encryptor');
 
 const dbName = 'saas_config_' + coreConstants.SUB_ENVIRONMENT + '_' + coreConstants.ENVIRONMENT;
@@ -116,8 +114,6 @@ const ConfigStrategyModelSpecificPrototype = {
         const localJsonObj = JSON.parse(localDecryptedParams);
         finalResult[kinds[queryResult[i].id]] = localJsonObj;
       }
-
-      //console.log("Final--------------",finalResult);
 
       return Promise.resolve(finalResult);
     }
