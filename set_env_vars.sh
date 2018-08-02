@@ -10,7 +10,7 @@ export OST_UTILITY_GETH_RPC_PROVIDERS='["http://127.0.0.1:9546"]'
 export OST_UTILITY_GETH_WS_PROVIDERS='["ws://127.0.0.1:19546"]'
 
 # Cache Engine
-export CR_ONLY_CACHE_ENGINE='memcached'
+export CR_ONLY_SHARED_CACHE_ENGINE='memcached'
 
 #cache engine for openst storage. Presently used for token balance cache.
 export OS_CACHING_ENGINE='memcached'
