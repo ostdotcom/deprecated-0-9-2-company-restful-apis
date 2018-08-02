@@ -3,7 +3,7 @@
 const rootPrefix = '..';
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   clientConfigStrategyCacheKlass = require(rootPrefix + '/lib/cache_management/client_config_strategies'),
-  configStrategyCache = require(rootPrefix + '/lib/cache_multi_management/config_strategy');
+  configStrategyCacheKlass = require(rootPrefix + '/lib/cache_multi_management/config_strategy');
 
 /**
  *
@@ -17,8 +17,14 @@ ConfigStrategyKlass.prototype = {
   /**
    * Get final hash of config strategy
    */
-  getConfigStrategy: function(clientId) {
-    const clientConfigStrategyCacheObj = new clientConfigStrategyCacheKlass(clientId);
+  getConfigStrategy: async function(clientId) {
+    const clientConfigStrategyCacheObj = new clientConfigStrategyCacheKlass({ clientId: clientId }),
+      strategyIds = await clientConfigStrategyCacheObj.fetch(),
+      strategyIdsArray = strategyIds.data;
+
+    const configStrategyCacheObj = new configStrategyCacheKlass({ strategyIds: strategyIdsArray });
+
+    let configStrategyHash = await configStrategyCacheObj.fetch();
 
     let configStrategyFlatHash = {
       OST_REDIS_HOST: '127.0.0.1',
