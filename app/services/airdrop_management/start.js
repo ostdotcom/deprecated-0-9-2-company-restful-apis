@@ -6,15 +6,14 @@
  * @module app/services/airdrop_management/start
  */
 
-const rootPrefix = '../../..',
-  responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  basicHelper = require(rootPrefix + '/helpers/basic'),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop'),
-  commonValidator = require(rootPrefix + '/lib/validators/common'),
-
-  AllocateAirdropKlass = require(rootPrefix + '/lib/allocate_airdrop/start_airdrop'),
-  InstanceComposer = require(rootPrefix + '/instance_composer');
+const rootPrefix = '../../..'
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , AllocateAirdropKlass = require(rootPrefix + '/lib/allocate_airdrop/start_airdrop')
+  , clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
+  , commonValidator = require(rootPrefix + '/lib/validators/common')
+;
 
 /**
  * Add new transaction kind constructor
@@ -142,7 +141,5 @@ StartAirdropKlass.prototype = {
   }
 
 };
-
-InstanceComposer.registerShadowableClass(Base, 'getStartAirdropKlass');
 
 module.exports = StartAirdropKlass;
