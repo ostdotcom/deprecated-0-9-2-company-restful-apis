@@ -1,5 +1,4 @@
 const rootPrefix = '..',
-  coreConstants = require(rootPrefix + '/config/core_constants'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   cacheImplementer = require(rootPrefix + '/lib/cache_management/engine/nonce');
 
