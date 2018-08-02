@@ -192,7 +192,6 @@ FetchCurrentOSTPriceKlass.prototype = {
           conversionRateConstants.ost_currency(),
           quoteCurrency
         );
-        logger.debug(priceInDecimal);
         if (priceInDecimal.isFailure()) {
           logger.notify('f_c_o_p_6', 'Error while getting price from contract.', priceInDecimal);
 
@@ -203,6 +202,7 @@ FetchCurrentOSTPriceKlass.prototype = {
           logger.win('Price point updated in contract.');
           return onResolve('success');
         } else {
+          logger.step(`dbRowId: ${dbRowId} price received from contract: ${priceInDecimal.data.price} but expected was: ${conversionRate}. Waiting for it to match.`);
           return setTimeout(loopCompareContractPrice, 10000);
         }
       };
