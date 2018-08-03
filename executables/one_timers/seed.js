@@ -25,6 +25,7 @@ seedConfigStrategies.prototype = {
     await oThis.seed_dynamo_params();
     await oThis.seed_memcached_params();
     await oThis.seed_autoscaling_params();
+    await oThis.seed_in_memory_params();
     await oThis.seed_constants_params();
     await oThis.seed_dax_params();
     await oThis.seed_es_params();
@@ -83,6 +84,15 @@ seedConfigStrategies.prototype = {
     const configStrategy = new configStrategyModel();
 
     await configStrategy.create('memcached', process.argv[2], memcached_params).then();
+  },
+
+  seed_in_memory_params: async function() {
+    let in_memory_params = {};
+    in_memory_params['OST_INMEMORY_CACHE_NAMESPACE'] = env_list.OST_INMEMORY_CACHE_NAMESPACE;
+
+    const configStrategy = new configStrategyModel();
+
+    await configStrategy.create('in_memory', process.argv[2], in_memory_params).then();
   },
 
   seed_value_geth_params: async function() {
