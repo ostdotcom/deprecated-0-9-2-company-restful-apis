@@ -8,11 +8,13 @@
 
 const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  AllocateAirdropKlass = require(rootPrefix + '/lib/allocate_airdrop/start_airdrop'),
   clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
-  commonValidator = require(rootPrefix + '/lib/validators/common');
+  commonValidator = require(rootPrefix + '/lib/validators/common'),
+  InstanceComposer = require(rootPrefix + '/instance_composer');
+
+require(rootPrefix + '/lib/allocate_airdrop/start_airdrop');
 
 /**
  * Add new transaction kind constructor
@@ -67,7 +69,8 @@ StartAirdropKlass.prototype = {
    * @return {promise<result>}
    */
   asyncPerform: async function() {
-    const oThis = this;
+    const oThis = this,
+      AllocateAirdropKlass = oThis.ic().getStartAllocateAirdropClass();
 
     await oThis.validateAndSanitize();
 
@@ -137,5 +140,7 @@ StartAirdropKlass.prototype = {
     return Promise.resolve(responseHelper.successWithData({}));
   }
 };
+
+InstanceComposer.registerShadowableClass(StartAirdropKlass, 'getStartAirdropClass');
 
 module.exports = StartAirdropKlass;

@@ -1,11 +1,18 @@
 'use strict';
 
+/**
+ * Get airdrop status.
+ *
+ * @module app/services/airdrop_management/get_airdrop_status
+ */
+
 const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   ClientAirdropModel = require(rootPrefix + '/app/models/client_airdrop'),
   clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop'),
   AirdropEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/airdrop'),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  InstanceComposer = require(rootPrefix + '/instance_composer');
 
 /**
  * Fetch status of Airdrop initiated
@@ -103,5 +110,7 @@ GetAirdropStatusKlass.prototype = {
     }
   }
 };
+
+InstanceComposer.registerShadowableClass(GetAirdropStatusKlass, 'getAirdropStatusClass');
 
 module.exports = GetAirdropStatusKlass;

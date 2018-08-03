@@ -1,17 +1,19 @@
 'use strict';
 
 const rootPrefix = '../../..',
-  openStPlatform = require('@openstfoundation/openst-platform'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   AirdropRouterKlass = require(rootPrefix + '/lib/allocate_airdrop/router'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  ManagedAddressesCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses'),
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
   clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop'),
   managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
-  BTSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure'),
-  commonValidator = require(rootPrefix + '/lib/validators/common');
+  commonValidator = require(rootPrefix + '/lib/validators/common'),
+  InstanceComposer = require(rootPrefix + '/instance_composer');
+
+require(rootPrefix + '/lib/providers/platform');
+require(rootPrefix + '/lib/cache_multi_management/managedAddresses');
+require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
 
 /**
  * Add new transaction kind constructor
@@ -99,7 +101,8 @@ StartAirdropForKitKlass.prototype = {
    * @return {promise<result>}
    */
   validateAndSanitize: async function() {
-    const oThis = this;
+    const oThis = this,
+      BTSecureCacheKlass = oThis.ic().getClientBrandedTokenSecureCache();
 
     if (!oThis.clientId || !oThis.tokenSymbol) {
       return Promise.reject(
@@ -215,7 +218,8 @@ StartAirdropForKitKlass.prototype = {
    * @return {promise<result>}
    */
   validateReserveBalance: async function() {
-    const oThis = this;
+    const oThis = this,
+      ManagedAddressesCacheKlass = oThis.ic().getManagedAddressCache();
 
     var macObj = new ManagedAddressesCacheKlass({ uuids: [oThis.clientBrandedToken.reserve_address_uuid] });
     var addr = await macObj.fetch();
@@ -250,7 +254,10 @@ StartAirdropForKitKlass.prototype = {
       );
     }
 
-    const obj = new openStPlatform.services.balance.brandedToken({
+    const platformProvider = oThis.ic().getPlatformProvider(),
+      openSTPlaform = platformProvider.getInstance();
+
+    const obj = new openSTPlaform.services.balance.brandedToken({
       address: reserveAddressObj.ethereum_address,
       erc20_address: oThis.clientBrandedToken.token_erc20_address
     });
@@ -281,5 +288,7 @@ StartAirdropForKitKlass.prototype = {
     return Promise.resolve(responseHelper.successWithData({}));
   }
 };
+
+InstanceComposer.registerShadowableClass(StartAirdropForKitKlass, 'getStartAirdropForKitClass');
 
 module.exports = StartAirdropForKitKlass;

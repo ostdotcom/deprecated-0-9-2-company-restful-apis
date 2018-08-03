@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * Schedule new airdrop task.
+ * List all the airdrops.
  *
- * @module app/services/airdrop_management/start
+ * @module app/services/airdrop_management/list
  */
 
 const rootPrefix = '../../..',
@@ -13,7 +13,8 @@ const rootPrefix = '../../..',
   commonValidator = require(rootPrefix + '/lib/validators/common'),
   clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop'),
   ClientAirdropModel = require(rootPrefix + '/app/models/client_airdrop'),
-  AirdropEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/airdrop');
+  AirdropEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/airdrop'),
+  InstanceComposer = require(rootPrefix + '/instance_composer');
 
 /**
  * List all the airdrops
@@ -243,5 +244,7 @@ ListAirdropsKlass.prototype = {
     return Promise.resolve(responseHelper.successWithData({}));
   }
 };
+
+InstanceComposer.registerShadowableClass(ListAirdropsKlass, 'getListAirdropsClass');
 
 module.exports = ListAirdropsKlass;
