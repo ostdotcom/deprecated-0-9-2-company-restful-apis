@@ -8,14 +8,16 @@
  */
 
 const rootPrefix = '../../..',
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type'),
   ActionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/action'),
-  ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points'),
-  ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token'),
   commonValidator = require(rootPrefix + '/lib/validators/common');
+
+require(rootPrefix + '/lib/cache_management/ost_price_points');
+require(rootPrefix + '/lib/cache_management/client_branded_token');
 
 /**
  * List - Service for getting the list of actions
@@ -378,7 +380,9 @@ ListActions.prototype = {
    * @returns {Promise}
    */
   getExtraData: function() {
-    const oThis = this;
+    const oThis = this,
+      ostPriceCacheKlass = oThis.ic().getOstPricePointsCache(),
+      ClientBrandedTokenCacheKlass = oThis.ic().getClientBrandedTokenCache();
 
     return new Promise(async function(onResolve, onReject) {
       if (oThis.extra_entities.includes('client_tokens')) {
@@ -441,5 +445,7 @@ ListActions.prototype = {
     );
   }
 };
+
+InstanceComposer.registerShadowableClass(ListActions, 'getListActionsClass');
 
 module.exports = ListActions;

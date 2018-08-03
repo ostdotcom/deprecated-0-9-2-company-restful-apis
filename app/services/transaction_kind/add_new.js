@@ -7,15 +7,17 @@
  *
  */
 const rootPrefix = '../../..',
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   util = require(rootPrefix + '/lib/util'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type'),
-  ClientTxKindCntCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type_count'),
   clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types'),
   ActionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/action'),
   commonValidator = require(rootPrefix + '/lib/validators/common');
+
+require(rootPrefix + '/lib/cache_management/client_transaction_type_count');
 
 /**
  * Add new transaction kind constructor
@@ -220,6 +222,7 @@ AddNewAction.prototype = {
    */
   clearCache: function() {
     const oThis = this,
+      ClientTxKindCntCacheKlass = oThis.ic().getClientTransactionTypeCountCache(),
       cacheObj = new ClientTxKindCntCacheKlass({ clientId: oThis.clientId });
 
     return cacheObj.clear();
@@ -250,5 +253,7 @@ AddNewAction.prototype = {
     );
   }
 };
+
+InstanceComposer.registerShadowableClass(AddNewAction, 'getAddNewActionClass');
 
 module.exports = AddNewAction;

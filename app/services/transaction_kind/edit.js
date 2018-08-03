@@ -8,16 +8,18 @@
  */
 
 const rootPrefix = '../../..',
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   util = require(rootPrefix + '/lib/util'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
-  ClientTransactionTypeFromNameCache = require(rootPrefix + '/lib/cache_management/client_transaction_type/by_name'),
-  ClientTransactionTypeFromIdCache = require(rootPrefix + '/lib/cache_management/client_transaction_type/by_id'),
   clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types'),
   ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   commonValidator = require(rootPrefix + '/lib/validators/common'),
   ActionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/action');
+
+require(rootPrefix + '/lib/cache_management/client_transaction_type/by_name');
+require(rootPrefix + '/lib/cache_management/client_transaction_type/by_id');
 
 /**
  * Edit action constructor
@@ -357,7 +359,9 @@ EditAction.prototype = {
    * @return {promise<result>}
    */
   _editTransactionKind: async function() {
-    const oThis = this;
+    const oThis = this,
+      ClientTransactionTypeFromNameCache = oThis.ic().getClientTransactionTypeByNameCache(),
+      ClientTransactionTypeFromIdCache = oThis.ic().getClientTransactionTypeByIdCache();
 
     logger.debug('-----------oThis.updatedValues-', oThis.updatedValues);
 
@@ -400,5 +404,7 @@ EditAction.prototype = {
     );
   }
 };
+
+InstanceComposer.registerShadowableClass(EditAction, 'getEditActionClass');
 
 module.exports = EditAction;

@@ -8,6 +8,7 @@
  */
 
 const rootPrefix = '../../..',
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
@@ -158,5 +159,7 @@ GetAction.prototype = {
     );
   }
 };
+
+InstanceComposer.registerShadowableClass(GetAction, 'getGetActionClass');
 
 module.exports = GetAction;
