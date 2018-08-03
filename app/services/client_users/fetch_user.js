@@ -3,10 +3,12 @@
 const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance'),
-  ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses'),
   UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/user'),
-  basicHelper = require(rootPrefix + '/helpers/basic');
+  basicHelper = require(rootPrefix + '/helpers/basic'),
+  InstanceComposer = require(rootPrefix + '/instance_composer');
+
+require(rootPrefix + '/lib/cache_multi_management/managedAddresses');
+require(rootPrefix + '/lib/economy_user_balance');
 
 /**
  *
@@ -60,7 +62,9 @@ fetchUserKlass.prototype = {
    *
    */
   asyncPerform: async function() {
-    const oThis = this;
+    const oThis = this,
+      ManagedAddressCacheKlass = oThis.ic().getManagedAddressCache(),
+      EconomyUserBalanceKlass = oThis.ic().getEconomyUserBalance();
 
     if (!basicHelper.isUuidValid(oThis.userUuid)) {
       return Promise.reject(
@@ -147,5 +151,7 @@ fetchUserKlass.prototype = {
     return Promise.resolve(responseHelper.successWithData(apiResponseData));
   }
 };
+
+InstanceComposer.registerShadowableClass(fetchUserKlass, 'getFetchUserClass');
 
 module.exports = fetchUserKlass;
