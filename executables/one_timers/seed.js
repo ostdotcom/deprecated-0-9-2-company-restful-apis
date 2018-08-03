@@ -1,5 +1,14 @@
 'use strict';
 
+/*
+*
+*
+* Usage :  node executables/one_timers/seed.js managed_address_salt_id
+*
+* Pass managed_address_salt_id as argument when running this script.
+*
+*
+* */
 const env_list = process.env;
 
 const rootPrefix = '../..',
