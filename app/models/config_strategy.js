@@ -101,7 +101,7 @@ const ConfigStrategyModelSpecificPrototype = {
       return Promise.reject('strategy ID array is empty');
     } else {
       const queryResult = await oThis
-        .select(['params', 'kind', 'managed_address_salts_id'])
+        .select(['id', 'params', 'kind', 'managed_address_salts_id'])
         .where(['id IN (?)', ids])
         .fire();
 
@@ -115,7 +115,10 @@ const ConfigStrategyModelSpecificPrototype = {
         let localDecryptedParams = localCipher.decrypt(response.data.addressSalt, queryResult[i].params);
 
         const localJsonObj = JSON.parse(localDecryptedParams);
-        finalResult[kinds[queryResult[i].kind]] = localJsonObj;
+        let strategyKind = kinds[queryResult[i].kind];
+        let Result = {};
+        Result[strategyKind] = localJsonObj;
+        finalResult[queryResult[i].id] = Result;
       }
 
       return Promise.resolve(finalResult);
