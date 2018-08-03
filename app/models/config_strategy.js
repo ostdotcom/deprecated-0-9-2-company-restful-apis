@@ -9,10 +9,13 @@
 const rootPrefix = '../..',
   coreConstants = require(rootPrefix + '/config/core_constants'),
   ModelBaseKlass = require(rootPrefix + '/app/models/base'),
-  configStartegyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
+  configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
   util = require(rootPrefix + '/lib/util'),
+  inMemoryCacheInstance = require(rootPrefix + '/lib/providers/in_memory_cache'),
   localCipher = require(rootPrefix + '/lib/encryptors/local_cipher'),
-  encryptorKlass = require(rootPrefix + '/lib/encryptors/addresses_encryptor');
+  ManagedAddressSaltModel = require(rootPrefix + '/app/models/managed_address_salt'),
+  kmsWrapperKlass = require(rootPrefix + '/lib/authentication/kms_wrapper'),
+  responseHelper = require(rootPrefix + '/lib/formatter/response');
 
 const dbName = 'saas_config_' + coreConstants.SUB_ENVIRONMENT + '_' + coreConstants.ENVIRONMENT;
 
@@ -29,17 +32,17 @@ const ConfigStrategyModel = function() {
 ConfigStrategyModel.prototype = Object.create(ModelBaseKlass.prototype);
 
 const kinds = {
-    '1': configStartegyConstants.dynamo,
-    '2': configStartegyConstants.dax,
-    '3': configStartegyConstants.redis,
-    '4': configStartegyConstants.memcached,
-    '5': configStartegyConstants.value_geth,
-    '6': configStartegyConstants.value_constants,
-    '7': configStartegyConstants.utility_geth,
-    '8': configStartegyConstants.utility_constants,
-    '9': configStartegyConstants.autoscaling,
-    '10': configStartegyConstants.es,
-    '11': configStartegyConstants.constants
+    '1': configStrategyConstants.dynamo,
+    '2': configStrategyConstants.dax,
+    '3': configStrategyConstants.redis,
+    '4': configStrategyConstants.memcached,
+    '5': configStrategyConstants.value_geth,
+    '6': configStrategyConstants.value_constants,
+    '7': configStrategyConstants.utility_geth,
+    '8': configStrategyConstants.utility_constants,
+    '9': configStrategyConstants.autoscaling,
+    '10': configStrategyConstants.es,
+    '11': configStrategyConstants.constants
   },
   invertedKinds = util.invert(kinds);
 
@@ -49,21 +52,31 @@ const ConfigStrategyModelSpecificPrototype = {
   /*
   * inserts the config strategy params, kind, managed address salt and sha encryption of config strategy params.
   *
-  * @params
+  * @param kind(eg. dynamo,dax etc)
+  * @param managedAddressSaltId
+  * @param configStrategyParams: It contains complete configuration of any particular kind
   * @return {Promise<integer>} - returns a Promise with integer of strategy id.
   *
   */
   create: async function(kind, managedAddressSaltId, configStrategyParams) {
     const oThis = this,
-      strategyKindInt = invertedKinds[kind],
-      encryptorObj = new encryptorKlass({ managedAddressSaltId: managedAddressSaltId });
+      strategyKindInt = invertedKinds[kind];
+    // encryptorObj = new encryptorKlass({ managedAddressSaltId: managedAddressSaltId });
+
+    var response = await oThis.getDecryptedSalt(managedAddressSaltId);
+    console.log('---------decrypted salt ', response);
+    if (response.isFailure()) {
+      return Promise.reject({ error: 'saltNotFound' });
+    }
+
+    const configStrategyParamsString = JSON.stringify(configStrategyParams);
+
+    let encryptedConfigStrategyParams = localCipher.encrypt(response.data.addressSalt, configStrategyParamsString);
 
     let isParamPresent = null,
-      configStrategyParamsString = JSON.stringify(configStrategyParams),
-      encryptedConfigStrategyParams = await encryptorObj.encrypt(configStrategyParamsString),
       hashedConfigStrategyParams = localCipher.getShaHashedText(configStrategyParamsString);
 
-    await oThis
+    await new ConfigStrategyModel()
       .getByParams(configStrategyParams)
       .then(function(result) {
         isParamPresent = result;
@@ -92,8 +105,8 @@ const ConfigStrategyModelSpecificPrototype = {
   /*
   * get complete ConfigStrategy hash by passing array of strategy ids.
   *
+  * @param ids: strategy ids
   * @return {Promise<Hash>} - returns a Promise with a flat hash of config strategy.
-  *
   *
   */
   getByIds: async function(ids) {
@@ -103,16 +116,22 @@ const ConfigStrategyModelSpecificPrototype = {
       return Promise.reject('strategy ID array is empty');
     } else {
       const queryResult = await oThis
-        .select(['params', 'id', 'managed_address_salts_id'])
+        .select(['params', 'kind', 'managed_address_salts_id'])
         .where(['id IN (?)', ids])
         .fire();
 
       let finalResult = {};
       for (let i = 0; i < queryResult.length; i++) {
-        const encryptorObj = new encryptorKlass({ managedAddressSaltId: queryResult[i].managed_address_salts_id });
-        const localDecryptedParams = await encryptorObj.decrypt(queryResult[i].params);
+        let response = await oThis.getDecryptedSalt(queryResult[i].managed_address_salts_id);
+        console.log('-------getbyid salt---', response);
+
+        if (response.isFailure()) {
+          return Promise.reject({ error: 'saltNotFound' });
+        }
+        let localDecryptedParams = localCipher.decrypt(response.data.addressSalt, queryResult[i].params);
+
         const localJsonObj = JSON.parse(localDecryptedParams);
-        finalResult[kinds[queryResult[i].id]] = localJsonObj;
+        finalResult[kinds[queryResult[i].kind]] = localJsonObj;
       }
 
       return Promise.resolve(finalResult);
@@ -139,6 +158,63 @@ const ConfigStrategyModelSpecificPrototype = {
     }
 
     return Promise.resolve(returnValue[0]);
+  },
+
+  /**
+   * Get Decrypted Config Strategy Salt from Cache or fetch.<br><br>
+   *
+   * @return {Promise<Result>} - returns a Promise with a decrypted salt.
+   *
+   */
+  getDecryptedSalt: async function(managedAddressSaltId) {
+    const oThis = this,
+      cacheKey = coreConstants.CONFIG_STRATEGY_SALT + '_' + managedAddressSaltId;
+
+    let configSaltResp = await inMemoryCacheInstance.cacheInstance.get(cacheKey),
+      configSalt = configSaltResp.data.response;
+
+    if (!configSalt) {
+      const addrSaltResp = await oThis._fetchAddressSalt(managedAddressSaltId);
+      configSalt = addrSaltResp.data.addressSalt;
+      await inMemoryCacheInstance.cacheInstance.set(cacheKey, configSalt);
+    }
+
+    return Promise.resolve(responseHelper.successWithData({ addressSalt: configSalt }));
+  },
+
+  /**
+   * @private
+   *
+   * @param managedAddressSaltId
+   *
+   */
+
+  _fetchAddressSalt: async function(managedAddressSaltId) {
+    const oThis = this;
+
+    var addrSalt = await new ManagedAddressSaltModel().getById(managedAddressSaltId);
+
+    if (!addrSalt[0]) {
+      return responseHelper.error({
+        internal_error_identifier: 'cm_mas_1',
+        api_error_identifier: 'invalid_params',
+        error_config: errorConfig
+      });
+    }
+
+    var KMSObject = new kmsWrapperKlass('managedAddresses');
+    var decryptedSalt = await KMSObject.decrypt(addrSalt[0]['managed_address_salt']);
+    if (!decryptedSalt['Plaintext']) {
+      return responseHelper.error({
+        internal_error_identifier: 'cm_mas_2',
+        api_error_identifier: 'invalid_params',
+        error_config: errorConfig
+      });
+    }
+
+    var salt = decryptedSalt['Plaintext'];
+
+    return Promise.resolve(responseHelper.successWithData({ addressSalt: salt }));
   }
 };
 
