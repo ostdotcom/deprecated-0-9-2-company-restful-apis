@@ -8,9 +8,14 @@ const rootPrefix = '../..',
 
 const router = express.Router();
 
+require(rootPrefix + '/app/services/client_users/edit_user');
+require(rootPrefix + '/app/services/address/generate');
+require(rootPrefix + '/app/services/client_users/list');
+require(rootPrefix + '/app/services/client_users/fetch_user');
+
 /**
  *
- * @name Edit an existing User
+ * @name Edit an existing UserOST_CACHE_ENGINE
  *
  * @route {POST} {base_url}/users/:id
  *
@@ -18,13 +23,12 @@ const router = express.Router();
  * @routeparam {string} :name - name with which user is to be created
  *
  */
+
 router.post('/:id', function(req, res, next) {
   req.decodedParams.apiName = 'edit_user';
   req.decodedParams.id = req.params.id;
 
-  const EditUserKlass = require(rootPrefix + '/app/services/client_users/edit_user');
-
-  Promise.resolve(routeHelper.performer(req, res, next, EditUserKlass, 'r_v1_u_1'));
+  Promise.resolve(routeHelper.performer(req, res, next, 'getEditUserClass', 'r_v1_u_1'));
 });
 
 /**
@@ -40,9 +44,7 @@ router.post('/', function(req, res, next) {
   req.decodedParams.apiName = 'create_user';
   req.decodedParams.address_type = managedAddressesConst.userAddressType;
 
-  const CreateUserKlass = require(rootPrefix + '/app/services/address/generate');
-
-  Promise.resolve(routeHelper.performer(req, res, next, CreateUserKlass, 'r_v1_u_2'));
+  Promise.resolve(routeHelper.performer(req, res, next, 'getGenerateAddressClass', 'r_v1_u_2'));
 });
 
 /**
@@ -61,9 +63,7 @@ router.post('/', function(req, res, next) {
 router.get('/', function(req, res, next) {
   req.decodedParams.apiName = 'list_users';
 
-  const ListUsersKlass = require(rootPrefix + '/app/services/client_users/list');
-
-  Promise.resolve(routeHelper.performer(req, res, next, ListUsersKlass, 'r_v1_u_4'));
+  Promise.resolve(routeHelper.performer(req, res, next, 'getListUserClass', 'r_v1_u_4'));
 });
 
 /**
@@ -79,9 +79,7 @@ router.get('/:id', function(req, res, next) {
   req.decodedParams.apiName = 'fetch_user';
   req.decodedParams.id = req.params.id;
 
-  const FetchUserKlass = require(rootPrefix + '/app/services/client_users/fetch_user');
-
-  Promise.resolve(routeHelper.performer(req, res, next, FetchUserKlass, 'r_v1_u_3'));
+  Promise.resolve(routeHelper.performer(req, res, next, 'getFetchUserClass', 'r_v1_u_3'));
 });
 
 module.exports = router;

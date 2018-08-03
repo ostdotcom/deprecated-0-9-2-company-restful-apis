@@ -5,17 +5,19 @@ const uuid = require('uuid');
 const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
-  AddressesEncryptorKlass = require(rootPrefix + '/lib/encryptors/addresses_encryptor'),
-  ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses'),
-  EthAddrPrivateKeyCacheKlass = require(rootPrefix + '/lib/cache_management/address_private_key'),
   managedAddressConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
   ManagedAddressSaltModel = require(rootPrefix + '/app/models/managed_address_salt'),
   kmsWrapperKlass = require(rootPrefix + '/lib/authentication/kms_wrapper'),
   UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/user'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  ClientAddressSaltMapping = require(rootPrefix + '/lib/cache_management/client_address_salt_mapping'),
-  openStPlatform = require('@openstfoundation/openst-platform');
+  InstanceComposer = require(rootPrefix + '/instance_composer');
+
+require(rootPrefix + '/lib/cache_multi_management/managedAddresses');
+require(rootPrefix + '/lib/cache_management/address_private_key');
+require(rootPrefix + '/lib/cache_management/client_address_salt_mapping');
+require(rootPrefix + '/lib/providers/platform');
+require(rootPrefix + '/lib/encryptors/addresses_encryptor');
 
 /**
  * Generate address klass
@@ -77,7 +79,8 @@ GenerateAddressKlass.prototype = {
       clientId = oThis.clientId,
       addressType = oThis.addressType,
       addrUuid = uuid.v4(),
-      errors_object = [];
+      errors_object = [],
+      ManagedAddressCacheKlass = oThis.ic().getManagedAddressCache();
 
     // Client id is mandatory for all address types but for internalChainIndenpendentAddressType
     if ((!clientId || clientId === '') && addressType != managedAddressConst.internalChainIndenpendentAddressType) {
@@ -174,10 +177,15 @@ GenerateAddressKlass.prototype = {
   _processAddressInBackground: async function(company_managed_address_id, addrUuid) {
     const oThis = this,
       clientId = oThis.clientId,
-      addressType = oThis.addressType;
+      addressType = oThis.addressType,
+      ManagedAddressCacheKlass = oThis.ic().getManagedAddressCache(),
+      EthAddrPrivateKeyCacheKlass = oThis.ic().getEthAddrPrivateKeyCache();
+
+    const platformProvider = oThis.ic().getPlatformProvider(),
+      openSTPlaform = platformProvider.getInstance();
 
     if (!oThis.ethAddress || !oThis.privateKey) {
-      const addrGenerator = new openStPlatform.services.utils.generateRawKey(),
+      const addrGenerator = new openSTPlaform.services.utils.generateRawKey(),
         generateAddrRsp = addrGenerator.perform();
 
       if (generateAddrRsp.isFailure()) {
@@ -240,7 +248,8 @@ GenerateAddressKlass.prototype = {
    *
    */
   _generateManagedAddressSalt: async function(clientId) {
-    var oThis = this;
+    var oThis = this,
+      ClientAddressSaltMapping = oThis.ic().getClientAddressSaltMappingCache();
 
     var insertedRec = null;
 
@@ -300,6 +309,9 @@ GenerateAddressKlass.prototype = {
    * @return {Promise<*>}
    */
   _updateInDb: async function(company_managed_address_id, eth_address, privateKeyD, managed_address_salt_id) {
+    const oThis = this,
+      AddressesEncryptorKlass = oThis.ic().getAddressEncryptorClass();
+
     const addressEncryptorObj = new AddressesEncryptorKlass({ managedAddressSaltId: managed_address_salt_id });
 
     const privateKeyEncr = await addressEncryptorObj.encrypt(privateKeyD);
@@ -321,5 +333,7 @@ GenerateAddressKlass.prototype = {
       .fire();
   }
 };
+
+InstanceComposer.registerShadowableClass(GenerateAddressKlass, 'getGenerateAddressClass');
 
 module.exports = GenerateAddressKlass;

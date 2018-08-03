@@ -4,10 +4,12 @@ const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
-  EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance'),
   UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/user'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
-  commonValidator = require(rootPrefix + '/lib/validators/common');
+  commonValidator = require(rootPrefix + '/lib/validators/common'),
+  InstanceComposer = require(rootPrefix + '/instance_composer');
+
+require(rootPrefix + '/lib/economy_user_balance');
 
 /**
  *
@@ -72,7 +74,8 @@ listUserKlass.prototype = {
    *
    */
   asyncPerform: async function() {
-    const oThis = this;
+    const oThis = this,
+      EconomyUserBalanceKlass = oThis.ic().getEconomyUserBalance();
 
     await oThis.validateAndSanitize();
 
@@ -254,5 +257,7 @@ listUserKlass.prototype = {
     return Promise.resolve(responseHelper.successWithData({}));
   }
 };
+
+InstanceComposer.registerShadowableClass(listUserKlass, 'getListUserClass');
 
 module.exports = listUserKlass;

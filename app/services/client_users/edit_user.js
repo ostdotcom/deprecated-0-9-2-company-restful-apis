@@ -6,13 +6,15 @@
  * @module services/client_users/edit_user
  */
 const rootPrefix = '../../..',
-  EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses'),
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
   UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/user'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+
+require(rootPrefix + '/lib/cache_multi_management/managedAddresses');
+require(rootPrefix + '/lib/economy_user_balance');
 
 /**
  * Update user klass
@@ -44,7 +46,7 @@ EditUserKlass.prototype = {
   perform: function() {
     const oThis = this;
 
-    return oThis.asycnPerform().catch(function(error) {
+    return oThis.asyncPerform().catch(function(error) {
       if (responseHelper.isCustomResult(error)) {
         return error;
       } else {
@@ -65,7 +67,7 @@ EditUserKlass.prototype = {
    * @return {Promise<result>}
    *
    */
-  asycnPerform: async function() {
+  asyncPerform: async function() {
     const oThis = this,
       clientId = oThis.clientId,
       userUuid = oThis.userUuid,
@@ -105,7 +107,9 @@ EditUserKlass.prototype = {
       );
     }
 
-    var managedAddressCache = new ManagedAddressCacheKlass({ uuids: [userUuid] });
+    let ManagedAddressCacheKlass = oThis.ic().getManagedAddressCache();
+
+    let managedAddressCache = new ManagedAddressCacheKlass({ uuids: [userUuid] });
 
     const cacheFetchResponse = await managedAddressCache.fetch();
 
@@ -142,6 +146,7 @@ EditUserKlass.prototype = {
     }
 
     const ethereumAddress = response['ethereum_address'],
+      EconomyUserBalanceKlass = oThis.ic().getEconomyUserBalance(),
       economyUserBalance = new EconomyUserBalanceKlass({ client_id: clientId, ethereum_addresses: [ethereumAddress] }),
       userBalance = await economyUserBalance.perform();
 
@@ -185,5 +190,7 @@ EditUserKlass.prototype = {
     return Promise.resolve(responseHelper.successWithData(apiResponseData));
   }
 };
+
+InstanceComposer.registerShadowableClass(EditUserKlass, 'getEditUserClass');
 
 module.exports = EditUserKlass;
