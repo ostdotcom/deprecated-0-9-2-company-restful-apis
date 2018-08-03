@@ -10,8 +10,7 @@ const rootPrefix = '../..',
   coreConstants = require(rootPrefix + '/config/core_constants'),
   ModelBaseKlass = require(rootPrefix + '/app/models/base'),
   configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
-  util = require(rootPrefix + '/lib/util'),
-  inMemoryCacheInstance = require(rootPrefix + '/lib/providers/in_memory_cache'),
+  InMemoryCacheProvider = require(rootPrefix + '/lib/providers/in_memory_cache'),
   localCipher = require(rootPrefix + '/lib/encryptors/local_cipher'),
   ManagedAddressSaltModel = require(rootPrefix + '/app/models/managed_address_salt'),
   kmsWrapperKlass = require(rootPrefix + '/lib/authentication/kms_wrapper'),
@@ -155,13 +154,17 @@ const ConfigStrategyModelSpecificPrototype = {
     const oThis = this,
       cacheKey = coreConstants.CONFIG_STRATEGY_SALT + '_' + managedAddressSaltId;
 
-    let configSaltResp = await inMemoryCacheInstance.cacheInstance.get(cacheKey),
+    let consistentBehavior = '0';
+    const cacheObject = InMemoryCacheProvider.getInstance(consistentBehavior);
+    const cacheImplementer = cacheObject.cacheInstance;
+
+    let configSaltResp = await cacheImplementer.get(cacheKey),
       configSalt = configSaltResp.data.response;
 
     if (!configSalt) {
       const addrSaltResp = await oThis._fetchAddressSalt(managedAddressSaltId);
       configSalt = addrSaltResp.data.addressSalt;
-      await inMemoryCacheInstance.cacheInstance.set(cacheKey, configSalt);
+      await cacheImplementer.set(cacheKey, configSalt);
     }
 
     return Promise.resolve(responseHelper.successWithData({ addressSalt: configSalt }));
