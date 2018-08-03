@@ -64,7 +64,6 @@ const ConfigStrategyModelSpecificPrototype = {
     // encryptorObj = new encryptorKlass({ managedAddressSaltId: managedAddressSaltId });
 
     var response = await oThis.getDecryptedSalt(managedAddressSaltId);
-    console.log('---------decrypted salt ', response);
     if (response.isFailure()) {
       return Promise.reject({ error: 'saltNotFound' });
     }
