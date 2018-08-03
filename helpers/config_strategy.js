@@ -14,20 +14,21 @@ const ConfigStrategyKlass = function() {};
 ConfigStrategyKlass.prototype = {
   /**
    * Get final hash of config strategy
+   * @param clientID: client ID whose config strategy hash is needed.
+   *
+   *
+   * @returns Hash of configstrategy
    */
   getConfigStrategy: async function(clientId) {
     const clientConfigStrategyCacheObj = new clientConfigStrategyCacheKlass({ clientId: clientId }),
       strategyIds = await clientConfigStrategyCacheObj.fetch(),
-      strategyIdsArray = strategyIds.data;
+      strategyIdsArray = strategyIds.data,
+      configStrategyCacheObj = new configStrategyCacheKlass({ strategyIds: strategyIdsArray });
 
-    const configStrategyCacheObj = new configStrategyCacheKlass({ strategyIds: strategyIdsArray });
-
-    let configStrategyHash = await configStrategyCacheObj.fetch();
-
-    let configStrategyFlatHash = {};
-    let FinalConfigStrategyFlatHash = {};
-
-    let valueArray = Object.values(configStrategyHash.data);
+    let configStrategyHash = await configStrategyCacheObj.fetch(),
+      configStrategyFlatHash = {},
+      FinalConfigStrategyFlatHash = {},
+      valueArray = Object.values(configStrategyHash.data);
 
     for (let i = 0; i < valueArray.length; i++) {
       Object.assign(configStrategyFlatHash, valueArray[i]);
