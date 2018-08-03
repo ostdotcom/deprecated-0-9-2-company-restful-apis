@@ -1,14 +1,22 @@
 'use strict';
+/**
+ * Get user addresses by uuid
+ *
+ * @module services/client_users/get_addresses_by_uuid
+ */
 
 const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  ManagedAddressModel = require(rootPrefix + '/app/models/managed_address');
+  ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
+  InstanceComposer = require(rootPrefix + '/instance_composer');
 
 /**
- * constructor
- *
  * @constructor
+ * @param {object} params -
+ * @param {number} params.user_uuid - uuid of user
+ * @param {number} params.client_id - client id of user
+ *
  */
 const GetAddressesByUuidKlass = function(params) {
   const oThis = this;
@@ -77,5 +85,7 @@ GetAddressesByUuidKlass.prototype = {
     return Promise.resolve(responseHelper.successWithData({ user_addresses: response }));
   }
 };
+
+InstanceComposer.registerShadowableClass(GetAddressesByUuidKlass, 'getAddressesByUuidClass');
 
 module.exports = GetAddressesByUuidKlass;

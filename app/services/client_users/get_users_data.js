@@ -1,16 +1,26 @@
 'use strict';
 
+/**
+ * Get data of a user
+ *
+ * @module services/client_users/get_user_data
+ */
+
 const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
-  EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance'),
-  basicHelper = require(rootPrefix + '/helpers/basic');
+  basicHelper = require(rootPrefix + '/helpers/basic'),
+  InstanceComposer = require(rootPrefix + '/instance_composer');
+
+require(rootPrefix + '/lib/economy_user_balance');
 
 /**
- * constructor
- *
  * @constructor
+ * @param {object} params -
+ * @param {number} params.client_id - client id of user
+ * @param {array} params.ethereum_addresses - ethereum addresses of user
+ *
  */
 const GetUsersDataKlass = function(params) {
   const oThis = this;
@@ -43,7 +53,9 @@ GetUsersDataKlass.prototype = {
    * @return {Promise<result>}
    */
   asyncPerform: async function() {
-    const oThis = this;
+    const oThis = this,
+      EconomyUserBalanceKlass = oThis.ic().getEconomyUserBalance();
+
     var users = await new ManagedAddressModel().getByEthAddresses(oThis.ethAddresses);
 
     if (users.length <= 0) {
@@ -100,5 +112,7 @@ GetUsersDataKlass.prototype = {
     return responseHelper.successWithData(response);
   }
 };
+
+InstanceComposer.registerShadowableClass(GetUsersDataKlass, 'getUsersDataClass');
 
 module.exports = GetUsersDataKlass;

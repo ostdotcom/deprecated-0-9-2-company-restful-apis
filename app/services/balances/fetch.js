@@ -10,8 +10,18 @@ const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
-  ManagedAddressesCache = require(rootPrefix + '/lib/cache_multi_management/managedAddresses'),
-  EconomyUserBalance = require(rootPrefix + '/lib/economy_user_balance');
+  InstanceComposer = require(rootPrefix + '/instance_composer');
+
+require(rootPrefix + '/lib/cache_multi_management/managedAddresses');
+require(rootPrefix + '/lib/economy_user_balance');
+
+/**
+ * @constructor
+ * @param {object} params -
+ * @param {number} params.user_uuid - uuid of user
+ * @param {number} params.client_id - client id of user
+ *
+ */
 
 const Fetch = function(params) {
   const oThis = this;
@@ -98,7 +108,8 @@ Fetch.prototype = {
    * @return {Promise}
    */
   getBalanceFetchParams: async function() {
-    const oThis = this;
+    const oThis = this,
+      ManagedAddressesCache = oThis.ic().getManagedAddressCache();
 
     let managedAddressesCacheResponse = await new ManagedAddressesCache({
       uuids: [oThis.user_uuid]
@@ -133,7 +144,8 @@ Fetch.prototype = {
    *
    */
   getBalance: async function() {
-    const oThis = this;
+    const oThis = this,
+      EconomyUserBalance = oThis.ic().getEconomyUserBalance();
 
     let economyUserBalanceResponse = await new EconomyUserBalance({
       client_id: oThis.clientId,
@@ -145,5 +157,7 @@ Fetch.prototype = {
     return responseHelper.successWithData(balanceData);
   }
 };
+
+InstanceComposer.registerShadowableClass(Fetch, 'getFetch');
 
 module.exports = Fetch;
