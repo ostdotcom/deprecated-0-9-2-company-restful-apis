@@ -1,7 +1,7 @@
 'use strict';
 
-const rootPrefix = '..';
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+const rootPrefix = '..',
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   clientConfigStrategyCacheKlass = require(rootPrefix + '/lib/cache_management/client_config_strategies'),
   configStrategyCacheKlass = require(rootPrefix + '/lib/cache_multi_management/config_strategy');
 
@@ -20,27 +20,33 @@ ConfigStrategyKlass.prototype = {
    * @returns Hash of configstrategy
    */
   getConfigStrategy: async function(clientId) {
-    const clientConfigStrategyCacheObj = new clientConfigStrategyCacheKlass({ clientId: clientId }),
-      strategyIds = await clientConfigStrategyCacheObj.fetch(),
-      strategyIdsArray = strategyIds.data,
-      configStrategyCacheObj = new configStrategyCacheKlass({ strategyIds: strategyIdsArray });
+    let clientConfigStrategyCacheObj = new clientConfigStrategyCacheKlass({ clientId: clientId }),
+      strategyIdsFetchRsp = await clientConfigStrategyCacheObj.fetch();
 
-    let configStrategyHash = await configStrategyCacheObj.fetch(),
-      configStrategyFlatHash = {},
-      FinalConfigStrategyFlatHash = {},
-      valueArray = Object.values(configStrategyHash.data);
-
-    for (let i = 0; i < valueArray.length; i++) {
-      Object.assign(configStrategyFlatHash, valueArray[i]);
+    if (strategyIdsFetchRsp.isFailure()) {
+      return Promise.reject(strategyIdsFetchRsp);
     }
 
-    valueArray = Object.values(configStrategyFlatHash);
+    let strategyIdsArray = strategyIdsFetchRsp.data,
+      configStrategyCacheObj = new configStrategyCacheKlass({ strategyIds: strategyIdsArray }),
+      configStrategyFetchRsp = await configStrategyCacheObj.fetch();
 
-    for (let j = 0; j < valueArray.length; j++) {
-      Object.assign(FinalConfigStrategyFlatHash, valueArray[j]);
+    if (configStrategyFetchRsp.isFailure()) {
+      return Promise.reject(configStrategyFetchRsp);
     }
 
-    return FinalConfigStrategyFlatHash;
+    let finalConfigStrategyFlatHash = {},
+      configStrategyIdToDetailMap = configStrategyFetchRsp.data;
+
+    for (let configStrategyId in configStrategyIdToDetailMap) {
+      let configStrategy = configStrategyIdToDetailMap[configStrategyId];
+
+      for (let strategyKind in configStrategy) {
+        Object.assign(finalConfigStrategyFlatHash, configStrategy[strategyKind]);
+      }
+    }
+
+    return finalConfigStrategyFlatHash;
   }
 };
 
