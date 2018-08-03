@@ -31,20 +31,8 @@ const ConfigStrategyModel = function() {
 
 ConfigStrategyModel.prototype = Object.create(ModelBaseKlass.prototype);
 
-const kinds = {
-    '1': configStrategyConstants.dynamo,
-    '2': configStrategyConstants.dax,
-    '3': configStrategyConstants.redis,
-    '4': configStrategyConstants.memcached,
-    '5': configStrategyConstants.value_geth,
-    '6': configStrategyConstants.value_constants,
-    '7': configStrategyConstants.utility_geth,
-    '8': configStrategyConstants.utility_constants,
-    '9': configStrategyConstants.autoscaling,
-    '10': configStrategyConstants.es,
-    '11': configStrategyConstants.constants
-  },
-  invertedKinds = util.invert(kinds);
+const kinds = configStrategyConstants.kinds,
+  invertedKinds = configStrategyConstants.invertedKinds;
 
 const ConfigStrategyModelSpecificPrototype = {
   tableName: 'config_strategies',
@@ -61,7 +49,6 @@ const ConfigStrategyModelSpecificPrototype = {
   create: async function(kind, managedAddressSaltId, configStrategyParams) {
     const oThis = this,
       strategyKindInt = invertedKinds[kind];
-    // encryptorObj = new encryptorKlass({ managedAddressSaltId: managedAddressSaltId });
 
     var response = await oThis.getDecryptedSalt(managedAddressSaltId);
     if (response.isFailure()) {
@@ -122,7 +109,6 @@ const ConfigStrategyModelSpecificPrototype = {
       let finalResult = {};
       for (let i = 0; i < queryResult.length; i++) {
         let response = await oThis.getDecryptedSalt(queryResult[i].managed_address_salts_id);
-        console.log('-------getbyid salt---', response);
 
         if (response.isFailure()) {
           return Promise.reject({ error: 'saltNotFound' });
