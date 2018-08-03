@@ -1,12 +1,14 @@
 'use strict';
 
 const rootPrefix = '../../..',
-  openStPlatform = require('@openstfoundation/openst-platform'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses'),
-  ClientBrandedTokenSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   basicHelper = require(rootPrefix + '/helpers/basic');
+
+require(rootPrefix + '/lib/providers/platform');
+require(rootPrefix + '/lib/cache_multi_management/managedAddresses');
+require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
 
 /**
  * constructor
@@ -116,9 +118,11 @@ UtilityChainBalancesFetcherKlass.prototype = {
    * @return {Promise}
    */
   _fetchostPrimeBalance: function() {
-    const oThis = this;
+    const oThis = this,
+      platformProvider = oThis.ic().getPlatformProvider(),
+      openSTPlaform = platformProvider.getInstance();
 
-    const obj = new openStPlatform.services.balance.simpleTokenPrime({ address: oThis.address });
+    const obj = new openSTPlaform.services.balance.simpleTokenPrime({ address: oThis.address });
 
     return obj.perform();
   },
@@ -132,6 +136,9 @@ UtilityChainBalancesFetcherKlass.prototype = {
    */
   _fetchBrandedTokenBalance: async function(tokenSymbol) {
     const oThis = this,
+      platformProvider = oThis.ic().getPlatformProvider(),
+      ClientBrandedTokenSecureCacheKlass = oThis.ic().getClientBrandedTokenSecureCache(),
+      openSTPlaform = platformProvider.getInstance(),
       clientBrandedTokenSecureCacheObj = new ClientBrandedTokenSecureCacheKlass({ tokenSymbol: tokenSymbol }),
       clientBrandedTokenSecureCacheRsp = await clientBrandedTokenSecureCacheObj.fetch();
 
@@ -161,7 +168,7 @@ UtilityChainBalancesFetcherKlass.prototype = {
       );
     }
 
-    const obj = new openStPlatform.services.balance.brandedToken({
+    const obj = new openSTPlaform.services.balance.brandedToken({
       address: oThis.address,
       erc20_address: clientBrandedTokenSecureCacheData.token_erc20_address
     });
@@ -175,7 +182,8 @@ UtilityChainBalancesFetcherKlass.prototype = {
    * @return {Promise}
    */
   _setAddress: async function() {
-    const oThis = this;
+    const oThis = this,
+      ManagedAddressCacheKlass = oThis.ic().getManagedAddressCache();
 
     const managedAddressCache = new ManagedAddressCacheKlass({ uuids: [oThis.addressUuid] });
 
@@ -191,5 +199,7 @@ UtilityChainBalancesFetcherKlass.prototype = {
     return Promise.resolve(responseHelper.successWithData({}));
   }
 };
+
+InstanceComposer.registerShadowableClass(UtilityChainBalancesFetcherKlass, 'getUtilityChainBalancesFetcherClass');
 
 module.exports = UtilityChainBalancesFetcherKlass;

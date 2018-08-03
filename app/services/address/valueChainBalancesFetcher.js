@@ -1,12 +1,12 @@
 'use strict';
 
 const rootPrefix = '../../..',
-  openStPlatform = require('@openstfoundation/openst-platform'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  ethBalanceCacheKlass = require(rootPrefix + '/lib/cache_management/ethBalance'),
-  ostBalanceCacheKlass = require(rootPrefix + '/lib/cache_management/ostBalance'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   basicHelper = require(rootPrefix + '/helpers/basic');
+
+require(rootPrefix + '/lib/providers/platform');
 
 /**
  * constructor
@@ -109,14 +109,11 @@ valueChainBalancesFetcherKlass.prototype = {
    * @return {Promise}
    */
   _fetchethBalance: function() {
-    const oThis = this;
+    const oThis = this,
+      platformProvider = oThis.ic().getPlatformProvider(),
+      openSTPlaform = platformProvider.getInstance();
 
-    // const obj = new ethBalanceCacheKlass({'address': oThis.address});
-    // return obj.fetch();
-
-    // Having a one minute cache is leading to PM team reporting bugs.
-    // untill we figure out a way to flush it avoid using it here
-    const obj = new openStPlatform.services.balance.eth({ address: oThis.address });
+    const obj = new openSTPlaform.services.balance.eth({ address: oThis.address });
 
     return obj.perform();
   },
@@ -127,15 +124,16 @@ valueChainBalancesFetcherKlass.prototype = {
    * @return {Promise}
    */
   _fetchOSTBalance: function() {
-    const oThis = this;
+    const oThis = this,
+      platformProvider = oThis.ic().getPlatformProvider(),
+      openSTPlaform = platformProvider.getInstance();
 
-    // const obj = new ostBalanceCacheKlass({'address': oThis.address});
-    // Having a one minute cache is leading to PM team reporting bugs.
-    // untill we figure out a way to flush it avoid using it here
-    const obj = new openStPlatform.services.balance.simpleToken({ address: oThis.address });
+    const obj = new openSTPlaform.services.balance.simpleToken({ address: oThis.address });
 
     return obj.perform();
   }
 };
+
+InstanceComposer.registerShadowableClass(valueChainBalancesFetcherKlass, 'getValueChainBalancesFetcherClass');
 
 module.exports = valueChainBalancesFetcherKlass;
