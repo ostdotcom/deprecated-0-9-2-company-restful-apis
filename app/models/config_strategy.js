@@ -14,7 +14,10 @@ const rootPrefix = '../..',
   localCipher = require(rootPrefix + '/lib/encryptors/local_cipher'),
   ManagedAddressSaltModel = require(rootPrefix + '/app/models/managed_address_salt'),
   kmsWrapperKlass = require(rootPrefix + '/lib/authentication/kms_wrapper'),
-  responseHelper = require(rootPrefix + '/lib/formatter/response');
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  basicHelper = require(rootPrefix + '/helpers/basic'),
+  apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
+  errorConfig = basicHelper.fetchErrorConfig(apiVersions.general);
 
 const dbName = 'saas_config_' + coreConstants.SUB_ENVIRONMENT + '_' + coreConstants.ENVIRONMENT;
 
@@ -47,16 +50,20 @@ const ConfigStrategyModelSpecificPrototype = {
   */
   create: async function(kind, managedAddressSaltId, configStrategyParams) {
     const oThis = this,
-      strategyKindInt = invertedKinds[kind];
+      strategyKindInt = invertedKinds[kind],
+      configStrategyParamsString = JSON.stringify(configStrategyParams);
 
-    var response = await oThis.getDecryptedSalt(managedAddressSaltId);
-    if (response.isFailure()) {
-      return Promise.reject({ error: 'saltNotFound' });
+    if (strategyKindInt == undefined) {
+      throw 'Error: Improper kind parameter';
     }
 
-    const configStrategyParamsString = JSON.stringify(configStrategyParams);
+    if (typeof managedAddressSaltId != 'number') {
+      throw 'Error: managedAddressSaltId shoule be an integer';
+    }
 
-    let encryptedConfigStrategyParams = localCipher.encrypt(response.data.addressSalt, configStrategyParamsString);
+    if (!configStrategyParams) {
+      throw 'Config Strategy params hash cannot be null';
+    }
 
     let isParamPresent = null,
       hashedConfigStrategyParams = localCipher.getShaHashedText(configStrategyParamsString);
@@ -74,6 +81,20 @@ const ConfigStrategyModelSpecificPrototype = {
       //If configStrategyParams is already present in database then id of that param is sent
       return Promise.resolve(isParamPresent);
     } else {
+      let response = await oThis.getDecryptedSalt(managedAddressSaltId);
+      if (response.isFailure()) {
+        return Promise.reject(
+          responseHelper.error({
+            internal_error_identifier: 'm_tb_dshh_y_1',
+            api_error_identifier: 'invalid_salt',
+            debug_options: {},
+            error_config: errorConfig
+          })
+        );
+      }
+
+      let encryptedConfigStrategyParams = localCipher.encrypt(response.data.addressSalt, configStrategyParamsString);
+
       const data = {
         kind: strategyKindInt,
         params: encryptedConfigStrategyParams,
@@ -98,27 +119,48 @@ const ConfigStrategyModelSpecificPrototype = {
     const oThis = this;
 
     if (ids.length == 0) {
-      return Promise.reject('strategy ID array is empty');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'm_tb_dsfhh_y_1',
+          api_error_identifier: 'empty_strategy_array',
+          debug_options: {},
+          error_config: errorConfig
+        })
+      );
     } else {
       const queryResult = await oThis
         .select(['id', 'params', 'kind', 'managed_address_salts_id'])
         .where(['id IN (?)', ids])
         .fire();
 
-      let finalResult = {};
-      for (let i = 0; i < queryResult.length; i++) {
-        let response = await oThis.getDecryptedSalt(queryResult[i].managed_address_salts_id);
+      let decryptedSalts = {},
+        finalResult = {};
 
-        if (response.isFailure()) {
-          return Promise.reject({ error: 'saltNotFound' });
+      for (let i = 0; i < queryResult.length; i++) {
+        //Following logic is added so that decrypt call is not given for already decrypted salts.
+        if (decryptedSalts[queryResult[i].managed_address_salts_id] == null) {
+          let response = await oThis.getDecryptedSalt(queryResult[i].managed_address_salts_id);
+          if (response.isFailure()) {
+            return Promise.reject(
+              responseHelper.error({
+                internal_error_identifier: 'm_tb_swry_1',
+                api_error_identifier: 'invalid_salt',
+                debug_options: {},
+                error_config: errorConfig
+              })
+            );
+          }
+
+          decryptedSalts[queryResult[i].managed_address_salts_id] = response.data.addressSalt;
         }
-        let localDecryptedParams = localCipher.decrypt(response.data.addressSalt, queryResult[i].params);
+
+        let localDecryptedParams = localCipher.decrypt(
+          decryptedSalts[queryResult[i].managed_address_salts_id],
+          queryResult[i].params
+        );
 
         const localJsonObj = JSON.parse(localDecryptedParams);
-        let strategyKind = kinds[queryResult[i].kind];
-        let Result = {};
-        Result[strategyKind] = localJsonObj;
-        finalResult[queryResult[i].id] = Result;
+        finalResult[queryResult[i].id] = localJsonObj;
       }
 
       return Promise.resolve(finalResult);
@@ -128,7 +170,8 @@ const ConfigStrategyModelSpecificPrototype = {
   /*
   * Get strategy id by passing unencrypted params hash.<br><br>
   *
-  * @return {Promise<array>} - returns a Promise with an array containing strategy id.
+  * @params {Object} params - hashed_params - SHA of config strategy params.
+  * @return {Promise<value>} - returns a Promise with a value of strategy id if it already exists.
   *
   */
   getByParams: async function(params) {
