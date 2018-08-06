@@ -7,7 +7,7 @@ const ClearNonceCache = function(params) {
 
   oThis.address = params.address.toLowerCase();
   oThis.chainKind = params.chain_kind;
-  oThis.consistentBehavior = '1';
+  oThis.consistentBehavior = '0';
 };
 
 ClearNonceCache.prototype = {

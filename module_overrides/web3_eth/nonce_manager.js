@@ -55,7 +55,7 @@ const NonceManagerKlass = function(params) {
   oThis.chainKind = chainKind;
   oThis.promiseQueue = [];
   oThis.processedQueue = [];
-  oThis.consistentBehavior = '1';
+  oThis.consistentBehavior = '0';
 
   oThis.cacheObject = SharedRedisProvider.getInstance(oThis.consistentBehavior);
 
