@@ -3,7 +3,9 @@
 const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  ClientTxKindCntCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type_count');
+  InstanceComposer = require(rootPrefix + '/instance_composer');
+
+require(rootPrefix + '/lib/cache_management/client_transaction_type_count');
 
 /**
  * constructor
@@ -41,7 +43,8 @@ clientStatsKlass.prototype = {
    * @return {Promise<result>}
    */
   asyncPerform: async function(params) {
-    const oThis = this;
+    const oThis = this,
+      ClientTxKindCntCacheKlass = oThis.ic().getClientTransactionTypeCountCache();
 
     const cacheObj = new ClientTxKindCntCacheKlass({ clientId: oThis.clientId });
 
@@ -58,5 +61,7 @@ clientStatsKlass.prototype = {
     );
   }
 };
+
+InstanceComposer.registerShadowableClass(clientStatsKlass, 'getFetchClientStatsClass');
 
 module.exports = clientStatsKlass;
