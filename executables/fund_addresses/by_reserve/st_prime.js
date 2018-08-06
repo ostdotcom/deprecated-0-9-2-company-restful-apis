@@ -20,10 +20,13 @@ const rootPrefix = '../../..';
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
 
-// Load Packages
-const FundClientAddressKlass = require(rootPrefix + '/app/services/address/fund_client_address'),
-  ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
+const ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
+  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy'),
+  configStrategyHelper = new ConfigStrategyHelperKlass(),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+
+require(rootPrefix + '/app/services/address/fund_client_address');
 
 /**
  * constructor for fund addresses with ST PRIME from Reserve address
@@ -54,7 +57,8 @@ FundUsersWithSTPrimeFromReserveKlass.prototype = {
    * @return {promise<result>}
    */
   asyncPerform: async function() {
-    const batchSize = 100;
+    const oThis = this,
+      batchSize = 100;
 
     var pageNo = 1;
 
@@ -74,9 +78,17 @@ FundUsersWithSTPrimeFromReserveKlass.prototype = {
       for (var i = 0; i < clientBrandedTokenRecords.length; i++) {
         if (!clientBrandedTokenRecords[i].airdrop_contract_addr) continue;
 
-        const clientId = clientBrandedTokenRecords[i].client_id;
+        const clientId = clientBrandedTokenRecords[i].client_id,
+          getConfigStrategyRsp = await configStrategyHelper.getConfigStrategy(clientId);
 
-        logger.step('* Funding ST prime for client id:', clientId);
+        if (getConfigStrategyRsp.isFailure()) {
+          return Promise.reject(getConfigStrategyRsp);
+        }
+
+        const instanceComposer = new InstanceComposer(getConfigStrategyRsp.data),
+          FundClientAddressKlass = instanceComposer.getFundClientAddressClass();
+
+        console.log('* Funding ST prime for client id:', clientId);
 
         await new FundClientAddressKlass({ client_id: clientId }).perform();
 

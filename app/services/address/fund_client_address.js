@@ -13,7 +13,7 @@
  */
 
 const rootPrefix = '../../..',
-  openStPlatform = require('@openstfoundation/openst-platform'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
@@ -21,8 +21,10 @@ const rootPrefix = '../../..',
   basicHelper = require(rootPrefix + '/helpers/basic'),
   managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
   ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/client_worker_managed_address_id'),
-  clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id'),
-  ClientActiveWorkerUuidCacheKlass = require(rootPrefix + '/lib/cache_management/client_active_worker_uuid');
+  clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id');
+
+require(rootPrefix + '/lib/providers/platform');
+require(rootPrefix + '/lib/cache_management/client_active_worker_uuid');
 
 /**
  * constructor
@@ -174,7 +176,8 @@ FundClientAddressKlass.prototype = {
   _transferStPrimeIfNeeded: async function() {
     const oThis = this;
 
-    const reservePassphraseD = 'no_password';
+    const reservePassphraseD = 'no_password',
+      ClientActiveWorkerUuidCacheKlass = oThis.ic().getClientActiveWorkerUuidCache();
 
     for (var i = 0; i < oThis.workerAddrObjs.length; i++) {
       var workerAddrObj = oThis.workerAddrObjs[i];
@@ -234,10 +237,14 @@ FundClientAddressKlass.prototype = {
     const oThis = this,
       ethereumAddress = oThis.reserveAddrObj.ethereum_address,
       minReserveAddrBalanceToProceedInWei = oThis._MIN_AVAILABLE_BALANCE_RESERVE,
-      fetchBalanceObj = new openStPlatform.services.balance.simpleTokenPrime({ address: ethereumAddress }),
+      platformProvider = oThis.ic().getPlatformProvider(),
+      openSTPlaform = platformProvider.getInstance(),
+      fetchBalanceObj = new openSTPlaform.services.balance.simpleTokenPrime({ address: ethereumAddress }),
       balanceResponse = await fetchBalanceObj.perform();
 
-    if (balanceResponse.isFailure()) return Promise.resolve(balanceResponse);
+    if (balanceResponse.isFailure()) {
+      return Promise.reject(balanceResponse);
+    }
 
     const balanceBigNumberInWei = basicHelper.convertToBigNumber(balanceResponse.data.balance);
 
@@ -262,7 +269,9 @@ FundClientAddressKlass.prototype = {
    */
   _isTransferRequired: async function(ethereumAddress) {
     const oThis = this,
-      fetchBalanceObj = new openStPlatform.services.balance.simpleTokenPrime({ address: ethereumAddress }),
+      platformProvider = oThis.ic().getPlatformProvider(),
+      openSTPlaform = platformProvider.getInstance(),
+      fetchBalanceObj = new openSTPlaform.services.balance.simpleTokenPrime({ address: ethereumAddress }),
       balanceResponse = await fetchBalanceObj.perform();
 
     if (balanceResponse.isFailure()) {
@@ -296,6 +305,8 @@ FundClientAddressKlass.prototype = {
    */
   _transferBalance: async function(reserveAddress, reservePassphrase, recipientAddress, transferAmountInWei) {
     const oThis = this,
+      platformProvider = oThis.ic().getPlatformProvider(),
+      openSTPlaform = platformProvider.getInstance(),
       transferParams = {
         sender_address: reserveAddress,
         sender_passphrase: reservePassphrase,
@@ -304,7 +315,7 @@ FundClientAddressKlass.prototype = {
         options: { returnType: 'txReceipt', tag: '' }
       };
 
-    const transferSTPrimeBalanceObj = new openStPlatform.services.transaction.transfer.simpleTokenPrime(transferParams);
+    const transferSTPrimeBalanceObj = new openSTPlaform.services.transaction.transfer.simpleTokenPrime(transferParams);
 
     const transferResponse = await transferSTPrimeBalanceObj.perform();
 
@@ -321,5 +332,7 @@ FundClientAddressKlass.prototype = {
     return Promise.resolve(transferResponse);
   }
 };
+
+InstanceComposer.registerShadowableClass(FundClientAddressKlass, 'getFundClientAddressClass');
 
 module.exports = FundClientAddressKlass;
