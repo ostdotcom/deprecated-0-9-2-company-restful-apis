@@ -9,7 +9,6 @@
 
 const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
@@ -52,7 +51,8 @@ FetchChainInteractionParams.prototype = {
    *
    */
   asyncPerform: function() {
-    const oThis = this;
+    const oThis = this,
+      configStrategy = oThis.ic().configStrategy;
 
     if (!oThis.clientId) {
       return Promise.resolve(
@@ -65,15 +65,15 @@ FetchChainInteractionParams.prototype = {
       );
     }
 
-    var responseData = {
-      utility_chain_id: chainInteractionConstants.UTILITY_CHAIN_ID,
-      utility_chain_geth_rpc_provider: chainInteractionConstants.UTILITY_GETH_RPC_PROVIDER,
-      utility_chain_geth_ws_provider: chainInteractionConstants.UTILITY_GETH_WS_PROVIDER,
-      value_chain_id: chainInteractionConstants.VALUE_CHAIN_ID,
-      value_chain_geth_rpc_provider: chainInteractionConstants.VALUE_GETH_RPC_PROVIDER,
-      value_chain_geth_ws_provider: chainInteractionConstants.VALUE_GETH_WS_PROVIDER,
-      simple_token_contract_addr: chainInteractionConstants.SIMPLE_TOKEN_CONTRACT_ADDR,
-      staker_addr: chainInteractionConstants.STAKER_ADDR
+    let responseData = {
+      utility_chain_id: configStrategy.OST_UTILITY_CHAIN_ID,
+      utility_chain_geth_rpc_provider: configStrategy.OST_UTILITY_GETH_RPC_PROVIDER,
+      utility_chain_geth_ws_provider: configStrategy.OST_UTILITY_GETH_WS_PROVIDER,
+      value_chain_id: configStrategy.OST_VALUE_CHAIN_ID,
+      value_chain_geth_rpc_provider: configStrategy.OST_VALUE_GETH_RPC_PROVIDER,
+      value_chain_geth_ws_provider: configStrategy.OST_VALUE_GETH_WS_PROVIDER,
+      simple_token_contract_addr: configStrategy.OST_SIMPLE_TOKEN_CONTRACT_ADDR,
+      staker_addr: configStrategy.OST_STAKER_ADDR
     };
 
     return Promise.resolve(responseHelper.successWithData(responseData));
