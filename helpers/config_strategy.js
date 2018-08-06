@@ -2,7 +2,7 @@
 
 const rootPrefix = '..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  clientConfigStrategyCacheKlass = require(rootPrefix + '/lib/cache_management/client_config_strategies'),
+  clientConfigStrategyCacheKlass = require(rootPrefix + '/lib/shared_cache_management/client_config_strategies'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   configStrategyCacheKlass = require(rootPrefix + '/lib/cache_multi_management/config_strategy');
 

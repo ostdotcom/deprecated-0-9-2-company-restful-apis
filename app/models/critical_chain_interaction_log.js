@@ -4,7 +4,7 @@ const rootPrefix = '../..',
   coreConstants = require(rootPrefix + '/config/core_constants'),
   ModelBaseKlass = require(rootPrefix + '/app/models/base'),
   criticalChainInteractionLogConst = require(rootPrefix + '/lib/global_constant/critical_chain_interaction_log'),
-  allMemcacheInstanceKlass = require(rootPrefix + '/lib/cache_management/all_memcache_instance'),
+  allMemcacheInstanceKlass = require(rootPrefix + '/lib/shared_cache_management/all_memcache_instance'),
   util = require(rootPrefix + '/lib/util'),
   responseHelper = require(rootPrefix + '/lib/formatter/response');
 

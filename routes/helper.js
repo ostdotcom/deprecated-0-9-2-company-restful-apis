@@ -5,7 +5,7 @@ const rootPrefix = '..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   apiParamsValidator = require(rootPrefix + '/lib/validators/api_params'),
-  ClientConfigStrategiesCache = require(rootPrefix + '/lib/cache_management/client_config_strategies'),
+  ClientConfigStrategiesCache = require(rootPrefix + '/lib/shared_cache_management/client_config_strategies'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
 const routeMethods = {
