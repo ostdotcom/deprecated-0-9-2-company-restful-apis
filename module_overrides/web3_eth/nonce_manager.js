@@ -6,7 +6,7 @@ const rootPrefix = '../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  cacheImplementer = require(rootPrefix + '/lib/cache_management/engine/nonce'),
+  SharedRedisProvider = require(rootPrefix + '/lib/providers/shared_redis'),
   nonceHelperKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_helper'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
@@ -55,9 +55,12 @@ const NonceManagerKlass = function(params) {
   oThis.chainKind = chainKind;
   oThis.promiseQueue = [];
   oThis.processedQueue = [];
+  oThis.consistentBehavior = '1';
+
+  oThis.cacheObject = SharedRedisProvider.getInstance(oThis.consistentBehavior);
 
   // Set cacheImplementer to perform caching operations
-  oThis.cacheImplementer = cacheImplementer;
+  oThis.cacheImplementer = oThis.cacheObject.cacheInstance;
 
   // Set cache key for nonce
   oThis.cacheKey = `nonce_${oThis.chainKind}_${oThis.address}`;
