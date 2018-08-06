@@ -16,6 +16,12 @@ export OST_SHARED_MEMCACHE_SERVERS='127.0.0.1:11211'
 #cache engine for openst storage. Presently used for token balance cache.
 export OS_CACHING_ENGINE='memcached'
 
+# Redis cache details
+export OST_REDIS_HOST='127.0.0.1'
+export OST_REDIS_PORT='6379'
+export OST_REDIS_PASS='st123'
+export OST_REDIS_TLS_ENABLED='0'
+
 # Database details
 export CR_MYSQL_CONNECTION_POOL_SIZE='3'
 

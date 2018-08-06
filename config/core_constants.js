@@ -29,8 +29,13 @@ define('SUB_ENVIRONMENT', process.env.CR_SUB_ENVIRONMENT);
 define('ENVIRONMENT_SHORT', process.env.CR_ENVIRONMENT.substring(0, 2));
 define('SUB_ENVIRONMENT_SHORT', process.env.CR_SUB_ENVIRONMENT.substring(0, 2));
 
-// MySQL details
+// Redis details
+define('OST_REDIS_HOST', process.env.OST_REDIS_HOST);
+define('OST_REDIS_PORT', process.env.OST_REDIS_PORT);
+define('OST_REDIS_PASS', process.env.OST_REDIS_PASS);
+define('OST_REDIS_TLS_ENABLED', process.env.OST_REDIS_TLS_ENABLED);
 
+// MySQL details
 define('MYSQL_CONNECTION_POOL_SIZE', process.env.CR_MYSQL_CONNECTION_POOL_SIZE);
 
 define('DEFAULT_MYSQL_HOST', process.env.CR_DEFAULT_MYSQL_HOST);
