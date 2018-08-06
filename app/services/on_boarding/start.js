@@ -3,7 +3,8 @@
 const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   OnBoardingRouterKlass = require(rootPrefix + '/lib/on_boarding/router'),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  InstanceComposer = require(rootPrefix + '/instance_composer');
 
 /**
  * Add new transaction kind constructor
@@ -11,7 +12,7 @@ const rootPrefix = '../../..',
  * @param {object} params - external passed parameters
  * @param {number} params.client_id - client id
  * @param {number} params.client_token_id - client token id
- * @param {number} params.token_symbol - token symbol
+ * @param {String} params.token_symbol - token symbol
  * @param {object} params.stake_and_mint_params -
  * @param {float} params.stake_and_mint_params.bt_to_mint -
  * @param {float} params.stake_and_mint_params.st_prime_to_mint -
@@ -125,5 +126,7 @@ StartOnBoardingKlass.prototype = {
     return Promise.resolve(responseHelper.successWithData({}));
   }
 };
+
+InstanceComposer.registerShadowableClass(StartOnBoardingKlass, 'getStartOnBoarding');
 
 module.exports = StartOnBoardingKlass;
