@@ -1,16 +1,18 @@
 'use strict';
 
-const openStPlatform = require('@openstfoundation/openst-platform'),
-  openSTNotification = require('@openstfoundation/openst-notification');
+const openSTNotification = require('@openstfoundation/openst-notification');
 
 const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
-  ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token'),
-  ClientSecuredBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure'),
-  chainIntConstants = require(rootPrefix + '/config/chain_interaction_constants'),
+  configStrategyHelper = require(rootPrefix + '/helpers/config_strategy'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+
+require(rootPrefix + '/lib/providers/platform');
+require(rootPrefix + '/lib/cache_management/client_branded_token');
+require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
 
 const EditBrandedTokenKlass = function(params) {
   var oThis = this;
@@ -156,13 +158,15 @@ EditBrandedTokenKlass.prototype = {
    *
    */
   setSimpleStakeContractAddress: function() {
-    const oThis = this;
+    const oThis = this,
+      platformProvider = oThis.ic().getPlatformProvider(),
+      openSTPlatform = platformProvider.getInstance();
 
     if (!oThis.brandedTokenRecordObject.token_uuid) {
       return Promise.resolve(responseHelper.successWithData({}));
     }
 
-    const object = new openStPlatform.services.utils.getBrandedTokenDetails({
+    const object = new openSTPlatform.services.utils.getBrandedTokenDetails({
       uuid: oThis.brandedTokenRecordObject.token_uuid
     });
 
@@ -184,7 +188,9 @@ EditBrandedTokenKlass.prototype = {
 
   publishUpdateEvent: function() {
     var oThis = this,
-      publish_data = {};
+      publish_data = {},
+      configStrategyHelperObj = new configStrategyHelper(),
+      chainIntConstants = configStrategyHelperObj.getConfigStrategy(oThis.client_id);
 
     publish_data.name = oThis.brandedTokenRecordObject.name;
     publish_data.ost_to_bt_conversion_factor = oThis.brandedTokenRecordObject.conversion_factor;
@@ -233,8 +239,9 @@ EditBrandedTokenKlass.prototype = {
    * @return {promise<result>}
    */
   clearCache: function() {
-    const oThis = this;
-
+    const oThis = this,
+      ClientBrandedTokenCacheKlass = oThis.ic().getClientBrandedTokenCache(),
+      ClientSecuredBrandedTokenCacheKlass = oThis.ic().getClientBrandedTokenSecureCache();
     const clientBrandedTokenCache = new ClientBrandedTokenCacheKlass({ clientId: oThis.client_id });
     clientBrandedTokenCache.clear();
 
@@ -246,5 +253,7 @@ EditBrandedTokenKlass.prototype = {
     return Promise.resolve(responseHelper.successWithData({}));
   }
 };
+
+InstanceComposer.registerShadowableClass(EditBrandedTokenKlass, 'getEditBrandedTokenKlass');
 
 module.exports = EditBrandedTokenKlass;
