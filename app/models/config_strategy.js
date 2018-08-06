@@ -57,10 +57,6 @@ const ConfigStrategyModelSpecificPrototype = {
       throw 'Error: Improper kind parameter';
     }
 
-    if (typeof managedAddressSaltId != 'number') {
-      throw 'Error: managedAddressSaltId shoule be an integer';
-    }
-
     if (!configStrategyParams) {
       throw 'Config Strategy params hash cannot be null';
     }
