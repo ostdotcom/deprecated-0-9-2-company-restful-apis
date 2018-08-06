@@ -11,17 +11,19 @@ const uuid = require('uuid');
 
 const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  GenerateEthAddressKlass = require(rootPrefix + '/app/services/address/generate'),
   kmsWrapperKlass = require(rootPrefix + '/lib/authentication/kms_wrapper'),
   ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
   ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/client_worker_managed_address_id'),
   clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id'),
   ManagedAddressSaltModel = require(rootPrefix + '/app/models/managed_address_salt'),
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
-  ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token'),
-  ClientSecuredBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses');
+  managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
+  InstanceComposer = require(rootPrefix + '/instance_composer');
+
+require(rootPrefix + '/app/services/address/generate');
+require(rootPrefix + '/lib/cache_management/client_branded_token');
+require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
 
 /**
  * Setup token constructor
@@ -30,7 +32,7 @@ const rootPrefix = '../../..',
  *
  * @param {object} params - external passed parameters
  * @param {number} params.client_id - client id for whom setup is to be made.
- * @param {number} params.symbol - unique(across system) symbol.
+ * @param {String} params.symbol - unique(across system) symbol.
  * @param {String} params.name - unique(across system) name of branded token.
  * @param {String} params.symbol_icon - ICON for branded token.
  *
@@ -194,7 +196,8 @@ SetupToken.prototype = {
    *
    */
   setClientReserveAddress: function() {
-    const oThis = this;
+    const oThis = this,
+      GenerateEthAddressKlass = oThis.ic().getGenerateAddressClass();
 
     return new Promise(async function(onResolve, onReject) {
       if (oThis.existingToken && oThis.existingToken.reserve_managed_address_id) {
@@ -227,7 +230,8 @@ SetupToken.prototype = {
    *
    */
   setClientWorkerAddresses: function() {
-    const oThis = this;
+    const oThis = this,
+      GenerateEthAddressKlass = oThis.ic().getGenerateAddressClass();
 
     return new Promise(async function(onResolve, onReject) {
       if (oThis.existingWorkerManagedAddressIds.length > 0) {
@@ -267,7 +271,8 @@ SetupToken.prototype = {
    *
    */
   setClientAirdropHolderAddress: function() {
-    const oThis = this;
+    const oThis = this,
+      GenerateEthAddressKlass = oThis.ic().getGenerateAddressClass();
 
     return new Promise(async function(onResolve, onReject) {
       if (oThis.existingToken && oThis.existingToken.airdrop_holder_managed_address_id) {
@@ -341,7 +346,9 @@ SetupToken.prototype = {
    * @return {promise<result>}
    */
   clearCache: function() {
-    const oThis = this;
+    const oThis = this,
+      ClientBrandedTokenCacheKlass = oThis.ic().getClientBrandedTokenCache(),
+      ClientSecuredBrandedTokenCacheKlass = oThis.ic().getClientBrandedTokenSecureCache();
 
     const clientBrandedTokenCache = new ClientBrandedTokenCacheKlass({ clientId: oThis.clientId });
     clientBrandedTokenCache.clear();
@@ -368,5 +375,7 @@ SetupToken.prototype = {
     );
   }
 };
+
+InstanceComposer.registerShadowableClass(SetupToken, 'getSetupToken');
 
 module.exports = SetupToken;

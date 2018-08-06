@@ -11,10 +11,12 @@ const uuid = require('uuid');
 
 const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  GenerateEthAddressKlass = require(rootPrefix + '/app/services/address/generate'),
-  ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses');
+  managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
+  InstanceComposer = require(rootPrefix + '/instance_composer');
+
+require(rootPrefix + '/app/services/address/generate');
+require(rootPrefix + '/lib/cache_management/client_branded_token');
 
 /**
  * Setup token constructor
@@ -23,7 +25,7 @@ const rootPrefix = '../../..',
  *
  * @param {object} params - external passed parameters
  * @param {number} params.client_id - client id for whom users are to be created.
- * @param {number} params.number_of_users - number_of_users to be geenrated
+ * @param {number} params.number_of_users - number_of_users to be generated
  *
  */
 const CreateDummyUsers = function(params) {
@@ -77,7 +79,8 @@ CreateDummyUsers.prototype = {
    *
    */
   validateParams: async function() {
-    const oThis = this;
+    const oThis = this,
+      ClientBrandedTokenCacheKlass = oThis.ic().getClientBrandedTokenCache();
 
     if (!oThis.numberOfUsers) {
       return Promise.resolve(
@@ -129,7 +132,8 @@ CreateDummyUsers.prototype = {
    *
    */
   createUserInBackground: async function() {
-    const oThis = this;
+    const oThis = this,
+      GenerateEthAddressKlass = oThis.ic().getGenerateAddressClass();
 
     var promiseResolvers = [];
 
@@ -154,5 +158,7 @@ CreateDummyUsers.prototype = {
     return Promise.resolve(responseHelper.successWithData({}));
   }
 };
+
+InstanceComposer.registerShadowableClass(CreateDummyUsers, 'getCreateDummyUsers');
 
 module.exports = CreateDummyUsers;

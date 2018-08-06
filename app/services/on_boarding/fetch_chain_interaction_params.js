@@ -10,8 +10,8 @@
 const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
-  openStPlatform = require('@openstfoundation/openst-platform'),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  InstanceComposer = require(rootPrefix + '/instance_composer');
 
 /**
  * Fetch Params using which FE could interact with our chains
@@ -79,5 +79,7 @@ FetchChainInteractionParams.prototype = {
     return Promise.resolve(responseHelper.successWithData(responseData));
   }
 };
+
+InstanceComposer.registerShadowableClass(FetchChainInteractionParams, 'getFetchChainInteractionParams');
 
 module.exports = FetchChainInteractionParams;

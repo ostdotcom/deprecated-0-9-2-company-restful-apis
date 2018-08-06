@@ -9,10 +9,12 @@
 
 const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  ucBalanceFetcherKlass = require(rootPrefix + '/app/services/address/utilityChainBalancesFetcher'),
-  vcBalanceFetcherKlass = require(rootPrefix + '/app/services/address/valueChainBalancesFetcher'),
-  ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points'),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  InstanceComposer = require(rootPrefix + '/instance_composer');
+
+require(rootPrefix + '/lib/cache_management/ost_price_points');
+require(rootPrefix + '/app/services/address/utilityChainBalancesFetcher');
+require(rootPrefix + '/app/services/address/valueChainBalancesFetcher');
 
 /**
  * Fetch Params using which FE could interact with our chains
@@ -55,7 +57,10 @@ FetchBalances.prototype = {
    *
    */
   aysncPerform: async function() {
-    const oThis = this;
+    const oThis = this,
+      ostPriceCacheKlass = oThis.ic().getOstPricePointsCache(),
+      ucBalanceFetcherKlass = oThis.ic().getUtilityChainBalancesFetcherClass(),
+      vcBalanceFetcherKlass = oThis.ic().getValueChainBalancesFetcherClass();
 
     if (!oThis.clientId) {
       return Promise.resolve(
@@ -111,5 +116,7 @@ FetchBalances.prototype = {
     return Promise.resolve(responseHelper.successWithData(responseData));
   }
 };
+
+InstanceComposer.registerShadowableClass(FetchBalances, 'getFetchBalances');
 
 module.exports = FetchBalances;
