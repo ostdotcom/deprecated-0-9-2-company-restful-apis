@@ -7,32 +7,31 @@
  */
 
 const openSTNotification = require('@openstfoundation/openst-notification'),
-  OSTPriceOracle = require('@ostdotcom/ost-price-oracle'),
   uuid = require('uuid');
 
 const rootPrefix = '../../..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  ClientTransactionTypeFromNameCache = require(rootPrefix + '/lib/cache_management/client_transaction_type/by_name'),
-  ClientTransactionTypeFromIdCache = require(rootPrefix + '/lib/cache_management/client_transaction_type/by_id'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   clientTransactionTypeConst = require(rootPrefix + '/lib/global_constant/client_transaction_types'),
-  ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses'),
-  BTSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure'),
-  BTCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token'),
   transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log'),
-  transactionLogModel = require(rootPrefix + '/app/models/transaction_log'),
-  chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
   ClientTrxRateCacheKlass = require(rootPrefix + '/lib/shared_cache_management/client_transactions_rate_limit'),
   commonValidator = require(rootPrefix + '/lib/validators/common'),
-  ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service'),
-  autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service'),
-  EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
   conversionRateConstants = require(rootPrefix + '/lib/global_constant/conversion_rates'),
-  errorConfig = basicHelper.fetchErrorConfig(apiVersions.general),
-  priceOracle = OSTPriceOracle.priceOracle;
+  errorConfig = basicHelper.fetchErrorConfig(apiVersions.general);
+
+require(rootPrefix + '/lib/cache_management/client_transaction_type/by_name');
+require(rootPrefix + '/lib/cache_management/client_transaction_type/by_id');
+require(rootPrefix + '/lib/cache_multi_management/managedAddresses');
+require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
+require(rootPrefix + '/lib/cache_management/client_branded_token');
+require(rootPrefix + '/app/models/transaction_log');
+require(rootPrefix + '/config/chain_interaction_constants');
+require(rootPrefix + '/lib/economy_user_balance');
+require(rootPrefix + '/lib/providers/price_oracle');
 
 /**
  * @constructor
@@ -129,7 +128,8 @@ ExecuteTransactionService.prototype = {
    * @return {promise<result>}
    */
   _fetchFromBtCache: async function() {
-    const oThis = this;
+    const oThis = this,
+      BTCacheKlass = oThis.ic().getClientBrandedTokenCache();
 
     const btCacheFetchResponse = await new BTCacheKlass({ clientId: oThis.clientId }).fetch();
     if (btCacheFetchResponse.isFailure()) return Promise.reject(btCacheFetchResponse);
@@ -157,7 +157,8 @@ ExecuteTransactionService.prototype = {
    * @return {promise<result>}
    */
   _fetchFromBtSecureCache: async function() {
-    const oThis = this;
+    const oThis = this,
+      BTSecureCacheKlass = oThis.ic().getClientBrandedTokenSecureCache();
 
     const btSecureCacheFetchResponse = await new BTSecureCacheKlass({ tokenSymbol: oThis.tokenSymbol }).fetch();
     if (btSecureCacheFetchResponse.isFailure()) return Promise.reject(btSecureCacheFetchResponse);
@@ -204,6 +205,8 @@ ExecuteTransactionService.prototype = {
 
     // fetch the transaction kind record
     if (oThis.transactionKind) {
+      const ClientTransactionTypeFromNameCache = oThis.ic().getClientTransactionTypeByNameCache();
+
       let clientTransactionTypeCacheFetchResponse = await new ClientTransactionTypeFromNameCache({
         client_id: oThis.clientId,
         transaction_kind: oThis.transactionKind
@@ -213,6 +216,7 @@ ExecuteTransactionService.prototype = {
 
       oThis.transactionTypeRecord = clientTransactionTypeCacheFetchResponse.data;
     } else if (oThis.actionId) {
+      const ClientTransactionTypeFromIdCache = oThis.ic().getClientTransactionTypeByIdCache();
       let clientTransactionTypeCacheFetchResponse = await new ClientTransactionTypeFromIdCache({
         id: oThis.actionId
       }).fetch();
@@ -401,7 +405,8 @@ ExecuteTransactionService.prototype = {
    * @return {promise<result>}
    */
   _validateUsers: async function() {
-    const oThis = this;
+    const oThis = this,
+      ManagedAddressCacheKlass = oThis.ic().getManagedAddressCache();
 
     if (
       oThis.transactionTypeRecord.kind === clientTransactionTypeConst.userToUserKind &&
@@ -518,7 +523,8 @@ ExecuteTransactionService.prototype = {
    * @return {promise<>}
    */
   _getSenderBalance: async function() {
-    const oThis = this;
+    const oThis = this,
+      EconomyUserBalanceKlass = oThis.ic().getEconomyUserBalance();
 
     // Fetch Airdrop Balance of users
     const ethereumAddress = oThis.fromUserObj.ethereum_address,
@@ -542,6 +548,9 @@ ExecuteTransactionService.prototype = {
    */
   _validateFromUserBalance: async function() {
     const oThis = this,
+      configStrategy = oThis.ic().configStrategy,
+      priceOracleProvider = oThis.ic().getPriceOracleProvider(),
+      priceOracle = priceOracleProvider.getInstance().priceOracle,
       amount = basicHelper.convertToWei(oThis.amount || oThis.transactionTypeRecord.currency_value),
       commissionPercent = oThis.commissionPercent || oThis.transactionTypeRecord.commission_percent;
 
@@ -553,7 +562,7 @@ ExecuteTransactionService.prototype = {
     if (oThis.transactionTypeRecord.currency_type == clientTransactionTypeConst.usdCurrencyType) {
       // Get conversion rate
       var priceInDecimal = await priceOracle.decimalPrice(
-        chainInteractionConstants.UTILITY_CHAIN_ID,
+        configStrategy.OST_UTILITY_CHAIN_ID,
         conversionRateConstants.ost_currency(),
         conversionRateConstants.usd_currency()
       );
@@ -615,7 +624,9 @@ ExecuteTransactionService.prototype = {
    * @return {promise<result>}
    */
   _createTransactionLog: async function() {
-    const oThis = this;
+    const oThis = this,
+      transactionLogModel = oThis.ic().getTransactionLogModel(),
+      configStrategy = oThis.ic().configStrategy;
 
     oThis.transactionLogData = {
       transaction_uuid: oThis.transactionUuid,
@@ -630,7 +641,7 @@ ExecuteTransactionService.prototype = {
       token_symbol: oThis.tokenSymbol,
       action_id: oThis.actionId,
       commission_percent: oThis.commissionPercent,
-      gas_price: basicHelper.convertToBigNumber(chainInteractionConstants.UTILITY_GAS_PRICE).toString(10),
+      gas_price: basicHelper.convertToBigNumber(configStrategy.OST_UTILITY_GAS_PRICE).toString(10),
       status: transactionLogConst.invertedStatuses[transactionLogConst.processingStatus],
       created_at: Date.now(),
       updated_at: Date.now()
@@ -639,9 +650,7 @@ ExecuteTransactionService.prototype = {
     let start_time = Date.now();
 
     await new transactionLogModel({
-      client_id: oThis.clientId,
-      ddb_service: ddbServiceObj,
-      auto_scaling: autoscalingServiceObj
+      client_id: oThis.clientId
     }).updateItem(oThis.transactionLogData);
 
     console.log('------- Time taken', (Date.now() - start_time) / 1000);
@@ -723,5 +732,5 @@ ExecuteTransactionService.prototype = {
     });
   }
 };
-
+InstanceComposer.registerShadowableClass(ExecuteTransactionService, 'getExecuteTransactionService');
 module.exports = ExecuteTransactionService;
