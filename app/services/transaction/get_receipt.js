@@ -3,8 +3,11 @@
 const openStPlatform = require('@openstfoundation/openst-platform');
 
 const rootPrefix = '../../..',
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+
+require(rootPrefix + '/lib/providers/platform');
 
 /**
  * Fetch Transaction Receipt from Transaction Hash
@@ -49,9 +52,12 @@ GetReceiptKlass.prototype = {
   },
 
   asyncPerform: async function() {
-    const oThis = this;
+    const oThis = this,
+      openStPlatformProvider = oThis.ic().getPlatformProvider(),
+      openStPlatform = openStPlatformProvider.getInstance(),
+      GetReceiptKlass = openStPlatform.services.transaction.getReceipt;
 
-    const obj = new openStPlatform.services.transaction.getReceipt({
+    const obj = new GetReceiptKlass({
       transaction_hash: oThis.transactionHash,
       chain: oThis.chain,
       address_to_name_map: oThis.addressToNameMap
@@ -66,4 +72,5 @@ GetReceiptKlass.prototype = {
   }
 };
 
+InstanceComposer.registerShadowableClass(GetReceiptKlass, 'getGetReceiptKlass');
 module.exports = GetReceiptKlass;
