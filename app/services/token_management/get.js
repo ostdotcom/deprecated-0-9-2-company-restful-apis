@@ -3,16 +3,16 @@
 const BigNumber = require('bignumber.js');
 
 const rootPrefix = '../../..',
-  ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token'),
-  ClientSecuredBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure'),
-  ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points'),
-  ucBalanceFetcherKlass = require(rootPrefix + '/app/services/address/utilityChainBalancesFetcher'),
-  chainIntConstants = require(rootPrefix + '/config/chain_interaction_constants'),
-  GetStakedAmountKlass = require(rootPrefix + '/app/services/stake_and_mint/get_staked_amount'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  basicHelper = require(rootPrefix + '/helpers/basic'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address');
+
+require(rootPrefix + '/lib/cache_management/client_branded_token');
+require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
+require(rootPrefix + '/lib/cache_management/ost_price_points');
+require(rootPrefix + '/app/services/address/utilityChainBalancesFetcher');
+require(rootPrefix + '/app/services/stake_and_mint/get_staked_amount');
 
 /**
  *
@@ -65,9 +65,13 @@ GetBrandedTokenKlass.prototype = {
    */
   asyncPerform: async function() {
     const oThis = this,
+      ClientBrandedTokenCacheKlass = oThis.ic().getClientBrandedTokenCache(),
+      ClientSecuredBrandedTokenCacheKlass = oThis.ic().getClientBrandedTokenSecureCache(),
+      OstPriceCacheKlass = oThis.ic().getOstPricePointsCache(),
+      configStrategy = oThis.ic().configStrategy,
       clientBrandedTokenCache = new ClientBrandedTokenCacheKlass({ clientId: oThis.clientId }),
       clientBrandedTokenResponse = await clientBrandedTokenCache.fetch(),
-      ostPrices = await new ostPriceCacheKlass().fetch(),
+      ostPrices = await new OstPriceCacheKlass().fetch(),
       responseData = { result_type: 'token' };
 
     if (clientBrandedTokenResponse.isFailure()) {
@@ -107,7 +111,7 @@ GetBrandedTokenKlass.prototype = {
       airdrop_contract_address: tokenSecureData.airdrop_contract_address,
       simple_stake_contract_address: tokenSecureData.simple_stake_contract_addr,
       total_supply: fetchBTMintedAmountRsp.data.allTimeBTMintedAmount,
-      ost_utility_balance: [[chainIntConstants.UTILITY_CHAIN_ID, fetchSTPrimeBalanceRsp.data.ostPrimeBalance]]
+      ost_utility_balance: [[configStrategy.OST_UTILITY_CHAIN_ID, fetchSTPrimeBalanceRsp.data.ostPrimeBalance]]
     };
 
     responseData.price_points = ostPrices.data;
@@ -128,7 +132,8 @@ GetBrandedTokenKlass.prototype = {
    *
    */
   fetchBTMintedAmount: async function(tokenSymbol, conversionFactor) {
-    const oThis = this;
+    const oThis = this,
+      GetStakedAmountKlass = oThis.ic().getGetStakedAmountKlass();
 
     const getStakedAmountObj = new GetStakedAmountKlass({
       client_id: oThis.clientId,
@@ -159,9 +164,10 @@ GetBrandedTokenKlass.prototype = {
    *
    */
   fetchSTPrimeBalance: async function(uuid) {
-    const oThis = this;
+    const oThis = this,
+      UcBalanceFetcherKlass = oThis.ic().getUtilityChainBalancesFetcherClass();
 
-    const balanceFetcherObj = new ucBalanceFetcherKlass({
+    const balanceFetcherObj = new UcBalanceFetcherKlass({
       address_uuid: uuid,
       client_id: oThis.clientId,
       balance_types: ['ostPrime']
@@ -180,5 +186,7 @@ GetBrandedTokenKlass.prototype = {
     );
   }
 };
+
+InstanceComposer.registerShadowableClass(GetBrandedTokenKlass, 'getBrandedTokenClass');
 
 module.exports = GetBrandedTokenKlass;
