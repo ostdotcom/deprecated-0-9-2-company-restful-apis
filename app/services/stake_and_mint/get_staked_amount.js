@@ -2,11 +2,12 @@
 
 const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  ClientSecuredBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure'),
-  openStPlatform = require('@openstfoundation/openst-platform'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
+require(rootPrefix + '/lib/providers/platform');
+require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
 /**
  * Add new transaction kind constructor
  *
@@ -48,13 +49,16 @@ GetStakedAmountKlass.prototype = {
     var oThis = this,
       r = null;
 
+    const platformProvider = oThis.ic().getPlatformProvider(),
+      openSTPlatform = platformProvider.getInstance();
+
     r = await oThis.validateAndSanitize();
     if (r.isFailure()) return Promise.resolve(r);
 
     r = await oThis.setSimpleStakeContractAddr();
     if (r.isFailure()) return Promise.resolve(r);
 
-    const object = new openStPlatform.services.stake.getStakedAmount({
+    const object = new openSTPlatform.services.stake.getStakedAmount({
       simple_stake_contract_address: oThis.simpleStakeContractAddr
     });
 
@@ -88,9 +92,9 @@ GetStakedAmountKlass.prototype = {
 
   setSimpleStakeContractAddr: async function() {
     var oThis = this;
-
-    const clientSecureBrandedTokenCache = new ClientSecuredBrandedTokenCacheKlass({ tokenSymbol: oThis.tokenSymbol });
-    const clientBrandedTokenSecureCacheRsp = await clientSecureBrandedTokenCache.fetch();
+    const ClientSecuredBrandedTokenCacheKlass = oThis.ic().getClientBrandedTokenSecureCache(),
+      clientSecureBrandedTokenCache = new ClientSecuredBrandedTokenCacheKlass({ tokenSymbol: oThis.tokenSymbol }),
+      clientBrandedTokenSecureCacheRsp = await clientSecureBrandedTokenCache.fetch();
 
     if (clientBrandedTokenSecureCacheRsp.isFailure()) {
       return Promise.resolve(clientBrandedTokenSecureCacheRsp);
@@ -104,4 +108,5 @@ GetStakedAmountKlass.prototype = {
   }
 };
 
+InstanceComposer.registerShadowableClass(GetStakedAmountKlass, 'getGetStakedAmountKlass');
 module.exports = GetStakedAmountKlass;
