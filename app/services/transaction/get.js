@@ -7,12 +7,12 @@
  */
 
 const rootPrefix = '../../..',
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  basicHelper = require(rootPrefix + '/helpers/basic'),
-  ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service'),
-  autoScalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service'),
-  transactionLogModel = require(rootPrefix + '/app/models/transaction_log');
+  basicHelper = require(rootPrefix + '/helpers/basic');
+
+require(rootPrefix + '/app/models/transaction_log');
 
 /**
  * @constructor
@@ -94,12 +94,11 @@ GetTransactionsService.prototype = {
    * @return {promise<result>}
    */
   _fetchRecord: async function() {
-    const oThis = this;
+    const oThis = this,
+      transactionLogModel = oThis.ic().getTransactionLogModel();
 
     let transactionFetchResponse = await new transactionLogModel({
-      client_id: oThis.clientId,
-      ddb_service: ddbServiceObj,
-      auto_scaling: autoScalingServiceObj
+      client_id: oThis.clientId
     }).batchGetItem([oThis.transactionUuid]);
 
     let transactionLogData = transactionFetchResponse.data[oThis.transactionUuid];
@@ -129,5 +128,7 @@ GetTransactionsService.prototype = {
     return Promise.resolve(responseHelper.successWithData(transactionLogData));
   }
 };
+
+InstanceComposer.registerShadowableClass(GetTransactionsService, 'getGetTransactionsService');
 
 module.exports = GetTransactionsService;

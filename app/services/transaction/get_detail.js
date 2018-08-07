@@ -11,15 +11,15 @@
 
 const rootPrefix = '../../..',
   ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
   UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/user'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  ActionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/action'),
-  ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service'),
-  autoScalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service'),
-  transactionLogModel = require(rootPrefix + '/app/models/transaction_log');
+  ActionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/action');
+
+require(rootPrefix + '/app/models/transaction_log');
 
 const GetTransactionDetailKlass = function(params) {
   params = params || {};
@@ -98,7 +98,8 @@ GetTransactionDetailKlass.prototype = {
    * @return {promise}
    */
   _getTransactionData: async function() {
-    const oThis = this;
+    const oThis = this,
+      transactionLogModel = oThis.ic().getTransactionLogModel();
 
     if (typeof oThis.transactionUuids != typeof []) {
       return Promise.reject(
@@ -112,10 +113,10 @@ GetTransactionDetailKlass.prototype = {
     }
 
     let transactionFetchResponse = await new transactionLogModel({
-      client_id: oThis.clientId,
-      ddb_service: ddbServiceObj,
-      auto_scaling: autoScalingServiceObj
+      client_id: oThis.clientId
     }).batchGetItem(oThis.transactionUuids);
+
+    console.log('transactionFetchResponse.data', transactionFetchResponse.data);
 
     let transactionLogRecordsHash = transactionFetchResponse.data;
 
@@ -259,4 +260,5 @@ GetTransactionDetailKlass.prototype = {
   }
 };
 
+InstanceComposer.registerShadowableClass(GetTransactionDetailKlass, 'getGetTransactionDetailKlass');
 module.exports = GetTransactionDetailKlass;
