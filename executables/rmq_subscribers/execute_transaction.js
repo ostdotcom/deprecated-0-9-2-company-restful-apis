@@ -33,19 +33,28 @@ const openSTNotification = require('@openstfoundation/openst-notification'),
 
 //All Module Requires.
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  ExecuteTransferBt = require(rootPrefix + '/lib/transactions/transfer_bt');
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
+  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy'),
+  configStrategyHelper = new ConfigStrategyHelperKlass();
+
+require(rootPrefix + '/lib/transactions/transfer_bt');
 
 const promiseExecutor = function(onResolve, onReject, params) {
   unAckCount++;
   // Process request
   const parsedParams = JSON.parse(params);
 
-  const payload = parsedParams.message.payload,
-    executeTransactionObj = new ExecuteTransferBt({
-      transactionUuid: payload.transactionUuid,
-      clientId: payload.clientId,
-      rateLimitCount: payload.rateLimitCount
-    });
+  const payload = parsedParams.message.payload;
+
+  let configStrategy = configStrategyHelper.getConfigStrategy(payload.clientId),
+    ic = new InstanceComposer(configStrategy),
+    ExecuteTransferBt = ic.getTransferBtClass();
+
+  let executeTransactionObj = new ExecuteTransferBt({
+    transactionUuid: payload.transactionUuid,
+    clientId: payload.clientId,
+    rateLimitCount: payload.rateLimitCount
+  });
 
   try {
     executeTransactionObj
