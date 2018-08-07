@@ -8,7 +8,6 @@
 
 const rootPrefix = '../..',
   coreConstants = require(rootPrefix + '/config/core_constants'),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   ModelBaseKlass = require(rootPrefix + '/app/models/base');
 
 const dbName = 'saas_config_' + coreConstants.SUB_ENVIRONMENT + '_' + coreConstants.ENVIRONMENT;
@@ -27,7 +26,19 @@ ChainGethProvidersModel.prototype = Object.create(ModelBaseKlass.prototype);
 const ChainGethProvidersModelModelSpecificPrototype = {
   tableName: 'chain_geth_providers',
 
-  enums: {},
+  // Convert integers to kinds.
+  enums: {
+    '1': 'value',
+
+    '2': 'utility'
+  },
+
+  // Convert kinds to integers.
+  invertedEnums: {
+    value: '1',
+
+    utility: '2'
+  },
 
   /**
    * Get details using the id.
@@ -36,13 +47,17 @@ const ChainGethProvidersModelModelSpecificPrototype = {
    * @return {*}
    *
    */
-  getById: function(id) {
+  getById: async function(id) {
     const oThis = this;
 
-    return oThis
+    let response = await oThis
       .select(['chain_id', 'chain_kind', 'ws_provider', 'rpc_provider'])
       .where({ id: id })
       .fire();
+
+    response[0].chain_kind = oThis.enums[response[0].chain_kind];
+
+    return Promise.resolve(response);
   },
 
   /**
@@ -52,13 +67,18 @@ const ChainGethProvidersModelModelSpecificPrototype = {
    * @return {*}
    *
    */
-  getByIds: function(ids) {
+  getByIds: async function(ids) {
     const oThis = this;
 
-    return oThis
+    let response = await oThis
       .select(['chain_id', 'chain_kind', 'ws_provider', 'rpc_provider'])
       .where(['id IN (?)', ids])
       .fire();
+
+    for (let i = 0; i < response.length; i++) {
+      response[i].chain_kind = oThis.enums[response[i].chain_kind];
+    }
+    return Promise.resolve(response);
   },
 
   /**
@@ -68,13 +88,17 @@ const ChainGethProvidersModelModelSpecificPrototype = {
    * @return {*}
    *
    */
-  getByChainId: function(chainId) {
+  getByChainId: async function(chainId) {
     const oThis = this;
 
-    return oThis
+    let response = await oThis
       .select(['chain_id', 'chain_kind', 'ws_provider', 'rpc_provider'])
       .where({ chain_id: chainId })
       .fire();
+
+    response[0].chain_kind = oThis.enums[response[0].chain_kind];
+
+    return Promise.resolve(response);
   },
 
   /**
@@ -84,13 +108,18 @@ const ChainGethProvidersModelModelSpecificPrototype = {
    * @return {*}
    *
    */
-  getByChainIds: function(chainIds) {
+  getByChainIds: async function(chainIds) {
     const oThis = this;
 
-    return oThis
+    let response = await oThis
       .select(['chain_id', 'chain_kind', 'ws_provider', 'rpc_provider'])
       .where(['chain_id IN (?)', chainIds])
       .fire();
+
+    for (let i = 0; i < response.length; i++) {
+      response[i].chain_kind = oThis.enums[response[i].chain_kind];
+    }
+    return Promise.resolve(response);
   },
 
   /**
@@ -104,6 +133,8 @@ const ChainGethProvidersModelModelSpecificPrototype = {
    */
   getWsProviders: function(params) {
     const oThis = this;
+
+    params.chain_kind = oThis.invertedEnums[params.chain_kind];
 
     return oThis
       .select('ws_provider')
@@ -125,6 +156,8 @@ const ChainGethProvidersModelModelSpecificPrototype = {
    */
   getRpcProviders: function(params) {
     const oThis = this;
+
+    params.chain_kind = oThis.invertedEnums[params.chain_kind];
 
     return oThis
       .select('rpc_provider')
@@ -206,12 +239,14 @@ const ChainGethProvidersModelModelSpecificPrototype = {
 
     if (
       typeof data.chain_id !== 'number' ||
-      typeof data.chain_kind !== 'number' ||
+      typeof data.chain_kind !== 'string' ||
       typeof data.ws_provider !== 'string' ||
       typeof data.rpc_provider !== 'string'
     ) {
       throw 'Insertion parameter are of wrong data types.';
     }
+
+    data.chain_kind = oThis.invertedEnums[data.chain_kind];
 
     return oThis.insert(data).fire();
   },
@@ -275,19 +310,19 @@ const ChainGethProvidersModelModelSpecificPrototype = {
     }
 
     let existingEntry = oThis
-      .select('ws_provider')
+      .select('rpc_provider')
       .where({ id: params.id })
       .fire();
 
-    if (existingEntry[0].ws_provider !== params.old_rpc_provider) {
+    if (existingEntry[0].rpc_provider !== params.old_rpc_provider) {
       throw 'old_rpc_provider does not match the entry in the database.';
     }
 
     return oThis
-      .update({ ws_provider: params.new_rpc_provider })
+      .update({ rpc_provider: params.new_rpc_provider })
       .where({
         id: params.id,
-        ws_provider: params.old_rpc_provider
+        rpc_provider: params.old_rpc_provider
       })
       .fire();
   },
