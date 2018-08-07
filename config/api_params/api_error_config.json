@@ -338,6 +338,11 @@
     "http_code": "500",
     "code": "SOMETHING_WENT_WRONG",
     "message": "Something went wrong"
+  },
+  "grant_prohibited": {
+    "http_code": "403",
+    "code": "GRANT_FORBIDDEN",
+    "message": "Cannot proceed with the grant."
   }
 
 }
