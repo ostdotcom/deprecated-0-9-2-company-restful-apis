@@ -3,12 +3,16 @@
 const rootPrefix = '../..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  AssignShardsForClient = require(rootPrefix + '/lib/on_boarding/assign_shards'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
   commonValidator = require(rootPrefix + '/lib/validators/common'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
+  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy'),
+  configStrategyHelper = new ConfigStrategyHelperKlass(),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
   errorConfig = basicHelper.fetchErrorConfig(apiVersions.internal);
+
+require(rootPrefix + '/lib/on_boarding/assign_shards');
 
 /**
  *
@@ -128,6 +132,10 @@ AssignShards.prototype = {
       logger.info('starting for ids >= ', id, ' and < ', endId);
 
       for (let client_id = id; client_id < endId && client_id < oThis.endClientId; client_id++) {
+        let configStrategy = configStrategyHelper.getConfigStrategy(client_id),
+          ic = new InstanceComposer(configStrategy),
+          AssignShardsForClient = ic.getAssignShardsClass();
+
         let promise = new AssignShardsForClient({
           client_id: client_id
         })
