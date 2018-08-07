@@ -2,8 +2,8 @@
 
 const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   StakeAndMintRouterKlass = require(rootPrefix + '/lib/stake_and_mint/router'),
-  basicHelper = require(rootPrefix + '/helpers/basic'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
 /**
@@ -111,5 +111,6 @@ StartStakeAndMintKlass.prototype = {
     return Promise.resolve(responseHelper.successWithData({}));
   }
 };
+InstanceComposer.registerShadowableClass(StartStakeAndMintKlass, 'getStartStakeAndMintKlass');
 
 module.exports = StartStakeAndMintKlass;
