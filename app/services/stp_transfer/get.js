@@ -2,12 +2,12 @@
 
 const rootPrefix = '../../..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log'),
-  transactionLogModel = require(rootPrefix + '/app/models/transaction_log'),
-  basicHelper = require(rootPrefix + '/helpers/basic'),
-  ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service'),
-  autoScalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service');
+  basicHelper = require(rootPrefix + '/helpers/basic');
+
+require(rootPrefix + '/app/models/transaction_log');
 
 /**
  * @constructor
@@ -89,12 +89,11 @@ GetStPTransferService.prototype = {
    * @return {promise<result>}
    */
   _fetchRecord: async function() {
-    const oThis = this;
+    const oThis = this,
+      transactionLogModel = oThis.ic().getTransactionLogModel();
 
     let transactionLogResponse = await new transactionLogModel({
-      client_id: oThis.client_id,
-      ddb_service: ddbServiceObj,
-      auto_scaling: autoScalingServiceObj
+      client_id: oThis.client_id
     }).batchGetItem([oThis.transactionUuid]);
 
     if (!transactionLogResponse.data[oThis.transactionUuid]) {
@@ -134,5 +133,6 @@ GetStPTransferService.prototype = {
     return responseHelper.successWithData(transactionLog);
   }
 };
+InstanceComposer.registerShadowableClass(GetStPTransferService, 'getGetStPTransferService');
 
 module.exports = GetStPTransferService;
