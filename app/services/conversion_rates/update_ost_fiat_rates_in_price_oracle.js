@@ -34,6 +34,8 @@ const UpdateOstFiatInPriceOracleKlass = function(params) {
   oThis.quoteCurrency = params.currency_code || conversionRateConstants.usd_currency();
   oThis.currentTime = Math.floor(new Date().getTime() / 1000);
   oThis.currentOstValue = null;
+  oThis.maxRetryCountForVerifyPriceInContract = 100;
+  oThis.attemptCountForVerifyPriceInContract = 1;
 };
 
 UpdateOstFiatInPriceOracleKlass.prototype = {
@@ -191,27 +193,40 @@ UpdateOstFiatInPriceOracleKlass.prototype = {
       dbRowId = oThis.dbRowId;
 
     return new Promise(function(onResolve, onReject) {
-      var loopCompareContractPrice = async function() {
-        var priceInDecimal = await priceOracle.decimalPrice(
+      let loopCompareContractPrice = async function() {
+        if (oThis.attemptCountForVerifyPriceInContract > oThis.maxRetryCountForVerifyPriceInContract) {
+          logger.notify('f_c_o_p_8', 'Something Is Wrong', {
+            dbRowId: dbRowId
+          });
+          return onReject(`dbRowId: ${dbRowId} maxRetryCountForVerifyPriceInContract reached`);
+        }
+
+        let priceInDecimal = await priceOracle.decimalPrice(
           chainId,
           conversionRateConstants.ost_currency(),
           quoteCurrency
         );
+
         if (priceInDecimal.isFailure()) {
           logger.notify('f_c_o_p_6', 'Error while getting price from contract.', priceInDecimal);
-
           return onResolve('error');
         } else if (priceInDecimal.isSuccess() && priceInDecimal.data.price == conversionRate) {
           await new CurrencyConversionRateModel().updateStatus(dbRowId, conversionRateConstants.active_status());
           new ostPriceCacheKlass().clear();
           logger.win('Price point updated in contract.');
+
           return onResolve('success');
         } else {
           logger.step(
-            `dbRowId: ${dbRowId} price received from contract: ${
+            `dbRowId: ${dbRowId} attemptNo: ${
+              oThis.attemptCountForVerifyPriceInContract
+            } price received from contract: ${
               priceInDecimal.data.price
             } but expected was: ${conversionRate}. Waiting for it to match.`
           );
+
+          oThis.attemptCountForVerifyPriceInContract += 1;
+
           return setTimeout(loopCompareContractPrice, 10000);
         }
       };
