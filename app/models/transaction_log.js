@@ -8,7 +8,6 @@
 const openSTStorage = require('@openstfoundation/openst-storage');
 
 const rootPrefix = '../..',
-  ShardedBaseModel = openSTStorage.ShardedBaseModel,
   util = require(rootPrefix + '/lib/util'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   DynamodbEntityTypesConst = require(rootPrefix + '/lib/global_constant/dynamodb_entity_types'),
@@ -16,7 +15,12 @@ const rootPrefix = '../..',
   basicHelper = require(rootPrefix + '/helpers/basic'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
   errorConfig = basicHelper.fetchErrorConfig(apiVersions.general),
-  BigNumber = require('bignumber.js');
+  BigNumber = require('bignumber.js'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
+  DynamoEntityTypesConst = require(rootPrefix + '/lib/global_constant/dynamodb_entity_types');
+
+require(rootPrefix + '/lib/providers/storage');
+
 const longToShortNamesMap = {
     transaction_hash: 'txh',
     transaction_uuid: 'txu',
@@ -52,22 +56,128 @@ const longToShortNamesMap = {
  * @constructor
  */
 const TransactionLogModel = function(params) {
-  const oThis = this;
+  const oThis = this,
+    storageProvider = oThis.ic().getStorageProvider(),
+    openSTStorage = storageProvider.getInstance();
 
   oThis.clientId = params.client_id;
   oThis.shardName = params.shard_name || null;
-
-  oThis.entityType = DynamodbEntityTypesConst.transactionLogEntityType;
-
-  ShardedBaseModel.call(oThis, params);
+  oThis.ddbServiceObj = openSTStorage.dynamoDBService;
+  oThis.shardHelper = new openSTStorage.model.ShardHelper(
+    DynamodbEntityTypesConst.transactionLogEntityType,
+    oThis.clientId,
+    oThis.shardName,
+    longToShortNamesMap,
+    shortToLongNamesMap
+  );
 };
 
-TransactionLogModel.prototype = Object.create(ShardedBaseModel.prototype);
-
 const transactionLogModelSpecificPrototype = {
-  shortToLongNamesMap: shortToLongNamesMap,
+  /**
+   * Allocate
+   *
+   * @return {promise<result>}
+   */
+  allocate: function() {
+    const oThis = this;
 
-  longToShortNamesMap: longToShortNamesMap,
+    return oThis.shardHelper.allocate();
+  },
+
+  /**
+   * Has allocated shard?
+   *
+   * @return {promise<result>}
+   */
+  hasAllocatedShard: function() {
+    const oThis = this;
+
+    return oThis.shardHelper.hasAllocatedShard();
+  },
+
+  /**
+   * Create and register shard
+   *
+   * @return {promise<result>}
+   */
+  createAndRegisterShard: function(shardName) {
+    const oThis = this;
+
+    oThis.setTableSchema(shardName);
+
+    return oThis.shardHelper.createAndRegisterShard(shardName);
+  },
+
+  /**
+   * Get shard
+   *
+   * @return {promise<result>}
+   */
+  _getShard: async function() {
+    const oThis = this;
+
+    await oThis.shardHelper._getShard();
+
+    oThis.shardName = oThis.shardHelper.shardName;
+  },
+
+  /**
+   * Handles logic of shorting input param keys
+   *
+   * @private
+   * @param longName - long name of key
+   *
+   * @return {String}
+   */
+  shortNameFor: function(longName) {
+    const oThis = this;
+
+    return oThis.shardHelper.shortNameFor(longName);
+  },
+
+  /**
+   * Handles logic of shorting input param keys
+   *
+   * @private
+   * @param longName - long name of key
+   *
+   * @return {String}
+   */
+  longNameFor: function(shortName) {
+    const oThis = this;
+
+    return oThis.shardHelper.longNameFor(shortName);
+  },
+
+  /**
+   * Create table params
+   *
+   * @return {object}
+   */
+  setTableSchema: function(shardName) {
+    // This method is used in base class
+    const oThis = this;
+
+    const tableSchema = {
+      TableName: shardName,
+      KeySchema: [
+        {
+          AttributeName: oThis.shortNameFor('transaction_uuid'),
+          KeyType: 'HASH'
+        }
+      ],
+      AttributeDefinitions: [{ AttributeName: oThis.shortNameFor('transaction_uuid'), AttributeType: 'S' }],
+      ProvisionedThroughput: {
+        ReadCapacityUnits: 1,
+        WriteCapacityUnits: 1
+      },
+      SSESpecification: {
+        Enabled: false
+      }
+    };
+
+    return oThis.shardHelper.setTableSchema(tableSchema);
+  },
 
   /**
    * NOTE: This would override the existing document (if any) with the keys being passed
@@ -312,34 +422,6 @@ const transactionLogModelSpecificPrototype = {
     const oThis = this;
 
     return oThis.clientId;
-  },
-
-  /**
-   * Create table params
-   *
-   * @return {object}
-   */
-  _createTableParams: function(shardName) {
-    // This method is used in base class
-    const oThis = this;
-
-    return {
-      TableName: shardName,
-      KeySchema: [
-        {
-          AttributeName: oThis.shortNameFor('transaction_uuid'),
-          KeyType: 'HASH'
-        }
-      ],
-      AttributeDefinitions: [{ AttributeName: oThis.shortNameFor('transaction_uuid'), AttributeType: 'S' }],
-      ProvisionedThroughput: {
-        ReadCapacityUnits: 1,
-        WriteCapacityUnits: 1
-      },
-      SSESpecification: {
-        Enabled: false
-      }
-    };
   },
 
   /**
@@ -638,5 +720,7 @@ const transactionLogModelSpecificPrototype = {
 };
 
 Object.assign(TransactionLogModel.prototype, transactionLogModelSpecificPrototype);
+
+InstanceComposer.registerShadowableClass(TransactionLogModel, 'getTransactionLogModel');
 
 module.exports = TransactionLogModel;
