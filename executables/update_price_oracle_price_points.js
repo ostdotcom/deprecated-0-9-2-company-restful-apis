@@ -36,7 +36,8 @@ UpdatePriceOraclePricePoints.prototype = {
         for (var quoteCurrency in quoteCurrencies) {
           if (quoteCurrency == conversionRateConstants.usd_currency()) {
             logger.step("Updating quote currency '" + quoteCurrency + "' in base currency '" + baseCurrency + "'");
-            var ostPriceUpdater = require(rootPrefix + '/app/services/conversion_rates/fetch_current_ost_price');
+            var ostPriceUpdater = require(rootPrefix +
+              '/app/services/conversion_rates/update_ost_fiat_rates_in_price_oracle');
             await new ostPriceUpdater({ currency_code: 'USD' }).perform();
             process.exit(0);
           } else {

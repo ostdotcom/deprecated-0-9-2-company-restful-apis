@@ -165,6 +165,7 @@ seedConfigStrategies.prototype = {
     utility_constants_params['OST_UTILITY_OPS_ADDR'] = env_list.OST_UTILITY_OPS_ADDR;
     utility_constants_params['OST_UTILITY_OPS_PASSPHRASE'] = env_list.OST_UTILITY_OPS_PASSPHRASE;
     utility_constants_params['OST_STPRIME_CONTRACT_ADDR'] = env_list.OST_STPRIME_CONTRACT_ADDR;
+    utility_constants_params['OST_UTILITY_PRICE_ORACLES'] = env_list.OST_UTILITY_PRICE_ORACLES;
 
     const configStrategy = new configStrategyModel();
 

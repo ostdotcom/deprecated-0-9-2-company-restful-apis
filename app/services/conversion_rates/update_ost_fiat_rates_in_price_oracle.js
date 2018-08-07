@@ -7,21 +7,18 @@
  */
 
 const request = require('request-promise'),
-  OSTPriceOracle = require('@ostdotcom/ost-price-oracle'),
   BigNumber = require('bignumber.js');
 
 const rootPrefix = '../../..',
-  chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
+  exchangeUrl = 'https://api.coinmarketcap.com/v1/ticker/simple-token',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   CurrencyConversionRateModel = require(rootPrefix + '/app/models/currency_conversion_rate'),
   conversionRateConstants = require(rootPrefix + '/lib/global_constant/conversion_rates'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points');
+  InstanceComposer = require(rootPrefix + '/instance_composer');
 
-const priceOracle = OSTPriceOracle.priceOracle,
-  exchangeUrl = 'https://api.coinmarketcap.com/v1/ticker/simple-token',
-  gasPrice = chainInteractionConstants.UTILITY_GAS_PRICE,
-  chainId = chainInteractionConstants.UTILITY_CHAIN_ID;
+require(rootPrefix + '/lib/providers/price_oracle');
+require(rootPrefix + '/lib/cache_management/ost_price_points');
 
 /**
  * Fetch OST Current price
@@ -31,7 +28,7 @@ const priceOracle = OSTPriceOracle.priceOracle,
  *
  * @constructor
  */
-const FetchCurrentOSTPriceKlass = function(params) {
+const UpdateOstFiatInPriceOracleKlass = function(params) {
   const oThis = this;
 
   oThis.quoteCurrency = params.currency_code || conversionRateConstants.usd_currency();
@@ -39,7 +36,7 @@ const FetchCurrentOSTPriceKlass = function(params) {
   oThis.currentOstValue = null;
 };
 
-FetchCurrentOSTPriceKlass.prototype = {
+UpdateOstFiatInPriceOracleKlass.prototype = {
   perform: function() {
     const oThis = this;
 
@@ -154,7 +151,10 @@ FetchCurrentOSTPriceKlass.prototype = {
    * @return {Promise<Result>}
    */
   setPriceInContract: function() {
-    const oThis = this;
+    const oThis = this,
+      configStrategy = oThis.ic().configStrategy,
+      priceOracleProvider = oThis.ic().getPriceOracleProvider(),
+      priceOracle = priceOracleProvider.getInstance().priceOracle;
 
     logger.debug('Price Input for contract:' + oThis.currentOstValue.conversion_rate);
     var num = new BigNumber(oThis.currentOstValue.conversion_rate);
@@ -166,11 +166,11 @@ FetchCurrentOSTPriceKlass.prototype = {
     var amountInWei = priceResponse.data.price.toNumber();
     logger.debug('Price Point in Wei for contract:' + amountInWei);
     return priceOracle.setPrice(
-      chainId,
+      configStrategy.OST_UTILITY_CHAIN_ID,
       conversionRateConstants.ost_currency(),
       oThis.quoteCurrency,
       amountInWei,
-      gasPrice
+      configStrategy.OST_UTILITY_GAS_PRICE
     );
   },
 
@@ -181,6 +181,11 @@ FetchCurrentOSTPriceKlass.prototype = {
    */
   compareContractPrice: function() {
     const oThis = this,
+      configStrategy = oThis.ic().configStrategy,
+      ostPriceCacheKlass = oThis.ic().getOstPricePointsCache(),
+      chainId = configStrategy.OST_UTILITY_CHAIN_ID,
+      priceOracleProvider = oThis.ic().getPriceOracleProvider(),
+      priceOracle = priceOracleProvider.getInstance().priceOracle,
       quoteCurrency = oThis.quoteCurrency,
       conversionRate = oThis.currentOstValue.conversion_rate,
       dbRowId = oThis.dbRowId;
@@ -202,7 +207,11 @@ FetchCurrentOSTPriceKlass.prototype = {
           logger.win('Price point updated in contract.');
           return onResolve('success');
         } else {
-          logger.step(`dbRowId: ${dbRowId} price received from contract: ${priceInDecimal.data.price} but expected was: ${conversionRate}. Waiting for it to match.`);
+          logger.step(
+            `dbRowId: ${dbRowId} price received from contract: ${
+              priceInDecimal.data.price
+            } but expected was: ${conversionRate}. Waiting for it to match.`
+          );
           return setTimeout(loopCompareContractPrice, 10000);
         }
       };
@@ -212,4 +221,6 @@ FetchCurrentOSTPriceKlass.prototype = {
   }
 };
 
-module.exports = FetchCurrentOSTPriceKlass;
+InstanceComposer.registerShadowableClass(UpdateOstFiatInPriceOracleKlass, 'getUpdateOstFiatInPriceOracleClass');
+
+module.exports = UpdateOstFiatInPriceOracleKlass;
