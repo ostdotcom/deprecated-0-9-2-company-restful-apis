@@ -108,6 +108,8 @@ seedConfigStrategies.prototype = {
     let value_geth_params = {};
     value_geth_params['OST_VALUE_GETH_RPC_PROVIDER'] = env_list.OST_VALUE_GETH_RPC_PROVIDER;
     value_geth_params['OST_VALUE_GETH_WS_PROVIDER'] = env_list.OST_VALUE_GETH_WS_PROVIDER;
+    value_geth_params['OST_VALUE_GETH_RPC_PROVIDERS'] = env_list.OST_VALUE_GETH_RPC_PROVIDERS;
+    value_geth_params['OST_VALUE_GETH_WS_PROVIDERS'] = env_list.OST_VALUE_GETH_WS_PROVIDERS;
     value_geth_params['OST_VALUE_CHAIN_ID'] = env_list.OST_VALUE_CHAIN_ID;
 
     const configStrategy = new configStrategyModel();
@@ -139,6 +141,8 @@ seedConfigStrategies.prototype = {
     let utility_geth_params = {};
     utility_geth_params['OST_UTILITY_GETH_RPC_PROVIDER'] = env_list.OST_UTILITY_GETH_RPC_PROVIDER;
     utility_geth_params['OST_UTILITY_GETH_WS_PROVIDER'] = env_list.OST_UTILITY_GETH_WS_PROVIDER;
+    utility_geth_params['OST_UTILITY_GETH_RPC_PROVIDERS'] = env_list.OST_UTILITY_GETH_RPC_PROVIDERS;
+    utility_geth_params['OST_UTILITY_GETH_WS_PROVIDERS'] = env_list.OST_UTILITY_GETH_WS_PROVIDERS;
     utility_geth_params['OST_UTILITY_CHAIN_ID'] = env_list.OST_UTILITY_CHAIN_ID;
 
     const configStrategy = new configStrategyModel();
