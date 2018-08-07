@@ -7,7 +7,6 @@ const rootPrefix = '../../..',
   basicHelper = require(rootPrefix + '/helpers/basic'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
-  configStrategyHelper = require(rootPrefix + '/helpers/config_strategy'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
 require(rootPrefix + '/lib/providers/platform');
@@ -189,8 +188,7 @@ EditBrandedTokenKlass.prototype = {
   publishUpdateEvent: function() {
     var oThis = this,
       publish_data = {},
-      configStrategyHelperObj = new configStrategyHelper(),
-      chainIntConstants = configStrategyHelperObj.getConfigStrategy(oThis.client_id);
+      configStrategy = oThis.ic().configStrategy;
 
     publish_data.name = oThis.brandedTokenRecordObject.name;
     publish_data.ost_to_bt_conversion_factor = oThis.brandedTokenRecordObject.conversion_factor;
@@ -211,7 +209,7 @@ EditBrandedTokenKlass.prototype = {
           entity: 'branded_token',
           identifier: {
             erc20_contract_address: oThis.brandedTokenRecordObject.token_erc20_address,
-            chain_id: chainIntConstants.UTILITY_CHAIN_ID
+            chain_id: configStrategy.UTILITY_CHAIN_ID
           },
           operation: 'update',
           data: publish_data
