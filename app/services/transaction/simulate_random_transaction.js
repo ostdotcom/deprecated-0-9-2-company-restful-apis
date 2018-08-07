@@ -6,20 +6,22 @@
  * @module /app/services/transaction/simulate_random_transaction
  */
 const rootPrefix = '../../..',
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type'),
   ManagedAdressModel = require(rootPrefix + '/app/models/managed_address'),
-  ClientUsersCntCacheKlass = require(rootPrefix + '/lib/cache_management/client_users_count'),
-  ClientTrxTypeCntCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type_count'),
   clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  BTSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure'),
-  executeTransactionKlass = require(rootPrefix + '/app/services/transaction/execute'),
   TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/transaction'),
-  EconomyUserBalanceKlass = require(rootPrefix + '/lib/economy_user_balance'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
-  ostPriceCacheKlass = require(rootPrefix + '/lib/cache_management/ost_price_points'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   commonHelper = require(rootPrefix + '/lib/validators/common');
+
+require(rootPrefix + '/lib/cache_management/client_users_count');
+require(rootPrefix + '/lib/cache_management/client_transaction_type_count');
+require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
+require(rootPrefix + '/lib/economy_user_balance');
+require(rootPrefix + '/lib/cache_management/ost_price_points');
+require(rootPrefix + '/app/services/transaction/execute');
 
 /**
  * Simulate Random transaction
@@ -93,7 +95,9 @@ simulateRandomTransactionKlass.prototype = {
    * @return {Promise<any>}
    */
   fetchClientBrandedToken: async function() {
-    const oThis = this;
+    const oThis = this,
+      BTSecureCacheKlass = oThis.ic().getClientBrandedTokenSecureCache();
+
     var btSecureCache = new BTSecureCacheKlass({ tokenSymbol: oThis.tokenSymbol });
     const cacheRsp = await btSecureCache.fetch();
 
@@ -119,7 +123,8 @@ simulateRandomTransactionKlass.prototype = {
    * @return {Promise<any>}
    */
   fetchConversionFactors: async function() {
-    const oThis = this;
+    const oThis = this,
+      ostPriceCacheKlass = oThis.ic().getOstPricePointsCache();
 
     oThis.conversionFactor = basicHelper.convertToBigNumber(oThis.clientBrandedToken['conversion_factor']);
 
@@ -136,7 +141,9 @@ simulateRandomTransactionKlass.prototype = {
    * @return {Promise<any>}
    */
   fetchRandomUsers: async function() {
-    const oThis = this;
+    const oThis = this,
+      EconomyUserBalanceKlass = oThis.ic().getEconomyUserBalance(),
+      ClientUsersCntCacheKlass = oThis.ic().getClientUsersCountCache();
 
     var countCacheObj = new ClientUsersCntCacheKlass({ client_id: oThis.clientId });
     var resp = await countCacheObj.fetch();
@@ -216,7 +223,9 @@ simulateRandomTransactionKlass.prototype = {
    * @return {Promise<any>}
    */
   fetchRandomTransactionTypes: async function() {
-    const oThis = this;
+    const oThis = this,
+      ClientTrxTypeCntCacheKlass = oThis.ic().getClientTransactionTypeCountCache();
+
     var countCacheObj = new ClientTrxTypeCntCacheKlass({ clientId: oThis.clientId });
     var resp = await countCacheObj.fetch();
     if (resp.isFailure() || parseInt(resp.data) <= 0) {
@@ -430,7 +439,8 @@ simulateRandomTransactionKlass.prototype = {
    * @return {Promise<any>}
    */
   sendTransaction: async function(txParams) {
-    const oThis = this;
+    const oThis = this,
+      executeTransactionKlass = oThis.ic().getExecuteTransactionService();
 
     if (!txParams.from_user_id || !txParams.to_user_id) {
       return Promise.resolve(
@@ -469,5 +479,7 @@ simulateRandomTransactionKlass.prototype = {
     return Promise.resolve(responseHelper.successWithData(apiResponseData));
   }
 };
+
+InstanceComposer.registerShadowableClass(simulateRandomTransactionKlass, 'getsimulateRandomTransactionKlass');
 
 module.exports = simulateRandomTransactionKlass;
