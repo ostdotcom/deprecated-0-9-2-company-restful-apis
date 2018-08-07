@@ -11,17 +11,16 @@ const openSTNotification = require('@openstfoundation/openst-notification'),
 
 const rootPrefix = '../../..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  BTSecureCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure'),
-  BTCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token'),
   transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log'),
-  transactionLogModel = require(rootPrefix + '/app/models/transaction_log'),
-  chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   notificationTopics = require(rootPrefix + '/lib/global_constant/notification_topics'),
-  commonValidator = require(rootPrefix + '/lib/validators/common'),
-  ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service'),
-  autoScalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service');
+  commonValidator = require(rootPrefix + '/lib/validators/common');
+
+require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
+require(rootPrefix + '/lib/cache_management/client_branded_token');
+require(rootPrefix + '/app/models/transaction_log');
 
 /**
  * @constructor
@@ -76,7 +75,8 @@ ExecuteSTPTransferService.prototype = {
    * @return {promise<result>}
    */
   asyncPerform: async function() {
-    const oThis = this;
+    const oThis = this,
+      transactionLogModel = oThis.ic().getTransactionLogModel();
 
     await oThis._fetchFromBtCache();
 
@@ -90,9 +90,7 @@ ExecuteSTPTransferService.prototype = {
     await oThis.enqueueTxForExecution();
 
     let dbResponse = await new transactionLogModel({
-      client_id: oThis.clientId,
-      ddb_service: ddbServiceObj,
-      auto_scaling: autoScalingServiceObj
+      client_id: oThis.clientId
     }).batchGetItem([oThis.transactionUuid]);
 
     if (!dbResponse.data) {
@@ -119,7 +117,7 @@ ExecuteSTPTransferService.prototype = {
    */
   _fetchFromBtCache: async function() {
     const oThis = this;
-
+    const BTCacheKlass = oThis.ic().getClientBrandedTokenCache();
     const btCacheFetchResponse = await new BTCacheKlass({ clientId: oThis.clientId }).fetch();
     if (btCacheFetchResponse.isFailure()) return Promise.reject(btCacheFetchResponse);
 
@@ -147,7 +145,7 @@ ExecuteSTPTransferService.prototype = {
    */
   _fetchFromBtSecureCache: async function() {
     const oThis = this;
-
+    const BTSecureCacheKlass = oThis.ic().getClientBrandedTokenSecureCache();
     const btSecureCacheFetchResponse = await new BTSecureCacheKlass({ tokenSymbol: oThis.tokenSymbol }).fetch();
     if (btSecureCacheFetchResponse.isFailure()) return Promise.reject(btSecureCacheFetchResponse);
 
@@ -268,14 +266,16 @@ ExecuteSTPTransferService.prototype = {
    * @return {promise<result>}
    */
   _createTransactionLog: async function() {
-    const oThis = this;
+    const oThis = this,
+      transactionLogModel = oThis.ic().getTransactionLogModel(),
+      configStrategy = oThis.ic().configStrategy;
 
     let dataToInsert = {
       client_id: oThis.clientId,
       transaction_uuid: oThis.transactionUuid,
       transaction_type: transactionLogConst.invertedTransactionTypes[transactionLogConst.stpTransferTransactionType],
       client_token_id: oThis.clientTokenId,
-      gas_price: basicHelper.convertToBigNumber(chainInteractionConstants.UTILITY_GAS_PRICE).toString(10), // converting hex to base 10
+      gas_price: basicHelper.convertToBigNumber(configStrategy.OST_UTILITY_GAS_PRICE).toString(10), // converting hex to base 10
       status: transactionLogConst.invertedStatuses[transactionLogConst.processingStatus],
       created_at: Date.now(),
       updated_at: Date.now(),
@@ -285,9 +285,7 @@ ExecuteSTPTransferService.prototype = {
     };
 
     let insertedRec = await new transactionLogModel({
-      client_id: oThis.clientId,
-      ddb_service: ddbServiceObj,
-      auto_scaling: autoScalingServiceObj
+      client_id: oThis.clientId
     }).updateItem(dataToInsert);
 
     if (!insertedRec.data) {
@@ -339,5 +337,7 @@ ExecuteSTPTransferService.prototype = {
     return Promise.resolve(responseHelper.successWithData({}));
   }
 };
+
+InstanceComposer.registerShadowableClass(ExecuteSTPTransferService, 'getExecuteSTPTransferService');
 
 module.exports = ExecuteSTPTransferService;
