@@ -41,8 +41,6 @@ const NonceManagerKlass = function(params) {
     clientId = params['client_id'],
     currentWsHost = params['host'];
 
-  console.log('currentWsHost----', currentWsHost);
-
   oThis.nonceHelper = new nonceHelperKlass();
   //Throw Here.
 
@@ -125,14 +123,6 @@ const NonceCacheKlassPrototype = {
 
       let cacheObject = OpenStCache.getInstance(cacheConfigStrategy);
       oThis.cacheImplementer = cacheObject.cacheInstance;
-
-      console.log('configStrategy.OST_VALUE_GETH_WS_PROVIDERS----', configStrategy.OST_VALUE_GETH_WS_PROVIDERS);
-      console.log('configStrategy.OST_VALUE_GETH_WS_PROVIDERS----', typeof configStrategy.OST_VALUE_GETH_WS_PROVIDERS);
-      console.log('configStrategy.OST_UTILITY_GETH_WS_PROVIDERS----', configStrategy.OST_UTILITY_GETH_WS_PROVIDERS);
-      console.log(
-        'configStrategy.OST_UTILITY_GETH_WS_PROVIDERS----',
-        typeof configStrategy.OST_UTILITY_GETH_WS_PROVIDERS
-      );
 
       // Using JSON.parse as configStrategy stores these array attributes as string.
       oThis.gethWsProviders =
