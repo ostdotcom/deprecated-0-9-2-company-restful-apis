@@ -74,7 +74,7 @@ const ManagedAddressKlassPrototype = {
     const oThis = this;
 
     return oThis
-      .select(['ethereum_address', 'managed_address_salt_id', 'private_key'])
+      .select(['ethereum_address', 'managed_address_salt_id', 'private_key', 'client_id'])
       .where(['ethereum_address IN (?)', ethAddresses])
       .fire();
   },

@@ -3,7 +3,7 @@ const Buffer = require('safe-buffer').Buffer,
 
 const rootPrefix = '..',
   chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
-  fetchPrivateKeyKlass = require(rootPrefix + '/lib/cache_management/address_private_key'),
+  fetchPrivateKeyKlass = require(rootPrefix + '/lib/shared_cache_management/address_private_key'),
   nonceHelperKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_helper'),
   nonceHelper = new nonceHelperKlass();
 

@@ -87,7 +87,7 @@ const Derived = function() {
 
       const Web3PromiEvent = require('web3-core-promievent'),
         hackedReturnedPromiEvent = Web3PromiEvent(),
-        fetchPrivateKeyKlass = require(rootPrefix + '/lib/cache_management/address_private_key');
+        fetchPrivateKeyKlass = require(rootPrefix + '/lib/shared_cache_management/address_private_key');
 
       var privateKeyObj;
 

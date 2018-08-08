@@ -12,10 +12,10 @@ const rootPrefix = '../../..',
   basicHelper = require(rootPrefix + '/helpers/basic'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
-  AddressesEncryptorKlass = require(rootPrefix + '/lib/encryptors/addresses_encryptor');
+  AddressesEncryptorKlass = require(rootPrefix + '/lib/encryptors/addresses_encryptor'),
+  EthAddrPrivateKeyCacheKlass = require(rootPrefix + '/lib/shared_cache_management/address_private_key');
 
 require(rootPrefix + '/lib/cache_multi_management/managedAddresses');
-require(rootPrefix + '/lib/cache_management/address_private_key');
 require(rootPrefix + '/lib/cache_management/client_address_salt_mapping');
 require(rootPrefix + '/lib/providers/platform');
 
@@ -178,8 +178,7 @@ GenerateAddressKlass.prototype = {
     const oThis = this,
       clientId = oThis.clientId,
       addressType = oThis.addressType,
-      ManagedAddressCacheKlass = oThis.ic().getManagedAddressCache(),
-      EthAddrPrivateKeyCacheKlass = oThis.ic().getEthAddrPrivateKeyCache();
+      ManagedAddressCacheKlass = oThis.ic().getManagedAddressCache();
 
     const platformProvider = oThis.ic().getPlatformProvider(),
       openSTPlaform = platformProvider.getInstance();
