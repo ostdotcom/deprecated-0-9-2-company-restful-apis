@@ -156,7 +156,12 @@ const ConfigStrategyModelSpecificPrototype = {
         );
 
         const localJsonObj = JSON.parse(localDecryptedParams);
-        finalResult[queryResult[i].id] = localJsonObj;
+
+        let Result = {},
+          strategyKind = kinds[queryResult[i].kind];
+
+        Result[strategyKind] = localJsonObj;
+        finalResult[queryResult[i].id] = Result;
       }
 
       return Promise.resolve(finalResult);

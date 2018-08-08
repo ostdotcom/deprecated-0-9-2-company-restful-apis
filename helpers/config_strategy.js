@@ -40,7 +40,11 @@ ConfigStrategyKlass.prototype = {
       configStrategyIdToDetailMap = configStrategyFetchRsp.data;
 
     for (let configStrategyId in configStrategyIdToDetailMap) {
-      Object.assign(finalConfigStrategyFlatHash, configStrategyIdToDetailMap[configStrategyId]);
+      let configStrategy = configStrategyIdToDetailMap[configStrategyId];
+
+      for (let strategyKind in configStrategy) {
+        Object.assign(finalConfigStrategyFlatHash, configStrategy[strategyKind]);
+      }
     }
 
     return Promise.resolve(responseHelper.successWithData(finalConfigStrategyFlatHash));
