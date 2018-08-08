@@ -213,7 +213,9 @@ const ChainGethProvidersModelModelSpecificPrototype = {
         }
       }
     } else {
-      throw 'This endpoint does not exist.';
+      // TODO: Change logic here later.
+      siblingEndPoints.push(gethEndpoint);
+      //throw 'This endpoint does not exist.';
     }
 
     return siblingEndPoints;

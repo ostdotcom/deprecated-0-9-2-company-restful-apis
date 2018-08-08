@@ -42,8 +42,9 @@ const getWeb3Instance = function(gethURL, chainKind) {
 };
 
 const instanceMap = {};
+
 function getInstanceKey(fromAddress, chainKind) {
-  var args = Array.prototype.slice.call(arguments);
+  let args = Array.prototype.slice.call(arguments);
   return args.join('_');
 }
 function getInstance(instanceKey) {
@@ -106,7 +107,7 @@ const NonceHelperKlassPrototype = {
     try {
       const allNoncePromise = [],
         allGethNodes = oThis._getAllGethNodes(chainKind);
-      for (var i = allGethNodes.length - 1; i >= 0; i--) {
+      for (let i = allGethNodes.length - 1; i >= 0; i--) {
         const gethURL = allGethNodes[i];
 
         const web3Provider = oThis.getWeb3Instance(gethURL, chainKind);
@@ -115,9 +116,9 @@ const NonceHelperKlassPrototype = {
 
       const allNoncePromiseResult = Promise.all(allNoncePromise);
 
-      var isNonceAvailable = false;
-      var nonceCount = 0;
-      for (var i = allNoncePromiseResult.length - 1; i >= 0; i--) {
+      let isNonceAvailable = false;
+      let nonceCount = 0;
+      for (let i = allNoncePromiseResult.length - 1; i >= 0; i--) {
         const currentNonceResponse = allNoncePromiseResult[i];
         if (currentNonceResponse.isFailure()) {
           continue;
@@ -164,7 +165,7 @@ const NonceHelperKlassPrototype = {
       const allTxPoolPromise = [],
         allGethNodes = oThis._getAllGethNodes(chainKind);
 
-      for (var i = allGethNodes.length - 1; i >= 0; i--) {
+      for (let i = allGethNodes.length - 1; i >= 0; i--) {
         const gethURL = allGethNodes[i];
         const web3Provider = oThis.getWeb3Instance(gethURL, chainKind);
         allTxPoolPromise.push(oThis.getPendingTransactionsFromGethNode(web3Provider));
@@ -174,9 +175,9 @@ const NonceHelperKlassPrototype = {
       const queuedData = {};
 
       logger.debug('allTxPoolPromiseResult: ', allTxPoolPromiseResult);
-      var isTransactionAvailable = false;
+      let isTransactionAvailable = false;
 
-      for (var i = allTxPoolPromiseResult.length - 1; i >= 0; i--) {
+      for (let i = allTxPoolPromiseResult.length - 1; i >= 0; i--) {
         const currentTxPoolResponse = allTxPoolPromiseResult[i];
         if (currentTxPoolResponse.isFailure()) {
           continue;
@@ -185,12 +186,12 @@ const NonceHelperKlassPrototype = {
         const pendingTransaction = currentTxPoolResponse.data.pending_transaction.pending;
         const queuedTransaction = currentTxPoolResponse.data.pending_transaction.queued;
 
-        for (var address in pendingTransaction) {
+        for (let address in pendingTransaction) {
           queuedData[address] = queuedData[address] || {};
           Object.assign(queuedData[address], pendingTransaction[address]);
         }
 
-        for (var address in queuedTransaction) {
+        for (let address in queuedTransaction) {
           queuedData[address] = queuedData[address] || {};
           Object.assign(queuedData[address], queuedTransaction[address]);
         }
@@ -243,11 +244,11 @@ const NonceHelperKlassPrototype = {
           })
         );
       }
-      var successAddresses = new Array(),
+      let successAddresses = new Array(),
         failAddresses = new Array();
 
       const queuedData = allQueuedTransaction.data.queuedData;
-      for (var address in queuedData) {
+      for (let address in queuedData) {
         const clearResponce = await oThis.clearMissingNonce(
           address,
           chainKind,
@@ -306,7 +307,7 @@ const NonceHelperKlassPrototype = {
       const allNoncePromise = [],
         allGethNodes = oThis._getAllGethNodes(chainKind);
 
-      for (var i = allGethNodes.length - 1; i >= 0; i--) {
+      for (let i = allGethNodes.length - 1; i >= 0; i--) {
         const gethURL = allGethNodes[i];
 
         const web3Provider = oThis.getWeb3Instance(gethURL, chainKind);
@@ -315,8 +316,8 @@ const NonceHelperKlassPrototype = {
 
       const allNoncePromiseResult = await Promise.all(allNoncePromise);
 
-      var nonceCount = 0;
-      for (var i = allNoncePromiseResult.length - 1; i >= 0; i--) {
+      let nonceCount = 0;
+      for (let i = allNoncePromiseResult.length - 1; i >= 0; i--) {
         const currentNonceResponse = allNoncePromiseResult[i];
         if (currentNonceResponse.isFailure()) {
           continue;
@@ -327,7 +328,7 @@ const NonceHelperKlassPrototype = {
 
       const maxNonceCount = Math.max(...Object.keys(pendingTransactions));
 
-      for (var nonce = nonceCount; nonce <= maxNonceCount; nonce++) {
+      for (let nonce = nonceCount; nonce <= maxNonceCount; nonce++) {
         // fix  nonce code here
         const bgNonce = new BigNumber(nonce);
         const nonceString = `${bgNonce.toString(10)}`;

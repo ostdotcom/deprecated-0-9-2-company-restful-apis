@@ -1,6 +1,6 @@
 'use strict';
 
-var basePackage = 'web3-eth';
+const basePackage = 'web3-eth';
 
 const BasePackage = require(basePackage),
   Buffer = require('safe-buffer').Buffer,
@@ -9,7 +9,7 @@ const BasePackage = require(basePackage),
 
 const rootPrefix = '../..';
 
-// Please declare your require variable here.
+// Please declare your require variables here.
 let nonceManagerKlass, responseHelper, logger, chainInteractionConstants;
 
 // NOTE :: Please define all your requires inside the function
@@ -21,9 +21,9 @@ function initRequires() {
 }
 
 // Module Override Code - Part 1
-var requireData, resolvedId, resolvedFileName;
+let requireData, resolvedId, resolvedFileName;
 
-for (var k in require.cache) {
+for (let k in require.cache) {
   if (k.indexOf('/' + basePackage + '/src/index.js') > -1) {
     requireData = require.cache[k];
     resolvedId = requireData.id;
@@ -34,7 +34,7 @@ for (var k in require.cache) {
 
 // Derived Class Definition/Implementation
 const Derived = function() {
-  var oThis = this;
+  let oThis = this;
 
   initRequires();
 
@@ -61,7 +61,7 @@ const Derived = function() {
       UTILITY_GAS_PRICE = chainInteractionConstants.UTILITY_GAS_PRICE,
       VALUE_GAS_PRICE = chainInteractionConstants.VALUE_GAS_PRICE;
 
-    var chainGasPrice, bnChainGasPrice;
+    let chainGasPrice, bnChainGasPrice;
     if (String(chainKind).toLowerCase() === 'value') {
       chainGasPrice = VALUE_GAS_PRICE; //<-- Change this to VALUE_GAS_PRICE
     } else {
@@ -89,16 +89,17 @@ const Derived = function() {
         hackedReturnedPromiEvent = Web3PromiEvent(),
         fetchPrivateKeyKlass = require(rootPrefix + '/lib/shared_cache_management/address_private_key');
 
-      var privateKeyObj;
+      let privateKeyObj;
+      let clientId = 0;
 
-      var txHashObtained = false,
+      let txHashObtained = false,
         retryCount = 0;
 
       const maxRetryFor = 2;
 
       const sanitize = function() {
         // convert to hex
-        var value = new BigNumber(rawTx.value || 0);
+        let value = new BigNumber(rawTx.value || 0);
         rawTx.value = '0x' + value.toString(16);
       };
 
@@ -116,18 +117,26 @@ const Derived = function() {
         }
 
         // get private key - this should be the private key without 0x at the beginning.
-        var privateKey = fetchPrivateKeyRsp.data['private_key_d'];
+        let privateKey = fetchPrivateKeyRsp.data['private_key_d'];
         if (privateKey.slice(0, 2).toLowerCase() === '0x') {
           privateKey = privateKey.substr(2);
         }
 
         privateKeyObj = new Buffer(privateKey, 'hex');
 
+        // Get clientId from the data. This will be later used to decide the nature of the redis cache object.
+        clientId = fetchPrivateKeyRsp.data['client_id'];
+
         return Promise.resolve();
       };
 
       const fetchNonceAndAddToRawTransaction = async function() {
-        const nonceManager = new nonceManagerKlass({ address: fromAddress, chain_kind: chainKind });
+        const nonceManager = new nonceManagerKlass({
+          address: fromAddress,
+          chain_kind: chainKind,
+          client_id: clientId,
+          host: host
+        });
 
         const getNonceResponse = await nonceManager.getNonce();
 
@@ -149,6 +158,16 @@ const Derived = function() {
       };
 
       const executeTx = async function() {
+        // Fetch Private Key if not present.
+        if (!privateKeyObj) {
+          logger.log('executeTx :: getPrivateKey initiated');
+          //Get the private key.
+          await getPrivateKey().catch(function(reason) {
+            logger.error('executeTx :: getPrivateKey :: Failed to get private key. reason', reason);
+            return Promise.reject(reason);
+          });
+        }
+
         const fetchNonceResult = await fetchNonceAndAddToRawTransaction();
 
         if (fetchNonceResult.isFailure()) {
@@ -159,28 +178,29 @@ const Derived = function() {
         const nonceManager = fetchNonceResult.data.nonceManager;
 
         //Fetch Private Key if not present.
-        if (!privateKeyObj) {
-          logger.log('executeTx :: getPrivateKey initiated');
-          //Get the private key.
-          await getPrivateKey().catch(function(reason) {
-            logger.error('executeTx :: getPrivateKey :: Failed to get private key. reason', reason);
-
-            // clear the nonce
-            return nonceManager
-              .completionWithFailure()
-              .catch(function(reason) {
-                logger.error(
-                  'executeTx :: nonceManager.completionWithFailure rejected the Promise.',
-                  ' nonceManager likely to keep ',
-                  fromAddress,
-                  ' locked'
-                );
-              })
-              .then(function(i_d_k) {
-                return Promise.reject(reason);
-              });
-          });
-        }
+        // if (!privateKeyObj) {
+        //   logger.log('executeTx :: getPrivateKey initiated');
+        //   //Get the private key.
+        //   await getPrivateKey().catch(function(reason) {
+        //     logger.error('executeTx :: getPrivateKey :: Failed to get private key. reason', reason);
+        //
+        //     // clear the nonce
+        //     return nonceManager
+        //       .completionWithFailure()
+        //       .catch(function(reason) {
+        //         logger.error(
+        //           'executeTx :: nonceManager.completionWithFailure rejected the Promise.',
+        //           ' nonceManager likely to keep ',
+        //           fromAddress,
+        //           ' locked'
+        //         );
+        //       })
+        //
+        //       .then(function(i_d_k) {
+        //         return Promise.reject(reason);
+        //       });
+        //   });
+        // }
 
         logger.log('executeTx :: sendSignedTx initiated');
         await sendSignedTx(nonceManager);

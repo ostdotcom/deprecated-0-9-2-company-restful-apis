@@ -110,7 +110,7 @@ FundClientAddressKlass.prototype = {
 
     await oThis._setAddresses();
 
-    var r = await oThis._checkBalanceOfReserveAddress();
+    let r = await oThis._checkBalanceOfReserveAddress();
     if (r.isFailure()) {
       return Promise.resolve(r);
     }
@@ -137,7 +137,7 @@ FundClientAddressKlass.prototype = {
       ),
       workerManagedAddressIds = [];
 
-    for (var i = 0; i < existingWorkerManagedAddresses.length; i++) {
+    for (let i = 0; i < existingWorkerManagedAddresses.length; i++) {
       workerManagedAddressIds.push(existingWorkerManagedAddresses[i].managed_address_id);
     }
 
@@ -153,8 +153,8 @@ FundClientAddressKlass.prototype = {
       )
     );
 
-    for (var i = 0; i < managedAddresses.length; i++) {
-      var addressObj = managedAddresses[i];
+    for (let i = 0; i < managedAddresses.length; i++) {
+      let addressObj = managedAddresses[i];
       if (addressObj.address_type == reserveAddressType) {
         oThis.reserveAddrObj = addressObj;
       } else if (addressObj.address_type == airdropHolderAddressType) {
@@ -179,8 +179,8 @@ FundClientAddressKlass.prototype = {
     const reservePassphraseD = 'no_password',
       ClientActiveWorkerUuidCacheKlass = oThis.ic().getClientActiveWorkerUuidCache();
 
-    for (var i = 0; i < oThis.workerAddrObjs.length; i++) {
-      var workerAddrObj = oThis.workerAddrObjs[i];
+    for (let i = 0; i < oThis.workerAddrObjs.length; i++) {
+      let workerAddrObj = oThis.workerAddrObjs[i];
 
       if (await oThis._isTransferRequired(workerAddrObj.ethereum_address)) {
         //transfer to worker
@@ -228,8 +228,6 @@ FundClientAddressKlass.prototype = {
   /**
    * Check ST Prime Balance of Reserve Address and notify if less
    *
-   * @param {string} ethereumAddress - Address to check balance for
-   *
    * @returns {promise<result>}
    * @private
    */
@@ -268,6 +266,10 @@ FundClientAddressKlass.prototype = {
    * @private
    */
   _isTransferRequired: async function(ethereumAddress) {
+    // Returning directly here for testing. Will remove later.
+    // TODO: Remove the below line.
+    return Promise.resolve(true);
+
     const oThis = this,
       platformProvider = oThis.ic().getPlatformProvider(),
       openSTPlaform = platformProvider.getInstance(),
