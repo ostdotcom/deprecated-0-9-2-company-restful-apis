@@ -169,6 +169,29 @@ const ConfigStrategyModelSpecificPrototype = {
   },
 
   /*
+   *
+   * @params {string}:
+   */
+  getStrategyIdsByKind: async function(kind) {
+    const oThis = this,
+      strategyKindInt = invertedKinds[kind];
+
+    if (strategyKindInt == undefined) {
+      throw 'Error: Improper kind parameter';
+    }
+
+    let query = oThis.select('id').where({ kind: strategyKindInt }),
+      queryResult = await query.fire(),
+      strategyIdsArray = [];
+
+    for (let i = 0; i < queryResult.length; i++) {
+      strategyIdsArray.push(queryResult[i].id);
+    }
+
+    return Promise.resolve(responseHelper.successWithData(strategyIdsArray));
+  },
+
+  /*
   * Get strategy id by passing unencrypted params hash.<br><br>
   *
   * @params {Object} params - hashed_params - SHA of config strategy params.
