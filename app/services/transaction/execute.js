@@ -29,7 +29,6 @@ require(rootPrefix + '/lib/cache_multi_management/managedAddresses');
 require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
 require(rootPrefix + '/lib/cache_management/client_branded_token');
 require(rootPrefix + '/app/models/transaction_log');
-require(rootPrefix + '/config/chain_interaction_constants');
 require(rootPrefix + '/lib/economy_user_balance');
 require(rootPrefix + '/lib/providers/price_oracle');
 

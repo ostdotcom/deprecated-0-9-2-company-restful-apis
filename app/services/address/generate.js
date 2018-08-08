@@ -75,6 +75,7 @@ GenerateAddressKlass.prototype = {
    */
   asyncPerform: async function() {
     var oThis = this,
+      configStrategy = oThis.ic().configStrategy,
       name = oThis.name,
       clientId = oThis.clientId,
       addressType = oThis.addressType,
@@ -149,7 +150,8 @@ GenerateAddressKlass.prototype = {
       address: updateRsp.data['ethereum_address'],
       name: name || '',
       total_airdropped_tokens: 0,
-      token_balance: 0
+      token_balance: 0,
+      utility_chain_id: configStrategy.OST_UTILITY_CHAIN_ID
     };
 
     const userEntityFormatter = new UserEntityFormatterKlass(userData),

@@ -11,9 +11,9 @@ const rootPrefix = '..';
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
 
-const chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
-  conversionRateConstants = require(rootPrefix + '/lib/global_constant/conversion_rates'),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+const conversionRateConstants = require(rootPrefix + '/lib/global_constant/conversion_rates'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  InstanceComposer = require(rootPrefix + '/instance_composer');
 
 /**
  * Update price oracle price points constructor
@@ -26,13 +26,16 @@ const UpdatePriceOraclePricePoints = function() {
 
 UpdatePriceOraclePricePoints.prototype = {
   perform: async function() {
-    if (Object.keys(chainInteractionConstants.UTILITY_PRICE_ORACLES).length == 0) {
+    const oThis = this,
+      configStrategy = oThis.ic().configStrategy;
+
+    if (Object.keys(configStrategy.OST_UTILITY_PRICE_ORACLES).length == 0) {
       throw 'Price oracle contracts not defined';
     }
 
-    for (var baseCurrency in chainInteractionConstants.UTILITY_PRICE_ORACLES) {
+    for (var baseCurrency in configStrategy.OST_UTILITY_PRICE_ORACLES) {
       if (baseCurrency == conversionRateConstants.ost_currency()) {
-        var quoteCurrencies = chainInteractionConstants.UTILITY_PRICE_ORACLES[baseCurrency];
+        var quoteCurrencies = configStrategy.OST_UTILITY_PRICE_ORACLES[baseCurrency];
         for (var quoteCurrency in quoteCurrencies) {
           if (quoteCurrency == conversionRateConstants.usd_currency()) {
             logger.step("Updating quote currency '" + quoteCurrency + "' in base currency '" + baseCurrency + "'");

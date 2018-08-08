@@ -46,54 +46,59 @@ const promiseExecutor = function(onResolve, onReject, params) {
 
   const payload = parsedParams.message.payload;
 
-  let configStrategy = configStrategyHelper.getConfigStrategy(payload.clientId),
-    ic = new InstanceComposer(configStrategy),
-    ExecuteTransferBt = ic.getTransferBtClass();
+  configStrategyHelper.getConfigStrategy(payload.clientId).then(function(configStrategyRsp) {
+    if (configStrategyRsp.isFailure()) {
+      return Promise.reject(configStrategyRsp);
+    }
 
-  let executeTransactionObj = new ExecuteTransferBt({
-    transactionUuid: payload.transactionUuid,
-    clientId: payload.clientId,
-    rateLimitCount: payload.rateLimitCount
-  });
+    let ic = new InstanceComposer(configStrategyRsp.data),
+      ExecuteTransferBt = ic.getTransferBtClass();
 
-  try {
-    executeTransactionObj
-      .perform()
-      .then(function(response) {
-        if (!response.isSuccess()) {
-          if (response.toHash().err.msg == 'lifo fire') {
-            publishToSlowQueue(parsedParams);
+    let executeTransactionObj = new ExecuteTransferBt({
+      transactionUuid: payload.transactionUuid,
+      clientId: payload.clientId,
+      rateLimitCount: payload.rateLimitCount
+    });
+
+    try {
+      executeTransactionObj
+        .perform()
+        .then(function(response) {
+          if (!response.isSuccess()) {
+            if (response.toHash().err.msg == 'lifo fire') {
+              publishToSlowQueue(parsedParams);
+            }
+            logger.error(
+              'e_rmqs_et_1',
+              'Something went wrong in transaction execution unAckCount ->',
+              unAckCount,
+              response,
+              params
+            );
           }
+          unAckCount--;
+          logger.debug('------ unAckCount -> ', unAckCount);
+          // ack RMQ
+          return onResolve();
+        })
+        .catch(function(err) {
           logger.error(
-            'e_rmqs_et_1',
-            'Something went wrong in transaction execution unAckCount ->',
+            'e_rmqs_et_2',
+            'Something went wrong in transaction execution. unAckCount ->',
             unAckCount,
-            response,
+            err,
             params
           );
-        }
-        unAckCount--;
-        logger.debug('------ unAckCount -> ', unAckCount);
-        // ack RMQ
-        return onResolve();
-      })
-      .catch(function(err) {
-        logger.error(
-          'e_rmqs_et_2',
-          'Something went wrong in transaction execution. unAckCount ->',
-          unAckCount,
-          err,
-          params
-        );
-        unAckCount--;
-        // ack RMQ
-        return onResolve();
-      });
-  } catch (err) {
-    unAckCount--;
-    logger.error('Listener could not process transaction.. Catch. unAckCount -> ', unAckCount);
-    return onResolve();
-  }
+          unAckCount--;
+          // ack RMQ
+          return onResolve();
+        });
+    } catch (err) {
+      unAckCount--;
+      logger.error('Listener could not process transaction.. Catch. unAckCount -> ', unAckCount);
+      return onResolve();
+    }
+  });
 };
 
 const publishToSlowQueue = async function(parsedParams) {

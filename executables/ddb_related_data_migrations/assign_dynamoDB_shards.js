@@ -132,8 +132,8 @@ AssignShards.prototype = {
       logger.info('starting for ids >= ', id, ' and < ', endId);
 
       for (let client_id = id; client_id < endId && client_id < oThis.endClientId; client_id++) {
-        let configStrategy = configStrategyHelper.getConfigStrategy(client_id),
-          ic = new InstanceComposer(configStrategy),
+        let configStrategyRsp = await configStrategyHelper.getConfigStrategy(client_id),
+          ic = new InstanceComposer(configStrategyRsp.data),
           AssignShardsForClient = ic.getAssignShardsClass();
 
         let promise = new AssignShardsForClient({

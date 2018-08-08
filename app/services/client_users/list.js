@@ -75,6 +75,7 @@ listUserKlass.prototype = {
    */
   asyncPerform: async function() {
     const oThis = this,
+      configStrategy = oThis.ic().configStrategy,
       EconomyUserBalanceKlass = oThis.ic().getEconomyUserBalance();
 
     await oThis.validateAndSanitize();
@@ -137,6 +138,7 @@ listUserKlass.prototype = {
         name: object['name'] || '',
         uuid: object['uuid'],
         address: object['ethereum_address'],
+        utility_chain_id: configStrategy.OST_UTILITY_CHAIN_ID,
         total_airdropped_tokens: basicHelper.convertToNormal((balanceData || {}).totalAirdroppedTokens).toString(10),
         token_balance: basicHelper.convertToNormal((balanceData || {}).tokenBalance).toString(10)
       };

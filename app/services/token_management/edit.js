@@ -209,7 +209,7 @@ EditBrandedTokenKlass.prototype = {
           entity: 'branded_token',
           identifier: {
             erc20_contract_address: oThis.brandedTokenRecordObject.token_erc20_address,
-            chain_id: configStrategy.UTILITY_CHAIN_ID
+            chain_id: configStrategy.OST_UTILITY_CHAIN_ID
           },
           operation: 'update',
           data: publish_data

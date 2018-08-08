@@ -230,6 +230,7 @@ GetTransactionDetailKlass.prototype = {
    */
   _getEconomyUsers: async function() {
     const oThis = this,
+      configStrategy = oThis.ic().configStrategy,
       userUuids = Object.keys(oThis.economyUserMap),
       economyUsersRecords = await new ManagedAddressModel()
         .select('*')
@@ -243,6 +244,7 @@ GetTransactionDetailKlass.prototype = {
           uuid: currRecord.uuid,
           name: currRecord.name || '',
           address: currRecord.ethereum_address,
+          utility_chain_id: configStrategy.OST_UTILITY_CHAIN_ID,
           kind: new ManagedAddressModel().addressTypes[currRecord.address_type],
           total_airdropped_tokens: 0,
           token_balance: 0

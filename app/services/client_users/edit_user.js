@@ -69,6 +69,7 @@ EditUserKlass.prototype = {
    */
   asyncPerform: async function() {
     const oThis = this,
+      configStrategy = oThis.ic().configStrategy,
       clientId = oThis.clientId,
       userUuid = oThis.userUuid,
       errors_object = [];
@@ -164,6 +165,7 @@ EditUserKlass.prototype = {
       uuid: userUuid,
       name: name,
       address: ethereumAddress,
+      utility_chain_id: configStrategy.OST_UTILITY_CHAIN_ID,
       total_airdropped_tokens: basicHelper.convertToNormal(totalAirdroppedTokens).toString(10),
       token_balance: basicHelper.convertToNormal(tokenBalance).toString(10)
     };

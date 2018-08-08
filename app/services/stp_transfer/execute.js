@@ -76,7 +76,8 @@ ExecuteSTPTransferService.prototype = {
    */
   asyncPerform: async function() {
     const oThis = this,
-      transactionLogModel = oThis.ic().getTransactionLogModel();
+      transactionLogModel = oThis.ic().getTransactionLogModel(),
+      configStrategy = oThis.ic().configStrategy;
 
     await oThis._fetchFromBtCache();
 
@@ -103,9 +104,11 @@ ExecuteSTPTransferService.prototype = {
       );
     }
 
-    let dbRecord = dbResponse.data[oThis.transactionUuid];
+    let dataFromDb = dbResponse.data[oThis.transactionUuid];
 
-    return responseHelper.successWithData(dbRecord);
+    dataFromDb['utility_chain_id'] = configStrategy.OST_UTILITY_CHAIN_ID;
+
+    return responseHelper.successWithData(dataFromDb);
   },
 
   /**

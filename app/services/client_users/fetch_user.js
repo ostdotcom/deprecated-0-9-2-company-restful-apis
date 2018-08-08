@@ -63,6 +63,7 @@ fetchUserKlass.prototype = {
    */
   asyncPerform: async function() {
     const oThis = this,
+      configStrategy = oThis.ic().configStrategy,
       ManagedAddressCacheKlass = oThis.ic().getManagedAddressCache(),
       EconomyUserBalanceKlass = oThis.ic().getEconomyUserBalance();
 
@@ -136,6 +137,7 @@ fetchUserKlass.prototype = {
       uuid: oThis.userUuid,
       name: response['name'],
       address: ethereumAddress,
+      utility_chain_id: configStrategy.OST_UTILITY_CHAIN_ID,
       total_airdropped_tokens: basicHelper.convertToNormal(totalAirdroppedTokens).toString(10),
       token_balance: basicHelper.convertToNormal(tokenBalance).toString(10)
     };
