@@ -343,6 +343,11 @@
     "http_code": "403",
     "code": "GRANT_FORBIDDEN",
     "message": "Cannot proceed with the grant."
+  },
+  "route_prohibited_in_main": {
+    "http_code": "403",
+    "code": "REQUEST_FORBIDDEN",
+    "message": "The request is prohibited in the Main Environment."
   }
 
 }
