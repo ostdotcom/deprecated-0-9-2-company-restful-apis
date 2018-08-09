@@ -33,7 +33,7 @@ router.get('/:id', function(req, res, next) {
     response.data.balance = balanceFormatterResponse.data;
   };
 
-  Promise.resolve(routeHelper.performer(req, res, next, 'getFetch', 'r_v1_b_1', null, dataFormatterFunc));
+  Promise.resolve(routeHelper.performer(req, res, next, 'getBalanceFetchClass', 'r_v1_b_1', null, dataFormatterFunc));
 });
 
 module.exports = router;

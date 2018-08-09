@@ -1,4 +1,4 @@
-'use strict';
+/*'use strict';
 
 const rootPrefix = '..',
   ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/client_worker_managed_address_id'),
@@ -96,3 +96,4 @@ FixStatusKlass.prototype = {
 
 const populateData = new FixStatusKlass();
 populateData.perform().then(console.log);
+*/

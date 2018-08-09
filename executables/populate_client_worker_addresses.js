@@ -1,4 +1,4 @@
-'use strict';
+/*'use strict';
 
 const rootPrefix = '..',
   ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
@@ -63,3 +63,4 @@ PopulateClientAddresses.prototype = {
 
 const populateData = new PopulateClientAddresses();
 populateData.perform().then(logger.debug);
+*/

@@ -1,4 +1,4 @@
-'use strict';
+/*'use strict';
 
 const rootPrefix = '..',
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
@@ -39,3 +39,4 @@ ValidateBalance.prototype = {
 
 let validateBalance = new ValidateBalance();
 validateBalance.perform();
+*/

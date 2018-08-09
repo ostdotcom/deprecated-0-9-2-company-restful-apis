@@ -158,6 +158,6 @@ Fetch.prototype = {
   }
 };
 
-InstanceComposer.registerShadowableClass(Fetch, 'getFetch');
+InstanceComposer.registerShadowableClass(Fetch, 'getBalanceFetchClass');
 
 module.exports = Fetch;
