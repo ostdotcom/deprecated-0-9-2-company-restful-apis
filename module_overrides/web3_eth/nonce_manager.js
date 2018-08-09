@@ -89,9 +89,9 @@ const NonceCacheKlassPrototype = {
       }
 
       let cacheResponse = response.data;
-      oThis.chainId = Object.keys(cacheResponse)[0];
+      oThis.chainId = cacheResponse['chainId'];
 
-      oThis.gethWsProviders = cacheResponse[oThis.chainId];
+      oThis.gethWsProviders = cacheResponse['siblingEndpoints'];
       // Not using JSON.parse as response is an array.
 
       let cacheObject = SharedRedisProvider.getInstance(oThis.consistentBehavior);

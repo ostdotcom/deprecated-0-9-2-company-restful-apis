@@ -220,8 +220,8 @@ const ChainGethProvidersModelModelSpecificPrototype = {
       siblingEndPoints.push(gethEndpoint);
       //throw 'This endpoint does not exist.';
     }
-
-    response[requiredChainId] = siblingEndPoints;
+    response['chainId'] = requiredChainId;
+    response['siblingEndpoints'] = siblingEndPoints;
     return response;
   },
 
