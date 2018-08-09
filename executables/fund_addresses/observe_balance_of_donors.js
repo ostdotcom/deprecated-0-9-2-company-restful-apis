@@ -9,7 +9,15 @@
 const rootPrefix = '../..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
-  openStPlatform = require('@openstfoundation/openst-platform');
+  InstanceComposer = require(rootPrefix + '/instance_composer');
+
+require(rootPrefix + '/lib/providers/platform');
+
+const args = process.argv,
+  config_file_path = args[2],
+  configStrategy = require(config_file_path),
+  instanceComposer = new InstanceComposer(configStrategy),
+  openStPlatform = instanceComposer.getPlatformProvider().getInstance();
 
 /**
  *

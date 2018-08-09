@@ -24,13 +24,20 @@ const rootPrefix = '../../..';
 require(rootPrefix + '/module_overrides/index');
 
 // load External Packages
-const openStPlatform = require('@openstfoundation/openst-platform');
+require(rootPrefix + '/lib/providers/platform');
 
 // Load Packages
 const chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
-  responseHelper = require(rootPrefix + '/lib/formatter/response');
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  InstanceComposer = require(rootPrefix + '/instance_composer');
+
+const args = process.argv,
+  config_file_path = args[2],
+  configStrategy = require(config_file_path),
+  instanceComposer = new InstanceComposer(configStrategy),
+  openStPlatform = instanceComposer.getPlatformProvider().getInstance();
 
 /**
  * constructor for fund addresses with ST PRIME
@@ -57,6 +64,8 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
       if (balanceResponse.isFailure()) return Promise.resolve(balanceResponse);
 
       const balanceBigNumberInWei = balanceResponse.data.balance;
+
+      console.log('====balanceResponse.data.balance', balanceResponse.data.balance);
 
       if (balanceBigNumberInWei.lessThan(minBalanceInWei)) {
         logger.debug("Funding ST' to ", userName);
