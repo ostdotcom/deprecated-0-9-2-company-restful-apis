@@ -12,12 +12,12 @@ const rootPrefix = '../../..',
   basicHelper = require(rootPrefix + '/helpers/basic'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
-  EthAddrPrivateKeyCacheKlass = require(rootPrefix + '/lib/shared_cache_management/address_private_key');
+  EthAddrPrivateKeyCacheKlass = require(rootPrefix + '/lib/shared_cache_management/address_private_key'),
+  AddressesEncryptorKlass = require(rootPrefix + '/lib/encryptors/addresses_encryptor');
 
 require(rootPrefix + '/lib/cache_multi_management/managedAddresses');
 require(rootPrefix + '/lib/cache_management/client_address_salt_mapping');
 require(rootPrefix + '/lib/providers/platform');
-require(rootPrefix + '/lib/encryptors/addresses_encryptor');
 
 /**
  * Generate address klass
@@ -310,8 +310,7 @@ GenerateAddressKlass.prototype = {
    * @return {Promise<*>}
    */
   _updateInDb: async function(company_managed_address_id, eth_address, privateKeyD, managed_address_salt_id) {
-    const oThis = this,
-      AddressesEncryptorKlass = oThis.ic().getAddressEncryptorKlass();
+    const oThis = this;
 
     const addressEncryptorObj = new AddressesEncryptorKlass({ managedAddressSaltId: managed_address_salt_id });
 
