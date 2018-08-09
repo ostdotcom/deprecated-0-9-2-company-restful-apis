@@ -181,7 +181,10 @@ const ChainGethProvidersModelModelSpecificPrototype = {
       chainIds = [],
       chainKinds = [],
       WsProviders = [],
-      RpcProviders = [];
+      RpcProviders = [],
+      requiredChainId = '0',
+      requiredChainKind = null,
+      response = {};
 
     let chainsInfo = await oThis.select('*').fire();
 
@@ -194,8 +197,8 @@ const ChainGethProvidersModelModelSpecificPrototype = {
 
     if (WsProviders.includes(gethEndpoint)) {
       let index = WsProviders.indexOf(gethEndpoint);
-      let requiredChainId = chainIds[index],
-        requiredChainKind = chainKinds[index];
+      requiredChainId = chainIds[index];
+      requiredChainKind = chainKinds[index];
 
       for (let i = 0; i < chainsInfo.length; i++) {
         if (chainsInfo[i].chain_id === requiredChainId && chainsInfo[i].chain_kind === requiredChainKind) {
@@ -204,8 +207,8 @@ const ChainGethProvidersModelModelSpecificPrototype = {
       }
     } else if (RpcProviders.includes(gethEndpoint)) {
       let index = RpcProviders.indexOf(gethEndpoint);
-      let requiredChainId = chainIds[index],
-        requiredChainKind = chainKinds[index];
+      requiredChainId = chainIds[index];
+      requiredChainKind = chainKinds[index];
 
       for (let i = 0; i < chainsInfo.length; i++) {
         if (chainsInfo[i].chain_id === requiredChainId && chainsInfo[i].chain_kind === requiredChainKind) {
@@ -218,7 +221,8 @@ const ChainGethProvidersModelModelSpecificPrototype = {
       //throw 'This endpoint does not exist.';
     }
 
-    return siblingEndPoints;
+    response[requiredChainId] = siblingEndPoints;
+    return response;
   },
 
   /**

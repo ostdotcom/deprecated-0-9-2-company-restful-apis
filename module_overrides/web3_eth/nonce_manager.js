@@ -63,15 +63,6 @@ const NonceManagerKlass = function(params) {
   oThis.promiseQueue = [];
   oThis.processedQueue = [];
   oThis.consistentBehavior = '0';
-
-  // Set cacheImplementer to perform caching operations
-  // oThis.cacheImplementer = oThis.cacheObject.cacheInstance;
-
-  // Set cache key for nonce
-  oThis.cacheKey = `nonce_${oThis.chainKind}_${oThis.address}`;
-  logger.log('NM :: NonceManagerKlass :: oThis.cacheKey: ', oThis.cacheKey);
-  // Set cache key for nonce lock
-  oThis.cacheLockKey = `nonce_${oThis.chainKind}_${oThis.address}_lock`;
 };
 
 const NonceCacheKlassPrototype = {
@@ -86,6 +77,7 @@ const NonceCacheKlassPrototype = {
    */
   deepInit: async function() {
     const oThis = this;
+
     if (oThis.clientId === '0') {
       let gethCacheParams = { gethProvider: oThis.currentWsHost };
       const chainGethProvidersCacheObject = new ChainGethProvidersCache(gethCacheParams);
@@ -96,8 +88,11 @@ const NonceCacheKlassPrototype = {
         return Promise.reject(response);
       }
 
-      oThis.gethWsProviders = response.data;
-      // Not using JSON.parse as response.data returns an array.
+      let cacheResponse = response.data;
+      oThis.chainId = Object.keys(cacheResponse)[0];
+
+      oThis.gethWsProviders = cacheResponse[oThis.chainId];
+      // Not using JSON.parse as response is an array.
 
       let cacheObject = SharedRedisProvider.getInstance(oThis.consistentBehavior);
       oThis.cacheImplementer = cacheObject.cacheInstance;
@@ -124,12 +119,21 @@ const NonceCacheKlassPrototype = {
       let cacheObject = OpenStCache.getInstance(cacheConfigStrategy);
       oThis.cacheImplementer = cacheObject.cacheInstance;
 
+      if (oThis.chainKind === 'value') {
+        oThis.gethWsProviders = JSON.parse(configStrategy.OST_VALUE_GETH_WS_PROVIDERS);
+        oThis.chainId = configStrategy.OST_VALUE_CHAIN_ID;
+      } else {
+        oThis.gethWsProviders = JSON.parse(configStrategy.OST_UTILITY_GETH_WS_PROVIDERS);
+        oThis.chainId = configStrategy.OST_UTILITY_CHAIN_ID;
+      }
       // Using JSON.parse as configStrategy stores these array attributes as string.
-      oThis.gethWsProviders =
-        oThis.chainKind === 'value'
-          ? JSON.parse(configStrategy.OST_VALUE_GETH_WS_PROVIDERS)
-          : JSON.parse(configStrategy.OST_UTILITY_GETH_WS_PROVIDERS);
     }
+
+    // Set cache key for nonce
+    oThis.cacheKey = `nonce_${oThis.chainKind}_${oThis.address}_${oThis.chainId}`;
+    logger.log('NM :: NonceManagerKlass :: oThis.cacheKey: ', oThis.cacheKey);
+    // Set cache key for nonce lock
+    oThis.cacheLockKey = `nonce_${oThis.chainKind}_${oThis.address}_${oThis.chainId}_lock`;
   },
 
   /**
@@ -515,11 +519,11 @@ const NonceCacheKlassPrototype = {
 
     let maxNonceCount = new BigNumber(0),
       isNonceCountAvailable = false,
-      allPendingNonce = new Array();
+      allPendingNonce = [];
 
     // Get the nonce count from the transaction object
     const getNonceFromUnminedTransaction = function(unminedTransactions) {
-      const allNonce = new Array();
+      const allNonce = [];
       if (unminedTransactions) {
         for (let nonceKey in unminedTransactions) {
           const transactionObj = unminedTransactions[nonceKey];
@@ -533,7 +537,7 @@ const NonceCacheKlassPrototype = {
 
     // get the nounce count from pending transations
     const getPendingNonce = function(pendingTransactions) {
-      let allNonce = new Array();
+      let allNonce = [];
       for (let key in pendingTransactions) {
         if (key.toLowerCase() === oThis.address) {
           allNonce = allNonce.concat(getNonceFromUnminedTransaction(pendingTransactions[key]));

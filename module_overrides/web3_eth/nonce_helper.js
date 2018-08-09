@@ -47,10 +47,12 @@ function getInstanceKey(fromAddress, chainKind) {
   let args = Array.prototype.slice.call(arguments);
   return args.join('_');
 }
+
 function getInstance(instanceKey) {
   logger.log('NM :: getInstance :: instanceKey', instanceKey);
   return instanceMap[instanceKey];
 }
+
 function setInstance(instance, instanceKey) {
   if (instanceMap[instanceKey]) {
     logger.error('NM :: setInstance :: called when an instance already exists');
@@ -244,8 +246,8 @@ const NonceHelperKlassPrototype = {
           })
         );
       }
-      let successAddresses = new Array(),
-        failAddresses = new Array();
+      let successAddresses = [],
+        failAddresses = [];
 
       const queuedData = allQueuedTransaction.data.queuedData;
       for (let address in queuedData) {
