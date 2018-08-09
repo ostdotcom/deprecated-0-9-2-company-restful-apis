@@ -14,13 +14,16 @@ const rootPrefix = '../..';
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
 
-const openStPlatform = require('@openstfoundation/openst-platform');
-
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  StakeAndMintInterCommKlass = openStPlatform.services.interComm.stakeAndMint;
+  InstanceComposer = require(rootPrefix + '/instance_composer');
 
 const args = process.argv,
-  filePath = args[2];
+  filePath = args[2],
+  configStrategy = args[3],
+  ic = new InstanceComposer(configStrategy),
+  platformProvider = ic.getPlatformProvider(),
+  openStPlatform = platformProvider.getInstance(),
+  StakeAndMintInterCommKlass = openStPlatform.services.interComm.stakeAndMint;
 
 const stakeAndMintInterCommObj = new StakeAndMintInterCommKlass({ file_path: filePath });
 stakeAndMintInterCommObj.registerInterruptSignalHandlers();

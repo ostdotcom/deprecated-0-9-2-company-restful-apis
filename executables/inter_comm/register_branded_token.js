@@ -11,17 +11,22 @@
  */
 
 const rootPrefix = '../..';
-
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
 
-const openStPlatform = require('@openstfoundation/openst-platform');
+require(rootPrefix + '/lib/providers/platform');
 
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  RegisterBrandedTokenInterComm = openStPlatform.services.interComm.registerBrandedToken;
+const InstanceComposer = require(rootPrefix + '/instance_composer'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
 const args = process.argv,
-  filePath = args[2];
+  filePath = args[2],
+  configStrategy = args[3];
+
+const ic = new InstanceComposer(configStrategy),
+  platformProvider = ic.getPlatformProvider(),
+  openStPlatform = platformProvider.getInstance(),
+  RegisterBrandedTokenInterComm = openStPlatform.services.interComm.registerBrandedToken;
 
 const registerBrandedTokenInterCommObj = new RegisterBrandedTokenInterComm({ file_path: filePath });
 registerBrandedTokenInterCommObj.registerInterruptSignalHandlers();
