@@ -5,21 +5,25 @@ const rootPrefix = '..';
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
 
-const openStPayments = require('@openstfoundation/openst-payments'),
-  SetWorkerKlass = openStPayments.services.workers.setWorker;
-
 const ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/client_worker_managed_address_id'),
   clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id'),
   ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
+  CriticalChainInteractionLogModel = require(rootPrefix + '/app/models/critical_chain_interaction_log'),
+  criticalChainInteractionLogConst = require(rootPrefix + '/lib/global_constant/critical_chain_interaction_log'),
   managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
-  GenerateEthAddressKlass = require(rootPrefix + '/app/services/address/generate'),
   chainIntConstants = require(rootPrefix + '/config/chain_interaction_constants'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
-  errorConfig = basicHelper.fetchErrorConfig(apiVersions.general);
+  errorConfig = basicHelper.fetchErrorConfig(apiVersions.general),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
+  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy'),
+  configStrategyHelper = new ConfigStrategyHelperKlass();
+
+require(rootPrefix + '/app/services/address/generate');
+require(rootPrefix + '/lib/providers/payments');
 
 const addMoreWorkersKlass = function(params) {
   const oThis = this;
@@ -109,6 +113,8 @@ addMoreWorkersKlass.prototype = {
     }
 
     var r = await oThis.associateWorkerAddresses();
+
+    console.log('====r', r);
     return Promise.resolve(r);
   },
 
@@ -142,10 +148,24 @@ addMoreWorkersKlass.prototype = {
       dbFields = ['client_id', 'managed_address_id', 'status', 'created_at', 'updated_at'],
       currentTime = new Date();
 
+    oThis.strategyMap = {};
+
     for (var j = 0; j < oThis.clientIds.length; j++) {
       var clientId = oThis.clientIds[j],
         managedAddressInsertData = [],
         newWorkerUuids = [];
+
+      let getConfigStrategyRsp = await configStrategyHelper.getConfigStrategy(clientId);
+
+      if (getConfigStrategyRsp.isFailure()) {
+        return Promise.reject(getConfigStrategyRsp);
+      }
+
+      oThis.strategyMap[clientId] = getConfigStrategyRsp.data;
+
+      let instanceComposer = new InstanceComposer(getConfigStrategyRsp.data);
+
+      let GenerateEthAddressKlass = instanceComposer.getGenerateAddressClass();
 
       var generateEthAddress = new GenerateEthAddressKlass({
         address_type: managedAddressesConst.workerAddressType,
@@ -160,7 +180,7 @@ addMoreWorkersKlass.prototype = {
         }
 
         const resultData = r.data[r.data.result_type];
-        newWorkerUuids.push(resultData.uuid);
+        newWorkerUuids.push(resultData.id);
       }
 
       const manageAddrObjs = await new ManagedAddressModel().getByUuids(newWorkerUuids);
@@ -246,6 +266,10 @@ addMoreWorkersKlass.prototype = {
         setWorkerObj = null,
         promise = null;
 
+      let instanceComposer = new InstanceComposer(oThis.strategyMap[clientId]);
+      let openStPayments = instanceComposer.getPaymentsProvider().getInstance();
+      let SetWorkerKlass = openStPayments.services.workers.setWorker;
+
       for (var i = 0; i < workerAddrs.length; i++) {
         setWorkerObj = new SetWorkerKlass({
           workers_contract_address: oThis.workerContractAddress,
@@ -288,7 +312,7 @@ addMoreWorkersKlass.prototype = {
       await new ClientWorkerManagedAddressIdModel().markStatusActive(successWorkerAddrIds);
     }
 
-    return responseHelper.successWithData(oThis.clientIdSetWorkerRsp);
+    return responseHelper.successWithData({});
   }
 };
 
