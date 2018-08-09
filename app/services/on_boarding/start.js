@@ -1,10 +1,10 @@
 "use strict";
 
 const rootPrefix = '../../..'
-    , responseHelper = require(rootPrefix + '/lib/formatter/response')
-    , OnBoardingRouterKlass = require(rootPrefix + '/lib/on_boarding/router.js')
-    , basicHelper = require(rootPrefix + '/helpers/basic')
-    , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , OnBoardingRouterKlass = require(rootPrefix + '/lib/on_boarding/router.js')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
+  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
 /**
@@ -49,19 +49,19 @@ StartOnBoardingKlass.prototype = {
     const oThis = this;
 
     return oThis.asyncPerform()
-        .catch(function(error) {
-          if (responseHelper.isCustomResult(error)){
-            return error;
-          } else {
-            logger.error(`${__filename}::perform::catch`);
-            logger.error(error);
-            return responseHelper.error({
-              internal_error_identifier: 's_sam_gsa_1',
-              api_error_identifier: 'unhandled_catch_response',
-              debug_options: {}
-            });
-          }
-        })
+      .catch(function(error) {
+        if (responseHelper.isCustomResult(error)){
+          return error;
+        } else {
+          logger.error(`${__filename}::perform::catch`);
+          logger.error(error);
+          return responseHelper.error({
+            internal_error_identifier: 's_sam_gsa_1',
+            api_error_identifier: 'unhandled_catch_response',
+            debug_options: {}
+          });
+        }
+      })
   },
 
   /**
@@ -104,8 +104,8 @@ StartOnBoardingKlass.prototype = {
     }
 
     if (!oThis.stakeAndMintParams || !oThis.stakeAndMintParams.bt_to_mint ||
-        !oThis.stakeAndMintParams.st_prime_to_mint || !oThis.stakeAndMintParams.client_eth_address ||
-        !oThis.stakeAndMintParams.transaction_hash) {
+      !oThis.stakeAndMintParams.st_prime_to_mint || !oThis.stakeAndMintParams.client_eth_address ||
+      !oThis.stakeAndMintParams.transaction_hash) {
 
       return Promise.reject(responseHelper.error({
         internal_error_identifier: 'sam_gsa_2',
@@ -115,18 +115,10 @@ StartOnBoardingKlass.prototype = {
 
     }
 
-    if (!oThis.airdropParams || !oThis.airdropParams.airdrop_amount || !oThis.airdropParams.airdrop_user_list_type) {
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 'sam_gsa_3',
-        api_error_identifier: 'invalid_api_params',
-        debug_options: {airdropParams: oThis.airdropParams}
-      }));
-    }
-
     return Promise.resolve(responseHelper.successWithData({}));
 
   }
 
-}
+};
 
 module.exports = StartOnBoardingKlass;

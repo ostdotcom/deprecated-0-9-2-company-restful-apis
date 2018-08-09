@@ -28,7 +28,7 @@ router.post('/start', function (req, res, next) {
 router.post('/grant-test-ost', function (req, res, next) {
   const performer = function() {
 
-    if (process.env.CR_ENVIRONMENT == 'production' && process.env.CR_SUB_ENVIRONMENT == 'main') {
+    if (basicHelper.isProduction() && basicHelper.isMainSubEnvironment()) {
 
       let response = responseHelper.error({
         internal_error_identifier: 'r_ob_gto_1',
@@ -75,7 +75,7 @@ router.post('/grant-test-ost', function (req, res, next) {
 router.post('/grant-eth', function (req, res, next) {
   const performer = function() {
 
-    if (process.env.CR_ENVIRONMENT == 'production' && process.env.CR_SUB_ENVIRONMENT == 'main') {
+    if (basicHelper.isProduction() && basicHelper.isMainSubEnvironment()) {
 
       let response = responseHelper.error({
         internal_error_identifier: 'r_ob_gto_1',

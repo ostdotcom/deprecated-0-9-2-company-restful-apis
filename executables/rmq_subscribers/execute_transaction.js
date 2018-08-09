@@ -45,11 +45,11 @@ const promiseExecutor = function (onResolve, onReject, params ) {
 
   const payload = parsedParams.message.payload
     , executeTransactionObj = new ExecuteTransferBt(
-      {
-        transactionUuid: payload.transactionUuid,
-        clientId: payload.clientId,
-        rateLimitCount: payload.rateLimitCount
-      })
+    {
+      transactionUuid: payload.transactionUuid,
+      clientId: payload.clientId,
+      rateLimitCount: payload.rateLimitCount
+    })
   ;
 
   try{
@@ -121,7 +121,7 @@ function handle() {
 
   if ( !PromiseQueueManager.getPendingCount() && !unAckCount ) {
     console.log("SIGINT/SIGTERM handle :: No pending Promises.");
-    process.exit( 0 );
+    process.exit( 1 );
   }
 
 
@@ -132,7 +132,7 @@ function handle() {
     }
     if ( PromiseQueueManager.getPendingCount() <= 0 || unAckCount <= 0 ) {
       console.log("SIGINT/SIGTERM handle :: No pending Promises.");
-      process.exit( 0 );
+      process.exit( 1 );
     } else {
       logger.info('waiting for open tasks to be done.');
       setTimeout(f, 1000);

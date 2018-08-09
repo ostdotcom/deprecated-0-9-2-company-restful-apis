@@ -41,7 +41,7 @@ const validateAndSanitize = function () {
     usageDemo();
     process.exit(1);
   }
-  
+
 };
 
 // validate and sanitize the input params
@@ -154,7 +154,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     if (oThis.interruptSignalObtained) {
       logger.win('* Exiting Process after interrupt signal obtained.');
-      process.exit(0);
+      process.exit(1);
     }
 
     const processNewBlocksAsync = async function () {
@@ -217,7 +217,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
         if (oThis.interruptSignalObtained) {
           logger.win('* Exiting Process after interrupt signal obtained.');
-          process.exit(0);
+          process.exit(1);
         } else {
           oThis.reInit();
         }
@@ -656,11 +656,11 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         ;
 
         clientIdToTxLogModelObjectMap[clientId] = clientIdToTxLogModelObjectMap[clientId] || new transactionLogModelDdb({
-            client_id: clientId,
-            ddb_service: ddbServiceObj,
-            auto_scaling: autoscalingServiceObj,
-            shard_name: shardName
-          });
+          client_id: clientId,
+          ddb_service: ddbServiceObj,
+          auto_scaling: autoscalingServiceObj,
+          shard_name: shardName
+        });
 
         promiseArray.push(clientIdToTxLogModelObjectMap[clientId].updateItem(toProcessData.data));
 
@@ -752,7 +752,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     if (oThis.interruptSignalObtained) {
       logger.win('* Exiting Process after interrupt signal obtained.');
-      process.exit(0);
+      process.exit(1);
     }
   },
 

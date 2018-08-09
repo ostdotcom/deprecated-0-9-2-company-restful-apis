@@ -16,6 +16,7 @@ const rootPrefix = '../../..'
   , ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
   , managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
 ;
 
 /**
@@ -66,10 +67,7 @@ CreateDummyUsers.prototype = {
 
     const oThis = this;
 
-    var r = null;
-
-    r = await oThis.validateParams();
-    if (r.isFailure()) return r;
+    await oThis.validateParams();
 
     // Do NOT wait for this promise to resolve to end request
     oThis.createUserInBackground();
@@ -88,8 +86,17 @@ CreateDummyUsers.prototype = {
 
     const oThis = this;
 
+    //Block request in Main Environment
+    if(basicHelper.isMainSubEnvironment()){
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 'ob_cdu_5',
+        api_error_identifier: 'route_prohibited_in_main',
+        debug_options: {}
+      }));
+    }
+
     if (!oThis.numberOfUsers) {
-      return Promise.resolve(responseHelper.paramValidationError({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 'ob_cdu_1',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['missing_number_of_users'],
@@ -102,7 +109,7 @@ CreateDummyUsers.prototype = {
     }
 
     if (!oThis.clientId) {
-      return Promise.resolve(responseHelper.paramValidationError({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 'ob_cdu_2',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['missing_client_id'],
@@ -114,7 +121,7 @@ CreateDummyUsers.prototype = {
       , clientDetail = await clientBrandedTokenCache.fetch();
 
     if (clientDetail.isFailure()) {
-      return Promise.resolve(responseHelper.paramValidationError({
+      return Promise.reject(responseHelper.paramValidationError({
         internal_error_identifier: 'ob_cdu_3',
         api_error_identifier: 'invalid_api_params',
         params_error_identifiers: ['invalid_client_id'],

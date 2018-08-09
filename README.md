@@ -129,7 +129,6 @@ Run the following command after creating the database.
 ```
 
 * Execute commands related to DynamoDB migrations.
-  * Delete the Dynamo DB data file from "$HOME/openst-setup/logs/shared-local-instance.db". 
   * Create tables needed for DDB framework.
   ```bash
   node executables/ddb_related_data_migrations/create_init_ddb_tables.js

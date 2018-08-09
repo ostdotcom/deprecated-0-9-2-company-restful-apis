@@ -16,6 +16,8 @@ const rootPrefix = '..'
   , v1Dot1ParamErrorConfig = require(rootPrefix + '/config/api_params/v1.1/error_config')
   , internalParamErrorConfig = require(rootPrefix + '/config/api_params/internal/error_config')
   , apiErrorConfig = require(rootPrefix + '/config/api_params/api_error_config')
+  , coreConstants = require(rootPrefix + '/config/core_constants')
+  , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
 ;
 
 /**
@@ -314,6 +316,160 @@ BasicHelperKlass.prototype = {
    */
   isGreaterThanMinWei: function(str) {
     return this.convertToBigNumber(str) >= this.convertToBigNumber(10).toPower(18)
+  },
+
+
+  /**
+   * check if sub environment is main
+   *
+   * @return {Boolean}
+   */
+  isProduction: function() {
+    return (coreConstants.ENVIRONMENT == 'production')
+  },
+
+  /**
+   * check if sub environment is main
+   *
+   * @return {Boolean}
+   */
+  isMainSubEnvironment: function() {
+    return (coreConstants.SUB_ENVIRONMENT == 'main')
+  },
+
+  /**
+   * check if sub environment is Sandbox
+   *
+   * @return {Boolean}
+   */
+  isSandboxSubEnvironment: function() {
+    return (coreConstants.SUB_ENVIRONMENT == 'main')
+  },
+
+  /**
+   * value chain Addresses and Min Balances
+   *
+   * @return {Map}
+   *
+   */
+  valueChainBalanceRequirements: function () {
+    const oThis = this;
+
+    if(oThis.isProduction() && oThis.isMainSubEnvironment()){
+      return {
+        utilityChainOwner: {minBalance: '6', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR},
+        staker: {minBalance: '1', address: chainInteractionConstants.STAKER_ADDR},
+        redeemer: {minBalance: '1', address: chainInteractionConstants.REDEEMER_ADDR},
+        valueRegistrar: {minBalance: '1', address: chainInteractionConstants.VALUE_REGISTRAR_ADDR},
+        valueDeployer: {minBalance: '1', address: chainInteractionConstants.VALUE_DEPLOYER_ADDR},
+        valueOps: {minBalance: '1', address: chainInteractionConstants.VALUE_OPS_ADDR}
+      }
+    } else {
+      return {
+        utilityChainOwner: {minBalance: '60', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR},
+        staker: {minBalance: '10', address: chainInteractionConstants.STAKER_ADDR},
+        redeemer: {minBalance: '10', address: chainInteractionConstants.REDEEMER_ADDR},
+        valueRegistrar: {minBalance: '10', address: chainInteractionConstants.VALUE_REGISTRAR_ADDR},
+        valueDeployer: {minBalance: '10', address: chainInteractionConstants.VALUE_DEPLOYER_ADDR},
+        valueOps: {minBalance: '10', address: chainInteractionConstants.VALUE_OPS_ADDR}
+      }
+    }
+
+  },
+
+  /**
+   * utility chain Addresses and Min Balances
+   *
+   * @return {Map}
+   *
+   */
+  utilityChainBalanceRequirements: function () {
+    const oThis = this;
+
+    if(oThis.isProduction() && oThis.isMainSubEnvironment()){
+      return {
+        utilityChainOwner: {minBalance: '6', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR},
+        staker: {minBalance: '1', address: chainInteractionConstants.STAKER_ADDR},
+        redeemer: {minBalance: '1', address: chainInteractionConstants.REDEEMER_ADDR},
+        utilityRegistrar: {minBalance: '1', address: chainInteractionConstants.UTILITY_REGISTRAR_ADDR},
+        utilityDeployer: {minBalance: '', address: chainInteractionConstants.UTILITY_DEPLOYER_ADDR},
+        utilityOps: {minBalance: '1', address: chainInteractionConstants.UTILITY_OPS_ADDR}
+      }
+    } else {
+      return {
+        utilityChainOwner: {minBalance: '60', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR},
+        staker: {minBalance: '10', address: chainInteractionConstants.STAKER_ADDR},
+        redeemer: {minBalance: '10', address: chainInteractionConstants.REDEEMER_ADDR},
+        utilityRegistrar: {minBalance: '10', address: chainInteractionConstants.UTILITY_REGISTRAR_ADDR},
+        utilityDeployer: {minBalance: '10', address: chainInteractionConstants.UTILITY_DEPLOYER_ADDR},
+        utilityOps: {minBalance: '10', address: chainInteractionConstants.UTILITY_OPS_ADDR}
+      }
+    }
+
+  },
+
+  /**
+   * Alert If ST Prime Balance is below this balance.
+   *
+   * @return {Map}
+   *
+   */
+  reserveAlertBalanceWei: function () {
+    const oThis = this;
+
+    if(oThis.isProduction() && oThis.isMainSubEnvironment()){
+      return oThis.convertToWei(0.5)
+    } else {
+      return oThis.convertToWei(1.1)
+    }
+  },
+
+  /**
+   * ST Prime Balance to Transfer to Workers address
+   *
+   * @return {Map}
+   *
+   */
+  transferSTPrimeToWorker: function () {
+    const oThis = this;
+
+    if(oThis.isProduction() && oThis.isMainSubEnvironment()){
+      return oThis.convertToWei(0.05)
+    } else {
+      return oThis.convertToWei(1)
+    }
+  },
+
+  /**
+   * ST Prime Balance to Transfer to Budget Holder address
+   *
+   * @return {Map}
+   *
+   */
+  transferSTPrimeToBudgetHolder: function () {
+    const oThis = this;
+
+    if(oThis.isProduction() && oThis.isMainSubEnvironment()){
+      return oThis.convertToWei(0.05)
+    } else {
+      return oThis.convertToWei(1)
+    }
+  },
+
+  /**
+   * ST Prime Balance transfer if balance is below this balance.
+   *
+   * @return {Map}
+   *
+   */
+  isSTPrimeTransferRequiredBal: function () {
+    const oThis = this;
+
+    if(oThis.isProduction() && oThis.isMainSubEnvironment()){
+      return oThis.convertToWei(0.04)
+    } else {
+      return oThis.convertToWei(1)
+    }
   }
 
 };

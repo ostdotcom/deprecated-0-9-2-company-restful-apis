@@ -183,7 +183,8 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
    */
   _valueChainMinBalanceFor: function (name) {
     const oThis = this
-      , nameData = oThis._valueChainData[name]
+      , valueChainBalance = basicHelper.valueChainBalanceRequirements()
+      , nameData = valueChainBalance[name]
     ;
 
     if (!nameData) {
@@ -208,7 +209,8 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
    */
   _valueChainAddressFor: function (name) {
     const oThis = this
-      , nameData = oThis._valueChainData[name]
+      , valueChainBalance = basicHelper.valueChainBalanceRequirements()
+      , nameData = valueChainBalance[name]
     ;
 
     if (!nameData) {
@@ -221,22 +223,6 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
     }
 
     return nameData.address;
-  },
-
-  /**
-   * value chain data for users
-   *
-   * @constant
-   *
-   * @private
-   */
-  _valueChainData: {
-    utilityChainOwner: {minBalance: '60', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR},
-    staker: {minBalance: '10', address: chainInteractionConstants.STAKER_ADDR},
-    redeemer: {minBalance: '10', address: chainInteractionConstants.REDEEMER_ADDR},
-    valueRegistrar: {minBalance: '10', address: chainInteractionConstants.VALUE_REGISTRAR_ADDR},
-    valueDeployer: {minBalance: '10', address: chainInteractionConstants.VALUE_DEPLOYER_ADDR},
-    valueOps: {minBalance: '10', address: chainInteractionConstants.VALUE_OPS_ADDR}
   },
 
   /**
