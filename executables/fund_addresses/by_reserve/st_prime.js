@@ -69,7 +69,6 @@ FundUsersWithSTPrimeFromReserveKlass.prototype = {
       // TODO: Remove the where query.
       const clientBrandedTokenRecords = await new ClientBrandedTokenModel()
         .select(['airdrop_contract_addr', 'client_id'])
-        .where({ client_id: 1111 })
         .limit(batchSize)
         .offset(offset)
         .fire();

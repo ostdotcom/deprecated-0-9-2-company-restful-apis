@@ -266,10 +266,6 @@ FundClientAddressKlass.prototype = {
    * @private
    */
   _isTransferRequired: async function(ethereumAddress) {
-    // Returning directly here for testing. Will remove later.
-    // TODO: Remove the below line.
-    return Promise.resolve(true);
-
     const oThis = this,
       platformProvider = oThis.ic().getPlatformProvider(),
       openSTPlaform = platformProvider.getInstance(),
