@@ -17,7 +17,6 @@ const rootPrefix = '../../..',
   transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
-  ClientTrxRateCacheKlass = require(rootPrefix + '/lib/shared_cache_management/client_transactions_rate_limit'),
   commonValidator = require(rootPrefix + '/lib/validators/common'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
   conversionRateConstants = require(rootPrefix + '/lib/global_constant/conversion_rates'),
@@ -31,6 +30,7 @@ require(rootPrefix + '/lib/cache_management/client_branded_token');
 require(rootPrefix + '/app/models/transaction_log');
 require(rootPrefix + '/lib/economy_user_balance');
 require(rootPrefix + '/lib/providers/price_oracle');
+require(rootPrefix + '/lib/cache_management/client_transactions_rate_limit');
 
 /**
  * @constructor
@@ -666,6 +666,7 @@ ExecuteTransactionService.prototype = {
     const oThis = this;
 
     let topicName = 'transaction.execute';
+    let ClientTrxRateCacheKlass = oThis.ic().getClientTransactionsRateLimitCacheClass();
 
     const rateLimitCrossed = await new ClientTrxRateCacheKlass({
       client_id: oThis.clientId

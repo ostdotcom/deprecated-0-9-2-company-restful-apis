@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 /*
  * Main application file
  *
@@ -7,61 +7,69 @@
  * * Reviewed by: Sunil
  */
 
-const rootPrefix = '.'
-;
+const rootPrefix = '.';
 
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
 
-const express = require('express')
-  , path = require('path')
-  , createNamespace = require('continuation-local-storage').createNamespace
-  , morgan = require('morgan')
-  , cookieParser = require('cookie-parser')
-  , bodyParser = require('body-parser')
-  , helmet = require('helmet')
-  , sanitizer = require('express-sanitized')
-  , customUrlParser = require('url')
-  , cluster = require('cluster')
-  , http = require('http')
-;
+const express = require('express'),
+  path = require('path'),
+  createNamespace = require('continuation-local-storage').createNamespace,
+  morgan = require('morgan'),
+  cookieParser = require('cookie-parser'),
+  bodyParser = require('body-parser'),
+  helmet = require('helmet'),
+  sanitizer = require('express-sanitized'),
+  customUrlParser = require('url'),
+  cluster = require('cluster'),
+  http = require('http');
 
-const jwtAuth = require(rootPrefix + '/lib/jwt/jwt_auth')
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , v0TransactionRoutes = require(rootPrefix + '/routes/v0/transaction_types')
-  , v0ClientUsersRoutes = require(rootPrefix + '/routes/v0/client_users')
-  , v1Routes = require(rootPrefix + '/routes/v1/index')
-  , v1Dot1Routes = require(rootPrefix + '/routes/v1.1/index')
-  , internalRoutes = require(rootPrefix + '/routes/internal/index')
-  , inputValidator = require(rootPrefix + '/lib/authentication/validate_signature')
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , customMiddleware = require(rootPrefix + '/helpers/custom_middleware')
-  , SystemServiceStatusesCacheKlass = require(rootPrefix + '/lib/cache_management/system_service_statuses')
-  , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
-  , basicHelper = require(rootPrefix + '/helpers/basic')
-  , errorConfig = basicHelper.fetchErrorConfig(apiVersions.internal)
-;
+const jwtAuth = require(rootPrefix + '/lib/jwt/jwt_auth'),
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  v0TransactionRoutes = require(rootPrefix + '/routes/v0/transaction_types'),
+  v0ClientUsersRoutes = require(rootPrefix + '/routes/v0/client_users'),
+  v1Routes = require(rootPrefix + '/routes/v1/index'),
+  v1Dot1Routes = require(rootPrefix + '/routes/v1.1/index'),
+  internalRoutes = require(rootPrefix + '/routes/internal/index'),
+  inputValidator = require(rootPrefix + '/lib/authentication/validate_signature'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  customMiddleware = require(rootPrefix + '/helpers/custom_middleware'),
+  SystemServiceStatusesCacheKlass = require(rootPrefix + '/lib/shared_cache_management/system_service_statuses'),
+  apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
+  basicHelper = require(rootPrefix + '/helpers/basic'),
+  errorConfig = basicHelper.fetchErrorConfig(apiVersions.internal);
 
-const requestSharedNameSpace = createNamespace('openST-Platform-NameSpace')
-  , systemServiceStatusesCache = new SystemServiceStatusesCacheKlass({})
-;
+const requestSharedNameSpace = createNamespace('openST-Platform-NameSpace'),
+  systemServiceStatusesCache = new SystemServiceStatusesCacheKlass({});
 
-morgan.token('id', function getId (req) {
+morgan.token('id', function getId(req) {
   return req.id;
 });
 
-morgan.token('endTime', function getendTime (req) {
+morgan.token('endTime', function getendTime(req) {
   var hrTime = process.hrtime();
-  return (hrTime[0] * 1000 + hrTime[1] / 1000000);
+  return hrTime[0] * 1000 + hrTime[1] / 1000000;
 });
-morgan.token('endDateTime', function getEndDateTime (req) {
+morgan.token('endDateTime', function getEndDateTime(req) {
   const d = new Date();
-  return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate() + " " + d.getHours() + ":" +
-    d.getMinutes() + ":" + d.getSeconds() + "." + d.getMilliseconds();
+  return (
+    d.getFullYear() +
+    '-' +
+    (d.getMonth() + 1) +
+    '-' +
+    d.getDate() +
+    ' ' +
+    d.getHours() +
+    ':' +
+    d.getMinutes() +
+    ':' +
+    d.getSeconds() +
+    '.' +
+    d.getMilliseconds()
+  );
 });
 
-const assignParams = function (req) {
-
+const assignParams = function(req) {
   logger.requestStartLog(customUrlParser.parse(req.originalUrl).pathname, req.method);
 
   if (req.method == 'POST') {
@@ -69,32 +77,33 @@ const assignParams = function (req) {
   } else if (req.method == 'GET') {
     req.decodedParams = req.query;
   }
-
 };
 
-const validateApiSignature = function (req, res, next){
+const validateApiSignature = function(req, res, next) {
   assignParams(req);
 
   const handleParamValidationResult = function(result) {
-    if(result.isSuccess()){
-      req.decodedParams["client_id"] = result.data["clientId"];
+    if (result.isSuccess()) {
+      req.decodedParams['client_id'] = result.data['clientId'];
       next();
     } else {
-      return responseHelper.error({
-        internal_error_identifier: 'a_1',
-        api_error_identifier: 'unauthorized_api_request',
-        debug_options: {}
-      }).renderResponse(res, errorConfig);
+      return responseHelper
+        .error({
+          internal_error_identifier: 'a_1',
+          api_error_identifier: 'unauthorized_api_request',
+          debug_options: {}
+        })
+        .renderResponse(res, errorConfig);
     }
   };
 
-  return inputValidator.perform(req.decodedParams, customUrlParser.parse(req.originalUrl).pathname)
+  return inputValidator
+    .perform(req.decodedParams, customUrlParser.parse(req.originalUrl).pathname)
     .then(handleParamValidationResult);
 };
 
 // before action for verifying the jwt token and setting the decoded info in req obj
 const decodeJwt = function(req, res, next) {
-
   logger.requestStartLog(customUrlParser.parse(req.originalUrl).pathname, req.method);
 
   if (req.method == 'POST') {
@@ -104,41 +113,34 @@ const decodeJwt = function(req, res, next) {
   }
 
   // Set the decoded params in the re and call the next in control flow.
-  const jwtOnResolve = function (reqParams) {
+  const jwtOnResolve = function(reqParams) {
     req.decodedParams = reqParams.data;
     // Validation passed.
     return next();
   };
 
   // send error, if token is invalid
-  const jwtOnReject = function (err) {
-    return responseHelper.error({
-      internal_error_identifier: 'a_2',
-      api_error_identifier: 'invalid_or_expired_token',
-      debug_options: {}
-    }).renderResponse(res, errorConfig);
+  const jwtOnReject = function(err) {
+    return responseHelper
+      .error({
+        internal_error_identifier: 'a_2',
+        api_error_identifier: 'invalid_or_expired_token',
+        debug_options: {}
+      })
+      .renderResponse(res, errorConfig);
   };
 
   // Verify token
-  Promise.resolve(
-    jwtAuth.verifyToken(token, 'saasApi')
-      .then(
-        jwtOnResolve,
-        jwtOnReject
-      )
-  ).catch(function (err) {
-    logger.notify(
-      'a_3',
-      'JWT Decide Failed',
-      {token: token}
-    );
-    return responseHelper.error({
-      internal_error_identifier: 'a_3',
-      api_error_identifier: 'something_went_wrong',
-      debug_options: {}
-    }).renderResponse(res, errorConfig);
+  Promise.resolve(jwtAuth.verifyToken(token, 'saasApi').then(jwtOnResolve, jwtOnReject)).catch(function(err) {
+    logger.notify('a_3', 'JWT Decide Failed', { token: token });
+    return responseHelper
+      .error({
+        internal_error_identifier: 'a_3',
+        api_error_identifier: 'something_went_wrong',
+        debug_options: {}
+      })
+      .renderResponse(res, errorConfig);
   });
-
 };
 
 // Set request debugging/logging details to shared namespace
@@ -152,64 +154,69 @@ const appendRequestDebugInfo = function(req, res, next) {
 
 // check system service statuses and return error if they are down
 const checkSystemServiceStatuses = async function(req, res, next) {
-
   if (req.method === 'POST') {
     var rParams = req.body;
   } else {
     var rParams = req.query;
   }
 
-  if (rParams && rParams.api_key && ['67ac5a9b79f49bcdba5e', '02db2e7059d66d8e83f2', '771044c4e1f943eb1f77'].includes(rParams.api_key)) {
+  if (
+    rParams &&
+    rParams.api_key &&
+    ['67ac5a9b79f49bcdba5e', '02db2e7059d66d8e83f2', '771044c4e1f943eb1f77'].includes(rParams.api_key)
+  ) {
     logger.info('Bypassing system maintainence checks for', rParams.api_key);
     return next();
   }
 
   const statusRsp = await systemServiceStatusesCache.fetch();
   if (statusRsp.isSuccess && statusRsp.data && statusRsp.data['saas_api_available'] != 1) {
-    return responseHelper.error({
-      internal_error_identifier: 'a_4',
-      api_error_identifier: 'api_under_maintenance',
-      debug_options: {}
-    }).renderResponse(res, errorConfig);
+    return responseHelper
+      .error({
+        internal_error_identifier: 'a_4',
+        api_error_identifier: 'api_under_maintenance',
+        debug_options: {}
+      })
+      .renderResponse(res, errorConfig);
   }
 
   next();
-
 };
 
-const appendInternalVersion = function(req, res, next){
+const appendInternalVersion = function(req, res, next) {
   req.decodedParams.apiVersion = apiVersions.internal;
   next();
 };
 
-const appendV0Version = function(req, res, next){
+const appendV0Version = function(req, res, next) {
   req.decodedParams.apiVersion = apiVersions.v0;
   next();
 };
 
-const appendV1Version = function(req, res, next){
+const appendV1Version = function(req, res, next) {
   req.decodedParams.apiVersion = apiVersions.v1;
   next();
 };
 
-const appendV1Dot1Version = function(req, res, next){
+const appendV1Dot1Version = function(req, res, next) {
   req.decodedParams.apiVersion = apiVersions.v1Dot1;
   next();
 };
 
-const killMasterIfAllWorkersDied = function () {
-  if(onlineWorker==0){
+const killMasterIfAllWorkersDied = function() {
+  if (onlineWorker == 0) {
     console.log('Killing master as all workers are died.');
-    process.exit(1);}
+    process.exit(1);
+  }
 };
 
 // if the process is a master.
 if (cluster.isMaster) {
   // Set worker process title
-  process.title = "Company Restful API node master";
+  process.title = 'Company Restful API node master';
 
   // Fork workers equal to number of CPUs
-  const numWorkers = (process.env.OST_CACHING_ENGINE=='none' ? 1 : (process.env.WORKERS || require('os').cpus().length));
+  const numWorkers = process.env.OST_CACHING_ENGINE == 'none' ? 1 : process.env.WORKERS || require('os').cpus().length;
 
   for (var i = 0; i < numWorkers; i++) {
     // Spawn a new worker process.
@@ -220,7 +227,7 @@ if (cluster.isMaster) {
   cluster.on('listening', function(worker, address) {
     logger.info(`[worker-${worker.id} ] is listening to ${address.port}`);
   });
-  var onlineWorker=0;
+  var onlineWorker = 0;
   // Worker came online. Will start listening shortly
   cluster.on('online', function(worker) {
     logger.info(`[worker-${worker.id}] is online`);
@@ -262,24 +269,27 @@ if (cluster.isMaster) {
       logger.info('Master received SIGTERM. Killing/disconnecting it.');
     });
   });
-
 } else if (cluster.isWorker) {
   // if the process is not a master
 
   // Set worker process title
-  process.title = "Company Restful API node worker-"+cluster.worker.id;
+  process.title = 'Company Restful API node worker-' + cluster.worker.id;
 
   // Create express application instance
   const app = express();
 
   // Load custom middleware and set the worker id
-  app.use(customMiddleware({worker_id: cluster.worker.id}));
+  app.use(customMiddleware({ worker_id: cluster.worker.id }));
   // Load Morgan
-  app.use(morgan('[:id][:endTime] Completed with ":status" in :response-time ms at :endDateTime -  ":res[content-length] bytes" - ":remote-addr" ":remote-user" - "HTTP/:http-version :method :url" - ":referrer" - ":user-agent"'));
+  app.use(
+    morgan(
+      '[:id][:endTime] Completed with ":status" in :response-time ms at :endDateTime -  ":res[content-length] bytes" - ":remote-addr" ":remote-user" - "HTTP/:http-version :method :url" - ":referrer" - ":user-agent"'
+    )
+  );
 
   app.use(helmet());
   app.use(bodyParser.json());
-  app.use(bodyParser.urlencoded({extended: true}));
+  app.use(bodyParser.urlencoded({ extended: true }));
   app.use(cookieParser());
   app.use(express.static(path.join(__dirname, 'public')));
 
@@ -291,35 +301,79 @@ if (cluster.isMaster) {
   // Following are the routes
   app.use('/', internalRoutes);
 
-  app.use('/internal', sanitizer(), checkSystemServiceStatuses, appendRequestDebugInfo, decodeJwt, appendInternalVersion, internalRoutes);
+  app.use(
+    '/internal',
+    sanitizer(),
+    checkSystemServiceStatuses,
+    appendRequestDebugInfo,
+    decodeJwt,
+    appendInternalVersion,
+    internalRoutes
+  );
 
-  app.use('/v1', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), appendV1Version, v1Routes);
+  app.use(
+    '/v1',
+    checkSystemServiceStatuses,
+    appendRequestDebugInfo,
+    validateApiSignature,
+    sanitizer(),
+    appendV1Version,
+    v1Routes
+  );
 
-  app.use('/v1.1', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), appendV1Dot1Version, v1Dot1Routes);
+  app.use(
+    '/v1.1',
+    checkSystemServiceStatuses,
+    appendRequestDebugInfo,
+    validateApiSignature,
+    sanitizer(),
+    appendV1Dot1Version,
+    v1Dot1Routes
+  );
 
-  app.use('/transaction-types', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), appendV0Version, v0TransactionRoutes);
+  app.use(
+    '/transaction-types',
+    checkSystemServiceStatuses,
+    appendRequestDebugInfo,
+    validateApiSignature,
+    sanitizer(),
+    appendV0Version,
+    v0TransactionRoutes
+  );
 
-  app.use('/users', checkSystemServiceStatuses, appendRequestDebugInfo, validateApiSignature, sanitizer(), appendV0Version, v0ClientUsersRoutes);
+  app.use(
+    '/users',
+    checkSystemServiceStatuses,
+    appendRequestDebugInfo,
+    validateApiSignature,
+    sanitizer(),
+    appendV0Version,
+    v0ClientUsersRoutes
+  );
 
-// catch 404 and forward to error handler
-  app.use(function (req, res, next) {
+  // catch 404 and forward to error handler
+  app.use(function(req, res, next) {
     logger.requestStartLog(customUrlParser.parse(req.originalUrl).pathname, req.method);
-    return responseHelper.error({
-      internal_error_identifier: 'a_5',
-      api_error_identifier: 'resource_not_found',
-      debug_options: {}
-    }).renderResponse(res, errorConfig);
+    return responseHelper
+      .error({
+        internal_error_identifier: 'a_5',
+        api_error_identifier: 'resource_not_found',
+        debug_options: {}
+      })
+      .renderResponse(res, errorConfig);
   });
 
-// error handler
-  app.use(function (err, req, res, next) {
+  // error handler
+  app.use(function(err, req, res, next) {
     // set locals, only providing error in development
     logger.notify('a_6', 'Something went wrong', err);
-    return responseHelper.error({
-      internal_error_identifier: 'a_6',
-      api_error_identifier: 'something_went_wrong',
-      debug_options: {}
-    }).renderResponse(res, errorConfig);
+    return responseHelper
+      .error({
+        internal_error_identifier: 'a_6',
+        api_error_identifier: 'something_went_wrong',
+        debug_options: {}
+      })
+      .renderResponse(res, errorConfig);
   });
 
   /**
@@ -342,7 +396,6 @@ if (cluster.isMaster) {
   server.listen(port, 443);
   server.on('error', onError);
   server.on('listening', onListening);
-
 }
 
 /**
@@ -374,9 +427,7 @@ function onError(error) {
     throw error;
   }
 
-  var bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
+  var bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
 
   // handle specific listen errors with friendly messages
   switch (error.code) {
@@ -399,7 +450,5 @@ function onError(error) {
 
 function onListening() {
   var addr = server.address();
-  var bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
+  var bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
 }

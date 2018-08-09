@@ -8,6 +8,8 @@ const rootPrefix = '../..',
 
 const router = express.Router();
 
+require(rootPrefix + '/app/services/balances/fetch');
+
 /**
  * Get balance of user
  *
@@ -17,7 +19,6 @@ const router = express.Router();
  *
  */
 router.get('/:id', function(req, res, next) {
-  const getBalanceKlass = require(rootPrefix + '/app/services/balances/fetch');
   req.decodedParams.apiName = 'get_balance';
   req.decodedParams.id = req.params.id;
 
@@ -32,7 +33,7 @@ router.get('/:id', function(req, res, next) {
     response.data.balance = balanceFormatterResponse.data;
   };
 
-  Promise.resolve(routeHelper.performer(req, res, next, getBalanceKlass, 'r_v1_b_1', null, dataFormatterFunc));
+  Promise.resolve(routeHelper.performer(req, res, next, 'getFetch', 'r_v1_b_1', null, dataFormatterFunc));
 });
 
 module.exports = router;

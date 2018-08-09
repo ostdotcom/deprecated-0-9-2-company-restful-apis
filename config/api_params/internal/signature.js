@@ -82,6 +82,40 @@ const signature = {
     ],
     optional: []
   },
+  grant_ost: {
+    mandatory: [
+      {
+        parameter: 'client_id',
+        error_identifier: 'missing_client_id'
+      },
+      {
+        parameter: 'ethereum_address',
+        error_identifier: 'missing_ethereum_address'
+      },
+      {
+        parameter: 'amount',
+        error_identifier: 'missing_amount'
+      }
+    ],
+    optional: []
+  },
+  grant_eth: {
+    mandatory: [
+      {
+        parameter: 'client_id',
+        error_identifier: 'missing_client_id'
+      },
+      {
+        parameter: 'ethereum_address',
+        error_identifier: 'missing_ethereum_address'
+      },
+      {
+        parameter: 'amount',
+        error_identifier: 'missing_amount'
+      }
+    ],
+    optional: []
+  },
   setup_bt: {
     mandatory: [
       {

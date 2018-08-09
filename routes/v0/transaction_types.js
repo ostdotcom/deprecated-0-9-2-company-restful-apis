@@ -9,13 +9,17 @@ const rootPrefix = '../..',
 
 const router = express.Router();
 
+require(rootPrefix + '/app/services/transaction_kind/list');
+require(rootPrefix + '/app/services/transaction_kind/add_new');
+require(rootPrefix + '/app/services/transaction_kind/edit');
+require(rootPrefix + '/app/services/transaction/execute');
+require(rootPrefix + '/app/services/transaction/get_detail');
+
 /* Get transaction block info for a transaction hash */
 router.get('/list', function(req, res, next) {
   req.decodedParams.apiName = 'list_actions';
 
   req.decodedParams.extra_entities = ['client_tokens', 'price_points'];
-
-  const transactionListKlass = require(rootPrefix + '/app/services/transaction_kind/list');
 
   const afterValidationFunc = async function(serviceParamsPerThisVersion) {
     const serviceParamsPerLatestVersion = util.clone(serviceParamsPerThisVersion);
@@ -40,15 +44,14 @@ router.get('/list', function(req, res, next) {
   };
 
   Promise.resolve(
-    routeHelper.performer(req, res, next, transactionListKlass, 'r_tk_1', afterValidationFunc, dataFormatterFunc)
+    routeHelper.performer(req, res, next, 'getListActionsClass', 'r_tk_1', afterValidationFunc, dataFormatterFunc)
   );
 });
 
 router.post('/create', function(req, res, next) {
   req.decodedParams.apiName = 'create_new_action';
 
-  const newTransactionKlass = require(rootPrefix + '/app/services/transaction_kind/add_new'),
-    clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types');
+  const clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types');
 
   const afterValidationFunc = async function(serviceParamsPerThisVersion) {
     const serviceParamsPerLatestVersion = util.clone(serviceParamsPerThisVersion);
@@ -80,14 +83,12 @@ router.post('/create', function(req, res, next) {
   };
 
   Promise.resolve(
-    routeHelper.performer(req, res, next, newTransactionKlass, 'r_tk_2', afterValidationFunc, dataFormatterFunc)
+    routeHelper.performer(req, res, next, 'getAddNewActionClass', 'r_tk_2', afterValidationFunc, dataFormatterFunc)
   );
 });
 
 router.post('/edit', function(req, res, next) {
   req.decodedParams.apiName = 'update_action';
-
-  const editTransactionKlass = require(rootPrefix + '/app/services/transaction_kind/edit');
 
   const afterValidationFunc = async function(serviceParamsPerThisVersion) {
     const serviceParamsPerLatestVersion = util.clone(serviceParamsPerThisVersion);
@@ -115,14 +116,12 @@ router.post('/edit', function(req, res, next) {
   };
 
   Promise.resolve(
-    routeHelper.performer(req, res, next, editTransactionKlass, 'r_tk_3', afterValidationFunc, dataFormatterFunc)
+    routeHelper.performer(req, res, next, 'getEditActionClass', 'r_tk_3', afterValidationFunc, dataFormatterFunc)
   );
 });
 
 router.post('/execute', function(req, res, next) {
   req.decodedParams.apiName = 'execute_transaction';
-
-  const executeTransactionKlass = require(rootPrefix + '/app/services/transaction/execute');
 
   const afterValidationFunc = async function(serviceParamsPerThisVersion) {
     const serviceParamsPerLatestVersion = util.clone(serviceParamsPerThisVersion);
@@ -151,14 +150,20 @@ router.post('/execute', function(req, res, next) {
   };
 
   Promise.resolve(
-    routeHelper.performer(req, res, next, executeTransactionKlass, 'r_tk_4', afterValidationFunc, dataFormatterFunc)
+    routeHelper.performer(
+      req,
+      res,
+      next,
+      'getExecuteTransactionService',
+      'r_tk_4',
+      afterValidationFunc,
+      dataFormatterFunc
+    )
   );
 });
 
 router.post('/status', function(req, res, next) {
   req.decodedParams.apiName = 'get_transaction_detail';
-
-  const getDetailTransactionKlass = require(rootPrefix + '/app/services/transaction/get_detail');
 
   const dataFormatterFunc = async function(serviceResponse) {
     const transactionTypes = serviceResponse.data.transaction_types,
@@ -199,7 +204,9 @@ router.post('/status', function(req, res, next) {
     serviceResponse.data.transaction_types = formattedTransactionTypes;
   };
 
-  Promise.resolve(routeHelper.performer(req, res, next, getDetailTransactionKlass, 'r_tk_5', null, dataFormatterFunc));
+  Promise.resolve(
+    routeHelper.performer(req, res, next, 'getGetTransactionDetailKlass', 'r_tk_5', null, dataFormatterFunc)
+  );
 });
 
 module.exports = router;

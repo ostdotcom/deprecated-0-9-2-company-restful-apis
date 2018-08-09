@@ -47,6 +47,11 @@ const errorConfig = {
     code: 'missing',
     message: 'Missing ethereum_addresses'
   },
+  missing_ethereum_address: {
+    parameter: 'ethereum_address',
+    code: 'missing',
+    message: 'Missing ethereum_address'
+  },
   missing_uuids: {
     parameter: 'uuids',
     code: 'missing',

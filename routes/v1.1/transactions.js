@@ -8,6 +8,9 @@ const rootPrefix = '../..',
 
 const router = express.Router();
 
+require(rootPrefix + '/app/services/transaction/execute');
+require(rootPrefix + '/app/services/transaction/get');
+
 //TODO: Try to reuse code from v1 transactions router file
 
 /**
@@ -24,8 +27,6 @@ const router = express.Router();
 router.post('/', function(req, res, next) {
   req.decodedParams.apiName = 'execute_transaction';
 
-  const ExecuteTransactionService = require(rootPrefix + '/app/services/transaction/execute');
-
   const dataFormatterFunc = async function(response) {
     const transactionEntityFormatter = new TransactionEntityFormatterKlass(response.data),
       transactionEntityFormatterRsp = await transactionEntityFormatter.perform();
@@ -39,7 +40,7 @@ router.post('/', function(req, res, next) {
   };
 
   Promise.resolve(
-    routeHelper.performer(req, res, next, ExecuteTransactionService, 'r_v1.1_t_1', null, dataFormatterFunc)
+    routeHelper.performer(req, res, next, 'getExecuteTransactionService', 'r_v1.1_t_1', null, dataFormatterFunc)
   );
 });
 
@@ -99,7 +100,6 @@ router.get('/', function(req, res, next) {
  * @routeparam {number} :id (mandatory) - id of the transaction
  */
 router.get('/:id', function(req, res, next) {
-  const GetTransactionService = require(rootPrefix + '/app/services/transaction/get');
   req.decodedParams.apiName = 'get_transaction';
   req.decodedParams.id = req.params.id;
 
@@ -114,7 +114,9 @@ router.get('/:id', function(req, res, next) {
     response.data.transaction = transactionEntityFormatterRsp.data;
   };
 
-  Promise.resolve(routeHelper.performer(req, res, next, GetTransactionService, 'r_v1.1_t_3', null, dataFormatterFunc));
+  Promise.resolve(
+    routeHelper.performer(req, res, next, 'getGetTransactionsService', 'r_v1.1_t_3', null, dataFormatterFunc)
+  );
 });
 
 module.exports = router;

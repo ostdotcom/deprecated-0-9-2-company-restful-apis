@@ -5,7 +5,7 @@ const rootPrefix = '..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   apiParamsValidator = require(rootPrefix + '/lib/validators/api_params'),
-  ClientConfigStrategiesCache = require(rootPrefix + '/lib/shared_cache_management/client_config_strategies'),
+  ConfigStrategyHelper = require(rootPrefix + '/helpers/config_strategy'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
 const routeMethods = {
@@ -88,17 +88,14 @@ const routeMethods = {
   _fetchConfigStrategy: async function(client_id) {
     const oThis = this;
 
-    let configStrategy = {};
+    let configStrategyHelper = new ConfigStrategyHelper(),
+      configStrategyRsp = await configStrategyHelper.getConfigStrategy(client_id);
 
-    let clientConfigStrategiesCache = new ClientConfigStrategiesCache({ client_id: client_id });
+    if (configStrategyRsp.isFailure()) {
+      return Promise.reject(configStrategyRsp);
+    }
 
-    let clientConfigStrategiesResponse = await clientConfigStrategiesCache.fetch();
-
-    let strategy_ids = clientConfigStrategiesResponse.data;
-
-    //TODO: Get strategy using ids from in-memory cache
-
-    return {};
+    return configStrategyRsp.data;
   }
 };
 

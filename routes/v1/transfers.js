@@ -8,6 +8,9 @@ const rootPrefix = '../..',
 
 const router = express.Router();
 
+require(rootPrefix + '/app/services/stp_transfer/execute');
+require(rootPrefix + '/app/services/stp_transfer/get');
+
 /**
  * @name Execute a STP Transfer
  *
@@ -18,8 +21,6 @@ const router = express.Router();
  */
 router.post('/', function(req, res, next) {
   req.decodedParams.apiName = 'execute_stp_transfer';
-
-  const ExecuteSTPTransferService = require(rootPrefix + '/app/services/stp_transfer/execute');
 
   const dataFormatterFunc = async function(response) {
     let stPrimeTransferFormatter = new StPrimeTransferFormatter(response.data),
@@ -33,7 +34,7 @@ router.post('/', function(req, res, next) {
   };
 
   Promise.resolve(
-    routeHelper.performer(req, res, next, ExecuteSTPTransferService, 'r_v1_stp_t_1', null, dataFormatterFunc)
+    routeHelper.performer(req, res, next, 'getExecuteSTPTransferService', 'r_v1_stp_t_1', null, dataFormatterFunc)
   );
 });
 
@@ -94,8 +95,6 @@ router.get('/', function(req, res, next) {
  * @routeparam {number} :id (mandatory) - id of the transaction
  */
 router.get('/:id', function(req, res, next) {
-  const GetSTPTransferService = require(rootPrefix + '/app/services/stp_transfer/get');
-
   req.decodedParams.apiName = 'get_stp_transfer';
   req.decodedParams.id = req.params.id;
 
@@ -111,7 +110,7 @@ router.get('/:id', function(req, res, next) {
   };
 
   Promise.resolve(
-    routeHelper.performer(req, res, next, GetSTPTransferService, 'r_v1_stp_t_4', null, dataFormatterFunc)
+    routeHelper.performer(req, res, next, 'getGetStPTransferService', 'r_v1_stp_t_4', null, dataFormatterFunc)
   );
 });
 

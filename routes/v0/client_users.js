@@ -5,7 +5,6 @@ const express = require('express');
 const rootPrefix = '../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  getAirdropStatusKlass = require(rootPrefix + '/app/services/airdrop_management/get_airdrop_status'),
   ucBalanceFetcherKlass = require(rootPrefix + '/app/services/address/utilityChainBalancesFetcher'),
   managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
   routeHelper = require(rootPrefix + '/routes/helper'),
@@ -18,6 +17,12 @@ const rootPrefix = '../..',
   errorConfig = basicHelper.fetchErrorConfig(apiVersions.v0);
 
 const router = express.Router();
+
+require(rootPrefix + '/app/services/address/generate');
+require(rootPrefix + '/app/services/client_users/edit_user');
+require(rootPrefix + '/app/services/client_users/list');
+require(rootPrefix + '/app/services/airdrop_management/start');
+require(rootPrefix + '/app/services/airdrop_management/get_airdrop_status');
 
 /**
  * Create a new user
@@ -33,8 +38,6 @@ router.post('/create', function(req, res, next) {
   req.decodedParams.apiName = 'create_user';
   req.decodedParams.address_type = managedAddressesConst.userAddressType;
 
-  const CreateUserKlass = require(rootPrefix + '/app/services/address/generate');
-
   const dataFormatterFunc = async function(response) {
     const userEntityFormatterRsp = await new UserEntityFormatterKlass(response.data.user).perform();
 
@@ -44,7 +47,9 @@ router.post('/create', function(req, res, next) {
     response.data.economy_users = [userEntityFormatterRsp.data];
   };
 
-  Promise.resolve(routeHelper.performer(req, res, next, CreateUserKlass, 'r_v0_u_1', null, dataFormatterFunc));
+  Promise.resolve(
+    routeHelper.performer(req, res, next, 'getGenerateAddressClass', 'r_v0_u_1', null, dataFormatterFunc)
+  );
 });
 
 /**
@@ -60,8 +65,6 @@ router.post('/create', function(req, res, next) {
  */
 router.post('/edit', function(req, res, next) {
   req.decodedParams.apiName = 'edit_user';
-
-  const EditUserKlass = require(rootPrefix + '/app/services/client_users/edit_user');
 
   const afterValidationFunc = async function(serviceParamsPerThisVersion) {
     const serviceParamsPerLatestVersion = util.clone(serviceParamsPerThisVersion);
@@ -81,7 +84,7 @@ router.post('/edit', function(req, res, next) {
   };
 
   Promise.resolve(
-    routeHelper.performer(req, res, next, EditUserKlass, 'r_v0_u_2', afterValidationFunc, dataFormatterFunc)
+    routeHelper.performer(req, res, next, 'getEditUserClass', 'r_v0_u_2', afterValidationFunc, dataFormatterFunc)
   );
 });
 
@@ -100,8 +103,6 @@ router.post('/edit', function(req, res, next) {
  */
 router.get('/list', function(req, res, next) {
   req.decodedParams.apiName = 'list_users';
-
-  const ListUsersKlass = require(rootPrefix + '/app/services/client_users/list');
 
   const afterValidationFunc = async function(serviceParamsPerThisVersion) {
     const serviceParamsPerLatestVersion = util.clone(serviceParamsPerThisVersion);
@@ -150,7 +151,7 @@ router.get('/list', function(req, res, next) {
   };
 
   Promise.resolve(
-    routeHelper.performer(req, res, next, ListUsersKlass, 'r_v0_u_3', afterValidationFunc, dataFormatterFunc)
+    routeHelper.performer(req, res, next, 'getListUserClass', 'r_v0_u_3', afterValidationFunc, dataFormatterFunc)
   );
 });
 
@@ -167,8 +168,6 @@ router.get('/list', function(req, res, next) {
  */
 router.post('/airdrop/drop', function(req, res, next) {
   req.decodedParams.apiName = 'start_airdrop';
-
-  const StartAirdropKlass = require(rootPrefix + '/app/services/airdrop_management/start');
 
   const afterValidationFunc = async function(serviceParamsPerThisVersion) {
     const serviceParamsPerLatestVersion = util.clone(serviceParamsPerThisVersion);
@@ -192,7 +191,7 @@ router.post('/airdrop/drop', function(req, res, next) {
   };
 
   Promise.resolve(
-    routeHelper.performer(req, res, next, StartAirdropKlass, 'r_su_3', afterValidationFunc, dataFormatterFunc)
+    routeHelper.performer(req, res, next, 'getStartAirdropClass', 'r_su_3', afterValidationFunc, dataFormatterFunc)
   );
 });
 
@@ -218,7 +217,7 @@ router.get('/airdrop/status', function(req, res, next) {
     response.data = airdropEntityFormatterRsp.data;
   };
 
-  Promise.resolve(routeHelper.performer(req, res, next, getAirdropStatusKlass, 'r_cu_7', null, dataFormatterFunc));
+  Promise.resolve(routeHelper.performer(req, res, next, 'getAirdropStatusClass', 'r_cu_7', null, dataFormatterFunc));
 });
 
 /* Get status of Airdrop request */
