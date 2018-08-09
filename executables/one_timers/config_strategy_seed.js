@@ -3,7 +3,7 @@
 /*
 *
 *
-* Usage :  node executables/one_timers/seed.js managed_address_salt_id
+* Usage :  node executables/one_timers/config_strategy_seed.js managed_address_salt_id
 *
 * Pass managed_address_salt_id as argument when running this script.
 *
