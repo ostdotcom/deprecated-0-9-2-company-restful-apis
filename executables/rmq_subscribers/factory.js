@@ -98,7 +98,7 @@ require(rootPrefix + '/lib/allocate_airdrop/start_airdrop.js');
 // require(rootPrefix +
 //   '/lib/stake_and_mint/block_scanner_status.js');
 require(rootPrefix + '/lib/airdrop_management/distribute_tokens/user_airdrop_contract_approve');
-// require(rootPrefix + '/lib/transactions/stPrime_transfer');
+require(rootPrefix + '/lib/transactions/stPrime_transfer');
 
 const topicPerformers = {};
 
@@ -139,6 +139,7 @@ const topicPerformers = {};
 
 topicPerformers[notificationTopics.airdrop_approve_contract] = 'getUserAirdropContractApproveClass';
 topicPerformers[notificationTopics.airdropAllocateTokens] = 'getStartAllocateAirdropClass';
+topicPerformers[notificationTopics.stpTransfer] = 'getTransferSTPrimeClass';
 
 const InstanceComposer = require(rootPrefix + '/instance_composer'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy'),
