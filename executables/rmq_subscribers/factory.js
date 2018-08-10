@@ -17,7 +17,8 @@ const openSTNotification = require('@openstfoundation/openst-notification'),
 
 const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  notificationTopics = require(rootPrefix + '/lib/global_constant/notification_topics');
+  notificationTopics = require(rootPrefix + '/lib/global_constant/notification_topics'),
+  IntercomStatusKlass = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js');
 
 const usageDemo = function() {
   logger.log('usage:', 'node ./executables/rmq_subscribers/factory.js processLockId queueSuffix topicsToSubscribe');
@@ -79,67 +80,44 @@ ProcessLocker.canStartProcess({ process_title: 'executables_rmq_subscribers_fact
 
 const queueName = 'executables_rmq_subscribers_factory_' + queueSuffix;
 
-// require(rootPrefix + '/lib/on_boarding/propose.js');
-// require(rootPrefix + '/lib/on_boarding/deploy_airdrop.js');
-// require(rootPrefix + '/lib/on_boarding/set_workers.js');
-// require(rootPrefix + '/lib/on_boarding/set_price_oracle.js');
-// require(rootPrefix +
-//   '/lib/on_boarding/set_accepted_margin.js');
+require(rootPrefix + '/lib/on_boarding/propose.js');
+require(rootPrefix + '/lib/on_boarding/deploy_airdrop.js');
+require(rootPrefix + '/lib/on_boarding/set_workers.js');
+require(rootPrefix + '/lib/on_boarding/set_price_oracle.js');
+require(rootPrefix + '/lib/on_boarding/set_accepted_margin.js');
 require(rootPrefix + '/lib/allocate_airdrop/start_airdrop.js');
-// require(rootPrefix +
-//   '/lib/stake_and_mint/verify_transfer_to_staker.js');
-// require(rootPrefix + '/lib/stake_and_mint/approve.js');
-// require(rootPrefix +
-//   '/lib/stake_and_mint/start/st_prime.js');
-// require(rootPrefix +
-//   '/lib/stake_and_mint/start/branded_token.js');
-// require(rootPrefix +
-//   '/lib/stake_and_mint/intercomm_status.js');
-// require(rootPrefix +
-//   '/lib/stake_and_mint/block_scanner_status.js');
+require(rootPrefix + '/lib/stake_and_mint/verify_transfer_to_staker.js');
+require(rootPrefix + '/lib/stake_and_mint/approve.js');
+require(rootPrefix + '/lib/stake_and_mint/start/st_prime.js');
+require(rootPrefix + '/lib/stake_and_mint/start/branded_token.js');
 require(rootPrefix + '/lib/airdrop_management/distribute_tokens/user_airdrop_contract_approve');
 require(rootPrefix + '/lib/transactions/stPrime_transfer');
 
-const topicPerformers = {};
+const icDrivenTopicPerformers = {};
 
-// topicPerformers[notificationTopics.onBoardingPropose] = require(rootPrefix + '/lib/on_boarding/propose.js');
-// topicPerformers[notificationTopics.onBoardingDeployAirdrop] = require(rootPrefix +
-//   '/lib/on_boarding/deploy_airdrop.js');
-// topicPerformers[notificationTopics.onBoardingSetWorkers] = require(rootPrefix + '/lib/on_boarding/set_workers.js');
-// topicPerformers[notificationTopics.onBoardingSetPriceOracle] = require(rootPrefix +
-//   '/lib/on_boarding/set_price_oracle.js');
-// topicPerformers[notificationTopics.onBoardingSetAcceptedMargin] = require(rootPrefix +
-//   '/lib/on_boarding/set_accepted_margin.js');
-// topicPerformers[notificationTopics.airdropAllocateTokens] = require(rootPrefix +
-//   '/lib/allocate_airdrop/start_airdrop.js');
-// topicPerformers[notificationTopics.stakeAndMintInitTransfer] = require(rootPrefix +
-//   '/lib/stake_and_mint/verify_transfer_to_staker.js');
-// topicPerformers[notificationTopics.stakeAndMintApprove] = require(rootPrefix + '/lib/stake_and_mint/approve.js');
-// topicPerformers[notificationTopics.stakeAndMintForSTPrime] = require(rootPrefix +
-//   '/lib/stake_and_mint/start/st_prime.js');
-// topicPerformers[notificationTopics.stakeAndMintForBT] = require(rootPrefix +
-//   '/lib/stake_and_mint/start/branded_token.js');
-// topicPerformers[notificationTopics.processStakingOnVcStart] = require(rootPrefix +
-//   '/lib/stake_and_mint/intercomm_status.js');
-// topicPerformers[notificationTopics.processStakingOnVcDone] = require(rootPrefix +
-//   '/lib/stake_and_mint/intercomm_status.js');
-// topicPerformers[notificationTopics.processMintingOnUcStart] = require(rootPrefix +
-//   '/lib/stake_and_mint/intercomm_status.js');
-// topicPerformers[notificationTopics.processMintingOnUcDone] = require(rootPrefix +
-//   '/lib/stake_and_mint/intercomm_status.js');
-// topicPerformers[notificationTopics.claimTokenOnUcStart] = require(rootPrefix +
-//   '/lib/stake_and_mint/intercomm_status.js');
-// topicPerformers[notificationTopics.claimTokenOnUcDone] = require(rootPrefix +
-//   '/lib/stake_and_mint/intercomm_status.js');
-// topicPerformers[notificationTopics.settleTokenBalanceOnUcDone] = require(rootPrefix +
-//   '/lib/stake_and_mint/block_scanner_status.js');
-// topicPerformers[notificationTopics.airdrop_approve_contract] = require(rootPrefix +
-//   '/lib/airdrop_management/distribute_tokens/user_airdrop_contract_approve');
-// topicPerformers[notificationTopics.stpTransfer] = require(rootPrefix + '/lib/transactions/stPrime_transfer');
+icDrivenTopicPerformers[notificationTopics.onBoardingDeployAirdrop] = 'getSetupAirdropContractClass';
+icDrivenTopicPerformers[notificationTopics.onBoardingPropose] = 'getProposeKlass';
+icDrivenTopicPerformers[notificationTopics.onBoardingSetWorkers] = 'getSetWorkersClass';
+icDrivenTopicPerformers[notificationTopics.onBoardingSetPriceOracle] = 'getSetPriceOracleClass';
+icDrivenTopicPerformers[notificationTopics.onBoardingSetAcceptedMargin] = 'getSetAcceptedMarginClass';
 
-topicPerformers[notificationTopics.airdrop_approve_contract] = 'getUserAirdropContractApproveClass';
-topicPerformers[notificationTopics.airdropAllocateTokens] = 'getStartAllocateAirdropClass';
-topicPerformers[notificationTopics.stpTransfer] = 'getTransferSTPrimeClass';
+icDrivenTopicPerformers[notificationTopics.stakeAndMintInitTransfer] = 'getVerifyTransferToStakerKlass';
+icDrivenTopicPerformers[notificationTopics.stakeAndMintApprove] = 'getApproveKlass';
+icDrivenTopicPerformers[notificationTopics.stakeAndMintForSTPrime] = 'getStPrimeStartMintKlass';
+icDrivenTopicPerformers[notificationTopics.stakeAndMintForBT] = 'getBrandedTokenStartMintKlass';
+
+icDrivenTopicPerformers[notificationTopics.airdrop_approve_contract] = 'getUserAirdropContractApproveClass';
+icDrivenTopicPerformers[notificationTopics.airdropAllocateTokens] = 'getStartAllocateAirdropClass';
+icDrivenTopicPerformers[notificationTopics.stpTransfer] = 'getTransferSTPrimeClass';
+
+let nonIcDrivenPerformers = {};
+
+nonIcDrivenPerformers[notificationTopics.processStakingOnVcStart] = IntercomStatusKlass;
+nonIcDrivenPerformers[notificationTopics.processStakingOnVcDone] = IntercomStatusKlass;
+nonIcDrivenPerformers[notificationTopics.processMintingOnUcStart] = IntercomStatusKlass;
+nonIcDrivenPerformers[notificationTopics.processMintingOnUcDone] = IntercomStatusKlass;
+nonIcDrivenPerformers[notificationTopics.claimTokenOnUcStart] = IntercomStatusKlass;
+nonIcDrivenPerformers[notificationTopics.claimTokenOnUcDone] = IntercomStatusKlass;
 
 const InstanceComposer = require(rootPrefix + '/instance_composer'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy'),
@@ -153,23 +131,10 @@ const promiseExecutor = function(onResolve, onReject, params) {
   // Only one topic is supported here. Neglecting the unsupported cases.
   if (topics.length != 1) return Promise.resolve();
 
-  configStrategyHelper.getConfigStrategy(parsedParams.message.payload.client_id).then(function(configStrategyRsp) {
-    if (configStrategyRsp.isFailure()) {
-      return onReject(configStrategyRsp);
-    }
+  let topic = topics[0];
 
-    let topic = topics[0],
-      instanceComposer = new InstanceComposer(configStrategyRsp.data);
-
-    let getterMethod = instanceComposer[topicPerformers[topic]];
-    let PerformerKlass = getterMethod.apply(instanceComposer);
-
-    if (!PerformerKlass) {
-      return onReject(`no performer Klass Found for ${topicPerformers[topic]}`);
-    }
-
-    logger.log('topic', topic);
-    logger.log('parsedParams.message.payload', parsedParams.message.payload);
+  if (nonIcDrivenPerformers.hasOwnProperty(topic)) {
+    let PerformerKlass = nonIcDrivenPerformers[topic];
 
     return new PerformerKlass(parsedParams.message.payload)
       .perform()
@@ -178,7 +143,35 @@ const promiseExecutor = function(onResolve, onReject, params) {
         logger.error('error in processor', error);
         return onResolve();
       });
-  });
+  } else if (icDrivenTopicPerformers.hasOwnProperty(topic)) {
+    configStrategyHelper.getConfigStrategy(parsedParams.message.payload.client_id).then(function(configStrategyRsp) {
+      if (configStrategyRsp.isFailure()) {
+        return onReject(configStrategyRsp);
+      }
+
+      let instanceComposer = new InstanceComposer(configStrategyRsp.data);
+
+      let getterMethod = instanceComposer[icDrivenTopicPerformers[topic]];
+      let PerformerKlass = getterMethod.apply(instanceComposer);
+
+      if (!PerformerKlass) {
+        return onReject(`no performer Klass Found for ${icDrivenTopicPerformers[topic]}`);
+      }
+
+      logger.log('topic', topic);
+      logger.log('parsedParams.message.payload', parsedParams.message.payload);
+
+      return new PerformerKlass(parsedParams.message.payload)
+        .perform()
+        .then(onResolve)
+        .catch(function(error) {
+          logger.error('error in processor', error);
+          return onResolve();
+        });
+    });
+  } else {
+    return onReject(`no performer Klass Found for ${topic}`);
+  }
 };
 
 const PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseExecutor, {
