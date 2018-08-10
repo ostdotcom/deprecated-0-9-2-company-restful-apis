@@ -44,11 +44,11 @@ const Derived = function() {
   oThis.unlockAccount = function() {
     logger.debug('HACKED unlockAccount INVOKED');
 
-    const chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
+    const coreConstants = require(rootPrefix + '/config/core_constants'),
       addressToUnlock = arguments['0'];
 
     // if address has passphrase, use the base package unlock account.
-    if (chainInteractionConstants.ADDRESSES_TO_UNLOCK_VIA_KEYSTORE_FILE_MAP[addressToUnlock.toLowerCase()]) {
+    if (coreConstants.ADDRESSES_TO_UNLOCK_VIA_KEYSTORE_FILE_MAP[addressToUnlock.toLowerCase()]) {
       logger.info('WEB3_OVERRIDE: performing unlockAccount using passphrase for address:', addressToUnlock);
       return _unlockAccount.apply(this, arguments);
     } else {

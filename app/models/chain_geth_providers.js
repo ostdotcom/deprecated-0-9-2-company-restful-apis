@@ -182,8 +182,8 @@ const ChainGethProvidersModelModelSpecificPrototype = {
       chainKinds = [],
       WsProviders = [],
       RpcProviders = [],
-      requiredChainId = '0',
-      requiredChainKind = null,
+      requiredChainId,
+      requiredChainKind,
       response = {};
 
     let chainsInfo = await oThis.select('*').fire();
@@ -216,11 +216,14 @@ const ChainGethProvidersModelModelSpecificPrototype = {
         }
       }
     } else {
-      // TODO: Change logic here later.
+      // TODO: Change logic here later. Throw error.
       siblingEndPoints.push(gethEndpoint);
+      requiredChainKind = 'utility';
+      requiredChainId = '0';
       //throw 'This endpoint does not exist.';
     }
     response['chainId'] = requiredChainId;
+    response['chainKind'] = requiredChainKind;
     response['siblingEndpoints'] = siblingEndPoints;
     return response;
   },

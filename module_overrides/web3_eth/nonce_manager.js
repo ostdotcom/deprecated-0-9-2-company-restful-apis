@@ -6,10 +6,8 @@ const rootPrefix = '../..',
   OpenStCache = require('@openstfoundation/openst-cache'),
   cacheManagementConst = require(rootPrefix + '/lib/global_constant/cache_management'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  configStrategyHelper = require(rootPrefix + '/helpers/config_strategy'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   SharedRedisProvider = require(rootPrefix + '/lib/providers/shared_redis'),
-  ChainGethProvidersCache = require(rootPrefix + '/lib/shared_cache_management/chain_geth_providers'),
   nonceHelperKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_helper'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
@@ -39,10 +37,13 @@ const NonceManagerKlass = function(params) {
     fromAddress = params['address'].toLowerCase(),
     chainKind = params['chain_kind'],
     clientId = params['client_id'],
-    currentWsHost = params['host'];
+    currentWsHost = params['host'],
+    chainId = params['chain_id'],
+    gethWsProviders = params['geth_providers'],
+    configStrategy = params['config_strategy'];
+  // gethWsProviders being fetched are the ones that need to be used directly.
 
   oThis.nonceHelper = new nonceHelperKlass();
-  //Throw Here.
 
   //Check for existing instance
   let instanceKey = oThis.nonceHelper.getInstanceKey(fromAddress, chainKind),
@@ -60,6 +61,9 @@ const NonceManagerKlass = function(params) {
   oThis.chainKind = chainKind;
   oThis.clientId = clientId;
   oThis.currentWsHost = currentWsHost;
+  oThis.chainId = chainId;
+  oThis.gethWsProviders = gethWsProviders;
+  oThis.configStrategy = configStrategy;
   oThis.promiseQueue = [];
   oThis.processedQueue = [];
   oThis.consistentBehavior = '0';
@@ -78,41 +82,20 @@ const NonceCacheKlassPrototype = {
   deepInit: async function() {
     const oThis = this;
 
+    // Create a shared redis object for non-client specific redis.
     if (oThis.clientId === '0') {
-      let gethCacheParams = { gethProvider: oThis.currentWsHost };
-      const chainGethProvidersCacheObject = new ChainGethProvidersCache(gethCacheParams);
-
-      // Fetch gethWsProviders from cache.
-      let response = await chainGethProvidersCacheObject.fetch();
-      if (response.isFailure()) {
-        return Promise.reject(response);
-      }
-
-      let cacheResponse = response.data;
-      oThis.chainId = cacheResponse['chainId'];
-
-      oThis.gethWsProviders = cacheResponse['siblingEndpoints'];
-      // Not using JSON.parse as response is an array.
-
       let cacheObject = SharedRedisProvider.getInstance(oThis.consistentBehavior);
       oThis.cacheImplementer = cacheObject.cacheInstance;
-    } else {
-      let configStrategyHelperObj = new configStrategyHelper();
-
-      let configStrategyResponse = await configStrategyHelperObj.getConfigStrategy(oThis.clientId);
-      if (configStrategyResponse.isFailure()) {
-        return Promise.reject(configStrategyResponse);
-      }
-
-      let configStrategy = configStrategyResponse.data;
-
+    }
+    // Create cache object for a client.
+    else {
       let cacheConfigStrategy = {
         OST_CACHING_ENGINE: cacheManagementConst.redis,
-        OST_REDIS_HOST: configStrategy.OST_REDIS_HOST,
-        OST_REDIS_PORT: configStrategy.OST_REDIS_PORT,
-        OST_REDIS_PASS: configStrategy.OST_REDIS_PASS,
-        OST_REDIS_TLS_ENABLED: configStrategy.OST_REDIS_TLS_ENABLED,
-        OST_DEFAULT_TTL: configStrategy.OST_DEFAULT_TTL,
+        OST_REDIS_HOST: oThis.configStrategy.OST_REDIS_HOST,
+        OST_REDIS_PORT: oThis.configStrategy.OST_REDIS_PORT,
+        OST_REDIS_PASS: oThis.configStrategy.OST_REDIS_PASS,
+        OST_REDIS_TLS_ENABLED: oThis.configStrategy.OST_REDIS_TLS_ENABLED,
+        OST_DEFAULT_TTL: oThis.configStrategy.OST_DEFAULT_TTL,
         OST_CACHE_CONSISTENT_BEHAVIOR: '0'
       };
 
@@ -120,13 +103,10 @@ const NonceCacheKlassPrototype = {
       oThis.cacheImplementer = cacheObject.cacheInstance;
 
       if (oThis.chainKind === 'value') {
-        oThis.gethWsProviders = configStrategy.OST_VALUE_GETH_WS_PROVIDERS;
-        oThis.chainId = configStrategy.OST_VALUE_CHAIN_ID;
+        oThis.chainId = oThis.configStrategy.OST_VALUE_CHAIN_ID;
       } else {
-        oThis.gethWsProviders = configStrategy.OST_UTILITY_GETH_WS_PROVIDERS;
-        oThis.chainId = configStrategy.OST_UTILITY_CHAIN_ID;
+        oThis.chainId = oThis.configStrategy.OST_UTILITY_CHAIN_ID;
       }
-      // Using JSON.parse as configStrategy stores these array attributes as string.
     }
 
     // Set cache key for nonce

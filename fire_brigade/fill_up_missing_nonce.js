@@ -2,7 +2,6 @@ const Buffer = require('safe-buffer').Buffer,
   Tx = require('ethereumjs-tx');
 
 const rootPrefix = '..',
-  chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
   fetchPrivateKeyKlass = require(rootPrefix + '/lib/shared_cache_management/address_private_key'),
   nonceHelperKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_helper'),
   nonceHelper = new nonceHelperKlass();
@@ -10,11 +9,12 @@ const rootPrefix = '..',
 const FillUpMissingNonce = function(params) {
   const oThis = this;
 
-  oThis.fromAddress = params.from_address.toLowerCase();
-  oThis.toAddress = params.to_address.toLowerCase();
-  oThis.chainKind = params.chain_kind;
-  oThis.missingNonce = params.missing_nonce;
-
+  oThis.fromAddress = params.from_address.toLowerCase(); // String
+  oThis.toAddress = params.to_address.toLowerCase(); // String
+  oThis.chainKind = params.chain_kind; // String
+  oThis.missingNonce = params.missing_nonce; // Integer
+  oThis.provider = params.geth_provider; // String
+  oThis.gasPrice = params.gas_price; // String
   oThis.privateKeyObj = null;
   oThis.rawTx = null;
 };
@@ -33,16 +33,11 @@ FillUpMissingNonce.prototype = {
   initializeRawTx: function() {
     const oThis = this;
 
-    const gasPrice =
-      oThis.chainKind == 'value'
-        ? chainInteractionConstants.VALUE_GAS_PRICE
-        : chainInteractionConstants.UTILITY_GAS_PRICE;
-
     oThis.rawTx = {
       from: oThis.fromAddress,
       to: oThis.toAddress,
       value: '0x1',
-      gasPrice: gasPrice,
+      gasPrice: oThis.gasPrice,
       gas: 25000,
       nonce: oThis.missingNonce
     };
@@ -60,7 +55,7 @@ FillUpMissingNonce.prototype = {
     }
 
     // get private key - this should be the private key without 0x at the beginning.
-    var privateKey = fetchPrivateKeyRsp.data['private_key_d'];
+    let privateKey = fetchPrivateKeyRsp.data['private_key_d'];
     if (privateKey.slice(0, 2).toLowerCase() === '0x') {
       privateKey = privateKey.substr(2);
     }
@@ -79,12 +74,7 @@ FillUpMissingNonce.prototype = {
 
     const serializedTx = tx.serialize();
 
-    const provider =
-      oThis.chainKind == 'value'
-        ? chainInteractionConstants.VALUE_GETH_WS_PROVIDER
-        : chainInteractionConstants.UTILITY_GETH_WS_PROVIDER;
-
-    const providerObj = nonceHelper.getWeb3Instance(provider, oThis.chainKind);
+    const providerObj = nonceHelper.getWeb3Instance(oThis.provider, oThis.chainKind);
 
     return providerObj.eth
       .sendSignedTransaction('0x' + serializedTx.toString('hex'))
