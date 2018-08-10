@@ -2,6 +2,7 @@
 
 const rootPrefix = '../../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   BaseKlass = require(rootPrefix + '/app/services/transaction/list/base'),
   basicHelper = require(rootPrefix + '/helpers/basic');
 
@@ -114,5 +115,5 @@ const GetTransactionListForClient = {
 };
 
 Object.assign(GetTransactionListByClientId.prototype, GetTransactionListForClient);
-
+InstanceComposer.registerShadowableClass(GetTransactionListByClientId, 'getGetTransactionListByClientIdClass');
 module.exports = GetTransactionListByClientId;

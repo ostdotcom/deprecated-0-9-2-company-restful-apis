@@ -8,15 +8,14 @@
 
 const rootPrefix = '../../..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   commonValidator = require(rootPrefix + '/lib/validators/common'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
-  ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service'),
-  elasticSearchLibManifest = require(rootPrefix + '/lib/elasticsearch/manifest'),
-  esSearchServiceObject = elasticSearchLibManifest.services.transactionLog,
-  transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log'),
-  transactionLogModel = require(rootPrefix + '/app/models/transaction_log'),
-  autoScalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service');
+  transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log');
+
+require(rootPrefix + '/app/models/transaction_log');
+require(rootPrefix + '/lib/elasticsearch_saas/search');
 
 /**
  * @constructor
@@ -185,6 +184,11 @@ ListStpTransfersService.prototype = {
    */
   _getFilteredUuids: async function() {
     const oThis = this;
+    const EsSearchServiceKlass = oThis.ic().getEsSearchService(),
+      esSearchServiceObject = new EsSearchServiceKlass({
+        queryBody: oThis.filteringParams,
+        requestSource: ['id']
+      });
 
     // https://www.elastic.co/guide/en/elasticsearch/guide/current/bool-query.html
     let boolFilters = [
@@ -259,7 +263,8 @@ ListStpTransfersService.prototype = {
    * @return {promise<result>}
    */
   _getDataForUuids: async function() {
-    const oThis = this;
+    const oThis = this,
+      transactionLogModel = oThis.ic().getTransactionLogModel();
 
     let transferLogData = {};
 
@@ -268,9 +273,7 @@ ListStpTransfersService.prototype = {
     }
 
     let transactionResponse = await new transactionLogModel({
-      client_id: oThis.clientId,
-      ddb_service: ddbServiceObj,
-      auto_scaling: autoScalingServiceObj
+      client_id: oThis.clientId
     }).batchGetItem(oThis.transferUuids);
 
     if (!transactionResponse.data) {
@@ -286,5 +289,7 @@ ListStpTransfersService.prototype = {
     return Promise.resolve(responseHelper.successWithData(transactionResponse.data));
   }
 };
+
+InstanceComposer.registerShadowableClass(ListStpTransfersService, 'getListStpTransfersService');
 
 module.exports = ListStpTransfersService;

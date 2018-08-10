@@ -2,13 +2,14 @@
 
 const rootPrefix = '../../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   BaseKlass = require(rootPrefix + '/app/services/transaction/list/base'),
   transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log'),
-  ManagedAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/managedAddresses'),
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
   managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
   basicHelper = require(rootPrefix + '/helpers/basic');
 
+require(rootPrefix + '/lib/cache_multi_management/managedAddresses');
 /**
  * @constructor
  *
@@ -40,7 +41,7 @@ const GetTransactionListForUser = {
    */
   _validateAndSanitize: async function() {
     var oThis = this;
-
+    const ManagedAddressCacheKlass = oThis.ic().getManagedAddressCache();
     await oThis._baseValidateAndSanitize.apply(oThis);
 
     if (!basicHelper.isUuidValid(oThis.userUuid)) {
@@ -177,5 +178,7 @@ const GetTransactionListForUser = {
 };
 
 Object.assign(GetTransactionList.prototype, GetTransactionListForUser);
+
+InstanceComposer.registerShadowableClass(GetTransactionList, 'getGetTransactionListClass');
 
 module.exports = GetTransactionList;
