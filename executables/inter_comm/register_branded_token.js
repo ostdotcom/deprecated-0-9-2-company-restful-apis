@@ -19,9 +19,41 @@ require(rootPrefix + '/lib/providers/platform');
 const InstanceComposer = require(rootPrefix + '/instance_composer'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
+const usageDemo = function() {
+  logger.log(
+    'usage:',
+    'node ./executables/inter_comm/register_branded_token.js blockNoFilePath configStrategyFilePath'
+  );
+};
+
 const args = process.argv,
-  filePath = args[2],
-  configStrategy = args[3];
+  filePath = args[2].trim(),
+  configStrategyFilePath = args[3].trim();
+
+let configStrategy = {};
+
+const validateAndSanitize = function() {
+  if (args.length < 4) {
+    logger.error('Invalid arguments !!!');
+    usageDemo();
+    process.exit(1);
+  }
+
+  if (!filePath) {
+    logger.error('filePath Not Found!!');
+    process.exit(1);
+  }
+
+  if (!configStrategyFilePath) {
+    logger.error('configStrategyFilePath Not Found!!');
+    process.exit(1);
+  }
+
+  configStrategy = require(configStrategyFilePath);
+};
+
+// validate and sanitize the input params
+validateAndSanitize();
 
 const ic = new InstanceComposer(configStrategy),
   platformProvider = ic.getPlatformProvider(),
