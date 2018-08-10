@@ -93,4 +93,4 @@ define('DYNAMODB_TABLE_NAME_PREFIX', process.env.OS_DYNAMODB_TABLE_NAME_PREFIX
   ? process.env.OS_DYNAMODB_TABLE_NAME_PREFIX
   : '');
 
-define('WEB3_POOL_SIZE', process.env.WEB3_POOL_SIZE);
+define('OST_WEB3_POOL_SIZE', process.env.OST_WEB3_POOL_SIZE);

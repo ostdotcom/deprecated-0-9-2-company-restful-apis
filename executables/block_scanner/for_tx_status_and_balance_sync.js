@@ -94,7 +94,7 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   DynamoEntityTypesConst = require(rootPrefix + '/lib/global_constant/dynamodb_entity_types');
 
 const PostAirdropPayKlass = openStPayments.services.airdropManager.postAirdropPay,
-  tokenBalanceModelDdb = openSTStorage.model.TokenBalanceModel,
+  tokenBalanceModelDdb = openSTStorage.model.TokenBalance,
   coreAbis = openStPlatform.abis;
 
 abiDecoder.addABI(coreAbis.airdrop);
@@ -151,7 +151,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   warmUpWeb3Pool: function() {
     const oThis = this,
       web3InteractFactory = ic.getWeb3InteractHelper();
-    let web3PoolSize = coreConstants.WEB3_POOL_SIZE;
+    let web3PoolSize = coreConstants.OST_WEB3_POOL_SIZE;
 
     for (var i = 0; i < web3PoolSize; i++) {
       web3InteractFactory.getInstance('utility');
@@ -364,7 +364,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     const oThis = this;
 
     let batchNo = 1,
-      web3PoolSize = coreConstants.WEB3_POOL_SIZE,
+      web3PoolSize = coreConstants.OST_WEB3_POOL_SIZE,
       loadPerConnection = parseInt(oThis.currentBlockInfo.transactions.length / web3PoolSize) + 1,
       promiseArray = [];
 
@@ -618,7 +618,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    */
   updateTransactionLogs: async function() {
     const oThis = this,
-      transactionLogModel = ic.getTransactionLogModel,
+      transactionLogModel = ic.getTransactionLogModel(),
       ddbServiceObj = openSTStorage.dynamoDBService;
 
     logger.debug('-------oThis.clientIdsMap----', oThis.clientIdsMap);
