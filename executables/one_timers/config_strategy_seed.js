@@ -13,6 +13,7 @@ const env_list = process.env;
 
 const rootPrefix = '../..',
   configStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
+  ChainGethProviderModel = require(rootPrefix + '/app/models/chain_geth_providers'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
 const seedConfigStrategies = function() {};
@@ -126,8 +127,6 @@ seedConfigStrategies.prototype = {
     value_constants_params['OST_VALUE_DEPLOYER_ADDR'] = env_list.OST_VALUE_DEPLOYER_ADDR;
     value_constants_params['OST_VALUE_DEPLOYER_PASSPHRASE'] = env_list.OST_VALUE_DEPLOYER_PASSPHRASE;
 
-    console.log('=====env_list.OST_VALUE_OPS_ADDR', env_list.OST_VALUE_OPS_ADDR);
-
     value_constants_params['OST_VALUE_OPS_ADDR'] = env_list.OST_VALUE_OPS_ADDR;
     value_constants_params['OST_VALUE_OPS_PASSPHRASE'] = env_list.OST_VALUE_OPS_PASSPHRASE;
     value_constants_params['OST_VALUE_CORE_CONTRACT_ADDR'] = env_list.OST_VALUE_CORE_CONTRACT_ADDR;
@@ -222,6 +221,40 @@ seedConfigStrategies.prototype = {
     const configStrategy = new configStrategyModel();
 
     await configStrategy.create('constants', process.argv[2], constants_params).then();
+  },
+
+  populateChainGethProviders: async function() {
+    let promises = [],
+      valueRpcProviders = env_list.OST_VALUE_GETH_RPC_PROVIDERS,
+      valueWsProviders = env_list.OST_VALUE_GETH_WS_PROVIDERS,
+      utilityRpcProviders = env_list.OST_UTILITY_GETH_RPC_PROVIDERS,
+      utilityWsProviders = env_list.OST_UTILITY_GETH_WS_PROVIDERS;
+
+    //Value Chain
+    for (let i = 0; i < valueRpcProviders.length; i++) {
+      promises.push(
+        new ChainGethProviderModel().insertRecord({
+          chain_id: parseInt(env_list.OST_VALUE_CHAIN_ID),
+          chain_kind: 'value',
+          ws_provider: valueWsProviders[i],
+          rpc_provider: valueRpcProviders[i]
+        })
+      );
+    }
+
+    //Utility Chain
+    for (let i = 0; i < utilityRpcProviders.length; i++) {
+      promises.push(
+        new ChainGethProviderModel().insertRecord({
+          chain_id: parseInt(env_list.OST_UTILITY_CHAIN_ID),
+          chain_kind: 'utility',
+          ws_provider: utilityWsProviders[i],
+          rpc_provider: utilityRpcProviders[i]
+        })
+      );
+    }
+
+    await Promise.all(promises);
   }
 };
 

@@ -123,49 +123,49 @@ const ConfigStrategyModelSpecificPrototype = {
           error_config: errorConfig
         })
       );
-    } else {
-      const queryResult = await oThis
-        .select(['id', 'params', 'kind', 'managed_address_salts_id'])
-        .where(['id IN (?)', ids])
-        .fire();
+    }
 
-      let decryptedSalts = {},
-        finalResult = {};
+    const queryResult = await oThis
+      .select(['id', 'params', 'kind', 'managed_address_salts_id'])
+      .where(['id IN (?)', ids])
+      .fire();
 
-      for (let i = 0; i < queryResult.length; i++) {
-        //Following logic is added so that decrypt call is not given for already decrypted salts.
-        if (decryptedSalts[queryResult[i].managed_address_salts_id] == null) {
-          let response = await oThis.getDecryptedSalt(queryResult[i].managed_address_salts_id);
-          if (response.isFailure()) {
-            return Promise.reject(
-              responseHelper.error({
-                internal_error_identifier: 'm_tb_swry_1',
-                api_error_identifier: 'invalid_salt',
-                debug_options: {},
-                error_config: errorConfig
-              })
-            );
-          }
+    let decryptedSalts = {},
+      finalResult = {};
 
-          decryptedSalts[queryResult[i].managed_address_salts_id] = response.data.addressSalt;
+    for (let i = 0; i < queryResult.length; i++) {
+      //Following logic is added so that decrypt call is not given for already decrypted salts.
+      if (decryptedSalts[queryResult[i].managed_address_salts_id] == null) {
+        let response = await oThis.getDecryptedSalt(queryResult[i].managed_address_salts_id);
+        if (response.isFailure()) {
+          return Promise.reject(
+            responseHelper.error({
+              internal_error_identifier: 'm_tb_swry_1',
+              api_error_identifier: 'invalid_salt',
+              debug_options: {},
+              error_config: errorConfig
+            })
+          );
         }
 
-        let localDecryptedParams = localCipher.decrypt(
-          decryptedSalts[queryResult[i].managed_address_salts_id],
-          queryResult[i].params
-        );
-
-        const localJsonObj = JSON.parse(localDecryptedParams, oThis._dataReviver);
-
-        let Result = {},
-          strategyKind = kinds[queryResult[i].kind];
-
-        Result[strategyKind] = localJsonObj;
-        finalResult[queryResult[i].id] = Result;
+        decryptedSalts[queryResult[i].managed_address_salts_id] = response.data.addressSalt;
       }
 
-      return Promise.resolve(finalResult);
+      let localDecryptedParams = localCipher.decrypt(
+        decryptedSalts[queryResult[i].managed_address_salts_id],
+        queryResult[i].params
+      );
+
+      const localJsonObj = JSON.parse(localDecryptedParams, oThis._dataReviver);
+
+      let Result = {},
+        strategyKind = kinds[queryResult[i].kind];
+
+      Result[strategyKind] = localJsonObj;
+      finalResult[queryResult[i].id] = Result;
     }
+
+    return Promise.resolve(finalResult);
   },
 
   /**
