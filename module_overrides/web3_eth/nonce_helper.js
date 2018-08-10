@@ -7,7 +7,6 @@ const OSTBase = require('@openstfoundation/openst-base'),
 
 const rootPrefix = '../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
@@ -100,15 +99,16 @@ const NonceHelperKlassPrototype = {
    *
    * @param {string} chainKind - chain kind e.g value, utility
    * @param {string} address - address whose nonce to be cleared
+   * @param {array} gethProviders - list of geth providers.
    *
    * @return {promise<result>}
    */
-  getMinedTransactionCount: function(chainKind, address) {
+  getMinedTransactionCount: function(chainKind, address, gethProviders) {
     const oThis = this;
 
     try {
       const allNoncePromise = [],
-        allGethNodes = oThis._getAllGethNodes(chainKind);
+        allGethNodes = gethProviders;
       for (let i = allGethNodes.length - 1; i >= 0; i--) {
         const gethURL = allGethNodes[i];
 
@@ -129,7 +129,7 @@ const NonceHelperKlassPrototype = {
         nonceCount = BigNumber.max(currentNonce, nonceCount);
         isNonceAvailable = true;
       }
-      if (isNonceAvailable == false) {
+      if (!isNonceAvailable) {
         return Promise.resolve(
           responseHelper.error({
             internal_error_identifier: 'mo_w_nh_getTransactionCount_1',
@@ -157,15 +157,16 @@ const NonceHelperKlassPrototype = {
    * Get all queued transactions
    *
    * @param {string} chainKind - chain kind e.g value, utility
+   * @param {array} gethProviders - list of geth providers.
    *
    * @return {promise<result>}
    */
-  getAllQueuedTransaction: async function(chainKind) {
+  getAllQueuedTransaction: async function(chainKind, gethProviders) {
     const oThis = this;
 
     try {
       const allTxPoolPromise = [],
-        allGethNodes = oThis._getAllGethNodes(chainKind);
+        allGethNodes = gethProviders;
 
       for (let i = allGethNodes.length - 1; i >= 0; i--) {
         const gethURL = allGethNodes[i];
@@ -200,7 +201,7 @@ const NonceHelperKlassPrototype = {
         isTransactionAvailable = true;
       }
 
-      if (isTransactionAvailable == false) {
+      if (!isTransactionAvailable) {
         return Promise.resolve(
           responseHelper.error({
             internal_error_identifier: 'mo_w_nh_getAllQueuedTransaction_1',
@@ -229,14 +230,15 @@ const NonceHelperKlassPrototype = {
    * @param {string} chainKind - chain kind e.g value, utility
    * @param {object} scope - caller scope
    * @param {function} clearCallback - call back function that needs to be called when missing nonce is found
+   * @param {array} gethProviders - list of geth providers.
    *
    * @return {promise<result>}
    */
-  clearAllMissingNonce: async function(chainKind, scope, clearCallback) {
+  clearAllMissingNonce: async function(chainKind, scope, clearCallback, gethProviders) {
     const oThis = this;
 
     try {
-      const allQueuedTransaction = await oThis.getAllQueuedTransaction(chainKind);
+      const allQueuedTransaction = await oThis.getAllQueuedTransaction(chainKind, gethProviders);
       if (allQueuedTransaction.isFailure()) {
         return Promise.resolve(
           responseHelper.error({
@@ -256,7 +258,8 @@ const NonceHelperKlassPrototype = {
           chainKind,
           queuedData[address],
           scope,
-          clearCallback
+          clearCallback,
+          gethProviders
         );
         if (clearResponce.isSuccess()) {
           successAddresses.push(address);
@@ -289,10 +292,11 @@ const NonceHelperKlassPrototype = {
    * @param {array} pendingTransactions - array of pending transaction
    * @param {object} scope - caller scope
    * @param {function} clearCallback - call back function that needs to be called when missing nonce is found
+   * @param {array} gethProviders - list of geth providers.
    *
    * @return {promise<result>}
    */
-  clearMissingNonce: async function(address, chainKind, pendingTransactions, scope, clearCallback) {
+  clearMissingNonce: async function(address, chainKind, pendingTransactions, scope, clearCallback, gethProviders) {
     const oThis = this;
 
     if (!clearCallback) {
@@ -307,7 +311,7 @@ const NonceHelperKlassPrototype = {
 
     try {
       const allNoncePromise = [],
-        allGethNodes = oThis._getAllGethNodes(chainKind);
+        allGethNodes = gethProviders;
 
       for (let i = allGethNodes.length - 1; i >= 0; i--) {
         const gethURL = allGethNodes[i];
@@ -357,7 +361,7 @@ const NonceHelperKlassPrototype = {
 
   /**
    * Get transactionCount
-   *
+   * @param {string} address - address for which transaction count is to be fetched.
    * @param {object} web3Provider - web3 object
    *
    * @return {promise<result>}
@@ -432,19 +436,6 @@ const NonceHelperKlassPrototype = {
         );
       }
     });
-  },
-
-  /**
-   * Get all geth nodes for the given chain kind
-   *
-   * @param {string} chainKind - chain kind e.g value, utility
-   *
-   * @return {string}
-   */
-  _getAllGethNodes: function(chainKind) {
-    return chainKind == 'value'
-      ? chainInteractionConstants.OST_VALUE_GETH_WS_PROVIDERS
-      : chainInteractionConstants.OST_UTILITY_GETH_WS_PROVIDERS;
   }
 };
 

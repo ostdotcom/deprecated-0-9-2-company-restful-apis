@@ -10,14 +10,14 @@ const BasePackage = require(basePackage),
 const rootPrefix = '../..';
 
 // Please declare your require variables here.
-let nonceManagerKlass, responseHelper, logger, chainInteractionConstants;
+let nonceManagerKlass, responseHelper, logger, coreConstants;
 
 // NOTE :: Please define all your requires inside the function
 function initRequires() {
   nonceManagerKlass = nonceManagerKlass || require(rootPrefix + '/module_overrides/web3_eth/nonce_manager');
   responseHelper = responseHelper || require(rootPrefix + '/lib/formatter/response');
   logger = logger || require(rootPrefix + '/lib/logger/custom_console_logger');
-  chainInteractionConstants = chainInteractionConstants || require(rootPrefix + '/config/chain_interaction_constants');
+  coreConstants = coreConstants || require(rootPrefix + '/config/core_constants');
 }
 
 // Module Override Code - Part 1
@@ -56,30 +56,11 @@ const Derived = function() {
       fromAddress = rawTx.from,
       gasPrice = String(rawTx.gasPrice || 0),
       bnGasPrice = new BigNumber(gasPrice),
-      host = oThis.currentProvider.host ? oThis.currentProvider.host : oThis.currentProvider.connection._url,
-      chainKind = chainInteractionConstants.GETH_PROVIDER_TO_CHAIN_KIND_MAP[host],
-      UTILITY_GAS_PRICE = chainInteractionConstants.UTILITY_GAS_PRICE,
-      VALUE_GAS_PRICE = chainInteractionConstants.VALUE_GAS_PRICE;
+      host = oThis.currentProvider.host ? oThis.currentProvider.host : oThis.currentProvider.connection._url;
 
-    let chainGasPrice, bnChainGasPrice;
-    if (String(chainKind).toLowerCase() === 'value') {
-      chainGasPrice = VALUE_GAS_PRICE; //<-- Change this to VALUE_GAS_PRICE
-    } else {
-      chainGasPrice = UTILITY_GAS_PRICE;
-    }
-    bnChainGasPrice = new BigNumber(chainGasPrice);
+    let chainGasPrice, bnChainGasPrice, chainKind, clientId, chainId, gethWsProviders, privateKeyObj, configStrategy;
 
-    if (bnGasPrice.isNaN() || bnGasPrice.lessThan(1)) {
-      if (bnChainGasPrice.isZero()) {
-        logger.debug('WARN :: Gas Price for chainKind', chainKind, 'is zero.');
-      } else {
-        rawTx.gasPrice = chainGasPrice;
-        logger.debug('Auto-corrected gas price to', rawTx.gasPrice);
-        console.trace('WARN :: sendTransaction called without setting gas price.\nPlease see trace for more info');
-      }
-    }
-
-    if (chainInteractionConstants.ADDRESSES_TO_UNLOCK_VIA_KEYSTORE_FILE_MAP[fromAddress.toLowerCase()]) {
+    if (coreConstants.ADDRESSES_TO_UNLOCK_VIA_KEYSTORE_FILE_MAP[fromAddress.toLowerCase()]) {
       logger.info('WEB3_OVERRIDE: sendTransaction using passphrase from address:', fromAddress);
       return _sendTransaction.apply(this, arguments);
     } else {
@@ -87,22 +68,30 @@ const Derived = function() {
 
       const Web3PromiEvent = require('web3-core-promievent'),
         hackedReturnedPromiEvent = Web3PromiEvent(),
+        ChainGethProvidersCache = require(rootPrefix + '/lib/shared_cache_management/chain_geth_providers'),
+        configStrategyHelper = require(rootPrefix + '/helpers/config_strategy'),
         fetchPrivateKeyKlass = require(rootPrefix + '/lib/shared_cache_management/address_private_key');
-
-      let privateKeyObj;
-      let clientId = 0;
 
       let txHashObtained = false,
         retryCount = 0;
 
       const maxRetryFor = 2;
 
+      /**
+       * Sanitizes and sets the transaction value.
+       *
+       */
       const sanitize = function() {
         // convert to hex
         let value = new BigNumber(rawTx.value || 0);
         rawTx.value = '0x' + value.toString(16);
       };
 
+      /**
+       * Fetches the decrypted private key and the clientId.
+       *
+       * @returns {Promise<*>}
+       */
       const getPrivateKey = async function() {
         const fetchPrivateKeyObj = new fetchPrivateKeyKlass({ address: fromAddress }),
           fetchPrivateKeyRsp = await fetchPrivateKeyObj.fetchDecryptedData();
@@ -116,27 +105,118 @@ const Derived = function() {
           return Promise.reject(errorMsg);
         }
 
-        // get private key - this should be the private key without 0x at the beginning.
+        // Get private key - this should be the private key without 0x at the beginning.
         let privateKey = fetchPrivateKeyRsp.data['private_key_d'];
         if (privateKey.slice(0, 2).toLowerCase() === '0x') {
           privateKey = privateKey.substr(2);
         }
 
         privateKeyObj = new Buffer(privateKey, 'hex');
-
-        // Get clientId from the data. This will be later used to decide the nature of the redis cache object.
         clientId = fetchPrivateKeyRsp.data['client_id'];
 
         return Promise.resolve();
       };
 
+      /**
+       * Fetches and sets the chainId, chainKind and sibling geth providers from chain_geth_providers table.
+       *
+       * @returns {Promise<*>}
+       */
+      const getChainKind = async function() {
+        // Fetch details from cache.
+        if (clientId === '0') {
+          let gethCacheParams = { gethProvider: host },
+            chainGethProvidersCacheObject = new ChainGethProvidersCache(gethCacheParams);
+
+          let response = await chainGethProvidersCacheObject.fetch();
+          if (response.isFailure()) {
+            return Promise.reject(response);
+          }
+
+          let cacheResponse = response.data;
+
+          // Set the variables for further use.
+          chainId = cacheResponse['chainId'];
+          chainKind = cacheResponse['chainKind'];
+          gethWsProviders = cacheResponse['siblingEndpoints'];
+
+          // Passing empty object as nonce manager class needs this as a param.
+          configStrategy = {};
+        }
+        // Fetch details for a client.
+        else {
+          let configStrategyHelperObj = new configStrategyHelper();
+
+          let configStrategyResponse = await configStrategyHelperObj.getConfigStrategy(clientId);
+          if (configStrategyResponse.isFailure()) {
+            return Promise.reject(configStrategyResponse);
+          }
+
+          configStrategy = configStrategyResponse.data;
+
+          let valueProviders = configStrategy.OST_VALUE_GETH_WS_PROVIDERS,
+            utilityProviders = configStrategy.OST_UTILITY_GETH_WS_PROVIDERS;
+
+          // We identify chain kind and geth providers in this manner to save one cache hit.
+          if (valueProviders.includes(host)) {
+            chainKind = 'value';
+            gethWsProviders = valueProviders;
+          } else if (utilityProviders.includes(host)) {
+            chainKind = 'utility';
+            gethWsProviders = utilityProviders;
+          }
+        }
+
+        return Promise.resolve();
+      };
+
+      /**
+       * Sets the chain gas price for the transaction.
+       *
+       */
+      const setRawTxGasPrice = function() {
+        if (clientId === '0' && chainKind === 'value') {
+          chainGasPrice = coreConstants.OST_VALUE_GAS_PRICE;
+        } else if (clientId === '0' && chainKind === 'utility') {
+          chainGasPrice = coreConstants.OST_UTILITY_GAS_PRICE;
+        } else if (clientId !== '0' && chainKind === 'value') {
+          chainGasPrice = configStrategy.OST_VALUE_GAS_PRICE;
+        } else if (clientId !== '0' && chainKind === 'utility') {
+          chainGasPrice = configStrategy.OST_UTILITY_GAS_PRICE;
+        }
+
+        bnChainGasPrice = new BigNumber(chainGasPrice);
+
+        if (bnGasPrice.isNaN() || bnGasPrice.lessThan(1)) {
+          if (bnChainGasPrice.isZero()) {
+            logger.debug('WARN :: Gas Price for chainKind', chainKind, 'is zero.');
+          } else {
+            rawTx.gasPrice = chainGasPrice;
+            logger.debug('Auto-corrected gas price to', rawTx.gasPrice);
+            console.trace('WARN :: sendTransaction called without setting gas price.\nPlease see trace for more info');
+          }
+        }
+      };
+
       const fetchNonceAndAddToRawTransaction = async function() {
+        // await getPrivateKey();
+
+        // nonce cache key has chain kind. need to fetch it.
+        await getChainKind();
+
+        await setRawTxGasPrice();
+
         const nonceManager = new nonceManagerKlass({
           address: fromAddress,
           chain_kind: chainKind,
           client_id: clientId,
-          host: host
+          host: host,
+          chain_id: chainId,
+          geth_providers: gethWsProviders,
+          config_strategy: configStrategy
         });
+        // We are passing gethWsProviders here as we don't want to make another cache hit in nonce manager class.
+        // The providers have been fetched depending on the clientId as well as the cache kind.
 
         const getNonceResponse = await nonceManager.getNonce();
 
@@ -149,6 +229,11 @@ const Derived = function() {
         return Promise.resolve(responseHelper.successWithData({ nonceManager: nonceManager }));
       };
 
+      /**
+       * Signs the transactions.
+       *
+       * @returns {*}
+       */
       const signTransactionLocally = function() {
         const tx = new Tx(rawTx);
 
@@ -176,31 +261,6 @@ const Derived = function() {
         }
 
         const nonceManager = fetchNonceResult.data.nonceManager;
-
-        //Fetch Private Key if not present.
-        // if (!privateKeyObj) {
-        //   logger.log('executeTx :: getPrivateKey initiated');
-        //   //Get the private key.
-        //   await getPrivateKey().catch(function(reason) {
-        //     logger.error('executeTx :: getPrivateKey :: Failed to get private key. reason', reason);
-        //
-        //     // clear the nonce
-        //     return nonceManager
-        //       .completionWithFailure()
-        //       .catch(function(reason) {
-        //         logger.error(
-        //           'executeTx :: nonceManager.completionWithFailure rejected the Promise.',
-        //           ' nonceManager likely to keep ',
-        //           fromAddress,
-        //           ' locked'
-        //         );
-        //       })
-        //
-        //       .then(function(i_d_k) {
-        //         return Promise.reject(reason);
-        //       });
-        //   });
-        // }
 
         logger.log('executeTx :: sendSignedTx initiated');
         await sendSignedTx(nonceManager);

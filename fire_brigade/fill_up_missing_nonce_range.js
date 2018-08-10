@@ -2,21 +2,31 @@ const rootPrefix = '..',
   nonceHelperKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_helper'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   FillUpMissingNonceKlass = require(rootPrefix + '/fire_brigade/fill_up_missing_nonce');
-const FillUpMissingNonceRange = function(toAddress, chainKind) {
+
+const FillUpMissingNonceRange = function(params) {
   const oThis = this;
   oThis.nonceHelper = new nonceHelperKlass();
-  oThis.toAddress = toAddress.toLowerCase();
-  oThis.chainKind = chainKind;
-  oThis.allPendingTasks = new Array();
+  oThis.toAddress = params.to_address.toLowerCase(); // String
+  oThis.chainKind = params.chain_kind; // String
+  oThis.gasPrice = params.gas_price; // String
+  oThis.gethProviders = params.geth_providers; // An array of providers is expected.
+  oThis.allPendingTasks = [];
   oThis.isProccessing = false;
   oThis.currentIndex = 0;
 };
+// We expect an array of providers as an input. We can later change this to query chain_geth_providers table to fetch
+// the geth providers based on the chain id and the chain kind.
 
 FillUpMissingNonceRange.prototype = {
   perform: async function() {
     const oThis = this;
 
-    const clearQueuedResponse = await oThis.nonceHelper.clearAllMissingNonce(oThis.chainKind, oThis, oThis.fillNonce);
+    const clearQueuedResponse = await oThis.nonceHelper.clearAllMissingNonce(
+      oThis.chainKind,
+      oThis,
+      oThis.fillNonce,
+      oThis.gethProviders
+    );
     if (clearQueuedResponse.isFailure()) {
       logger.error('Unable to clear queued transactions: ', clearQueuedResponse);
     } else {
@@ -31,6 +41,8 @@ FillUpMissingNonceRange.prototype = {
     params['to_address'] = oThis.toAddress;
     params['chain_kind'] = oThis.chainKind;
     params['missing_nonce'] = parseInt(nonce);
+    params['gas_price'] = oThis.gasPrice;
+    params['geth_provider'] = oThis.gethProviders[0];
 
     oThis.addToBatchProcess(params);
   },
@@ -38,7 +50,7 @@ FillUpMissingNonceRange.prototype = {
   addToBatchProcess: function(object) {
     const oThis = this;
     oThis.allPendingTasks.push(object);
-    if (oThis.isProccessing == false) {
+    if (!oThis.isProccessing) {
       oThis.isProccessing = true;
       oThis.batchProcess();
     }
@@ -49,12 +61,12 @@ FillUpMissingNonceRange.prototype = {
     const oThis = this;
     const batchSize = 100;
     while (oThis.currentIndex < oThis.allPendingTasks.length) {
-      const allPromises = new Array();
-      for (var count = 0; count < batchSize && oThis.currentIndex < oThis.allPendingTasks.length; count++) {
+      const allPromises = [];
+      for (let count = 0; count < batchSize && oThis.currentIndex < oThis.allPendingTasks.length; count++) {
         const params = oThis.allPendingTasks[oThis.currentIndex];
         const promiseObject = new Promise(async function(onResolve, onReject) {
-          const fullUpNonceObject = new FillUpMissingNonceKlass(params);
-          await fullUpNonceObject.perform();
+          const fillUpNonceObject = new FillUpMissingNonceKlass(params);
+          await fillUpNonceObject.perform();
           onResolve();
         });
         allPromises.push(promiseObject);

@@ -29,6 +29,10 @@ define('SUB_ENVIRONMENT', process.env.CR_SUB_ENVIRONMENT);
 define('ENVIRONMENT_SHORT', process.env.CR_ENVIRONMENT.substring(0, 2));
 define('SUB_ENVIRONMENT_SHORT', process.env.CR_SUB_ENVIRONMENT.substring(0, 2));
 
+// Gas prices
+define('OST_UTILITY_GAS_PRICE', process.env.OST_UTILITY_GAS_PRICE);
+define('OST_VALUE_GAS_PRICE', process.env.OST_VALUE_GAS_PRICE);
+
 // Redis details
 define('OST_REDIS_HOST', process.env.OST_REDIS_HOST);
 define('OST_REDIS_PORT', process.env.OST_REDIS_PORT);
@@ -79,7 +83,7 @@ define('CACHE_SHA_KEY', process.env.CR_CACHE_DATA_SHA_KEY);
 define('DEBUG_ENABLED', process.env.OST_DEBUG_ENABLED);
 
 // Price oracle details
-var accepted_margin = {};
+let accepted_margin = {};
 try {
   accepted_margin = JSON.parse(process.env.CR_ACCEPTED_PRICE_FLUCTUATION_FOR_PAYMENT);
 } catch (err) {}
@@ -94,3 +98,17 @@ define('DYNAMODB_TABLE_NAME_PREFIX', process.env.OS_DYNAMODB_TABLE_NAME_PREFIX
   : '');
 
 define('OST_WEB3_POOL_SIZE', process.env.OST_WEB3_POOL_SIZE);
+
+// Map of all addresses which would be needed to unlocked via Key Store File.
+// Every other address will be unlocked via private_key.
+const addresses_to_unlock_via_keystore_file = ['OST_UTILITY_INITIAL_ST_PRIME_HOLDER_ADDR'];
+
+let addresses_to_unlock_via_keystore_file_map = {};
+for (let i = 0; i < addresses_to_unlock_via_keystore_file.length; i++) {
+  let addr = process.env[addresses_to_unlock_via_keystore_file[i]];
+  if (addr) {
+    addresses_to_unlock_via_keystore_file_map[addr.toLowerCase()] = 1;
+  }
+}
+
+define('ADDRESSES_TO_UNLOCK_VIA_KEYSTORE_FILE_MAP', addresses_to_unlock_via_keystore_file_map);
