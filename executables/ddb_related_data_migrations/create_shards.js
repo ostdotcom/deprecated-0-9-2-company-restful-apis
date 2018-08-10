@@ -136,3 +136,8 @@ object
     console.log(a);
     process.exit(1);
   });
+
+/*
+*  node executables/ddb_related_data_migrations/create_shards.js ~/config.json { 100: 2, 101: 3 }
+*
+* */
