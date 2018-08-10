@@ -420,7 +420,7 @@ BasicHelperKlass.prototype = {
     if(oThis.isProduction() && oThis.isMainSubEnvironment()){
       return oThis.convertToWei(0.5)
     } else {
-      return oThis.convertToWei(1.1)
+      return oThis.convertToWei(0.5)
     }
   },
 
@@ -436,7 +436,7 @@ BasicHelperKlass.prototype = {
     if(oThis.isProduction() && oThis.isMainSubEnvironment()){
       return oThis.convertToWei(0.05)
     } else {
-      return oThis.convertToWei(1)
+      return oThis.convertToWei(0.05)
     }
   },
 
@@ -452,7 +452,7 @@ BasicHelperKlass.prototype = {
     if(oThis.isProduction() && oThis.isMainSubEnvironment()){
       return oThis.convertToWei(0.05)
     } else {
-      return oThis.convertToWei(1)
+      return oThis.convertToWei(0.5)
     }
   },
 

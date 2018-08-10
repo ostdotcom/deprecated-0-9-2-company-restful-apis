@@ -46,15 +46,6 @@ const FundClientAddressKlass = function (params) {
 FundClientAddressKlass.prototype = {
 
   /**
-   * Minimum balance for reserve address
-   *
-   * @constant
-   * @private
-   */
-  _MIN_AVAILABLE_BALANCE_RESERVE: basicHelper.convertToWei(1.1),
-
-
-  /**
    * perform
    *
    * @return {Result}
