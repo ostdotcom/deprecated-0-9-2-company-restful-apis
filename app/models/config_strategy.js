@@ -155,7 +155,7 @@ const ConfigStrategyModelSpecificPrototype = {
           queryResult[i].params
         );
 
-        const localJsonObj = JSON.parse(localDecryptedParams);
+        const localJsonObj = JSON.parse(localDecryptedParams, oThis._dataReviver);
 
         let Result = {},
           strategyKind = kinds[queryResult[i].kind];
@@ -168,9 +168,29 @@ const ConfigStrategyModelSpecificPrototype = {
     }
   },
 
+  /**
+   * @private
+   *
+   * This function is used by JSON.parse to check the key and value before returning.
+   *
+   */
+  _dataReviver: function(key, value) {
+    if (
+      key == 'OST_UTILITY_PRICE_ORACLES' ||
+      key == 'OST_UTILITY_GETH_RPC_PROVIDERS' ||
+      key == 'OST_UTILITY_GETH_WS_PROVIDERS' ||
+      key == 'OST_VALUE_GETH_RPC_PROVIDERS' ||
+      key == 'OST_VALUE_GETH_WS_PROVIDERS'
+    ) {
+      let newval = JSON.parse(value);
+      return newval;
+    }
+    return value;
+  },
+
   /*
    *
-   * @params {string}:
+   * @param {string}:
    */
   getStrategyIdsByKind: async function(kind) {
     const oThis = this,
@@ -194,7 +214,7 @@ const ConfigStrategyModelSpecificPrototype = {
   /*
   * Get strategy id by passing unencrypted params hash.<br><br>
   *
-  * @params {Object} params - hashed_params - SHA of config strategy params.
+  * @param {Object} params - hashed_params - SHA of config strategy params.
   * @return {Promise<value>} - returns a Promise with a value of strategy id if it already exists.
   *
   */
