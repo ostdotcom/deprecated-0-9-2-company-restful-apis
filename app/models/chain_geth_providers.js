@@ -219,7 +219,7 @@ const ChainGethProvidersModelModelSpecificPrototype = {
       throw 'This endpoint does not exist.';
     }
     response['chainId'] = requiredChainId;
-    response['chainKind'] = requiredChainKind;
+    response['chainKind'] = oThis.enums[requiredChainKind];
     response['siblingEndpoints'] = siblingEndPoints;
     return response;
   },

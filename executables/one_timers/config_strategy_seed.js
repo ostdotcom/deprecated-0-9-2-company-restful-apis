@@ -226,12 +226,12 @@ seedConfigStrategies.prototype = {
 
   populateChainGethProviders: async function() {
     let promises = [],
-      valueRpcProviders = env_list.OST_VALUE_GETH_RPC_PROVIDERS,
-      valueWsProviders = env_list.OST_VALUE_GETH_WS_PROVIDERS,
-      utilityRpcProviders = env_list.OST_UTILITY_GETH_RPC_PROVIDERS,
-      utilityWsProviders = env_list.OST_UTILITY_GETH_WS_PROVIDERS;
+      valueRpcProviders = JSON.parse(env_list.OST_VALUE_GETH_RPC_PROVIDERS),
+      valueWsProviders = JSON.parse(env_list.OST_VALUE_GETH_WS_PROVIDERS),
+      utilityRpcProviders = JSON.parse(env_list.OST_UTILITY_GETH_RPC_PROVIDERS),
+      utilityWsProviders = JSON.parse(env_list.OST_UTILITY_GETH_WS_PROVIDERS);
 
-    //Value Chain
+    // Value Chain
     for (let i = 0; i < valueRpcProviders.length; i++) {
       promises.push(
         new ChainGethProviderModel().insertRecord({
@@ -243,7 +243,7 @@ seedConfigStrategies.prototype = {
       );
     }
 
-    //Utility Chain
+    // Utility Chain
     for (let i = 0; i < utilityRpcProviders.length; i++) {
       promises.push(
         new ChainGethProviderModel().insertRecord({
