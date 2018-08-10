@@ -4,13 +4,15 @@ const rootPrefix = '..',
   managedAddressModel = require(rootPrefix + '/app/models/managed_address'),
   managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
   ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
-  BrandedTokenKlass = require(rootPrefix +
-    '/node_modules/@openstfoundation/openst-platform/lib/contract_interact/branded_token'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
-  errorConfig = basicHelper.fetchErrorConfig(apiVersions.general);
+  errorConfig = basicHelper.fetchErrorConfig(apiVersions.general),
+  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy'),
+  configStrategyHelper = new ConfigStrategyHelperKlass(),
+  InstanceComposer = require(rootPrefix + '/instance_composer');
+require(rootPrefix + '/lib/providers/platform');
 
 const VerifyUserApprovalAmountsKlass = function(params) {
   const oThis = this;
@@ -103,6 +105,15 @@ VerifyUserApprovalAmountsKlass.prototype = {
           .where(['client_id = ?', clientId])
           .fire();
 
+      let getConfigStrategyRsp = await configStrategyHelper.getConfigStrategy(clientId);
+
+      if (getConfigStrategyRsp.isFailure()) {
+        return Promise.reject(getConfigStrategyRsp);
+      }
+
+      let instanceComposer = new InstanceComposer(getConfigStrategyRsp.data);
+      let openSTPlaform = instanceComposer.getPlatformProvider().getInstance();
+
       if (!clientBtContractAddr || !clientAirdropContractAddr) {
         console.log('skipping for clientId: ', clientId);
         continue;
@@ -120,13 +131,16 @@ VerifyUserApprovalAmountsKlass.prototype = {
           continue;
         }
 
-        var btContractObj = new BrandedTokenKlass({ ERC20: clientBtContractAddr });
+        let GetAllowance = openSTPlaform.services.approve.getAllowance;
 
-        var getAllowanceRsp = await btContractObj.getAllowance(
-          managedAddress.ethereum_address,
-          clientAirdropContractAddr
-        );
-        // console.log('getAllowanceRsp', getAllowanceRsp)
+        var getAllowanceObj = new GetAllowance({
+          erc20_address: clientBtContractAddr,
+          owner_address: managedAddress.ethereum_address,
+          spender_address: clientAirdropContractAddr
+        });
+
+        var getAllowanceRsp = await getAllowanceObj.perform();
+
         if (
           getAllowanceRsp.isFailure() ||
           !getAllowanceRsp.data.allowance ||
@@ -144,5 +158,5 @@ VerifyUserApprovalAmountsKlass.prototype = {
   }
 };
 
-const populateData = new VerifyUserApprovalAmountsKlass({ startClientId: 1090, endClientId: 1090 });
+const populateData = new VerifyUserApprovalAmountsKlass({ startClientId: 1000, endClientId: 1000 });
 populateData.perform().then(console.log);
