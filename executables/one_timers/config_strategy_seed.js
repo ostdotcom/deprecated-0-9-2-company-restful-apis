@@ -43,6 +43,7 @@ seedConfigStrategies.prototype = {
     await oThis.seed_utility_geth_params();
     await oThis.seed_value_constants_params();
     await oThis.seed_value_geth_params();
+    await oThis.populateChainGethProviders();
     console.log('Success');
     process.exit(0);
   },
