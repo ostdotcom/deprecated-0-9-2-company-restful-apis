@@ -216,11 +216,7 @@ const ChainGethProvidersModelModelSpecificPrototype = {
         }
       }
     } else {
-      // TODO: Change logic here later. Throw error.
-      siblingEndPoints.push(gethEndpoint);
-      requiredChainKind = 'utility';
-      requiredChainId = '0';
-      //throw 'This endpoint does not exist.';
+      throw 'This endpoint does not exist.';
     }
     response['chainId'] = requiredChainId;
     response['chainKind'] = requiredChainKind;
