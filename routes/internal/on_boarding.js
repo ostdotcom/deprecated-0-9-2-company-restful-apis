@@ -1,7 +1,8 @@
 const express = require('express');
 
 const rootPrefix = '../..',
-  routeHelper = require(rootPrefix + '/routes/helper');
+  routeHelper = require(rootPrefix + '/routes/helper'),
+  AssignStrategiesKlass = require(rootPrefix + '/lib/on_boarding/assign_strategies');
 
 const router = express.Router();
 
@@ -39,7 +40,9 @@ router.post('/grant-eth', function(req, res, next) {
 router.post('/setup-token', function(req, res, next) {
   req.decodedParams.apiName = 'setup_bt';
 
-  Promise.resolve(routeHelper.performer(req, res, next, 'getSetupToken', 'r_ob_5'));
+  new AssignStrategiesKlass(req.decodedParams['client_id']).perform().then(function(rsp) {
+    Promise.resolve(routeHelper.performer(req, res, next, 'getSetupToken', 'r_ob_5'));
+  });
 });
 
 /* Propose a branded token */
