@@ -8,14 +8,25 @@
 
 const rootPrefix = '../..';
 
-const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
+const InstanceComposer = require(rootPrefix + '/instance_composer'),
+  ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
   ProcessLocker = new ProcessLockerKlass();
+
+require(rootPrefix + '/lib/providers/platform');
+require(rootPrefix + '/lib/providers/payments');
+require(rootPrefix + '/lib/providers/storage');
+require(rootPrefix + '/app/models/transaction_log');
+require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
+require(rootPrefix + '/lib/web3/interact/ws_interact');
 
 // command line arguments
 const args = process.argv,
   processLockId = args[2],
   datafilePath = args[3],
-  benchmarkFilePath = args[4];
+  benchmarkFilePath = args[4],
+  configStrategyFilePath = args[5].trim();
+
+let configStrategy = {};
 
 // usage demo
 const usageDemo = function() {
@@ -43,6 +54,14 @@ const validateAndSanitize = function() {
     usageDemo();
     process.exit(1);
   }
+
+  if (!configStrategyFilePath) {
+    logger.error('Config strategy file path is NOT passed in the arguments.');
+    usageDemo();
+    process.exit(1);
+  }
+
+  configStrategy = require(configStrategyFilePath);
 };
 
 // validate and sanitize the input params
@@ -53,29 +72,29 @@ ProcessLocker.canStartProcess({ process_title: 'executables_block_scanner_execut
 
 const fs = require('fs'),
   abiDecoder = require('abi-decoder'),
-  openStPlatform = require('@openstfoundation/openst-platform'),
-  openStPayments = require('@openstfoundation/openst-payments'),
-  openSTStorage = require('@openstfoundation/openst-storage'),
+  ic = new InstanceComposer(configStrategy),
+  platformProvider = ic.getPlatformProvider(),
+  openStPlatform = platformProvider.getInstance(),
+  paymentsProvider = ic.getPaymentsProvider(),
+  openStPayments = paymentsProvider.getInstance(),
+  storageProvider = ic.getStorageProvider(),
+  openSTStorage = storageProvider.getInstance(),
   BigNumber = require('bignumber.js'),
   uuid = require('uuid');
 
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
+  coreConstants = require(rootPrefix + '/config/core_constants'),
   TransactionMeta = require(rootPrefix + '/app/models/transaction_meta'),
   transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log'),
-  ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service'),
-  autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service'),
-  Erc20ContractAddressCacheKlass = require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address'),
   commonValidator = require(rootPrefix + '/lib/validators/common'),
-  transactionLogModel = require(rootPrefix + '/app/models/transaction_log'),
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
   ManagedAddressesModel = require(rootPrefix + '/app/models/managed_address'),
-  web3InteractFactory = require(rootPrefix + '/lib/web3/interact/ws_interact'),
   DynamoEntityTypesConst = require(rootPrefix + '/lib/global_constant/dynamodb_entity_types');
 
 const PostAirdropPayKlass = openStPayments.services.airdropManager.postAirdropPay,
-  tokenBalanceModelDdb = openSTStorage.TokenBalanceModel,
+  tokenBalanceModelDdb = openSTStorage.model.TokenBalanceModel,
   coreAbis = openStPlatform.abis;
 
 abiDecoder.addABI(coreAbis.airdrop);
@@ -130,7 +149,9 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    * Warm up web3 pool
    */
   warmUpWeb3Pool: function() {
-    let web3PoolSize = chainInteractionConstants.WEB3_POOL_SIZE;
+    const oThis = this,
+      web3InteractFactory = ic.getWeb3InteractHelper();
+    let web3PoolSize = coreConstants.WEB3_POOL_SIZE;
 
     for (var i = 0; i < web3PoolSize; i++) {
       web3InteractFactory.getInstance('utility');
@@ -141,7 +162,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    * Check for new blocks
    */
   checkForNewBlocks: async function() {
-    const oThis = this;
+    const oThis = this,
+      web3InteractFactory = ic.getWeb3InteractHelper();
 
     if (oThis.interruptSignalObtained) {
       logger.win('* Exiting Process after interrupt signal obtained.');
@@ -316,7 +338,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   },
 
   getTxReceiptsForBatch: async function(batchedTxHashes) {
-    const oThis = this;
+    const oThis = this,
+      web3InteractFactory = ic.getWeb3InteractHelper();
 
     let promiseArray = [],
       web3Interact = web3InteractFactory.getInstance('utility');
@@ -341,7 +364,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     const oThis = this;
 
     let batchNo = 1,
-      web3PoolSize = chainInteractionConstants.WEB3_POOL_SIZE,
+      web3PoolSize = coreConstants.WEB3_POOL_SIZE,
       loadPerConnection = parseInt(oThis.currentBlockInfo.transactions.length / web3PoolSize) + 1,
       promiseArray = [];
 
@@ -499,7 +522,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   generateToUpdateDataForUnKnownTx: async function() {
     const oThis = this,
       eventGeneratingContractAddresses = [],
-      txHashToShortListedEventsMap = {};
+      txHashToShortListedEventsMap = {},
+      Erc20ContractAddressCacheKlass = ic.getErc20ContractAddressCache();
 
     let erc20ContractAddressesData = {};
 
@@ -593,7 +617,9 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    * Update transaction logs table
    */
   updateTransactionLogs: async function() {
-    const oThis = this;
+    const oThis = this,
+      transactionLogModel = ic.getTransactionLogModel,
+      ddbServiceObj = openSTStorage.dynamoDBService;
 
     logger.debug('-------oThis.clientIdsMap----', oThis.clientIdsMap);
 
@@ -628,8 +654,6 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           clientIdToTxLogModelObjectMap[clientId] ||
           new transactionLogModel({
             client_id: clientId,
-            ddb_service: ddbServiceObj,
-            auto_scaling: autoscalingServiceObj,
             shard_name: shardName
           });
 
@@ -734,7 +758,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    * Get highest block
    */
   refreshHighestBlock: async function() {
-    const oThis = this;
+    const oThis = this,
+      web3InteractFactory = ic.getWeb3InteractHelper();
 
     let web3Interact = web3InteractFactory.getInstance('utility');
 
@@ -1030,7 +1055,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    * @returns {promise<result>}
    */
   _insertDataInTransactionLogs: async function(formattedTransactionsData) {
-    const oThis = this;
+    const oThis = this,
+      transactionLogModel = ic.getTransactionLogModel();
 
     logger.info('starting _insertDataInTransactionLogs');
 
@@ -1043,9 +1069,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       logger.info(`starting _insertDataInTransactionLogs clientId : ${clientId} length : ${dataToInsert.length}`);
 
       let rsp = await new transactionLogModel({
-        client_id: clientId,
-        ddb_service: ddbServiceObj,
-        auto_scaling: autoscalingServiceObj
+        client_id: clientId
       }).batchPutItem(dataToInsert, 10);
     }
 
@@ -1060,7 +1084,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    * @returns {promise<result>}
    */
   _settleBalancesInDb: async function(balanceAdjustmentMap) {
-    const oThis = this;
+    const oThis = this,
+      ddbServiceObj = openSTStorage.dynamoDBService;
 
     logger.info('starting _settleBalancesInDb');
 
@@ -1072,9 +1097,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       let userBalancesSettlementsData = balanceAdjustmentMap[erc20ContractAddress],
         tokenBalanceModelObj = new tokenBalanceModelDdb({
           erc20_contract_address: erc20ContractAddress,
-          chain_id: chainInteractionConstants.UTILITY_CHAIN_ID,
-          ddb_service: ddbServiceObj,
-          auto_scaling: autoscalingServiceObj
+          chain_id: chainInteractionConstants.UTILITY_CHAIN_ID
         }),
         promises = [],
         userAddresses = Object.keys(userBalancesSettlementsData);
@@ -1111,9 +1134,11 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   catchHandlingFunction: async function(error) {
     if (responseHelper.isCustomResult(error)) {
       const errorData = error.toDebugHash();
-      if(errorData.err.debugOptions && errorData.err.debugOptions.error &&
-        errorData.err.debugOptions.error.code != 'ConditionalCheckFailedException'){
-
+      if (
+        errorData.err.debugOptions &&
+        errorData.err.debugOptions.error &&
+        errorData.err.debugOptions.error.code != 'ConditionalCheckFailedException'
+      ) {
         logger.notify(errorData.err.debugOptions);
       } else {
         logger.error(error.toDebugHash());
@@ -1138,3 +1163,5 @@ const blockScannerObj = new BlockScannerForTxStatusAndBalanceSync({
 });
 blockScannerObj.registerInterruptSignalHandlers();
 blockScannerObj.init();
+
+// InstanceComposer.register(BlockScannerForTxStatusAndBalanceSync, 'getBlockScannerForTxStatusAndBalanceSync', true);
