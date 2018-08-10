@@ -184,11 +184,6 @@ ListStpTransfersService.prototype = {
    */
   _getFilteredUuids: async function() {
     const oThis = this;
-    const EsSearchServiceKlass = oThis.ic().getEsSearchService(),
-      esSearchServiceObject = new EsSearchServiceKlass({
-        queryBody: oThis.filteringParams,
-        requestSource: ['id']
-      });
 
     // https://www.elastic.co/guide/en/elasticsearch/guide/current/bool-query.html
     let boolFilters = [
@@ -215,7 +210,12 @@ ListStpTransfersService.prototype = {
       sort: [sortParams]
     };
 
-    let searchRsp = await esSearchServiceObject.search(filteringParams, ['id']);
+    const EsSearchServiceKlass = oThis.ic().getEsSearchService(),
+      esSearchServiceObject = new EsSearchServiceKlass({
+        queryBody: filteringParams,
+        requestSource: ['id']
+      });
+    let searchRsp = await esSearchServiceObject.perform(filteringParams, ['id']);
     if (searchRsp.isFailure()) {
       return Promise.reject(searchRsp);
     }
