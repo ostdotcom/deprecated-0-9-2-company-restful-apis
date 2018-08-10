@@ -3,9 +3,13 @@
 const rootPrefix = '../..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service'),
-  shardMgmtObj = ddbServiceObj.shardManagement(),
-  autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service');
+  InstanceComposer = require(rootPrefix + '/instance_composer');
+
+require(rootPrefix + '/lib/providers/storage');
+
+const args = process.argv,
+  config_file_path = args[2],
+  configStrategy = require(config_file_path);
 
 /**
  *
@@ -48,10 +52,15 @@ CreateInitDdbTables.prototype = {
    * @returns {promise}
    */
   asyncPerform: async function() {
-    const oThis = this;
+    const oThis = this,
+      instanceComposer = new InstanceComposer(configStrategy),
+      storageProvider = instanceComposer.getStorageProvider(),
+      openSTStorage = storageProvider.getInstance(),
+      ddbServiceObj = openSTStorage.dynamoDBService,
+      shardMgmtObj = ddbServiceObj.shardManagement();
 
     // running the database migrations for shard management table
-    await shardMgmtObj.runShardMigration(ddbServiceObj, autoscalingServiceObj);
+    await shardMgmtObj.runShardMigration(ddbServiceObj);
 
     return Promise.resolve(responseHelper.successWithData({}));
   }

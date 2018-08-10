@@ -5,8 +5,6 @@
  *
  */
 
-const openSTStorage = require('@openstfoundation/openst-storage');
-
 const rootPrefix = '../..',
   util = require(rootPrefix + '/lib/util'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
