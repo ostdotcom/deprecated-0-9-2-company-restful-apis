@@ -12,7 +12,6 @@ const ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/clie
   criticalChainInteractionLogConst = require(rootPrefix + '/lib/global_constant/critical_chain_interaction_log'),
   managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
-  chainIntConstants = require(rootPrefix + '/config/chain_interaction_constants'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
@@ -35,11 +34,12 @@ const addMoreWorkersKlass = function(params) {
   oThis.clientIdSymbolMap = {};
   oThis.clientIdSetWorkerAddressesMap = {};
 
-  oThis.workerContractAddress = chainIntConstants.UTILITY_WORKERS_CONTRACT_ADDRESS;
-  oThis.senderAddress = chainIntConstants.UTILITY_OPS_ADDR;
-  oThis.senderPassphrase = chainIntConstants.UTILITY_OPS_PASSPHRASE;
-  oThis.chainId = chainIntConstants.UTILITY_CHAIN_ID;
-  oThis.gasPrice = chainIntConstants.UTILITY_GAS_PRICE;
+  oThis.workerContractAddress = null;
+  oThis.senderAddress = null;
+  oThis.senderPassphrase = null;
+  oThis.chainId = null;
+  oThis.gasPrice = null;
+
   oThis.deactivationHeight = basicHelper
     .convertToBigNumber(10)
     .toPower(18)
@@ -235,6 +235,14 @@ addMoreWorkersKlass.prototype = {
     for (var j = 0; j < oThis.clientIds.length; j++) {
       clientId = oThis.clientIds[j];
 
+      let configStrategy = oThis.strategyMap[clientId];
+
+      oThis.workerContractAddress = configStrategy.OST_UTILITY_WORKERS_CONTRACT_ADDRESS;
+      oThis.senderAddress = configStrategy.OST_UTILITY_OPS_ADDR;
+      oThis.senderPassphrase = configStrategy.OST_UTILITY_OPS_PASSPHRASE;
+      oThis.chainId = configStrategy.OST_UTILITY_CHAIN_ID;
+      oThis.gasPrice = configStrategy.OST_UTILITY_GAS_PRICE;
+
       logger.info('sending txs for clientId', clientId);
 
       var existingWorkerManagedAddresses = await new ClientWorkerManagedAddressIdModel().getInActiveByClientId(
@@ -266,7 +274,7 @@ addMoreWorkersKlass.prototype = {
         setWorkerObj = null,
         promise = null;
 
-      let instanceComposer = new InstanceComposer(oThis.strategyMap[clientId]);
+      let instanceComposer = new InstanceComposer(configStrategy);
       let openStPayments = instanceComposer.getPaymentsProvider().getInstance();
       let SetWorkerKlass = openStPayments.services.workers.setWorker;
 
@@ -316,5 +324,5 @@ addMoreWorkersKlass.prototype = {
   }
 };
 
-const obj = new addMoreWorkersKlass({ startClientId: 1021, endClientId: 1021, newWorkersCnt: 4, clientIds: [] });
+const obj = new addMoreWorkersKlass({ startClientId: 1000, endClientId: 1000, newWorkersCnt: 4, clientIds: [] });
 obj.perform().then(logger.debug);

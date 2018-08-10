@@ -125,6 +125,10 @@ seedConfigStrategies.prototype = {
     value_constants_params['OST_VALUE_REGISTRAR_PASSPHRASE'] = env_list.OST_VALUE_REGISTRAR_PASSPHRASE;
     value_constants_params['OST_VALUE_DEPLOYER_ADDR'] = env_list.OST_VALUE_DEPLOYER_ADDR;
     value_constants_params['OST_VALUE_DEPLOYER_PASSPHRASE'] = env_list.OST_VALUE_DEPLOYER_PASSPHRASE;
+
+    console.log('=====env_list.OST_VALUE_OPS_ADDR', env_list.OST_VALUE_OPS_ADDR);
+
+    value_constants_params['OST_VALUE_OPS_ADDR'] = env_list.OST_VALUE_OPS_ADDR;
     value_constants_params['OST_VALUE_OPS_PASSPHRASE'] = env_list.OST_VALUE_OPS_PASSPHRASE;
     value_constants_params['OST_VALUE_CORE_CONTRACT_ADDR'] = env_list.OST_VALUE_CORE_CONTRACT_ADDR;
     value_constants_params['OST_VALUE_REGISTRAR_CONTRACT_ADDR'] = env_list.OST_VALUE_REGISTRAR_CONTRACT_ADDR;

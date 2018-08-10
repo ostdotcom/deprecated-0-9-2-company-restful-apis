@@ -26,8 +26,7 @@ require(rootPrefix + '/module_overrides/index');
 require(rootPrefix + '/lib/providers/platform');
 
 // Load Packages
-const chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
@@ -211,12 +210,12 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
    * @private
    */
   _valueChainData: {
-    utilityChainOwner: { minBalance: '60', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR },
-    staker: { minBalance: '10', address: chainInteractionConstants.STAKER_ADDR },
-    redeemer: { minBalance: '10', address: chainInteractionConstants.REDEEMER_ADDR },
-    valueRegistrar: { minBalance: '10', address: chainInteractionConstants.VALUE_REGISTRAR_ADDR },
-    valueDeployer: { minBalance: '10', address: chainInteractionConstants.VALUE_DEPLOYER_ADDR },
-    valueOps: { minBalance: '10', address: chainInteractionConstants.VALUE_OPS_ADDR }
+    utilityChainOwner: { minBalance: '60', address: configStrategy.OST_UTILITY_CHAIN_OWNER_ADDR },
+    staker: { minBalance: '10', address: configStrategy.OST_STAKER_ADDR },
+    redeemer: { minBalance: '10', address: configStrategy.OST_REDEEMER_ADDR },
+    valueRegistrar: { minBalance: '10', address: configStrategy.OST_VALUE_REGISTRAR_ADDR },
+    valueDeployer: { minBalance: '10', address: configStrategy.OST_VALUE_DEPLOYER_ADDR },
+    valueOps: { minBalance: '10', address: configStrategy.OST_VALUE_OPS_ADDR }
   },
 
   /**

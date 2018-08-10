@@ -27,8 +27,7 @@ require(rootPrefix + '/module_overrides/index');
 require(rootPrefix + '/lib/providers/platform');
 
 // Load Packages
-const chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
@@ -64,8 +63,6 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
       if (balanceResponse.isFailure()) return Promise.resolve(balanceResponse);
 
       const balanceBigNumberInWei = balanceResponse.data.balance;
-
-      console.log('====balanceResponse.data.balance', balanceResponse.data.balance);
 
       if (balanceBigNumberInWei.lessThan(minBalanceInWei)) {
         logger.debug("Funding ST' to ", userName);
@@ -214,12 +211,12 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
    * @private
    */
   _utilityChainData: {
-    utilityChainOwner: { minBalance: '60', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR },
-    staker: { minBalance: '10', address: chainInteractionConstants.STAKER_ADDR },
-    redeemer: { minBalance: '10', address: chainInteractionConstants.REDEEMER_ADDR },
-    utilityRegistrar: { minBalance: '10', address: chainInteractionConstants.UTILITY_REGISTRAR_ADDR },
-    utilityDeployer: { minBalance: '10', address: chainInteractionConstants.UTILITY_DEPLOYER_ADDR },
-    utilityOps: { minBalance: '10', address: chainInteractionConstants.UTILITY_OPS_ADDR }
+    utilityChainOwner: { minBalance: '60', address: configStrategy.OST_UTILITY_CHAIN_OWNER_ADDR },
+    staker: { minBalance: '10', address: configStrategy.OST_STAKER_ADDR },
+    redeemer: { minBalance: '10', address: configStrategy.OST_REDEEMER_ADDR },
+    utilityRegistrar: { minBalance: '10', address: configStrategy.OST_UTILITY_REGISTRAR_ADDR },
+    utilityDeployer: { minBalance: '10', address: configStrategy.OST_UTILITY_DEPLOYER_ADDR },
+    utilityOps: { minBalance: '10', address: configStrategy.OST_UTILITY_OPS_ADDR }
   },
 
   /**

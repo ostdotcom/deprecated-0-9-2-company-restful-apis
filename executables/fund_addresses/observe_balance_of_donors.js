@@ -8,7 +8,6 @@
 
 const rootPrefix = '../..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
 require(rootPrefix + '/lib/providers/platform');
@@ -51,7 +50,7 @@ balanceObserververKlass.prototype = {
    */
   _observeFoundationEthBalance: async function() {
     const oThis = this,
-      foundationAddr = chainInteractionConstants.FOUNDATION_ADDR,
+      foundationAddr = configStrategy.OST_FOUNDATION_ADDR,
       ethBalanceRsp = await oThis._fetchEthBalance(foundationAddr);
 
     if (ethBalanceRsp.isSuccess()) {
@@ -71,7 +70,7 @@ balanceObserververKlass.prototype = {
    */
   _observeUtilityChainOwnerEthBalance: async function() {
     const oThis = this,
-      utilityChainOwnerAddr = chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR,
+      utilityChainOwnerAddr = configStrategy.OST_UTILITY_CHAIN_OWNER_ADDR,
       ethBalanceRsp = await oThis._fetchEthBalance(utilityChainOwnerAddr);
 
     if (ethBalanceRsp.isSuccess()) {
