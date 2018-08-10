@@ -120,10 +120,10 @@ const NonceCacheKlassPrototype = {
       oThis.cacheImplementer = cacheObject.cacheInstance;
 
       if (oThis.chainKind === 'value') {
-        oThis.gethWsProviders = JSON.parse(configStrategy.OST_VALUE_GETH_WS_PROVIDERS);
+        oThis.gethWsProviders = configStrategy.OST_VALUE_GETH_WS_PROVIDERS;
         oThis.chainId = configStrategy.OST_VALUE_CHAIN_ID;
       } else {
-        oThis.gethWsProviders = JSON.parse(configStrategy.OST_UTILITY_GETH_WS_PROVIDERS);
+        oThis.gethWsProviders = configStrategy.OST_UTILITY_GETH_WS_PROVIDERS;
         oThis.chainId = configStrategy.OST_UTILITY_CHAIN_ID;
       }
       // Using JSON.parse as configStrategy stores these array attributes as string.
