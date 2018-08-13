@@ -12,7 +12,8 @@ require(rootPrefix + '/module_overrides/index');
  *
  */
 
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+const InstanceComposer = require(rootPrefix + '/instance_composer'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
 require(rootPrefix + '/lib/providers/platform');
 require(rootPrefix + '/tools/setup/platform/generate_internal_addresses');
