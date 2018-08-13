@@ -41,63 +41,63 @@ StartServicesKlass.prototype = {
     const oThis = this
       , servicesList = [];
 
-    // Start REDIS server
-    logger.step("** Starting Redis Server");
-    var cmd = "redis-server --port 6379  --requirepass 'st123'"
-      + " >> " + homeAbsolutePath + "/openst-setup/logs/redis.log";
+    // // Start REDIS server
+    // logger.step("** Starting Redis Server");
+    // var cmd = "redis-server --port 6379  --requirepass 'st123'"
+    //   + " >> " + homeAbsolutePath + "/openst-setup/logs/redis.log";
+    // // servicesList.push(cmd);
+    // oThis._asyncCommand(cmd);
+    //
+    // // Start Memcached server
+    // logger.step("** Starting Memcached Server");
+    // var cmd = "memcached -p 11211 -d"
+    //   + " >> " + homeAbsolutePath + "/openst-setup/logs/memcached.log";
+    // // servicesList.push(cmd);
+    // oThis._asyncCommand(cmd);
+    //
+    // // Start RabbitMQ server
+    // logger.step("** Starting RabbitMQ Server");
+    // var cmd = "rabbitmq-server"
+    //   + " >> " + homeAbsolutePath + "/openst-setup/logs/rabbitmq.log";
+    // // servicesList.push(cmd);
+    // oThis._asyncCommand(cmd);
+    //
+    // // Start DynamoDB server
+    // logger.step("** Starting DynamoDB");
+    // var cmd = "java -Djava.library.path=" + homeAbsolutePath + "/dynamodb_local_latest/DynamoDBLocal_lib/ -jar "
+    //   + homeAbsolutePath + "/dynamodb_local_latest/DynamoDBLocal.jar -sharedDb -dbPath "
+    //   + homeAbsolutePath + "/openst-setup/logs/";
+    // // servicesList.push(cmd);
+    // oThis._asyncCommand(cmd);
+    //
+    // // Start Value Chain
+    // logger.step("** Start value chain");
+    // var cmd = "sh " + binFolderAbsolutePath + "/run-value.sh";
     // servicesList.push(cmd);
-    oThis._asyncCommand(cmd);
-
-    // Start Memcached server
-    logger.step("** Starting Memcached Server");
-    var cmd = "memcached -p 11211 -d"
-      + " >> " + homeAbsolutePath + "/openst-setup/logs/memcached.log";
+    // oThis._asyncCommand(cmd);
+    //
+    // // Start Utility Chain
+    // logger.step("** Start utility chain");
+    // var cmd = "sh " + binFolderAbsolutePath + "/run-utility.sh";
     // servicesList.push(cmd);
-    oThis._asyncCommand(cmd);
-
-    // Start RabbitMQ server
-    logger.step("** Starting RabbitMQ Server");
-    var cmd = "rabbitmq-server"
-      + " >> " + homeAbsolutePath + "/openst-setup/logs/rabbitmq.log";
-    // servicesList.push(cmd);
-    oThis._asyncCommand(cmd);
-
-    // Start DynamoDB server
-    logger.step("** Starting DynamoDB");
-    var cmd = "java -Djava.library.path=" + homeAbsolutePath + "/dynamodb_local_latest/DynamoDBLocal_lib/ -jar "
-      + homeAbsolutePath + "/dynamodb_local_latest/DynamoDBLocal.jar -sharedDb -dbPath "
-      + homeAbsolutePath + "/openst-setup/logs/";
-    // servicesList.push(cmd);
-    oThis._asyncCommand(cmd);
-
-    // Start Value Chain
-    logger.step("** Start value chain");
-    var cmd = "sh " + binFolderAbsolutePath + "/run-value.sh";
-    servicesList.push(cmd);
-    oThis._asyncCommand(cmd);
-
-    // Start Utility Chain
-    logger.step("** Start utility chain");
-    var cmd = "sh " + binFolderAbsolutePath + "/run-utility.sh";
-    servicesList.push(cmd);
-    oThis._asyncCommand(cmd);
-
-    // Wait for 5 seconds for geth to come up
-    const sleep = function(ms) {
-      return new Promise(function(resolve) {setTimeout(resolve, ms)});
-    };
-    await sleep(5000);
-
-    // Check geths are up and running
-    logger.step("** Check chains are up and responding");
-    const statusObj = new platformStatus()
-      , servicesResponse = await statusObj.perform();
-    if (servicesResponse.isFailure()) {
-      logger.error("* Error ", servicesResponse);
-      process.exit(1);
-    } else {
-      logger.info("* Value Chain:", servicesResponse.data.chain.value, "Utility Chain:", servicesResponse.data.chain.utility);
-    }
+    // oThis._asyncCommand(cmd);
+    //
+    // // Wait for 5 seconds for geth to come up
+    // const sleep = function(ms) {
+    //   return new Promise(function(resolve) {setTimeout(resolve, ms)});
+    // };
+    // await sleep(5000);
+    //
+    // // Check geths are up and running
+    // logger.step("** Check chains are up and responding");
+    // const statusObj = new platformStatus()
+    //   , servicesResponse = await statusObj.perform();
+    // if (servicesResponse.isFailure()) {
+    //   logger.error("* Error ", servicesResponse);
+    //   process.exit(1);
+    // } else {
+    //   logger.info("* Value Chain:", servicesResponse.data.chain.value, "Utility Chain:", servicesResponse.data.chain.utility);
+    // }
 
     // Start intercom processes in openST env
     logger.step("** Starting Register Branded Token Intercom");
