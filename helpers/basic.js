@@ -392,7 +392,7 @@ BasicHelperKlass.prototype = {
         staker: {minBalance: '1', address: chainInteractionConstants.STAKER_ADDR},
         redeemer: {minBalance: '1', address: chainInteractionConstants.REDEEMER_ADDR},
         utilityRegistrar: {minBalance: '1', address: chainInteractionConstants.UTILITY_REGISTRAR_ADDR},
-        utilityDeployer: {minBalance: '', address: chainInteractionConstants.UTILITY_DEPLOYER_ADDR},
+        utilityDeployer: {minBalance: '0.01', address: chainInteractionConstants.UTILITY_DEPLOYER_ADDR},
         utilityOps: {minBalance: '1', address: chainInteractionConstants.UTILITY_OPS_ADDR}
       }
     } else {
