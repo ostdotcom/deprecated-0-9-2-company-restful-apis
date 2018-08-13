@@ -7,10 +7,12 @@
  */
 
 const rootPrefix = '../../..',
-  generateAddressKlass = require(rootPrefix + '/app/services/address/generate'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   managedAddressConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  openStPlatform = require('@openstfoundation/openst-platform');
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+
+require(rootPrefix + '/app/services/address/generate');
+require(rootPrefix + '/lib/providers/platform');
 
 /**
  * Generate Internal addresses required for setup.
@@ -31,11 +33,15 @@ generateInternalAddressesKlass.prototype = {
    * @return {Promise<Array>}
    */
   perform: async function() {
-    const oThis = this;
+    const oThis = this,
+      generateAddressKlass = oThis.ic().getGenerateAddressClass(),
+      platformProvider = oThis.ic().getPlatformProvider(),
+      openSTPlaform = platformProvider.getInstance();
+
     var addressesArr = [];
 
     for (var i = 0; i < oThis.addrGenerationCount; i++) {
-      const addrGenerator = new openStPlatform.services.utils.generateRawKey(),
+      const addrGenerator = new openSTPlaform.services.utils.generateRawKey(),
         generateAddrRsp = addrGenerator.perform();
 
       if (generateAddrRsp.isFailure()) {
@@ -65,5 +71,7 @@ generateInternalAddressesKlass.prototype = {
     return Promise.resolve(addressesArr);
   }
 };
+
+InstanceComposer.registerShadowableClass(generateInternalAddressesKlass, 'getGenerateInternalAddressesClass');
 
 module.exports = generateInternalAddressesKlass;
