@@ -46,7 +46,7 @@ const NonceManagerKlass = function(params) {
   oThis.nonceHelper = new nonceHelperKlass();
 
   //Check for existing instance
-  let instanceKey = oThis.nonceHelper.getInstanceKey(fromAddress, chainKind),
+  let instanceKey = oThis.nonceHelper.getInstanceKey(fromAddress, chainKind, chainId),
     existingInstance = oThis.nonceHelper.getInstance(instanceKey);
   if (existingInstance) {
     logger.log('NM :: NonceManagerKlass :: existingInstance FOUND!');

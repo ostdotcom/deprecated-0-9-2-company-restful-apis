@@ -42,7 +42,7 @@ const getWeb3Instance = function(gethURL, chainKind) {
 
 const instanceMap = {};
 
-function getInstanceKey(fromAddress, chainKind) {
+function getInstanceKey(fromAddress, chainKind, chainId) {
   let args = Array.prototype.slice.call(arguments);
   return args.join('_');
 }
@@ -82,8 +82,8 @@ const NonceHelperKlassPrototype = {
     return getWeb3Instance(gethURL, chainKind);
   },
 
-  getInstanceKey: function(fromAddress, chainKind) {
-    return getInstanceKey(fromAddress, chainKind);
+  getInstanceKey: function(fromAddress, chainKind, chainId) {
+    return getInstanceKey(fromAddress, chainKind, chainId);
   },
 
   getInstance: function(instanceKey) {

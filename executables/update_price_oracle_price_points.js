@@ -14,11 +14,13 @@ require(rootPrefix + '/module_overrides/index');
 const conversionRateConstants = require(rootPrefix + '/lib/global_constant/conversion_rates'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
+
 require(rootPrefix + '/app/services/conversion_rates/update_ost_fiat_rates_in_price_oracle');
 
 const args = process.argv,
   config_file_path = args[2],
   configStrategy = require(config_file_path);
+
 /**
  * Update price oracle price points constructor
  *
