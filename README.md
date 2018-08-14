@@ -34,17 +34,17 @@
 ```bash
 > source set_env_vars.sh
 # Temporarily set redis caching engine for Platform and memcached for SAAS. We will set it permanently later on.
-> export OST_CACHING_ENGINE='redis'
-> export OST_DEFAULT_TTL='36000'
-> export OST_REDIS_HOST='127.0.0.1'
-> export OST_REDIS_PORT=6379
-> export OST_REDIS_PASS=st123
-> export OST_REDIS_TLS_ENABLED=0
-> export OST_MEMCACHE_SERVERS='127.0.0.1:11211'
-> export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform
-> export OST_UTILITY_GAS_PRICE='0x0'
-> export OST_VALUE_GAS_PRICE='0xBA43B7400'
-> echo "export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform" >> ~/.bash_profile
+export OST_CACHING_ENGINE='redis'
+export OST_DEFAULT_TTL='36000'
+export OST_REDIS_HOST='127.0.0.1'
+export OST_REDIS_PORT=6379
+export OST_REDIS_PASS=st123
+export OST_REDIS_TLS_ENABLED=0
+export OST_MEMCACHE_SERVERS='127.0.0.1:11211'
+export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform
+export OST_UTILITY_GAS_PRICE='0x0'
+export OST_VALUE_GAS_PRICE='0xBA43B7400'
+echo "export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform" >> ~/.bash_profile
 ```
 
 * Delete the Dynamo DB data file if it exists. The data file resides at "$HOME/openst-setup/logs/shared-local-instance.db". We do this because deploy.js file will initiate the DB file creation again. 
