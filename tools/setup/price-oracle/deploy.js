@@ -10,10 +10,15 @@
 const rootPrefix = '../../..';
 require(rootPrefix + '/module_overrides/index');
 
-const PriceOracleDeployerKlass = require(rootPrefix +
-    '/node_modules/@ostdotcom/ost-price-oracle/tools/deploy/deploy_and_set_ops'),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  chainConstants = require(rootPrefix + '/config/chain_interaction_constants');
+const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  InstanceComposer = require(rootPrefix + '/instance_composer');
+
+const args = process.argv,
+  configStrategyFilePath = args[2],
+  configStrategy = require(configStrategyFilePath),
+  instanceComposer = new InstanceComposer(configStrategy),
+  DeployAndSetOpsKlass = instanceComposer.getPriceOracleProvider().getInstance().deployAndSetOps;
+require(rootPrefix + '/lib/providers/price_oracle');
 
 /**
  * Deploy Price Oracle contract for OST and USD
@@ -29,9 +34,9 @@ DeployPriceOracleKlass.prototype = {
    * @return {Promise<void>}
    */
   perform: async function() {
-    const deployerObj = new PriceOracleDeployerKlass();
+    const deployerObj = new DeployAndSetOpsKlass();
     var resp = await deployerObj.perform({
-      gasPrice: chainConstants.UTILITY_GAS_PRICE,
+      gasPrice: configStrategy.UTILITY_GAS_PRICE,
       baseCurrency: 'OST',
       quoteCurrency: 'USD'
     });
