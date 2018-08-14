@@ -34,7 +34,7 @@ SetPaymentsWorkerKlass.prototype = {
    * @return {Promise<void>}
    */
   perform: async function() {
-    const setWorkerKlass = openStPayments.services.workers.setWorkerAndOps;
+    const setWorkerKlass = openStPayments.services.workers.deployWorkersAndSetOps;
     let setWorkerObj = new setWorkerKlass();
     var resp = await setWorkerObj.perform({
       gasPrice: configStrategy.OST_UTILITY_GAS_PRICE,
