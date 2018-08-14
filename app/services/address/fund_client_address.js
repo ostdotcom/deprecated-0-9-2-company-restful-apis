@@ -213,7 +213,7 @@ FundClientAddressKlass.prototype = {
     if (balanceBigNumberInWei.lessThan(minReserveAddrBalanceToProceedInWei)) {
       return responseHelper.error({
         internal_error_identifier: 's_a_fca_1',
-        api_error_identifier: 'insufficient_funds',
+        api_error_identifier: 'insufficient_gas',
         debug_options: {clientId: oThis.clientId}
       });
     }

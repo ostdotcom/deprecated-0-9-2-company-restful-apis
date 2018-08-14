@@ -418,7 +418,7 @@ BasicHelperKlass.prototype = {
     const oThis = this;
 
     if(oThis.isProduction() || oThis.isMainSubEnvironment()){
-      return oThis.convertToWei(0.5)
+      return oThis.convertToWei(0.05)
     } else {
       return oThis.convertToWei(0.5)
     }
@@ -450,7 +450,7 @@ BasicHelperKlass.prototype = {
     const oThis = this;
 
     if(oThis.isProduction() && oThis.isMainSubEnvironment()){
-      return oThis.convertToWei(0.05)
+      return oThis.convertToWei(0.01)
     } else {
       return oThis.convertToWei(0.5)
     }
@@ -466,7 +466,7 @@ BasicHelperKlass.prototype = {
     const oThis = this;
 
     if(oThis.isProduction() && oThis.isMainSubEnvironment()){
-      return oThis.convertToWei(0.04)
+      return oThis.convertToWei(0.01)
     } else {
       return oThis.convertToWei(1)
     }
