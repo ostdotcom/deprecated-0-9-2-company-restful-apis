@@ -59,15 +59,15 @@ export OS_AUTOSCALING_LOGGING_ENABLED='0'
 export OS_DYNAMODB_TABLE_NAME_PREFIX='d_pk_'
 
 # AWS details
-export CR_AWS_ACCESS_KEY='AKIAI2YIQOUAWLIER37Q'
-export CR_AWS_SECRET_KEY='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'
+export CR_AWS_ACCESS_KEY='AKIAJUDRALNURKAVS5IQ'
+export CR_AWS_SECRET_KEY='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'
 export CR_AWS_REGION='us-east-1'
 
 # KMS details
-export CR_API_KEY_KMS_ARN='arn:aws:kms:us-east-1:704700004548:key'
-export CR_API_KEY_KMS_ID='d803ff0a-92a4-4ef0-8e46-614588c590ad'
-export CR_MANAGED_ADDRESS_KMS_ARN='arn:aws:kms:us-east-1:704700004548:key'
-export CR_MANAGED_ADDRESS_KMS_ID='5dd83cf2-3580-4c55-9959-8d53e3265f1e'
+export CR_API_KEY_KMS_ARN='arn:aws:kms:us-east-1:604850698061:key'
+export CR_API_KEY_KMS_ID='eab8148d-fd9f-451d-9eb9-16c115645635'
+export CR_MANAGED_ADDRESS_KMS_ARN='arn:aws:kms:us-east-1:604850698061:key'
+export CR_MANAGED_ADDRESS_KMS_ID='eab8148d-fd9f-451d-9eb9-16c115645635'
 
 # JWT details
 export CA_SAAS_API_SECRET_KEY='1somethingsarebetterkeptinenvironemntvariables'
