@@ -12,13 +12,13 @@ require(rootPrefix + '/module_overrides/index');
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
+require(rootPrefix + '/lib/providers/payments');
+
 const args = process.argv,
   configStrategyFilePath = args[2],
   configStrategy = require(configStrategyFilePath),
   instanceComposer = new InstanceComposer(configStrategy),
   openStPayments = instanceComposer.getPaymentsProvider().getInstance();
-
-require(rootPrefix + '/lib/providers/payments');
 
 /**
  * Set Worker for OpenSt Payments
@@ -37,8 +37,8 @@ SetPaymentsWorkerKlass.prototype = {
     const setWorkerKlass = openStPayments.services.workers.setWorkerAndOps;
     let setWorkerObj = new setWorkerKlass();
     var resp = await setWorkerObj.perform({
-      gasPrice: configStrategy.UTILITY_GAS_PRICE,
-      chainId: configStrategy.UTILITY_CHAIN_ID
+      gasPrice: configStrategy.OST_UTILITY_GAS_PRICE,
+      chainId: configStrategy.OST_UTILITY_CHAIN_ID
     });
 
     logger.debug(' ********* Response *****');

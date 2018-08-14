@@ -13,12 +13,13 @@ require(rootPrefix + '/module_overrides/index');
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
+require(rootPrefix + '/lib/providers/price_oracle');
+
 const args = process.argv,
   configStrategyFilePath = args[2],
   configStrategy = require(configStrategyFilePath),
   instanceComposer = new InstanceComposer(configStrategy),
   DeployAndSetOpsKlass = instanceComposer.getPriceOracleProvider().getInstance().deployAndSetOps;
-require(rootPrefix + '/lib/providers/price_oracle');
 
 /**
  * Deploy Price Oracle contract for OST and USD
@@ -36,7 +37,7 @@ DeployPriceOracleKlass.prototype = {
   perform: async function() {
     const deployerObj = new DeployAndSetOpsKlass();
     var resp = await deployerObj.perform({
-      gasPrice: configStrategy.UTILITY_GAS_PRICE,
+      gasPrice: configStrategy.OST_UTILITY_GAS_PRICE,
       baseCurrency: 'OST',
       quoteCurrency: 'USD'
     });
