@@ -192,15 +192,18 @@ const ConfigStrategyModelSpecificPrototype = {
    *
    * @param {string}:
    */
-  getStrategyIdsByKind: async function(kind) {
+  getStrategyIdsByKindAndGroupId: async function(kind, group_id) {
     const oThis = this,
-      strategyKindInt = invertedKinds[kind];
+      strategyKindInt = invertedKinds[kind],
+      groupId = group_id;
 
     if (strategyKindInt == undefined) {
       throw 'Error: Improper kind parameter';
     }
 
-    let query = oThis.select('id').where({ kind: strategyKindInt }),
+    let query = oThis
+        .select(['id', 'group_id'])
+        .where('kind = ' + strategyKindInt + ' AND (group_id = ' + groupId + ' OR group_id IS NULL)'),
       queryResult = await query.fire(),
       strategyIdsArray = [];
 
@@ -208,7 +211,56 @@ const ConfigStrategyModelSpecificPrototype = {
       strategyIdsArray.push(queryResult[i].id);
     }
 
-    return Promise.resolve(responseHelper.successWithData(strategyIdsArray));
+    return Promise.resolve(responseHelper.successWithData(queryResult));
+  },
+
+  /*
+   *
+   * This function returns distinct group ids:
+   *
+   * @return [Array]
+   */
+  getDistinctGroupIds: async function() {
+    const oThis = this;
+
+    let distinctGroupIdArray = [];
+
+    let query = oThis.select('group_id').group_by('group_id'),
+      queryResult = await query.fire();
+
+    for (let i = 0; i < queryResult.length; i++) {
+      distinctGroupIdArray.push(queryResult[i].group_id);
+    }
+
+    return Promise.resolve(responseHelper.successWithData(distinctGroupIdArray));
+  },
+
+  /**
+   * This function returns group ids of the strategy ids passed as an array
+   * @param strategyIdsArray
+   * @returns {Promise<*>}
+   */
+  getGroupIdsByStrategyIds: async function(strategyIdsArray) {
+    const oThis = this;
+
+    if (strategyIdsArray.length == 0) {
+      logger.error('Empty strategy Ids array was passed');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'a_mo_cs_2',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {},
+          error_config: errorConfig
+        })
+      );
+    }
+
+    const queryResult = await oThis
+      .select(['id', 'group_id'])
+      .where(['id IN (?)', strategyIdsArray])
+      .fire();
+
+    return Promise.resolve(responseHelper.successWithData(queryResult));
   },
 
   /*
