@@ -627,7 +627,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     logger.debug('-------oThis.clientIdsMap----', oThis.clientIdsMap);
 
-    if (Object.keys(oThis.clientIdsMap) === 0) return {};
+    if (Object.keys(oThis.clientIdsMap).length === 0) return {};
 
     const getManagedShardResponse = await ddbServiceObj.shardManagement().getManagedShard({
       entity_type: DynamoEntityTypesConst.transactionLogEntityType,
