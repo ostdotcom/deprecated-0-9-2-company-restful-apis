@@ -57,7 +57,7 @@ addMoreWorkersKlass.prototype = {
       r = null;
 
     return oThis.asyncPerform().catch(function(error) {
-      var errorObj = null;
+      let errorObj = null;
 
       // something unhandled happened
       logger.error('executables/add_more_workers.js::perform::catch');
@@ -95,24 +95,24 @@ addMoreWorkersKlass.prototype = {
   asyncPerform: async function() {
     const oThis = this;
 
-    var r = oThis.setclientIds();
+    let r = oThis.setclientIds();
     if (r.isFailure()) {
       return Promise.resolve(r);
     }
 
-    var r = await oThis.setclientIdSymbolMap();
+    r = await oThis.setclientIdSymbolMap();
 
     if (r.isFailure()) {
       return Promise.reject(r);
     }
 
-    var r = await oThis.generateWorkerAddresses();
+    r = await oThis.generateWorkerAddresses();
 
     if (r.isFailure()) {
       return Promise.reject(r);
     }
 
-    var r = await oThis.associateWorkerAddresses();
+    r = await oThis.associateWorkerAddresses();
 
     console.log('====r', r);
     return Promise.resolve(r);
@@ -135,7 +135,7 @@ addMoreWorkersKlass.prototype = {
 
     oThis.clientIds = [];
 
-    for (var i = oThis.startClientId; i <= oThis.endClientId; i++) {
+    for (let i = oThis.startClientId; i <= oThis.endClientId; i++) {
       oThis.clientIds.push(i);
     }
 
@@ -150,8 +150,8 @@ addMoreWorkersKlass.prototype = {
 
     oThis.strategyMap = {};
 
-    for (var j = 0; j < oThis.clientIds.length; j++) {
-      var clientId = oThis.clientIds[j],
+    for (let j = 0; j < oThis.clientIds.length; j++) {
+      let clientId = oThis.clientIds[j],
         managedAddressInsertData = [],
         newWorkerUuids = [];
 
@@ -167,13 +167,13 @@ addMoreWorkersKlass.prototype = {
 
       let GenerateEthAddressKlass = instanceComposer.getGenerateAddressClass();
 
-      var generateEthAddress = new GenerateEthAddressKlass({
+      let generateEthAddress = new GenerateEthAddressKlass({
         address_type: managedAddressesConst.workerAddressType,
         client_id: clientId
       });
 
-      for (var i = 0; i < oThis.newWorkersCnt; i++) {
-        var r = await generateEthAddress.perform();
+      for (let i = 0; i < oThis.newWorkersCnt; i++) {
+        let r = await generateEthAddress.perform();
 
         if (r.isFailure()) {
           return Promise.resolve(r);
@@ -184,7 +184,7 @@ addMoreWorkersKlass.prototype = {
       }
 
       const manageAddrObjs = await new ManagedAddressModel().getByUuids(newWorkerUuids);
-      for (var i = 0; i < manageAddrObjs.length; i++) {
+      for (let i = 0; i < manageAddrObjs.length; i++) {
         managedAddressInsertData.push([
           clientId,
           manageAddrObjs[i].id,
@@ -199,7 +199,7 @@ addMoreWorkersKlass.prototype = {
 
     logger.info('waiting for addresses to be generated');
 
-    var wait = function() {
+    let wait = function() {
       return new Promise(function(onResolve, onReject) {
         setTimeout(function() {
           logger.info('addresses generated');
@@ -215,9 +215,9 @@ addMoreWorkersKlass.prototype = {
     const oThis = this,
       clientBrandedTokens = await new ClientBrandedTokenModel().getByClientIds(oThis.clientIds);
 
-    var clientBrandedToken = null;
+    let clientBrandedToken = null;
 
-    for (var i = 0; i < clientBrandedTokens.length; i++) {
+    for (let i = 0; i < clientBrandedTokens.length; i++) {
       clientBrandedToken = clientBrandedTokens[i];
       oThis.clientIdSymbolMap[parseInt(clientBrandedToken.client_id)] = clientBrandedToken.symbol;
     }
@@ -230,9 +230,9 @@ addMoreWorkersKlass.prototype = {
   associateWorkerAddresses: async function() {
     const oThis = this;
 
-    var clientId = null;
+    let clientId = null;
 
-    for (var j = 0; j < oThis.clientIds.length; j++) {
+    for (let j = 0; j < oThis.clientIds.length; j++) {
       clientId = oThis.clientIds[j];
 
       let configStrategy = oThis.strategyMap[clientId];
@@ -245,13 +245,13 @@ addMoreWorkersKlass.prototype = {
 
       logger.info('sending txs for clientId', clientId);
 
-      var existingWorkerManagedAddresses = await new ClientWorkerManagedAddressIdModel().getInActiveByClientId(
+      let existingWorkerManagedAddresses = await new ClientWorkerManagedAddressIdModel().getInActiveByClientId(
           clientId
         ),
         managedAddressIdClientWorkerAddrIdMap = {},
         workerAddressesIdToUpdateMap = {};
 
-      for (var i = 0; i < existingWorkerManagedAddresses.length; i++) {
+      for (let i = 0; i < existingWorkerManagedAddresses.length; i++) {
         managedAddressIdClientWorkerAddrIdMap[parseInt(existingWorkerManagedAddresses[i].managed_address_id)] =
           existingWorkerManagedAddresses[i].id;
       }
@@ -261,12 +261,12 @@ addMoreWorkersKlass.prototype = {
         .where(['id in (?)', Object.keys(managedAddressIdClientWorkerAddrIdMap)])
         .fire();
 
-      for (var i = 0; i < managedAddresses.length; i++) {
+      for (let i = 0; i < managedAddresses.length; i++) {
         workerAddressesIdToUpdateMap[managedAddresses[i].ethereum_address] =
           managedAddressIdClientWorkerAddrIdMap[managedAddresses[i].id];
       }
 
-      var workerAddrs = Object.keys(workerAddressesIdToUpdateMap),
+      let workerAddrs = Object.keys(workerAddressesIdToUpdateMap),
         promiseResolvers = [],
         promiseResponses = [],
         formattedPromiseResponses = {},
@@ -278,7 +278,7 @@ addMoreWorkersKlass.prototype = {
       let openStPayments = instanceComposer.getPaymentsProvider().getInstance();
       let SetWorkerKlass = openStPayments.services.workers.setWorker;
 
-      for (var i = 0; i < workerAddrs.length; i++) {
+      for (let i = 0; i < workerAddrs.length; i++) {
         setWorkerObj = new SetWorkerKlass({
           workers_contract_address: oThis.workerContractAddress,
           sender_address: oThis.senderAddress,
@@ -297,8 +297,8 @@ addMoreWorkersKlass.prototype = {
 
       promiseResponses = await Promise.all(promiseResolvers);
 
-      for (var i = 0; i < promiseResolvers.length; i++) {
-        var r = promiseResponses[i];
+      for (let i = 0; i < promiseResolvers.length; i++) {
+        let r = promiseResponses[i];
         if (r.isFailure()) {
           logger.notify('l_sw_2', 'Set Worker Failed', r, { clientId: clientId });
         } else {
@@ -307,7 +307,7 @@ addMoreWorkersKlass.prototype = {
         }
       }
 
-      if (successWorkerAddrIds.length == 0) {
+      if (successWorkerAddrIds.length === 0) {
         const errorRsp = responseHelper.error({
           internal_error_identifier: 'e_amw_3',
           api_error_identifier: 'could_not_proceed',

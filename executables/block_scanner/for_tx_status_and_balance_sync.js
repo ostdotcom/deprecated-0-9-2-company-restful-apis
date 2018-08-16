@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * This is the base class for block scanners
+ * This is the base class for block scanners.
  *
  * @module executables/block_scanner/for_tx_status_and_balance_sync
  */
@@ -19,29 +19,30 @@ require(rootPrefix + '/app/models/transaction_log');
 require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
 require(rootPrefix + '/lib/web3/interact/ws_interact');
 
-// command line arguments
+// Command line arguments.
 const args = process.argv,
   processLockId = args[2],
   datafilePath = args[3],
-  benchmarkFilePath = args[4],
-  configStrategyFilePath = args[5].trim();
+  configStrategyFilePath = args[4].trim(),
+  benchmarkFilePath = args[5];
 
 let configStrategy = {};
 
-// usage demo
+// Usage demo.
 const usageDemo = function() {
   logger.log(
     'usage:',
-    'node ./executables/block_scanner/for_tx_status_and_balance_sync.js processLockId datafilePath [benchmarkFilePath]'
+    'node ./executables/block_scanner/for_tx_status_and_balance_sync.js processLockId datafilePath configStrategyFilePath [benchmarkFilePath]'
   );
   logger.log(
     '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
   );
   logger.log('* datafilePath is the path to the file which is storing the last block scanned info.');
+  logger.log('* configStrategyFilePath is the path to the file which is storing the config strategy info.');
   logger.log('* benchmarkFilePath is the path to the file which is storing the benchmarking info.');
 };
 
-// validate and sanitize the command line arguments
+// Validate and sanitize the command line arguments.
 const validateAndSanitize = function() {
   if (!processLockId) {
     logger.error('Process Lock id NOT passed in the arguments.');
@@ -64,10 +65,10 @@ const validateAndSanitize = function() {
   configStrategy = require(configStrategyFilePath);
 };
 
-// validate and sanitize the input params
+// Validate and sanitize the input params.
 validateAndSanitize();
 
-// check if another process with the same title is running
+// Check if another process with the same title is running.
 ProcessLocker.canStartProcess({ process_title: 'executables_block_scanner_execute_transaction' + processLockId });
 
 const fs = require('fs'),
@@ -127,17 +128,17 @@ const BlockScannerForTxStatusAndBalanceSync = function(params) {
 
 BlockScannerForTxStatusAndBalanceSync.prototype = {
   /**
-   * Intentional block delay
+   * Intentional block delay.
    */
   INTENTIONAL_BLOCK_DELAY: 0,
 
   /**
-   * Starts the process of the script with initializing processor
+   * Starts the process of the script with initializing processor.
    */
   init: function() {
     const oThis = this;
 
-    // Read this from a file
+    // Read this from a file.
     oThis.scannerData = JSON.parse(fs.readFileSync(oThis.filePath).toString());
 
     oThis.warmUpWeb3Pool();
@@ -146,20 +147,20 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   },
 
   /**
-   * Warm up web3 pool
+   * Warm up web3 pool.
    */
   warmUpWeb3Pool: function() {
     const oThis = this,
       web3InteractFactory = ic.getWeb3InteractHelper();
     let web3PoolSize = coreConstants.OST_WEB3_POOL_SIZE;
 
-    for (var i = 0; i < web3PoolSize; i++) {
+    for (let i = 0; i < web3PoolSize; i++) {
       web3InteractFactory.getInstance('utility');
     }
   },
 
   /**
-   * Check for new blocks
+   * Check for new blocks.
    */
   checkForNewBlocks: async function() {
     const oThis = this,
@@ -194,12 +195,12 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
         if (!oThis.currentBlockInfo) return oThis.schedule();
 
-        // categorize the transaction hashes into known (having entry in transaction meta) and unknown
+        // Categorize the transaction hashes into known (having entry in transaction meta) and unknown.
         await oThis.categorizeTransactions();
 
         if (oThis.benchmarkFilePath)
           oThis.granularTimeTaken.push('categorizeTransactions-' + (Date.now() - oThis.startTime) + 'ms');
-        // for all the transactions in the block, get the receipt
+        // For all the transactions in the block, get the receipt.
         await oThis.getTransactionReceipts();
         if (oThis.benchmarkFilePath)
           oThis.granularTimeTaken.push('getTransactionReceipts-' + (Date.now() - oThis.startTime) + 'ms');
@@ -208,12 +209,12 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         if (oThis.benchmarkFilePath)
           oThis.granularTimeTaken.push('collectDecodedEvents-' + (Date.now() - oThis.startTime) + 'ms');
 
-        // construct the data to be updated for known transaction
+        // Construct the data to be updated for known transaction.
         await oThis.generateToUpdateDataForKnownTx();
         if (oThis.benchmarkFilePath)
           oThis.granularTimeTaken.push('generateToUpdateDataForKnownTx-' + (Date.now() - oThis.startTime) + 'ms');
 
-        // construct the data to be inserted for unknown transaction
+        // Construct the data to be inserted for unknown transaction.
         await oThis.generateToUpdateDataForUnKnownTx();
         if (oThis.benchmarkFilePath)
           oThis.granularTimeTaken.push('generateToUpdateDataForUnKnownTx-' + (Date.now() - oThis.startTime) + 'ms');
@@ -226,7 +227,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         if (oThis.benchmarkFilePath)
           oThis.granularTimeTaken.push('updateScannerDataFile-' + (Date.now() - oThis.startTime) + 'ms');
 
-        if (oThis.recognizedTxHashes.length != 0) {
+        if (oThis.recognizedTxHashes.length !== 0) {
           if (oThis.benchmarkFilePath) {
             oThis.updateBanchmarkFile();
             oThis.granularTimeTaken.push('updateBanchmarkFile-' + (Date.now() - oThis.startTime) + 'ms');
@@ -255,7 +256,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   },
 
   /**
-   * Init params
+   * Init params.
    */
   initParams: function() {
     const oThis = this;
@@ -277,17 +278,17 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   },
 
   /**
-   * Categorize Transactions using transaction_meta table
+   * Categorize Transactions using transaction_meta table.
    */
   categorizeTransactions: async function(allTxHashes) {
     const oThis = this,
       batchSize = 100;
 
-    var batchNo = 1,
+    let batchNo = 1,
       totalBtTransfers = 0,
       totalSTPTransfers = 0;
 
-    // batch-wise fetch data from transaction_meta table.
+    // Batch-wise fetch data from transaction_meta table.
     while (true) {
       const offset = (batchNo - 1) * batchSize,
         batchedTxHashes = oThis.currentBlockInfo.transactions.slice(offset, batchSize + offset),
@@ -300,7 +301,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       const batchedTxLogRecords = await new TransactionMeta().getByTransactionHash(batchedTxHashes);
 
       logger.debug('---------------batchedTxLogRecords-----', batchedTxLogRecords);
-      for (var i = 0; i < batchedTxLogRecords.length; i++) {
+      for (let i = 0; i < batchedTxLogRecords.length; i++) {
         const currRecord = batchedTxLogRecords[i];
 
         recognizedTxHashesMap[currRecord.transaction_hash] = 1;
@@ -324,8 +325,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         oThis.knownTxUuidToTxHashMap[currRecord.transaction_uuid] = currRecord.transaction_hash;
       }
 
-      for (var i = 0; i < batchedTxHashes.length; i++) {
-        //if already known transaction skip here.
+      for (let i = 0; i < batchedTxHashes.length; i++) {
+        // If already known transaction, skip here.
         if (recognizedTxHashesMap[batchedTxHashes[i]]) continue;
         oThis.unRecognizedTxHashes.push(batchedTxHashes[i]);
       }
@@ -344,13 +345,13 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     let promiseArray = [],
       web3Interact = web3InteractFactory.getInstance('utility');
 
-    for (var i = 0; i < batchedTxHashes.length; i++) {
+    for (let i = 0; i < batchedTxHashes.length; i++) {
       promiseArray.push(web3Interact.getReceipt(batchedTxHashes[i]));
     }
 
     const txReceiptResults = await Promise.all(promiseArray);
 
-    for (var i = 0; i < batchedTxHashes.length; i++) {
+    for (let i = 0; i < batchedTxHashes.length; i++) {
       oThis.txHashToTxReceiptMap[batchedTxHashes[i]] = txReceiptResults[i];
     }
 
@@ -358,7 +359,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   },
 
   /**
-   * Get transaction receipt
+   * Get transaction receipt.
    */
   getTransactionReceipts: async function() {
     const oThis = this;
@@ -389,13 +390,13 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   },
 
   /**
-   * Generate to update data
+   * Generate to update data.
    */
   generateToUpdateDataForKnownTx: async function() {
     const oThis = this,
       batchSize = 500;
 
-    for (var clientId in oThis.recognizedTxUuidsGroupedByClientId) {
+    for (let clientId in oThis.recognizedTxUuidsGroupedByClientId) {
       let txUuids = oThis.recognizedTxUuidsGroupedByClientId[clientId],
         batchNo = 1;
 
@@ -410,7 +411,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
         if (batchedTxUuids.length === 0) break;
 
-        for (var txUuidIndex = 0; txUuidIndex < batchedTxUuids.length; txUuidIndex++) {
+        for (let txUuidIndex = 0; txUuidIndex < batchedTxUuids.length; txUuidIndex++) {
           let txUuid = batchedTxUuids[txUuidIndex];
 
           let txHash = oThis.knownTxUuidToTxHashMap[txUuid];
@@ -467,9 +468,9 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     let addressesToFetch = [];
 
-    for (var clientId in oThis.recognizedTxUuidsGroupedByClientId) {
+    for (let clientId in oThis.recognizedTxUuidsGroupedByClientId) {
       let txUuids = oThis.recognizedTxUuidsGroupedByClientId[clientId];
-      for (var txUuidsInd = 0; txUuidsInd < txUuids.length; txUuidsInd++) {
+      for (let txUuidsInd = 0; txUuidsInd < txUuids.length; txUuidsInd++) {
         let txUuid = txUuids[txUuidsInd],
           txHash = oThis.knownTxUuidToTxHashMap[txUuid],
           txReceipt = oThis.txHashToTxReceiptMap[txHash];
@@ -478,9 +479,9 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           let decodedEvents = abiDecoder.decodeLogs(txReceipt.logs);
           oThis.txHashToDecodedEventsMap[txHash] = decodedEvents;
 
-          for (var i = 0; i < decodedEvents.length; i++) {
-            if (decodedEvents[i].name == 'Transfer') {
-              for (var j = 0; j < decodedEvents[i].events.length; j++) {
+          for (let i = 0; i < decodedEvents.length; i++) {
+            if (decodedEvents[i].name === 'Transfer') {
+              for (let j = 0; j < decodedEvents[i].events.length; j++) {
                 if (['_from', '_to'].includes(decodedEvents[i].events[j].name)) {
                   addressesToFetch.push(decodedEvents[i].events[j].value);
                 }
@@ -527,11 +528,11 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     let erc20ContractAddressesData = {};
 
-    for (var i = 0; i < oThis.unRecognizedTxHashes.length; i++) {
+    for (let i = 0; i < oThis.unRecognizedTxHashes.length; i++) {
       let txHash = oThis.unRecognizedTxHashes[i],
         txReceipt = oThis.txHashToTxReceiptMap[txHash];
 
-      for (var j = 0; j < txReceipt.logs.length; j++) {
+      for (let j = 0; j < txReceipt.logs.length; j++) {
         eventGeneratingContractAddresses.push(txReceipt.logs[j].address);
       }
     }
@@ -546,11 +547,11 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       erc20ContractAddressesData = cacheFetchRsp.data;
     }
 
-    for (var i = 0; i < oThis.unRecognizedTxHashes.length; i++) {
+    for (let i = 0; i < oThis.unRecognizedTxHashes.length; i++) {
       let txHash = oThis.unRecognizedTxHashes[i];
       let txReceipt = oThis.txHashToTxReceiptMap[txHash];
 
-      for (var j = 0; j < txReceipt.logs.length; j++) {
+      for (let j = 0; j < txReceipt.logs.length; j++) {
         let txReceiptLogElement = txReceipt.logs[j],
           contractAddress = txReceiptLogElement.address.toLowerCase(),
           eventSignature = txReceiptLogElement.topics[0],
@@ -623,7 +624,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     logger.debug('-------oThis.clientIdsMap----', oThis.clientIdsMap);
 
-    if (Object.keys(oThis.clientIdsMap) == 0) return {};
+    if (Object.keys(oThis.clientIdsMap) === 0) return {};
 
     const getManagedShardResponse = await ddbServiceObj.shardManagement().getManagedShard({
       entity_type: DynamoEntityTypesConst.transactionLogEntityType,
@@ -643,9 +644,9 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       let offset = (batchNo - 1) * dynamoQueryBatchSize,
         batchedData = oThis.dataToUpdate.slice(offset, dynamoQueryBatchSize + offset);
 
-      if (batchedData.length == 0) break;
+      if (batchedData.length === 0) break;
 
-      for (var i = 0; i < batchedData.length; i++) {
+      for (let i = 0; i < batchedData.length; i++) {
         let toProcessData = batchedData[i],
           clientId = toProcessData.client_id,
           shardName = getManagedShardResponse.data.items[clientId].shardName;
@@ -784,53 +785,53 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     let airdropPaymentEventVars = null,
       allTransferEventsVars = [];
 
-    for (var i = 0; i < decodedEvents.length; i++) {
-      if (decodedEvents[i].name == 'AirdropPayment') {
+    for (let i = 0; i < decodedEvents.length; i++) {
+      if (decodedEvents[i].name === 'AirdropPayment') {
         airdropPaymentEventVars = decodedEvents[i].events;
       }
-      if (decodedEvents[i].name == 'Transfer') {
+      if (decodedEvents[i].name === 'Transfer') {
         allTransferEventsVars.push(decodedEvents[i].events);
       }
     }
 
     airdropPaymentEventVars = airdropPaymentEventVars || [];
-    for (var i = 0; i < airdropPaymentEventVars.length; i++) {
-      if (airdropPaymentEventVars[i].name == '_commissionTokenAmount') {
+    for (let i = 0; i < airdropPaymentEventVars.length; i++) {
+      if (airdropPaymentEventVars[i].name === '_commissionTokenAmount') {
         eventData._commissionTokenAmount = airdropPaymentEventVars[i].value;
       }
 
-      if (airdropPaymentEventVars[i].name == '_tokenAmount') {
+      if (airdropPaymentEventVars[i].name === '_tokenAmount') {
         eventData._tokenAmount = airdropPaymentEventVars[i].value;
       }
 
-      if (airdropPaymentEventVars[i].name == '_airdropUsed') {
+      if (airdropPaymentEventVars[i].name === '_airdropUsed') {
         eventData._airdropUsed = airdropPaymentEventVars[i].value;
       }
     }
 
     logger.debug('---------------------------allTransferEventsVars------', allTransferEventsVars);
 
-    for (var i = 0; i < allTransferEventsVars.length; i++) {
+    for (let i = 0; i < allTransferEventsVars.length; i++) {
       let transferEventVars = allTransferEventsVars[i];
 
       let transferEvent = {};
 
-      for (var j = 0; j < transferEventVars.length; j++) {
-        if (transferEventVars[j].name == '_from') {
+      for (let j = 0; j < transferEventVars.length; j++) {
+        if (transferEventVars[j].name === '_from') {
           transferEvent.from_address = transferEventVars[j].value;
           if (oThis.addressToDetailsMap[transferEvent.from_address.toLowerCase()]) {
             transferEvent.from_uuid = oThis.addressToDetailsMap[transferEvent.from_address.toLowerCase()].uuid;
           }
         }
 
-        if (transferEventVars[j].name == '_to') {
+        if (transferEventVars[j].name === '_to') {
           transferEvent.to_address = transferEventVars[j].value;
           if (oThis.addressToDetailsMap[transferEvent.to_address.toLowerCase()]) {
             transferEvent.to_uuid = oThis.addressToDetailsMap[transferEvent.to_address.toLowerCase()].uuid;
           }
         }
 
-        if (transferEventVars[j].name == '_value') {
+        if (transferEventVars[j].name === '_value') {
           transferEvent.amount_in_wei = transferEventVars[j].value;
         }
       }
@@ -842,8 +843,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   },
 
   /**
-   * computes balance adjustment map. returns map with key as contract address and value as a map
-   * which has key as user_eth_address and value as amount to be adjusted
+   * Computes balance adjustment map. Returns map with key as contract address and value as a map
+   * which has key as user_eth_address and value as amount to be adjusted.
    *
    * @returns {promise<result>}
    */
@@ -874,10 +875,10 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         for (let j = 0; j < decodedEventData.events.length; j++) {
           let eventData = decodedEventData.events[j];
           switch (eventData.name) {
-            case '_from': //case "_staker":
+            case '_from': // Case "_staker":
               fromAddr = eventData.value.toLowerCase();
               break;
-            case '_to': //case "_beneficiary":
+            case '_to': // Case "_beneficiary":
               toAddr = eventData.value.toLowerCase();
               break;
             case '_value':
@@ -893,7 +894,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         });
 
         if (fromAddr === contractAddress) {
-          // if from == contract this tx event is then of claim by beneficiary. This was credited by platform so ignore here
+          // If from == contract, this tx event is then of claim by beneficiary. This was credited by platform so ignore here.
           continue;
         }
 
@@ -934,7 +935,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
       // uniq!
       affectedAddresses = affectedAddresses.filter(function(item, pos) {
-        return affectedAddresses.indexOf(item) == pos;
+        return affectedAddresses.indexOf(item) === pos;
       });
     }
 
@@ -949,7 +950,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   },
 
   /**
-   * from all the data we have fetched till now, format it to a format which could be directly inserted in DDB.
+   * From all the data we have fetched till now, format it to a format which could be directly inserted in DDB.
    *
    * @returns {promise<result>}
    */
@@ -991,8 +992,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         erc20ContractAddressData = erc20ContractAddressesData[contractAddress.toLowerCase()];
 
       if (!erc20ContractAddressData) {
-        // as we are also processing mint events, they wouldn't have client id.
-        // they should only be used to adjust balances but not insert here
+        // As we are also processing mint events, they wouldn't have client id.
+        // They should only be used to adjust balances but not insert here.
         continue;
       }
 
@@ -1037,7 +1038,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         }
       }
 
-      // group data by client_ids so that they can be batch inserted in ddb
+      // Group data by client_ids so that they can be batch inserted in ddb.
       formattedTransactionsData[txFormattedData['client_id']] =
         formattedTransactionsData[txFormattedData['client_id']] || [];
 
@@ -1050,7 +1051,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   },
 
   /**
-   * bulk create records in DDB
+   * Bulk create records in DDB.
    *
    * @returns {promise<result>}
    */
@@ -1079,7 +1080,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   },
 
   /**
-   * settle balances in DB
+   * Settle balances in DB.
    *
    * @returns {promise<result>}
    */
@@ -1102,7 +1103,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         promises = [],
         userAddresses = Object.keys(userBalancesSettlementsData);
 
-      for (var l = 0; l < userAddresses.length; l++) {
+      for (let l = 0; l < userAddresses.length; l++) {
         let userAddress = userAddresses[l],
           settledAmountDelta = userBalancesSettlementsData[userAddress].settledBalance,
           unsettledDebitDelta = userBalancesSettlementsData[userAddress].unSettledDebit || '0';
@@ -1127,7 +1128,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   },
 
   /**
-   * generic function to handle catch blocks
+   * Generic function to handle catch blocks
    *
    * @returns {object}
    */
@@ -1137,7 +1138,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       if (
         errorData.err.debugOptions &&
         errorData.err.debugOptions.error &&
-        errorData.err.debugOptions.error.code != 'ConditionalCheckFailedException'
+        errorData.err.debugOptions.error.code !== 'ConditionalCheckFailedException'
       ) {
         logger.notify(errorData.err.debugOptions);
       } else {

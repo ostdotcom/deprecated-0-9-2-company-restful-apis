@@ -14,7 +14,7 @@ require(rootPrefix + '/lib/cache_management/client_branded_token');
 require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
 
 const EditBrandedTokenKlass = function(params) {
-  var oThis = this;
+  const oThis = this;
 
   oThis.params = params;
   oThis.client_id = oThis.params.client_id;
@@ -49,8 +49,8 @@ EditBrandedTokenKlass.prototype = {
   },
 
   asyncPerform: async function() {
-    var oThis = this,
-      r = null;
+    const oThis = this;
+    let r = null;
 
     r = await oThis.validateAndSanitize();
     if (r.isFailure()) return Promise.resolve(r);
@@ -71,7 +71,7 @@ EditBrandedTokenKlass.prototype = {
   },
 
   validateAndSanitize: async function() {
-    var oThis = this;
+    const oThis = this;
 
     if (!oThis.client_id || !oThis.symbol || !basicHelper.isBTSymbolValid(oThis.symbol)) {
       return Promise.resolve(
@@ -97,7 +97,7 @@ EditBrandedTokenKlass.prototype = {
 
     oThis.brandedTokenRecordObject = clientBrandedTokens[0];
 
-    if (oThis.brandedTokenRecordObject.client_id != oThis.client_id) {
+    if (oThis.brandedTokenRecordObject.client_id !== oThis.client_id) {
       return Promise.resolve(
         responseHelper.error({
           internal_error_identifier: 'tm_e_3',
@@ -107,18 +107,18 @@ EditBrandedTokenKlass.prototype = {
       );
     }
 
-    if (oThis.name && basicHelper.isBTNameValid(oThis.name) && oThis.name != oThis.brandedTokenRecordObject.name) {
+    if (oThis.name && basicHelper.isBTNameValid(oThis.name) && oThis.name !== oThis.brandedTokenRecordObject.name) {
       oThis.brandedTokenRecordObject.name = oThis.name;
     }
 
-    if (oThis.symbol_icon && oThis.symbol_icon != oThis.brandedTokenRecordObject.symbol_icon) {
+    if (oThis.symbol_icon && oThis.symbol_icon !== oThis.brandedTokenRecordObject.symbol_icon) {
       oThis.brandedTokenRecordObject.symbol_icon = oThis.symbol_icon;
     }
 
     if (
       oThis.token_erc20_address &&
       basicHelper.isAddressValid(oThis.token_erc20_address) &&
-      oThis.token_erc20_address != oThis.brandedTokenRecordObject.token_erc20_address
+      oThis.token_erc20_address !== oThis.brandedTokenRecordObject.token_erc20_address
     ) {
       oThis.brandedTokenRecordObject.token_erc20_address = oThis.token_erc20_address;
     }
@@ -126,7 +126,7 @@ EditBrandedTokenKlass.prototype = {
     if (
       oThis.airdrop_contract_addr &&
       basicHelper.isAddressValid(oThis.airdrop_contract_addr) &&
-      oThis.airdrop_contract_addr != oThis.brandedTokenRecordObject.airdrop_contract_addr
+      oThis.airdrop_contract_addr !== oThis.brandedTokenRecordObject.airdrop_contract_addr
     ) {
       oThis.brandedTokenRecordObject.airdrop_contract_addr = oThis.airdrop_contract_addr;
     }
@@ -134,7 +134,7 @@ EditBrandedTokenKlass.prototype = {
     if (
       oThis.token_uuid &&
       basicHelper.isTokenUuidValid(oThis.token_uuid) &&
-      oThis.token_uuid != oThis.brandedTokenRecordObject.token_uuid
+      oThis.token_uuid !== oThis.brandedTokenRecordObject.token_uuid
     ) {
       oThis.brandedTokenRecordObject.token_uuid = oThis.token_uuid;
     }
@@ -142,7 +142,7 @@ EditBrandedTokenKlass.prototype = {
     if (
       oThis.conversion_factor &&
       basicHelper.isBTConversionRateValid(oThis.conversion_factor) &&
-      oThis.conversion_factor != oThis.brandedTokenRecordObject.conversion_factor
+      oThis.conversion_factor !== oThis.brandedTokenRecordObject.conversion_factor
     ) {
       oThis.brandedTokenRecordObject.conversion_factor = oThis.conversion_factor;
     }
@@ -186,7 +186,7 @@ EditBrandedTokenKlass.prototype = {
   },
 
   publishUpdateEvent: function() {
-    var oThis = this,
+    const oThis = this,
       publish_data = {},
       configStrategy = oThis.ic().configStrategy;
 
@@ -197,7 +197,7 @@ EditBrandedTokenKlass.prototype = {
     publish_data.uuid = oThis.brandedTokenRecordObject.token_uuid;
     publish_data.created_at = new Date(oThis.brandedTokenRecordObject.created_at).getTime() / 1000;
 
-    if (Object.keys(publish_data).length == 0 || !oThis.brandedTokenRecordObject.token_erc20_address) {
+    if (Object.keys(publish_data).length === 0 || !oThis.brandedTokenRecordObject.token_erc20_address) {
       return Promise.resolve(responseHelper.successWithData({}));
     }
     openSTNotification.publishEvent.perform({
@@ -220,7 +220,7 @@ EditBrandedTokenKlass.prototype = {
   },
 
   editToken: async function() {
-    var oThis = this;
+    const oThis = this;
 
     await new ClientBrandedTokenModel()
       .update(oThis.brandedTokenRecordObject)

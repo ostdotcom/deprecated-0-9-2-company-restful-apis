@@ -53,7 +53,7 @@ const ConfigStrategyModelSpecificPrototype = {
       strategyKindInt = invertedKinds[kind],
       configStrategyParamsString = JSON.stringify(configStrategyParams);
 
-    if (strategyKindInt == undefined) {
+    if (strategyKindInt === undefined) {
       throw 'Error: Improper kind parameter';
     }
 
@@ -221,13 +221,13 @@ const ConfigStrategyModelSpecificPrototype = {
   getByParams: async function(params) {
     const oThis = this;
 
-    var returnValue = [],
+    let returnValue = [],
       paramsHash = localCipher.getShaHashedText(JSON.stringify(params));
 
     let query = oThis.select('id').where({ hashed_params: paramsHash }),
       queryResult = await query.fire();
 
-    if (queryResult.length != 0) {
+    if (queryResult.length !== 0) {
       returnValue.push(queryResult[0].id);
     }
 
@@ -270,7 +270,7 @@ const ConfigStrategyModelSpecificPrototype = {
   _fetchAddressSalt: async function(managedAddressSaltId) {
     const oThis = this;
 
-    var addrSalt = await new ManagedAddressSaltModel().getById(managedAddressSaltId);
+    let addrSalt = await new ManagedAddressSaltModel().getById(managedAddressSaltId);
 
     if (!addrSalt[0]) {
       return responseHelper.error({
@@ -280,8 +280,8 @@ const ConfigStrategyModelSpecificPrototype = {
       });
     }
 
-    var KMSObject = new kmsWrapperKlass('managedAddresses');
-    var decryptedSalt = await KMSObject.decrypt(addrSalt[0]['managed_address_salt']);
+    let KMSObject = new kmsWrapperKlass('managedAddresses');
+    let decryptedSalt = await KMSObject.decrypt(addrSalt[0]['managed_address_salt']);
     if (!decryptedSalt['Plaintext']) {
       return responseHelper.error({
         internal_error_identifier: 'cm_mas_2',
@@ -290,7 +290,7 @@ const ConfigStrategyModelSpecificPrototype = {
       });
     }
 
-    var salt = decryptedSalt['Plaintext'];
+    let salt = decryptedSalt['Plaintext'];
 
     return Promise.resolve(responseHelper.successWithData({ addressSalt: salt }));
   }

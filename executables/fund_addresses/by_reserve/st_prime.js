@@ -73,11 +73,11 @@ FundUsersWithSTPrimeFromReserveKlass.prototype = {
         .offset(offset)
         .fire();
 
-      if (clientBrandedTokenRecords.length == 0) break;
+      if (clientBrandedTokenRecords.length === 0) break;
 
       pageNo = pageNo + 1;
 
-      for (var i = 0; i < clientBrandedTokenRecords.length; i++) {
+      for (let i = 0; i < clientBrandedTokenRecords.length; i++) {
         if (!clientBrandedTokenRecords[i].airdrop_contract_addr) continue;
 
         const clientId = clientBrandedTokenRecords[i].client_id,

@@ -38,7 +38,7 @@ require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
  *
  */
 const SetupToken = function(params) {
-  var oThis = this;
+  const oThis = this;
 
   oThis.clientId = params.client_id;
   oThis.symbol = params.symbol;
@@ -84,7 +84,7 @@ SetupToken.prototype = {
   asyncPerform: async function() {
     const oThis = this;
 
-    var r = null;
+    let r = null;
 
     r = await oThis.validateParams();
     if (r.isFailure()) return r;
@@ -140,9 +140,9 @@ SetupToken.prototype = {
    *
    */
   setClientAddressSalt: async function() {
-    var oThis = this;
+    const oThis = this;
 
-    var KMSObject = new kmsWrapperKlass('managedAddresses');
+    let KMSObject = new kmsWrapperKlass('managedAddresses');
     const newKey = await KMSObject.generateDataKey();
 
     const addressSalt = newKey['CiphertextBlob'];
@@ -153,7 +153,7 @@ SetupToken.prototype = {
   },
 
   getExistingManagedAddress: async function() {
-    var oThis = this,
+    const oThis = this,
       clientTokenByClientId = await new ClientBrandedTokenModel().getByClientId(oThis.clientId),
       existingWorkerManagedAddresses = await new ClientWorkerManagedAddressIdModel().getByClientId(oThis.clientId);
 
@@ -161,7 +161,7 @@ SetupToken.prototype = {
       oThis.existingToken = clientTokenByClientId[clientTokenByClientId.length - 1];
     }
 
-    for (var i = 0; i < existingWorkerManagedAddresses.length; i++) {
+    for (let i = 0; i < existingWorkerManagedAddresses.length; i++) {
       oThis.existingWorkerManagedAddressIds.push(existingWorkerManagedAddresses[i].managed_address_id);
     }
 
@@ -176,7 +176,7 @@ SetupToken.prototype = {
    *
    */
   setClientAddresses: async function() {
-    var oThis = this,
+    const oThis = this,
       promisesArray = [];
 
     promisesArray.push(oThis.setClientReserveAddress());
@@ -210,7 +210,7 @@ SetupToken.prototype = {
           address_type: managedAddressesConst.reserveAddressType,
           client_id: oThis.clientId
         });
-        var r = await generateEthAddress.perform();
+        let r = await generateEthAddress.perform();
         if (r.isFailure()) return onResolve(r);
         const resultData = r.data[r.data.result_type];
         oThis.reserveAddrUuid = resultData.id;
@@ -236,25 +236,25 @@ SetupToken.prototype = {
     return new Promise(async function(onResolve, onReject) {
       if (oThis.existingWorkerManagedAddressIds.length > 0) {
         const manageAddrObj = await new ManagedAddressModel().getByIds(oThis.existingWorkerManagedAddressIds);
-        for (var i = 0; i < manageAddrObj.length; i++) {
+        for (let i = 0; i < manageAddrObj.length; i++) {
           oThis.workerAddrUuids.push(manageAddrObj[i].uuid);
         }
 
         return onResolve(responseHelper.successWithData({}));
       } else {
-        for (var i = 0; i < oThis.allowedWorkersCnt; i++) {
-          var generateEthAddress = new GenerateEthAddressKlass({
+        for (let i = 0; i < oThis.allowedWorkersCnt; i++) {
+          let generateEthAddress = new GenerateEthAddressKlass({
             address_type: managedAddressesConst.workerAddressType,
             client_id: oThis.clientId
           });
-          var r = await generateEthAddress.perform();
+          let r = await generateEthAddress.perform();
           if (r.isFailure()) return onResolve(r);
           const resultData = r.data[r.data.result_type];
           oThis.workerAddrUuids.push(resultData.id);
         }
 
         const manageAddrObjs = await new ManagedAddressModel().getByUuids(oThis.workerAddrUuids);
-        for (var i = 0; i < manageAddrObjs.length; i++) {
+        for (let i = 0; i < manageAddrObjs.length; i++) {
           oThis.newWorkerManagedAddressIds.push(manageAddrObjs[i].id);
         }
 
@@ -285,7 +285,7 @@ SetupToken.prototype = {
           address_type: managedAddressesConst.airdropHolderAddressType,
           client_id: oThis.clientId
         });
-        var r = await generateEthAddress.perform();
+        let r = await generateEthAddress.perform();
         if (r.isFailure()) return onResolve(r);
         const resultData = r.data[r.data.result_type];
         oThis.airdropHolderAddrUuid = resultData.id;
@@ -319,18 +319,18 @@ SetupToken.prototype = {
     // create entry in client token
     await new ClientBrandedTokenModel().insert(oThis.clientTokenObj).fire();
 
-    var managedAddressInsertData = [],
+    let managedAddressInsertData = [],
       newWorkerManagedAddressIdsLength = oThis.newWorkerManagedAddressIds.length;
 
     if (newWorkerManagedAddressIdsLength > 0) {
-      for (var i = 0; i < newWorkerManagedAddressIdsLength; i++) {
+      for (let i = 0; i < newWorkerManagedAddressIdsLength; i++) {
         managedAddressInsertData.push([
           oThis.clientId,
           oThis.newWorkerManagedAddressIds[i],
           new ClientWorkerManagedAddressIdModel().invertedStatuses[clientWorkerManagedAddressConst.inactiveStatus]
         ]);
       }
-      var fields = ['client_id', 'managed_address_id', 'status'];
+      let fields = ['client_id', 'managed_address_id', 'status'];
       const queryResponse = await new ClientWorkerManagedAddressIdModel()
         .insertMultiple(fields, managedAddressInsertData)
         .fire();

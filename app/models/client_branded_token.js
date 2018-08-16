@@ -22,6 +22,25 @@ const ClientBrandedTokenModelSpecificPrototype = {
 
   enums: {},
 
+  /**
+   * Get all clientIds.
+   *
+   * @returns {*}
+   *
+   */
+  getAllClientIds: function() {
+    const oThis = this;
+
+    return oThis.select('client_id').fire();
+  },
+
+  /**
+   * Get all details using the id.
+   *
+   * @param id
+   * @returns {*}
+   *
+   */
   getById: function(id) {
     const oThis = this;
 
@@ -31,6 +50,13 @@ const ClientBrandedTokenModelSpecificPrototype = {
       .fire();
   },
 
+  /**
+   * Get details using the symbol.
+   *
+   * @param symbol
+   * @returns {*}
+   *
+   */
   getBySymbol: function(symbol) {
     const oThis = this;
 
@@ -40,6 +66,13 @@ const ClientBrandedTokenModelSpecificPrototype = {
       .fire();
   },
 
+  /**
+   * Get details using the clientId.
+   *
+   * @param clientId
+   * @returns {*}
+   *
+   */
   getByClientId: function(clientId) {
     const oThis = this;
 
@@ -50,6 +83,13 @@ const ClientBrandedTokenModelSpecificPrototype = {
       .fire();
   },
 
+  /**
+   * Get details for multiple clientIds.
+   *
+   * @param clientIds
+   * @returns {*}
+   *
+   */
   getByClientIds: function(clientIds) {
     const oThis = this;
 
