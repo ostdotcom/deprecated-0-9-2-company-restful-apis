@@ -8,8 +8,6 @@ require(rootPrefix + '/module_overrides/index');
 const ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/client_worker_managed_address_id'),
   clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id'),
   ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
-  CriticalChainInteractionLogModel = require(rootPrefix + '/app/models/critical_chain_interaction_log'),
-  criticalChainInteractionLogConst = require(rootPrefix + '/lib/global_constant/critical_chain_interaction_log'),
   managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
@@ -72,20 +70,6 @@ addMoreWorkersKlass.prototype = {
           debug_options: { error: error },
           error_config: errorConfig
         });
-      }
-
-      if (oThis.criticalChainInteractionLog) {
-        new CriticalChainInteractionLogModel().updateCriticalChainInteractionLog(
-          oThis.criticalChainInteractionLog.id,
-          {
-            status: new CriticalChainInteractionLogModel().invertedStatuses[
-              criticalChainInteractionLogConst.failedStatus
-            ],
-            response_data: errorObj.toHash()
-          },
-          oThis.parentCriticalChainInteractionLogId,
-          oThis.clientTokenId
-        );
       }
 
       return errorObj;
