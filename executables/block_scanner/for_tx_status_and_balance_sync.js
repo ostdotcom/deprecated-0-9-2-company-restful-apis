@@ -298,7 +298,10 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
       if (batchedTxHashes.length === 0) break;
 
-      const batchedTxLogRecords = await new TransactionMeta().getByTransactionHash(batchedTxHashes);
+      const batchedTxLogRecords = await new TransactionMeta().getByTransactionHash(
+        batchedTxHashes,
+        configStrategy.OST_UTILITY_CHAIN_ID
+      );
 
       logger.debug('---------------batchedTxLogRecords-----', batchedTxLogRecords);
       for (let i = 0; i < batchedTxLogRecords.length; i++) {

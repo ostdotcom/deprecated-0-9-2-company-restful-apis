@@ -33,15 +33,16 @@ const TransactionMetaModelSpecificPrototype = {
    * Get by transaction hash
    *
    * @param transactionHashes - Array of Transaction hash
+   * @param chainId - chain id
    *
    * @return {promise}
    */
-  getByTransactionHash: async function(transactionHashes) {
+  getByTransactionHash: async function(transactionHashes, chainId) {
     const oThis = this;
 
     return oThis
       .select('*')
-      .where(['transaction_hash IN (?)', transactionHashes])
+      .where(['transaction_hash IN (?) AND chain_id = ?', transactionHashes, chainId])
       .fire();
   },
 

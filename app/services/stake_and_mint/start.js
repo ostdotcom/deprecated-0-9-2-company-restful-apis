@@ -61,12 +61,14 @@ StartStakeAndMintKlass.prototype = {
    * @return {promise<result>}
    */
   asyncPerform: async function() {
-    const oThis = this;
+    const oThis = this,
+      configStrategy = oThis.ic().configStrategy;
 
     await oThis.validateAndSanitize();
 
     return new StakeAndMintRouterKlass({
       current_step: 'init',
+      chain_id: configStrategy.OST_UTILITY_CHAIN_ID,
       token_symbol: oThis.tokenSymbol,
       client_id: oThis.clientId,
       client_token_id: oThis.clientTokenId,
