@@ -85,7 +85,6 @@ const fs = require('fs'),
 
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
   TransactionMeta = require(rootPrefix + '/app/models/transaction_meta'),
   transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log'),
@@ -115,8 +114,6 @@ const BlockScannerForTxStatusAndBalanceSync = function(params) {
   oThis.ProcessedMintEventSignature = '0x96989a6b1d8c3bb8d6cc22e14b188b5c14b1f33f34ff07ea2e4fd6d880dac2c7';
   oThis.RevertedMintEventSignature = '0x86e6b95641fbf0f8939eb3da2e7e26aee0188048353d08a45c78218e84cf1d4f';
 
-  oThis.OpenSTUtilityContractAddr = chainInteractionConstants.OPENSTUTILITY_CONTRACT_ADDR.toLowerCase();
-  oThis.StPrimeContractUuid = chainInteractionConstants.ST_PRIME_UUID.toLowerCase();
   oThis.ZeroXAddress = '0x0000000000000000000000000000000000000000';
 
   oThis.tokenTransferKind = new TransactionMeta().invertedKinds[transactionLogConst.tokenTransferTransactionType];
@@ -1101,7 +1098,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       let userBalancesSettlementsData = balanceAdjustmentMap[erc20ContractAddress],
         tokenBalanceModelObj = new tokenBalanceModelDdb({
           erc20_contract_address: erc20ContractAddress,
-          chain_id: chainInteractionConstants.UTILITY_CHAIN_ID
+          chain_id: configStrategy.OST_UTILITY_CHAIN_ID
         }),
         promises = [],
         userAddresses = Object.keys(userBalancesSettlementsData);
