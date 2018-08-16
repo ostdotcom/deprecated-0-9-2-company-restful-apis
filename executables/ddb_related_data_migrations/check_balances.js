@@ -1,17 +1,16 @@
 'use strict';
 
-const openStPlatform = require('@openstfoundation/openst-platform'),
-  openStorage = require('@openstfoundation/openst-storage');
-
 const rootPrefix = '../..',
-  getBrandedTokenBalanceKlass = openStPlatform.services.balance.brandedTokenFromChain,
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
+  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy'),
+  configStrategyHelper = new ConfigStrategyHelperKlass(),
   ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
-  TokenBalanceModel = openStorage.TokenBalanceModel,
-  ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service'),
-  autoscalingServiceObj = require(rootPrefix + '/lib/auto_scaling_service'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   responseHelper = require(rootPrefix + '/lib/formatter/response');
+
+require(rootPrefix + '/lib/providers/platform');
+require(rootPrefix + '/lib/providers/storage');
 
 /**
  *
@@ -105,6 +104,15 @@ CheckBalances.prototype = {
    */
   _checkForClient: async function(clientData) {
     const oThis = this,
+      configStrategyRsp = await configStrategyHelper.getConfigStrategy(clientData['client_id']),
+      configStrategy = configStrategyRsp.data,
+      ic = new InstanceComposer(configStrategy),
+      platformProvider = ic.getPlatformProvider(),
+      openSTPlaform = platformProvider.getInstance(),
+      getBrandedTokenBalanceKlass = openSTPlaform.services.balance.brandedTokenFromChain,
+      storageProvider = ic.getStorageProvider(),
+      openSTStorage = storageProvider.getInstance(),
+      TokenBalanceModel = openSTStorage.model.TokenBalance,
       erc20_address = clientData['token_erc20_address'];
 
     let dbRows = await new ManagedAddressModel()
@@ -142,9 +150,7 @@ CheckBalances.prototype = {
       // console.log('promiseResponses', JSON.stringify(promiseResponses));
 
       let balancesFromDdbRsp = await new TokenBalanceModel({
-        erc20_contract_address: erc20_address,
-        ddb_service: ddbServiceObj,
-        auto_scaling: autoscalingServiceObj
+        erc20_contract_address: erc20_address
       }).getBalance({ ethereum_addresses: addresses });
 
       // console.log('balancesFromDdbRsp', balancesFromDdbRsp);
