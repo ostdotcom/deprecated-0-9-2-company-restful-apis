@@ -1,12 +1,17 @@
 /**
+ *
+ *
  * This script will enter chain ids in critical_chain_interaction_logs table.
  * Usage: node executables/one_timers/insert_chain_id_critical_chain_interaction.js
+ *
+ *
  */
 
 'use strict';
 const rootPrefix = '../..',
   coreConstants = require(rootPrefix + '/config/core_constants'),
   chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   ModelBaseKlass = require(rootPrefix + '/app/models/base');
 
 const dbName = 'company_saas_shared_' + coreConstants.SUB_ENVIRONMENT + '_' + coreConstants.ENVIRONMENT;
@@ -26,23 +31,26 @@ const CriticalChainDefaultChainIdInsertSpecificPrototype = {
     const oThis = this;
 
     await oThis
-      .update({ chain_id: chainId }, false)
+      .update({ chain_id: chainId }, { touch: false })
       .where({ chain_type: chainType })
       .fire();
   },
 
   perform: async function() {
-    let chainId = chainInteractionConstants.VALUE_CHAIN_ID,
-      chainType = 1;
+    let valueChainId = chainInteractionConstants.VALUE_CHAIN_ID,
+      utilityChainId = chainInteractionConstants.UTILITY_CHAIN_ID,
+      valueChainType = 1,
+      utilityChainType = 2;
 
-    await new CriticalChainDefaultChainIdInsert().insertHelper(chainId, chainType);
+    if (valueChainId !== undefined || utilityChainId !== undefined) {
+      await new CriticalChainDefaultChainIdInsert().insertHelper(valueChainId, valueChainType);
 
-    chainId = chainInteractionConstants.UTILITY_CHAIN_ID;
-    chainType = 2;
+      await new CriticalChainDefaultChainIdInsert().insertHelper(utilityChainId, utilityChainType);
+    } else {
+      logger.error('utility chain id or value chain id is not defined.');
+    }
 
-    await new CriticalChainDefaultChainIdInsert().insertHelper(chainId, chainType);
-
-    process.exit();
+    process.exit(0);
   }
 };
 
