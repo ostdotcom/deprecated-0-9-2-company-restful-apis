@@ -3,13 +3,13 @@
 /*
 * This file is used to populate config_strategies table and chain_geth_providers table.
 *
-* Usage:  node executables/one_timers/config_strategy_seed.js managed_address_salt_id
+* Usage:  node executables/one_timers/config_strategy_seed.js managed_address_salt_id [config file path]
 *
 * Pass managed_address_salt_id as argument when running this script.
 *
 *
 * */
-const env_list = process.env;
+const env_list = process.argv[3] ? require(process.argv[3]) : process.env;
 
 const rootPrefix = '../..',
   configStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
