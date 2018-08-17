@@ -10,6 +10,7 @@ const router = express.Router();
 
 require(rootPrefix + '/app/services/stp_transfer/execute');
 require(rootPrefix + '/app/services/stp_transfer/get');
+require(rootPrefix + '/app/services/stp_transfer/list');
 
 /**
  * @name Execute a STP Transfer
@@ -52,7 +53,6 @@ router.post('/', function(req, res, next) {
  * @routeparam {string} :id (optional) - this is the comma separated ids to filter on.
  */
 router.get('/', function(req, res, next) {
-  const GetSTPTransferListService = require(rootPrefix + '/app/services/stp_transfer/list');
   req.decodedParams.apiName = 'list_stp_transfers';
 
   const dataFormatterFunc = async function(response) {
@@ -81,7 +81,7 @@ router.get('/', function(req, res, next) {
   };
 
   Promise.resolve(
-    routeHelper.performer(req, res, next, GetSTPTransferListService, 'r_v1_stp_t_2', null, dataFormatterFunc)
+    routeHelper.performer(req, res, next, 'getListStpTransfersService', 'r_v1_stp_t_2', null, dataFormatterFunc)
   );
 });
 

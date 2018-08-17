@@ -10,6 +10,7 @@ const router = express.Router();
 
 require(rootPrefix + '/app/services/transaction/execute');
 require(rootPrefix + '/app/services/transaction/get');
+require(rootPrefix + '/app/services/transaction/list/for_client_id');
 
 /**
  * @name Execute a transaction
@@ -55,8 +56,6 @@ router.post('/', function(req, res, next) {
  * @routeparam {number} :limit (optional) - Min 1, Max 100, Default 10.
  */
 router.get('/', function(req, res, next) {
-  const GetTransactionListService = require(rootPrefix + '/app/services/transaction/list/for_client_id');
-
   req.decodedParams.apiName = 'list_transactions';
 
   const dataFormatterFunc = async function(response) {
@@ -84,7 +83,7 @@ router.get('/', function(req, res, next) {
   };
 
   Promise.resolve(
-    routeHelper.performer(req, res, next, GetTransactionListService, 'r_v1_t_2', null, dataFormatterFunc)
+    routeHelper.performer(req, res, next, 'getGetTransactionListByClientIdClass', 'r_v1_t_2', null, dataFormatterFunc)
   );
 });
 

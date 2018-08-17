@@ -8,6 +8,8 @@ const rootPrefix = '../..',
 
 const router = express.Router();
 
+require(rootPrefix + '/app/services/transaction/list/for_user_id');
+
 /**
  * Get ledger of transactions of user
  *
@@ -17,7 +19,6 @@ const router = express.Router();
  *
  */
 router.get('/:id', function(req, res, next) {
-  const getLedgerKlass = require(rootPrefix + '/app/services/transaction/list/for_user_id');
   req.decodedParams.apiName = 'get_transaction_ledger';
   req.decodedParams.id = req.params.id;
 
@@ -46,7 +47,9 @@ router.get('/:id', function(req, res, next) {
     response.data[response.data.result_type] = transactionData;
   };
 
-  Promise.resolve(routeHelper.performer(req, res, next, getLedgerKlass, 'r_v1.1_l_1', null, dataFormatterFunc));
+  Promise.resolve(
+    routeHelper.performer(req, res, next, 'getGetTransactionListClass', 'r_v1.1_l_1', null, dataFormatterFunc)
+  );
 });
 
 module.exports = router;
