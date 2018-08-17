@@ -6,6 +6,10 @@ export CR_SUB_ENVIRONMENT='sandbox'
 export CR_ONLY_SHARED_CACHE_ENGINE='memcached'
 export OST_SHARED_MEMCACHE_SERVERS='127.0.0.1:11211'
 
+# Gas Price
+export OST_VALUE_GAS_PRICE='0x174876E800'
+export OST_UTILITY_GAS_PRICE='0x3B9ACA00'
+
 # Redis cache details
 export OST_REDIS_HOST='127.0.0.1'
 export OST_REDIS_PORT='6379'
