@@ -130,7 +130,6 @@ seedConfigStrategies.prototype = {
 
     value_constants_params['OST_VALUE_OPS_ADDR'] = env_list.OST_VALUE_OPS_ADDR;
     value_constants_params['OST_VALUE_OPS_PASSPHRASE'] = env_list.OST_VALUE_OPS_PASSPHRASE;
-    value_constants_params['OST_VALUE_CORE_CONTRACT_ADDR'] = env_list.OST_VALUE_CORE_CONTRACT_ADDR;
     value_constants_params['OST_VALUE_REGISTRAR_CONTRACT_ADDR'] = env_list.OST_VALUE_REGISTRAR_CONTRACT_ADDR;
     value_constants_params['OST_FOUNDATION_ADDR'] = env_list.OST_FOUNDATION_ADDR;
     value_constants_params['OST_FOUNDATION_PASSPHRASE'] = env_list.OST_FOUNDATION_PASSPHRASE;
@@ -175,6 +174,7 @@ seedConfigStrategies.prototype = {
     utility_constants_params['OST_STPRIME_CONTRACT_ADDR'] = env_list.OST_STPRIME_CONTRACT_ADDR;
     utility_constants_params['OST_UTILITY_PRICE_ORACLES'] = env_list.OST_UTILITY_PRICE_ORACLES;
     utility_constants_params['OST_UTILITY_WORKERS_CONTRACT_ADDRESS'] = env_list.OST_UTILITY_WORKERS_CONTRACT_ADDRESS;
+    utility_constants_params['OST_VALUE_CORE_CONTRACT_ADDR'] = env_list.OST_VALUE_CORE_CONTRACT_ADDR;
 
     const configStrategy = new configStrategyModel();
 
