@@ -10,6 +10,14 @@ export OST_SHARED_MEMCACHE_SERVERS='127.0.0.1:11211'
 export OST_VALUE_GAS_PRICE='0x174876E800'
 export OST_UTILITY_GAS_PRICE='0x3B9ACA00'
 
+# Enable RabbitMQ.
+export OST_RMQ_SUPPORT='1'
+export OST_RMQ_HOST='127.0.0.1'
+export OST_RMQ_PORT='5672'
+export OST_RMQ_USERNAME='guest'
+export OST_RMQ_PASSWORD='guest'
+export OST_RMQ_HEARTBEATS='30'
+
 # Redis cache details
 export OST_REDIS_HOST='127.0.0.1'
 export OST_REDIS_PORT='6379'
