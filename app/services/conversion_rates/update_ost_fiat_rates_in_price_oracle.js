@@ -63,7 +63,9 @@ UpdateOstFiatInPriceOracleKlass.prototype = {
    * @return {promise<result>} - returns a promise which resolves to an object of kind Result
    */
   asyncPerform: async function() {
-    const oThis = this;
+    const oThis = this,
+      configStrategy = oThis.ic().configStrategy;
+
     var url = exchangeUrl + '?convert=' + oThis.quoteCurrency;
 
     // Make Coinmarketcap api call
@@ -80,6 +82,7 @@ UpdateOstFiatInPriceOracleKlass.prototype = {
     // Insert current ost value in database
     const insertResponse = await new CurrencyConversionRateModel()
       .insert({
+        chain_id: configStrategy.OST_UTILITY_CHAIN_ID,
         base_currency: new CurrencyConversionRateModel().invertedBaseCurrencies[oThis.currentOstValue.base_currency],
         quote_currency: new CurrencyConversionRateModel().invertedQuoteCurrencies[oThis.currentOstValue.quote_currency],
         conversion_rate: oThis.currentOstValue.conversion_rate,

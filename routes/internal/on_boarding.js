@@ -2,6 +2,10 @@ const express = require('express');
 
 const rootPrefix = '../..',
   routeHelper = require(rootPrefix + '/routes/helper'),
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
+  basicHelper = require(rootPrefix + '/helpers/basic'),
+  errorConfig = basicHelper.fetchErrorConfig(apiVersions.internal),
   AssignStrategiesKlass = require(rootPrefix + '/lib/on_boarding/assign_strategies');
 
 const router = express.Router();
@@ -39,10 +43,7 @@ router.post('/grant-eth', function(req, res, next) {
 /* Set up a branded token - this does not have any block chain setup. This is only saving the information in DB */
 router.post('/setup-token', function(req, res, next) {
   req.decodedParams.apiName = 'setup_bt';
-
-  new AssignStrategiesKlass(req.decodedParams['client_id']).perform().then(function(rsp) {
-    Promise.resolve(routeHelper.performer(req, res, next, 'getSetupToken', 'r_ob_5'));
-  });
+  Promise.resolve(routeHelper.performer(req, res, next, 'getSetupToken', 'r_ob_5'));
 });
 
 /* Propose a branded token */
@@ -68,6 +69,26 @@ router.get('/fetch-balances', function(req, res, next) {
   req.decodedParams.apiName = 'fetch_balances';
 
   Promise.resolve(routeHelper.performer(req, res, next, 'getFetchBalances', 'r_ob_9'));
+});
+
+/* Assign Strategies For Client */
+router.post('/assign-strategies', function(req, res, next) {
+  const performer = function() {
+    const decodedParams = req.decodedParams;
+
+    // handle final response
+    const handleResponse = function(response) {
+      return response.renderResponse(res, errorConfig);
+    };
+
+    new AssignStrategiesKlass(req.decodedParams['client_id']).perform().then(handleResponse);
+  };
+
+  Promise.resolve(performer()).catch(function(err) {
+    logger.notify('r_ob_10', 'Something went wrong', err);
+
+    responseHelper.error('r_ob_10', 'Something went wrong').renderResponse(res, errorConfig);
+  });
 });
 
 module.exports = router;

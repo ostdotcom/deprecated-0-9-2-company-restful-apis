@@ -74,12 +74,13 @@ const CurrencyConversionRateModelSpecificPrototype = {
       .fire();
   },
 
-  getLastActiveRates: function(currencyCode) {
+  getLastActiveRates: function(uc_chain_id, currencyCode) {
     const oThis = this;
 
     return oThis
       .select('*')
       .where({
+        chain_id: uc_chain_id,
         quote_currency: utils.invert(oThis.quote_currency)[currencyCode],
         base_currency: utils.invert(oThis.base_currency)[conversionRatesConst.ost_currency()]
       })
