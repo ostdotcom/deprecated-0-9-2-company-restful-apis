@@ -1,6 +1,6 @@
 # Core ENV Details
 export CR_ENVIRONMENT='development'
-export CR_SUB_ENVIRONMENT='sandbox'
+export CR_SUB_ENVIRONMENT='main'
 
 # chain constants
 export OST_VALUE_GETH_RPC_PROVIDERS='["http://127.0.0.1:8545"]'

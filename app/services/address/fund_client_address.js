@@ -23,6 +23,8 @@ const rootPrefix = '../../..'
   , ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/client_worker_managed_address_id')
   , clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id')
   , ClientActiveWorkerUuidCacheKlass = require(rootPrefix + '/lib/cache_management/client_active_worker_uuid')
+  , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
+  , errorConfig = basicHelper.fetchErrorConfig(apiVersions.general)
 ;
 
 /**
@@ -214,7 +216,8 @@ FundClientAddressKlass.prototype = {
       return responseHelper.error({
         internal_error_identifier: 's_a_fca_1',
         api_error_identifier: 'insufficient_gas',
-        debug_options: {clientId: oThis.clientId}
+        debug_options: {clientId: oThis.clientId},
+        error_config: errorConfig
       });
     }
 
