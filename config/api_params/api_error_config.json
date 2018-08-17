@@ -349,6 +349,11 @@
     "code": "GRANT_FORBIDDEN",
     "message": "Cannot proceed with the grant."
   },
+  "random_transaction_prohibited": {
+    "http_code": "403",
+    "code": "REQUEST_FORBIDDEN",
+    "message": "Cannot simulate random transaction for main env."
+  },
   "route_prohibited_in_main": {
     "http_code": "403",
     "code": "REQUEST_FORBIDDEN",

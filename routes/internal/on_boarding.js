@@ -28,11 +28,11 @@ router.post('/start', function (req, res, next) {
 router.post('/grant-test-ost', function (req, res, next) {
   const performer = function() {
 
-    if (basicHelper.isProduction() && basicHelper.isMainSubEnvironment()) {
+    if (basicHelper.isMainSubEnvironment()) {
 
       let response = responseHelper.error({
         internal_error_identifier: 'r_ob_gto_1',
-        api_error_identifier: 'grant_prohibitedgrant_prohibited',
+        api_error_identifier: 'grant_prohibited',
         debug_options: {}
       });
 
@@ -75,7 +75,7 @@ router.post('/grant-test-ost', function (req, res, next) {
 router.post('/grant-eth', function (req, res, next) {
   const performer = function() {
 
-    if (basicHelper.isProduction() && basicHelper.isMainSubEnvironment()) {
+    if (basicHelper.isMainSubEnvironment()) {
 
       let response = responseHelper.error({
         internal_error_identifier: 'r_ob_gto_1',

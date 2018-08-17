@@ -3,11 +3,26 @@ const express = require('express')
   , rootPrefix = '../..'
   , routeHelper = require(rootPrefix + '/routes/helper')
   , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/transaction')
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
+  , errorConfig = basicHelper.fetchErrorConfig(apiVersions.internal);
 
 /* Get transaction block info for a transaction hash */
 router.post('/create-transaction', function (req, res, next) {
 
   req.decodedParams.apiName = 'simulate_random_transaction';
+
+  if (basicHelper.isMainSubEnvironment()) {
+
+    let response = responseHelper.error({
+      internal_error_identifier: 'r_ob_gto_1',
+      api_error_identifier: 'random_transaction_prohibited',
+      debug_options: {}
+    });
+
+    return response.renderResponse(res, errorConfig);
+  }
 
   const simulateTransactionKlass = require(rootPrefix + '/app/services/transaction/simulate_random_transaction');
 
