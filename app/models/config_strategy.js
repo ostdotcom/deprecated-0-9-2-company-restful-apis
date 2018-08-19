@@ -17,7 +17,8 @@ const rootPrefix = '../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
-  errorConfig = basicHelper.fetchErrorConfig(apiVersions.general);
+  errorConfig = basicHelper.fetchErrorConfig(apiVersions.general),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
 const dbName = 'saas_config_' + coreConstants.SUB_ENVIRONMENT + '_' + coreConstants.ENVIRONMENT;
 
@@ -345,6 +346,80 @@ const ConfigStrategyModelSpecificPrototype = {
     let salt = decryptedSalt['Plaintext'];
 
     return Promise.resolve(responseHelper.successWithData({ addressSalt: salt }));
+  },
+
+  /**
+   *
+   * @param strategy_id
+   * @param updatedConfigStrategyParams
+   * @returns {Promise<*>}
+   */
+  updateStrategyIds: async function(strategy_id, updatedConfigStrategyParams) {
+    const oThis = this,
+      updatedConfigStrategyParamsString = JSON.stringify(updatedConfigStrategyParams);
+
+    const queryResult = await oThis
+      .select(['managed_address_salts_id'])
+      .where({ id: strategy_id })
+      .fire();
+
+    const managedAddressSaltId = queryResult[0].managed_address_salts_id;
+
+    console.log('queryResult', managedAddressSaltId);
+
+    let isParamPresent = null,
+      hashedUpdatedConfigStrategyParams = localCipher.getShaHashedText(updatedConfigStrategyParamsString);
+
+    //To check if the updated config strategy is already present in the database table.
+    await new ConfigStrategyModel()
+      .getByParams(updatedConfigStrategyParams)
+      .then(function(result) {
+        isParamPresent = result;
+      })
+      .catch(function(err) {
+        console.log('Error', err);
+      });
+
+    if (isParamPresent != null) {
+      //If configStrategyParams is already present in database then id of that param is sent
+      logger.error('The config strategy is already present in database with id: ', isParamPresent);
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'm_tb_cs_3',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {},
+          error_config: errorConfig
+        })
+      );
+    }
+
+    let response = await oThis.getDecryptedSalt(managedAddressSaltId);
+    if (response.isFailure()) {
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'm_tb_cs_2',
+          api_error_identifier: 'invalid_salt',
+          debug_options: {},
+          error_config: errorConfig
+        })
+      );
+    }
+
+    let encryptedUpdatedConfigStrategyParams = await localCipher.encrypt(
+      response.data.addressSalt,
+      updatedConfigStrategyParamsString
+    );
+
+    const data = {
+      params: encryptedUpdatedConfigStrategyParams,
+      hashed_params: hashedUpdatedConfigStrategyParams
+    };
+    const dbId = await new ConfigStrategyModel()
+      .update(data)
+      .where({ id: strategy_id })
+      .fire();
+
+    return Promise.resolve(responseHelper.successWithData({}));
   }
 };
 
