@@ -108,7 +108,7 @@ GetStPTransferService.prototype = {
 
     let transactionLog = transactionLogResponse.data[oThis.transactionUuid];
 
-    if (oThis.client_id != transactionLog.client_id) {
+    if (oThis.client_id !== transactionLog.client_id) {
       return Promise.reject(
         responseHelper.error({
           internal_error_identifier: 's_stpt_g_4',
@@ -120,7 +120,7 @@ GetStPTransferService.prototype = {
 
     let transactionLogType = transactionLogConst.transactionTypes[transactionLog.transaction_type];
 
-    if (transactionLogType != transactionLogConst.stpTransferTransactionType) {
+    if (transactionLogType !== transactionLogConst.stpTransferTransactionType) {
       return Promise.reject(
         responseHelper.error({
           internal_error_identifier: 's_stpt_g_5',
@@ -129,6 +129,9 @@ GetStPTransferService.prototype = {
         })
       );
     }
+
+    let configStrategy = oThis.ic().configStrategy;
+    transactionLog['utility_chain_id'] = configStrategy.OST_UTILITY_CHAIN_ID;
 
     return responseHelper.successWithData(transactionLog);
   }
