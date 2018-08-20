@@ -66,16 +66,17 @@ const ConfigStrategyModelSpecificPrototype = {
       hashedConfigStrategyParams = localCipher.getShaHashedText(configStrategyParamsString);
 
     await new ConfigStrategyModel()
-      .getByParams(configStrategyParams)
+      .getByParams(hashedConfigStrategyParams)
       .then(function(result) {
         isParamPresent = result;
       })
       .catch(function(err) {
-        console.log('Error', err);
+        logger.error('Error', err);
       });
 
-    if (isParamPresent != null) {
+    if (isParamPresent !== null) {
       //If configStrategyParams is already present in database then id of that param is sent
+      logger.info('The given params is already present in database with id:', isParamPresent);
       return Promise.resolve(isParamPresent);
     } else {
       let response = await oThis.getDecryptedSalt(managedAddressSaltId);
@@ -83,7 +84,7 @@ const ConfigStrategyModelSpecificPrototype = {
         return Promise.reject(
           responseHelper.error({
             internal_error_identifier: 'm_tb_dshh_y_1',
-            api_error_identifier: 'invalid_salt',
+            api_error_identifier: 'something_went_wrong',
             debug_options: {},
             error_config: errorConfig
           })
@@ -142,7 +143,7 @@ const ConfigStrategyModelSpecificPrototype = {
           return Promise.reject(
             responseHelper.error({
               internal_error_identifier: 'm_tb_swry_1',
-              api_error_identifier: 'invalid_salt',
+              api_error_identifier: 'something_went_wrong',
               debug_options: {},
               error_config: errorConfig
             })
@@ -265,26 +266,25 @@ const ConfigStrategyModelSpecificPrototype = {
   },
 
   /*
-  * Get strategy id by passing unencrypted params hash.<br><br>
+  * Get strategy id by passing SHA encryption of params hash.<br><br>
   *
   * @param {Object} params - hashed_params - SHA of config strategy params.
   * @return {Promise<value>} - returns a Promise with a value of strategy id if it already exists.
   *
   */
-  getByParams: async function(params) {
+  getByParams: async function(shaParams) {
     const oThis = this;
 
-    let returnValue = [],
-      paramsHash = localCipher.getShaHashedText(JSON.stringify(params));
+    let returnValue = null;
 
-    let query = oThis.select('id').where({ hashed_params: paramsHash }),
+    let query = oThis.select('id').where({ hashed_params: shaParams }),
       queryResult = await query.fire();
 
     if (queryResult.length !== 0) {
-      returnValue.push(queryResult[0].id);
+      returnValue = queryResult[0].id;
     }
 
-    return Promise.resolve(returnValue[0]);
+    return Promise.resolve(returnValue);
   },
 
   /**
@@ -354,33 +354,42 @@ const ConfigStrategyModelSpecificPrototype = {
    * @param updatedConfigStrategyParams
    * @returns {Promise<*>}
    */
-  updateStrategyIds: async function(strategy_id, updatedConfigStrategyParams) {
+  updateStrategyId: async function(strategy_id, updatedConfigStrategyParams) {
     const oThis = this,
+      queryResult = await new ConfigStrategyModel()
+        .select(['managed_address_salts_id'])
+        .where({ id: strategy_id })
+        .fire();
+
+    if (queryResult.length === 0) {
+      logger.error('Strategy id is invalid');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'm_tb_cs_4',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {},
+          error_config: errorConfig
+        })
+      );
+    }
+
+    const managedAddressSaltId = queryResult[0].managed_address_salts_id,
       updatedConfigStrategyParamsString = JSON.stringify(updatedConfigStrategyParams);
-
-    const queryResult = await oThis
-      .select(['managed_address_salts_id'])
-      .where({ id: strategy_id })
-      .fire();
-
-    const managedAddressSaltId = queryResult[0].managed_address_salts_id;
-
-    console.log('queryResult', managedAddressSaltId);
 
     let isParamPresent = null,
       hashedUpdatedConfigStrategyParams = localCipher.getShaHashedText(updatedConfigStrategyParamsString);
 
     //To check if the updated config strategy is already present in the database table.
     await new ConfigStrategyModel()
-      .getByParams(updatedConfigStrategyParams)
+      .getByParams(hashedUpdatedConfigStrategyParams)
       .then(function(result) {
         isParamPresent = result;
       })
       .catch(function(err) {
-        console.log('Error', err);
+        logger.error('Error', err);
       });
 
-    if (isParamPresent != null) {
+    if (isParamPresent !== null) {
       //If configStrategyParams is already present in database then id of that param is sent
       logger.error('The config strategy is already present in database with id: ', isParamPresent);
       return Promise.reject(
@@ -398,7 +407,7 @@ const ConfigStrategyModelSpecificPrototype = {
       return Promise.reject(
         responseHelper.error({
           internal_error_identifier: 'm_tb_cs_2',
-          api_error_identifier: 'invalid_salt',
+          api_error_identifier: 'something_went_wrong',
           debug_options: {},
           error_config: errorConfig
         })
