@@ -433,11 +433,7 @@ BasicHelperKlass.prototype = {
   transferSTPrimeToWorker: function () {
     const oThis = this;
 
-    if(oThis.isProduction() && oThis.isMainSubEnvironment()){
-      return oThis.convertToWei(0.05)
-    } else {
-      return oThis.convertToWei(0.05)
-    }
+    return oThis.convertToWei(0.05);
   },
 
   /**
@@ -449,7 +445,7 @@ BasicHelperKlass.prototype = {
   transferSTPrimeToBudgetHolder: function () {
     const oThis = this;
 
-    if(oThis.isProduction() && oThis.isMainSubEnvironment()){
+    if(oThis.isMainSubEnvironment()){
       return oThis.convertToWei(0.01)
     } else {
       return oThis.convertToWei(0.5)
@@ -465,8 +461,8 @@ BasicHelperKlass.prototype = {
   isSTPrimeTransferRequiredBal: function () {
     const oThis = this;
 
-    if(oThis.isProduction() && oThis.isMainSubEnvironment()){
-      return oThis.convertToWei(0.01)
+    if(oThis.isMainSubEnvironment()){
+      return oThis.convertToWei(0.1)
     } else {
       return oThis.convertToWei(1)
     }
