@@ -31,11 +31,11 @@ const BasicHelperKlass = function() {};
 BasicHelperKlass.prototype = {
 
   convertToNormal: function (numInWei) {
-    return this.convertToBigNumber(numInWei).div(this.convertToBigNumber(10).toPower(18))
+    return this.convertToBigNumber(numInWei).div(this.convertToBigNumber(10).toPower(18));
   },
 
   convertToWei: function (num) {
-    return this.convertToBigNumber(num).mul(this.convertToBigNumber(10).toPower(18))
+    return this.convertToBigNumber(num).mul(this.convertToBigNumber(10).toPower(18));
   },
 
   /**
@@ -289,7 +289,7 @@ BasicHelperKlass.prototype = {
     return {
       param_error_config: paramErrorConfig,
       api_error_config: apiErrorConfig
-    }
+    };
 
   },
 
@@ -315,7 +315,7 @@ BasicHelperKlass.prototype = {
    * @return {Array}
    */
   isGreaterThanMinWei: function(str) {
-    return this.convertToBigNumber(str) >= this.convertToBigNumber(10).toPower(18)
+    return this.convertToBigNumber(str) >= this.convertToBigNumber(10).toPower(18);
   },
 
 
@@ -325,7 +325,7 @@ BasicHelperKlass.prototype = {
    * @return {Boolean}
    */
   isProduction: function() {
-    return (coreConstants.ENVIRONMENT == 'production')
+    return (coreConstants.ENVIRONMENT == 'production');
   },
 
   /**
@@ -334,7 +334,7 @@ BasicHelperKlass.prototype = {
    * @return {Boolean}
    */
   isMainSubEnvironment: function() {
-    return (coreConstants.SUB_ENVIRONMENT == 'main')
+    return (coreConstants.SUB_ENVIRONMENT == 'main');
   },
 
   /**
@@ -343,7 +343,7 @@ BasicHelperKlass.prototype = {
    * @return {Boolean}
    */
   isSandboxSubEnvironment: function() {
-    return (coreConstants.SUB_ENVIRONMENT == 'main')
+    return (coreConstants.SUB_ENVIRONMENT == 'main');
   },
 
   /**
@@ -363,7 +363,7 @@ BasicHelperKlass.prototype = {
         valueRegistrar: {minBalance: '0.25', address: chainInteractionConstants.VALUE_REGISTRAR_ADDR},
         valueDeployer: {minBalance: '0.5', address: chainInteractionConstants.VALUE_DEPLOYER_ADDR},
         valueOps: {minBalance: '1', address: chainInteractionConstants.VALUE_OPS_ADDR}
-      }
+      };
     } else {
       return {
         utilityChainOwner: {minBalance: '60', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR},
@@ -372,7 +372,7 @@ BasicHelperKlass.prototype = {
         valueRegistrar: {minBalance: '10', address: chainInteractionConstants.VALUE_REGISTRAR_ADDR},
         valueDeployer: {minBalance: '10', address: chainInteractionConstants.VALUE_DEPLOYER_ADDR},
         valueOps: {minBalance: '10', address: chainInteractionConstants.VALUE_OPS_ADDR}
-      }
+      };
     }
 
   },
@@ -394,7 +394,7 @@ BasicHelperKlass.prototype = {
         utilityRegistrar: {minBalance: '1', address: chainInteractionConstants.UTILITY_REGISTRAR_ADDR},
         utilityDeployer: {minBalance: '0.01', address: chainInteractionConstants.UTILITY_DEPLOYER_ADDR},
         utilityOps: {minBalance: '1', address: chainInteractionConstants.UTILITY_OPS_ADDR}
-      }
+      };
     } else {
       return {
         utilityChainOwner: {minBalance: '60', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR},
@@ -403,7 +403,7 @@ BasicHelperKlass.prototype = {
         utilityRegistrar: {minBalance: '10', address: chainInteractionConstants.UTILITY_REGISTRAR_ADDR},
         utilityDeployer: {minBalance: '10', address: chainInteractionConstants.UTILITY_DEPLOYER_ADDR},
         utilityOps: {minBalance: '10', address: chainInteractionConstants.UTILITY_OPS_ADDR}
-      }
+      };
     }
 
   },
@@ -417,10 +417,10 @@ BasicHelperKlass.prototype = {
   reserveAlertBalanceWei: function () {
     const oThis = this;
 
-    if(oThis.isProduction() || oThis.isMainSubEnvironment()){
-      return oThis.convertToWei(0.05)
+    if(oThis.isMainSubEnvironment()){
+      return oThis.convertToWei(0.05);
     } else {
-      return oThis.convertToWei(0.5)
+      return oThis.convertToWei(0.5);
     }
   },
 
@@ -433,7 +433,11 @@ BasicHelperKlass.prototype = {
   transferSTPrimeToWorker: function () {
     const oThis = this;
 
-    return oThis.convertToWei(0.05);
+    if(oThis.isMainSubEnvironment()){
+      return oThis.convertToWei(0.5);
+    } else {
+      return oThis.convertToWei(1);
+    }
   },
 
   /**
@@ -446,9 +450,9 @@ BasicHelperKlass.prototype = {
     const oThis = this;
 
     if(oThis.isMainSubEnvironment()){
-      return oThis.convertToWei(0.01)
+      return oThis.convertToWei(0.05);
     } else {
-      return oThis.convertToWei(0.5)
+      return oThis.convertToWei(1);
     }
   },
 
@@ -462,9 +466,9 @@ BasicHelperKlass.prototype = {
     const oThis = this;
 
     if(oThis.isMainSubEnvironment()){
-      return oThis.convertToWei(0.1)
+      return oThis.convertToWei(0.01);
     } else {
-      return oThis.convertToWei(1)
+      return oThis.convertToWei(0.5);
     }
   }
 
