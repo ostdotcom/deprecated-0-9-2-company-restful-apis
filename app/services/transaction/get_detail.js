@@ -116,8 +116,6 @@ GetTransactionDetailKlass.prototype = {
       client_id: oThis.clientId
     }).batchGetItem(oThis.transactionUuids);
 
-    console.log('transactionFetchResponse.data', transactionFetchResponse.data);
-
     let transactionLogRecordsHash = transactionFetchResponse.data;
 
     if (!transactionLogRecordsHash || Object.keys(transactionLogRecordsHash).length == 0) {

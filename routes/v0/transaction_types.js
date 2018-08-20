@@ -133,8 +133,6 @@ router.post('/execute', function(req, res, next) {
   };
 
   const dataFormatterFunc = async function(response) {
-    console.log('data', response.data);
-
     const rawData = response.data,
       formattedData = {
         transaction_uuid: rawData['transaction_uuid'],
@@ -143,8 +141,6 @@ router.post('/execute', function(req, res, next) {
         to_uuid: rawData['to_uuid'],
         action_id: rawData['action_id']
       };
-
-    console.log('formattedData', formattedData);
 
     response.data = formattedData;
   };
