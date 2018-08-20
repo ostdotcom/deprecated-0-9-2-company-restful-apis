@@ -11,7 +11,7 @@
     "@openstfoundation/openst-cache": "1.0.5-beta.8",
     "@openstfoundation/openst-notification": "1.0.3-beta.5",
     "@openstfoundation/openst-payments": "1.0.9-beta.12",
-    "@openstfoundation/openst-platform": "0.9.5-beta.14",
+    "@openstfoundation/openst-platform": "0.9.6-beta.1",
     "@openstfoundation/openst-storage": "1.0.1-beta.14",
     "@ostdotcom/ost-price-oracle": "1.0.4-beta.3",
     "abi-decoder": "1.1.0",
