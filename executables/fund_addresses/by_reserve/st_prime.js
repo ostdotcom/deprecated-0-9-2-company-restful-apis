@@ -65,8 +65,6 @@ FundUsersWithSTPrimeFromReserveKlass.prototype = {
     while (true) {
       const offset = (pageNo - 1) * batchSize;
 
-      // Added the where query for testing. Will remove later.
-      // TODO: Remove the where query.
       const clientBrandedTokenRecords = await new ClientBrandedTokenModel()
         .select(['airdrop_contract_addr', 'client_id'])
         .limit(batchSize)
