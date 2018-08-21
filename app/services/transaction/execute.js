@@ -575,10 +575,12 @@ ExecuteTransactionService.prototype = {
           })
         );
       }
+
       logger.debug('---priceInDecimal--', priceInDecimal);
-      transferBtAmountInWei = basicHelper
-        .convertToBigNumber(amount)
-        .div(basicHelper.convertToBigNumber(priceInDecimal.data.price));
+      let ostToUSDBn = basicHelper.convertToBigNumber(priceInDecimal.data.price),
+        usdToBt = basicHelper.convertToBigNumber(oThis.clientBrandedToken.conversion_factor).div(ostToUSDBn);
+
+      transferBtAmountInWei = basicHelper.convertToBigNumber(amount).mul(usdToBt);
     } else {
       transferBtAmountInWei = basicHelper.convertToBigNumber(amount);
     }
@@ -595,6 +597,8 @@ ExecuteTransactionService.prototype = {
     logger.debug('---commissionAmount--', commissionAmount);
     const requiredBtAmountInWei = transferBtAmountInWei.plus(basicHelper.convertToBigNumber(commissionAmount));
 
+    logger.debug('---oThis.fromUuid---', oThis.fromUuid);
+    logger.debug('---oThis.transactionTypeRecord---', oThis.transactionTypeRecord);
     logger.debug('---requiredBtAmountInWei--', requiredBtAmountInWei);
     logger.debug('---oThis.fromUserTokenBalance--', oThis.fromUserTokenBalance);
 
