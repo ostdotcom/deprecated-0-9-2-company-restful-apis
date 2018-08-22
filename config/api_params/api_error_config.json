@@ -349,6 +349,11 @@
     "code": "GRANT_FORBIDDEN",
     "message": "Cannot proceed with the grant."
   },
+  "transfer_prohibited": {
+    "http_code": "403",
+    "code": "TRANSFER_FORBIDDEN",
+    "message": "Cannot proceed with ST prime transfer on main-net."
+  },
   "random_transaction_prohibited": {
     "http_code": "403",
     "code": "REQUEST_FORBIDDEN",

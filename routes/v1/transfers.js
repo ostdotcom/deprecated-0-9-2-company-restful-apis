@@ -5,7 +5,12 @@ const express = require('express')
 
 const rootPrefix = '../..'
   , routeHelper = require(rootPrefix + '/routes/helper')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
   , StPrimeTransferFormatter = require(rootPrefix + '/lib/formatter/entities/latest/stp_transfer')
+  , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
+  , basicHelper = require(rootPrefix + '/helpers/basic')
+  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+  , errorConfig = basicHelper.fetchErrorConfig(apiVersions.v1)
 ;
 
 const router = express.Router()
@@ -21,6 +26,16 @@ const router = express.Router()
  */
 router.post('/', function (req, res, next) {
   req.decodedParams.apiName = 'execute_stp_transfer';
+
+  if (basicHelper.isMainSubEnvironment()) {
+    let response = responseHelper.error({
+      internal_error_identifier: 'r_v1_stp_t_5',
+      api_error_identifier: 'transfer_prohibited',
+      debug_options: {}
+    });
+
+    return response.renderResponse(res, errorConfig);
+  }
 
   const ExecuteSTPTransferService = require(rootPrefix + '/app/services/stp_transfer/execute');
 
