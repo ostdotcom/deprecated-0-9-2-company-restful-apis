@@ -547,37 +547,26 @@ ExecuteTransactionService.prototype = {
    */
   _validateFromUserBalance: async function() {
     const oThis = this,
-      configStrategy = oThis.ic().configStrategy,
-      priceOracleProvider = oThis.ic().getPriceOracleProvider(),
-      priceOracle = priceOracleProvider.getInstance().priceOracle,
       amount = basicHelper.convertToWei(oThis.amount || oThis.transactionTypeRecord.currency_value),
       commissionPercent = oThis.commissionPercent || oThis.transactionTypeRecord.commission_percent;
 
-    var transferBtAmountInWei = null;
+    let transferBtAmountInWei = null;
 
     logger.debug('---amount--', amount);
 
     logger.debug('---oThis.transactionTypeRecord--', oThis.transactionTypeRecord);
-    if (oThis.transactionTypeRecord.currency_type == clientTransactionTypeConst.usdCurrencyType) {
-      // Get conversion rate
-      var priceInDecimal = await priceOracle.decimalPrice(
-        configStrategy.OST_UTILITY_CHAIN_ID,
-        conversionRateConstants.ost_currency(),
-        conversionRateConstants.usd_currency()
-      );
 
-      if (priceInDecimal.isFailure()) {
-        return Promise.reject(
-          responseHelper.error({
-            internal_error_identifier: 's_t_e_30',
-            api_error_identifier: 'getPriceOracle_failed',
-            error_config: errorConfig
-          })
-        );
+    if (oThis.transactionTypeRecord.currency_type == clientTransactionTypeConst.usdCurrencyType) {
+      let ostPriceCacheKlass = oThis.ic().getOstPricePointsCache(),
+        ostPrices = await new ostPriceCacheKlass().fetch();
+
+      if (ostPrices.isFailure()) {
+        return Promise.reject(ostPrices);
       }
 
-      logger.debug('---priceInDecimal--', priceInDecimal);
-      let ostToUSDBn = basicHelper.convertToBigNumber(priceInDecimal.data.price),
+      logger.debug('---ostPrices--', ostPrices);
+
+      let ostToUSDBn = basicHelper.convertToBigNumber(ostPrices['data']['OST']['USD']),
         usdToBt = basicHelper.convertToBigNumber(oThis.clientBrandedToken.conversion_factor).div(ostToUSDBn);
 
       transferBtAmountInWei = basicHelper.convertToBigNumber(amount).mul(usdToBt);
