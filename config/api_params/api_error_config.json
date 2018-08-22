@@ -347,12 +347,12 @@
   "grant_prohibited": {
     "http_code": "403",
     "code": "GRANT_FORBIDDEN",
-    "message": "Cannot proceed with the grant."
+    "message": "This API Endpoint is prohibited on Mainnet environment."
   },
   "transfer_prohibited": {
     "http_code": "403",
     "code": "TRANSFER_FORBIDDEN",
-    "message": "Cannot proceed with ST prime transfer on main-net."
+    "message": "This API Endpoint is prohibited on Mainnet environment. If you wish to test the contract deployment functionality on Utility chain you can do so on Testnet environment."
   },
   "random_transaction_prohibited": {
     "http_code": "403",
