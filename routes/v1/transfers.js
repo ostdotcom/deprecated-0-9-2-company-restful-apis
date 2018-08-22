@@ -5,7 +5,6 @@ const express = require('express')
 
 const rootPrefix = '../..'
   , routeHelper = require(rootPrefix + '/routes/helper')
-  , basicHelper = require(rootPrefix + '/helpers/basic')
   , StPrimeTransferFormatter = require(rootPrefix + '/lib/formatter/entities/latest/stp_transfer')
   , apiVersions = require(rootPrefix + '/lib/global_constant/api_versions')
   , basicHelper = require(rootPrefix + '/helpers/basic')
