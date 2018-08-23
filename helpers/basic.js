@@ -358,10 +358,10 @@ BasicHelperKlass.prototype = {
     if(true || oThis.isProduction() || oThis.isMainSubEnvironment()){
       return {
         utilityChainOwner: {minBalance: '2', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR},
-        staker: {minBalance: '0.25', address: chainInteractionConstants.STAKER_ADDR},
+        staker: {minBalance: '0.5', address: chainInteractionConstants.STAKER_ADDR},
         redeemer: {minBalance: '0', address: chainInteractionConstants.REDEEMER_ADDR},
-        valueRegistrar: {minBalance: '0.25', address: chainInteractionConstants.VALUE_REGISTRAR_ADDR},
-        valueDeployer: {minBalance: '0.5', address: chainInteractionConstants.VALUE_DEPLOYER_ADDR},
+        valueRegistrar: {minBalance: '0.5', address: chainInteractionConstants.VALUE_REGISTRAR_ADDR},
+        valueDeployer: {minBalance: '0.9', address: chainInteractionConstants.VALUE_DEPLOYER_ADDR},
         valueOps: {minBalance: '0.5', address: chainInteractionConstants.VALUE_OPS_ADDR}
       };
     } else {
