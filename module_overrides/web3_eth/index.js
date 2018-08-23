@@ -135,13 +135,14 @@ const Derived = function() {
         }
 
         bnChainGasPrice = new BigNumber(chainGasPrice);
+
         if (bnChainGasPrice.isZero()) {
           logger.debug('WARN :: Gas Price for chainKind', chainKind, 'is zero.');
         } else {
           rawTx.gasPrice = chainGasPrice;
           logger.debug('Auto-corrected gas price to', rawTx.gasPrice);
           console.trace('WARN :: sendTransaction called without setting gas price.\nPlease see trace for more info');
-        }
+
       };
 
 
