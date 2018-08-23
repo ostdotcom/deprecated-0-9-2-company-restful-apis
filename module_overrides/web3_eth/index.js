@@ -133,8 +133,9 @@ const Derived = function() {
           chainGasPrice = chainInteractionConstants.UTILITY_GAS_PRICE;
           
         }
+
         bnChainGasPrice = new BigNumber(chainGasPrice);
-        if (bnGasPrice.isNaN() || bnGasPrice.lessThan(1)) {
+        if (bnChainGasPrice.isNaN() || bnChainGasPrice.lessThan(1)) {
           if (bnChainGasPrice.isZero()) {
             logger.debug('WARN :: Gas Price for chainKind', chainKind, 'is zero.');
           } else {
@@ -142,6 +143,8 @@ const Derived = function() {
             logger.debug('Auto-corrected gas price to', rawTx.gasPrice);
             console.trace('WARN :: sendTransaction called without setting gas price.\nPlease see trace for more info');
           }
+        }else{
+          rawTx.gasPrice = chainGasPrice;
         }
       };
 
@@ -177,7 +180,7 @@ const Derived = function() {
       const signTransactionLocally = function () {
         const tx = new Tx(rawTx);
         tx.sign(privateKeyObj);
-
+        console.log('rawTx**********',rawTx);
         return tx.serialize();
       };
 
