@@ -6,7 +6,8 @@
  * @module executables/block_scanner/for_tx_status_and_balance_sync
  */
 
-const rootPrefix = '../..'
+const rootPrefix = '../..',
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
 const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker')
@@ -60,8 +61,7 @@ const fs = require('fs')
   , uuid = require('uuid')
 ;
 
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+const responseHelper = require(rootPrefix + '/lib/formatter/response')
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , TransactionMeta = require(rootPrefix + '/app/models/transaction_meta')
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')

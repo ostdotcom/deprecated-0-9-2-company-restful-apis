@@ -195,6 +195,13 @@ Run the following command after creating the database.
 > node executables/inter_comm/stake_and_mint_processor.js $HOME/openst-setup/logs/stake_and_mint_processor.data
 ```
 
+* Start Hunter Intercom in new terminal.
+```bash
+> source $HOME/openst-setup/openst_env_vars.sh
+> source set_env_vars.sh
+> node executables/inter_comm/hunter.js $HOME/openst-setup/logs/hunter.data
+```
+
 * Start Processor to execute transactions in new terminal.
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
