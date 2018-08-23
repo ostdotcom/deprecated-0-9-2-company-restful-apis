@@ -355,14 +355,14 @@ BasicHelperKlass.prototype = {
   valueChainBalanceRequirements: function () {
     const oThis = this;
 
-    if(oThis.isProduction() || oThis.isMainSubEnvironment()){
+    if(true || oThis.isProduction() || oThis.isMainSubEnvironment()){
       return {
         utilityChainOwner: {minBalance: '2', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR},
         staker: {minBalance: '0.25', address: chainInteractionConstants.STAKER_ADDR},
         redeemer: {minBalance: '0', address: chainInteractionConstants.REDEEMER_ADDR},
         valueRegistrar: {minBalance: '0.25', address: chainInteractionConstants.VALUE_REGISTRAR_ADDR},
         valueDeployer: {minBalance: '0.5', address: chainInteractionConstants.VALUE_DEPLOYER_ADDR},
-        valueOps: {minBalance: '1', address: chainInteractionConstants.VALUE_OPS_ADDR}
+        valueOps: {minBalance: '0.5', address: chainInteractionConstants.VALUE_OPS_ADDR}
       };
     } else {
       return {
@@ -386,13 +386,13 @@ BasicHelperKlass.prototype = {
   utilityChainBalanceRequirements: function () {
     const oThis = this;
 
-    if(oThis.isProduction() || oThis.isMainSubEnvironment()){
+    if(true || oThis.isProduction() || oThis.isMainSubEnvironment()){
       return {
-        utilityChainOwner: {minBalance: '6', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR},
+        utilityChainOwner: {minBalance: '10', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR},
         staker: {minBalance: '1', address: chainInteractionConstants.STAKER_ADDR},
         redeemer: {minBalance: '1', address: chainInteractionConstants.REDEEMER_ADDR},
         utilityRegistrar: {minBalance: '1', address: chainInteractionConstants.UTILITY_REGISTRAR_ADDR},
-        utilityDeployer: {minBalance: '0.01', address: chainInteractionConstants.UTILITY_DEPLOYER_ADDR},
+        utilityDeployer: {minBalance: '1', address: chainInteractionConstants.UTILITY_DEPLOYER_ADDR},
         utilityOps: {minBalance: '1', address: chainInteractionConstants.UTILITY_OPS_ADDR}
       };
     } else {
