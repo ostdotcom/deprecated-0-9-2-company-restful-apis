@@ -115,3 +115,9 @@ for(var i=0; i<addresses_to_unlock_via_keystore_file.length; i++) {
 }
 
 define('ADDRESSES_TO_UNLOCK_VIA_KEYSTORE_FILE_MAP', addresses_to_unlock_via_keystore_file_map);
+
+//Gas price for mainnet
+define("MIN_VALUE_GAS_PRICE", process.env.MIN_VALUE_GAS_PRICE);
+define("MAX_VALUE_GAS_PRICE", process.env.MAX_VALUE_GAS_PRICE);
+define("DEFAULT_VALUE_GAS_PRICE", process.env.DEFAULT_VALUE_GAS_PRICE);
+define("BUFFER_VALUE_GAS_PRICE", process.env.BUFFER_VALUE_GAS_PRICE);
