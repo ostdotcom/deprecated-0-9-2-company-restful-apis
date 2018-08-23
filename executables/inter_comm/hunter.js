@@ -34,8 +34,8 @@ hunterInterCommObj.init();
 logger.win("InterComm Script for Hunter initiated.");
 
 
-process.on('uncaughtException', function() {
-  logger.error("Received uncaughtException");
+process.on('uncaughtException', function(args) {
+  logger.error("Received uncaughtException", args);
   setTimeout(function () {
     process.exit(1);
   }, 60000)
