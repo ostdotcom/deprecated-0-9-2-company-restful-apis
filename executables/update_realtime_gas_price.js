@@ -1,5 +1,11 @@
 "use strict";
 
+/**
+ *
+ * Usage: node executables/update_realtime_gas_price.js 'process_id'
+ *
+ *
+ */
 const rootPrefix = '..',
   ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
   ProcessLocker = new ProcessLockerKlass();
@@ -29,14 +35,12 @@ UpdateRealTimeGasPrice.prototype = {
     let estimatedGasPriceFloat = 0,
       valueChainGasPriceCacheObj = new valueChainGasPriceCacheKlass(),
       chainIdInternal = chainInteractionConstants.VALUE_CHAIN_ID;
-
     let retrycount = 10;
 
     while (retrycount > 0 && estimatedGasPriceFloat == 0) {
       estimatedGasPriceFloat = await dynamicGasPriceProvider.dynamicGasPrice.get(chainIdInternal);
       retrycount = retrycount - 1;
     }
-
     //All constants will be stored in gwei
     if (estimatedGasPriceFloat > 0) {
 
@@ -69,4 +73,6 @@ UpdateRealTimeGasPrice.prototype = {
 
 // perform action
 const UpdateRealTimeGasPriceObj = new UpdateRealTimeGasPrice();
-UpdateRealTimeGasPriceObj.perform();
+UpdateRealTimeGasPriceObj.perform().then(function(a){
+  process.exit(0);
+});
