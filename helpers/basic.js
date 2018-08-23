@@ -470,6 +470,12 @@ BasicHelperKlass.prototype = {
     } else {
       return oThis.convertToWei(0.5);
     }
+  },
+
+  pauseForSeconds: async function (timeInSeconds) {
+    setTimeout(function () {
+      return Promise.resolve();
+    }, timeInSeconds*1000)
   }
 
 };
