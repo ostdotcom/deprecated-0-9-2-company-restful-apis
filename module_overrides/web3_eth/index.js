@@ -17,7 +17,7 @@ function initRequires() {
   nonceManagerKlass = nonceManagerKlass || require(rootPrefix + '/module_overrides/web3_eth/nonce_manager');
   responseHelper = responseHelper || require(rootPrefix + '/lib/formatter/response');
   logger = logger || require(rootPrefix + '/lib/logger/custom_console_logger');
-  valueChainGasPriceCacheKlass= valueChainGasPriceCacheKlass || require(rootPrefix + '/lib/cache_management/estimate_value_chain_gas_price');
+  valueChainGasPriceCacheKlass = valueChainGasPriceCacheKlass || require(rootPrefix + '/lib/cache_management/estimate_value_chain_gas_price');
   chainInteractionConstants = chainInteractionConstants || require(rootPrefix + '/config/chain_interaction_constants');
 }
 
@@ -34,7 +34,7 @@ for (let k in require.cache) {
 }
 
 // Derived Class Definition/Implementation
-const Derived = function() {
+const Derived = function () {
   let oThis = this;
 
   initRequires();
@@ -49,7 +49,7 @@ const Derived = function() {
 
   const _sendTransaction = oThis.sendTransaction;
 
-  oThis.sendTransaction = function() {
+  oThis.sendTransaction = function () {
     logger.debug('HACKED sendTransaction INVOKED');
     logger.debug('arguments of sendTransaction', arguments);
 
@@ -123,15 +123,18 @@ const Derived = function() {
       const setRawTxGasPrice = async function () {
 
         if (String(chainKind).toLowerCase() === "value") {
-          
+
           let valueChainGasPriceCacheObj = new valueChainGasPriceCacheKlass(),
             chainGasPriceRsp = await valueChainGasPriceCacheObj.fetch();
+
           chainGasPrice = chainGasPriceRsp.data;
-          
+
+          // console.log('=value===chainGasPrice', chainGasPrice);
+
         } else {
-          
+
           chainGasPrice = chainInteractionConstants.UTILITY_GAS_PRICE;
-          
+          // console.log('=utility===chainGasPrice', chainGasPrice);
         }
 
         bnChainGasPrice = new BigNumber(chainGasPrice);
@@ -142,6 +145,7 @@ const Derived = function() {
           rawTx.gasPrice = chainGasPrice;
           logger.debug('Auto-corrected gas price to', rawTx.gasPrice);
           console.trace('WARN :: sendTransaction called without setting gas price.\nPlease see trace for more info');
+        }
 
       };
 
@@ -177,7 +181,7 @@ const Derived = function() {
       const signTransactionLocally = function () {
         const tx = new Tx(rawTx);
         tx.sign(privateKeyObj);
-        console.log('rawTx**********',rawTx);
+
         return tx.serialize();
       };
 
@@ -279,8 +283,6 @@ const Derived = function() {
   return oThis;
 
 };
-
-
 
 Derived.isOSTVersion = true;
 
