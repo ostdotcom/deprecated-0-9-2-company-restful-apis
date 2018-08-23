@@ -129,12 +129,10 @@ const Derived = function () {
 
           chainGasPrice = chainGasPriceRsp.data;
 
-          // console.log('=value===chainGasPrice', chainGasPrice);
 
         } else {
 
           chainGasPrice = chainInteractionConstants.UTILITY_GAS_PRICE;
-          // console.log('=utility===chainGasPrice', chainGasPrice);
         }
 
         bnChainGasPrice = new BigNumber(chainGasPrice);
@@ -144,7 +142,6 @@ const Derived = function () {
         } else {
           rawTx.gasPrice = chainGasPrice;
           logger.debug('Auto-corrected gas price to', rawTx.gasPrice);
-          console.trace('WARN :: sendTransaction called without setting gas price.\nPlease see trace for more info');
         }
 
       };
