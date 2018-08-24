@@ -355,7 +355,7 @@ BasicHelperKlass.prototype = {
   valueChainBalanceRequirements: function () {
     const oThis = this;
 
-    if(true || oThis.isProduction() || oThis.isMainSubEnvironment()){
+    if(oThis.isProduction() || oThis.isMainSubEnvironment()){
       return {
         utilityChainOwner: {minBalance: '2', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR},
         staker: {minBalance: '0.5', address: chainInteractionConstants.STAKER_ADDR},
@@ -386,7 +386,7 @@ BasicHelperKlass.prototype = {
   utilityChainBalanceRequirements: function () {
     const oThis = this;
 
-    if(true || oThis.isProduction() || oThis.isMainSubEnvironment()){
+    if(oThis.isProduction() || oThis.isMainSubEnvironment()){
       return {
         utilityChainOwner: {minBalance: '10', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR},
         staker: {minBalance: '1', address: chainInteractionConstants.STAKER_ADDR},
