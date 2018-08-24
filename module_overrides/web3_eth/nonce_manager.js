@@ -240,7 +240,12 @@ const NonceCacheKlassPrototype = {
           logger.log('NM :: acquireLockAndReturn :: nonceResponse: ', nonceResponse);
           return responseHelper.successWithData({ nonce: parseInt(nonceResponse.data.response) });
         } else {
-          return await oThis._syncNonce();
+          let syncNonceResp = await oThis._syncNonce();
+          logger.log('NM :: acquireLockAndReturn :: syncNonceResp: ', syncNonceResp.getDebugData());
+          if(syncNonceResp.isFailure()){
+            await oThis._releaseLock();
+          }
+          return syncNonceResp;
         }
       } else {
         return acquireLockResponse;
