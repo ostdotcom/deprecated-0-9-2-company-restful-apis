@@ -7,7 +7,7 @@
  * <br>It listens to the ProcessedMint event emitted by processMinting method of openSTUtility contract.
  * On getting this event, it calls processStaking method of openSTValue contract if not called already.
  *
- * @module executables/inter_comm/hunter
+ * @module executables/inter_comm/stake_hunter
  */
 
 const rootPrefix = '../..'
@@ -20,18 +20,18 @@ const openStPlatform = require('@openstfoundation/openst-platform')
 ;
 
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , HunterInterCommKlass = openStPlatform.services.interComm.hunter
+  , StakeHunterInterCommKlass = openStPlatform.services.interComm.stakeHunter
 ;
 
 const args = process.argv
   , filePath = args[2]
 ;
 
-const hunterInterCommObj = new HunterInterCommKlass({file_path: filePath});
-hunterInterCommObj.registerInterruptSignalHandlers();
-hunterInterCommObj.init();
+const stakeHunterInterCommObj = new StakeHunterInterCommKlass({file_path: filePath});
+stakeHunterInterCommObj.registerInterruptSignalHandlers();
+stakeHunterInterCommObj.init();
 
-logger.win("InterComm Script for Hunter initiated.");
+logger.win("InterComm Script for Stake Hunter initiated.");
 
 
 process.on('uncaughtException', function(args) {

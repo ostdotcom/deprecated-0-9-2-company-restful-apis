@@ -124,11 +124,11 @@ StartServicesKlass.prototype = {
     servicesList.push(cmd);
     oThis._asyncCommand(cmd);
 
-    logger.step("** Starting Hunter Intercom");
-    var cmd = "node executables/inter_comm/hunter.js "
+    logger.step("** Starting Stake Hunter Intercom");
+    var cmd = "node executables/inter_comm/stake_hunter.js "
       + homeAbsolutePath
-      + "/openst-setup/logs/hunter.data"
-      + " >> " + homeAbsolutePath + "/openst-setup/logs/hunter.log";
+      + "/openst-setup/logs/stake_hunter.data"
+      + " >> " + homeAbsolutePath + "/openst-setup/logs/stake_hunter.log";
     servicesList.push(cmd);
     oThis._asyncCommand(cmd);
 
