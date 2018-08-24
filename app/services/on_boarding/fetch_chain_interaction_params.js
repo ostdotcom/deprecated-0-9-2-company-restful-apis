@@ -12,6 +12,7 @@ const rootPrefix = '../../..'
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , openStPlatform = require('@openstfoundation/openst-platform')
   , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
+  , valueChainGasPriceCacheKlass = require(rootPrefix + '/lib/cache_management/estimate_value_chain_gas_price');
 ;
 
 /**
@@ -56,9 +57,13 @@ FetchChainInteractionParams.prototype = {
    * @return {result} - returns an object of Result
    *
    */
-  asyncPerform: function () {
+  asyncPerform: async function () {
 
     const oThis = this;
+
+    let valueChainGasPriceCacheObj = new valueChainGasPriceCacheKlass(),
+      chainGasPriceRsp = await valueChainGasPriceCacheObj.fetch(),
+      chainGasPrice = chainGasPriceRsp.data;
 
     if (!oThis.clientId) {
       return Promise.resolve(responseHelper.paramValidationError({
@@ -78,7 +83,8 @@ FetchChainInteractionParams.prototype = {
       value_chain_geth_rpc_provider: chainInteractionConstants.VALUE_GETH_RPC_PROVIDER,
       value_chain_geth_ws_provider: chainInteractionConstants.VALUE_GETH_WS_PROVIDER,
       simple_token_contract_addr: chainInteractionConstants.SIMPLE_TOKEN_CONTRACT_ADDR,
-      staker_addr: chainInteractionConstants.STAKER_ADDR
+      staker_addr: chainInteractionConstants.STAKER_ADDR,
+      value_chain_gas_price: chainGasPrice
 
     };
 
