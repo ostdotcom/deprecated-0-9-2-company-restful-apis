@@ -20,6 +20,7 @@ const dynamicGasPriceProvider = require('@ostdotcom/ost-dynamic-gas-price'),
 
 const chainInteractionConstants = require(rootPrefix+'/config/chain_interaction_constants'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger.js'),
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
   valueChainGasPriceCacheKlass= require(rootPrefix + '/lib/cache_management/estimate_value_chain_gas_price');
 
 /**
@@ -67,8 +68,9 @@ UpdateRealTimeGasPrice.prototype = {
         valueChainGasPriceCacheObj._setCache(gasPriceToBeSubmittedHex);
       }
       logger.info('Value chain gas price is set to:',gasPriceToBeSubmittedHex);
+      return Promise.resolve(responseHelper.successWithData(gasPriceToBeSubmittedHex));
     }
-
+    return Promise.resolve(responseHelper.successWithData({}));
   }
 };
 
@@ -77,5 +79,5 @@ const UpdateRealTimeGasPriceObj = new UpdateRealTimeGasPrice();
 UpdateRealTimeGasPriceObj.perform().then(async function(a){
   setTimeout(function(){
     process.exit(0);
-  },10000); //To kill the process after 10 seconds expecting that the cache will be set by then.
+  },5000); //To kill the process after 10 seconds expecting that the cache will be set by then.
 });
