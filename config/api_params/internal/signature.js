@@ -80,12 +80,7 @@ const signature = {
         "error_identifier": "missing_client_token_id"
       }
     ],
-    "optional":[
-      {
-        "parameter": "airdrop_params",
-        "error_identifier": "missing_airdrop_params"
-      }
-    ]
+    "optional":["airdrop_params"]
   },
   "setup_bt": {
     "mandatory":[
