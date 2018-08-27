@@ -68,6 +68,7 @@ seedConfigStrategies.prototype = {
     dynamo_params['OS_DYNAMODB_REGION'] = env_list.OS_DYNAMODB_REGION;
     dynamo_params['OS_DYNAMODB_LOGGING_ENABLED'] = env_list.OS_DYNAMODB_LOGGING_ENABLED;
     dynamo_params['OS_DYNAMODB_TABLE_NAME_PREFIX'] = env_list.OS_DYNAMODB_TABLE_NAME_PREFIX;
+    dynamo_params['OS_DAX_ENABLED'] = env_list.OS_DAX_ENABLED;
 
     const configStrategy = new configStrategyModel();
 
@@ -218,6 +219,7 @@ seedConfigStrategies.prototype = {
     constants_params['OST_CACHING_ENGINE'] = env_list.OST_CACHING_ENGINE;
     constants_params['OST_DEFAULT_TTL'] = env_list.OST_DEFAULT_TTL;
     constants_params['OST_STANDALONE_MODE'] = env_list.OST_STANDALONE_MODE;
+    constants_params['OST_CACHE_CONSISTENT_BEHAVIOR'] = env_list.OST_CACHE_CONSISTENT_BEHAVIOR;
 
     const configStrategy = new configStrategyModel();
 
