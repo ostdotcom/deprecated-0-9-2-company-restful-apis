@@ -61,7 +61,7 @@ ExecuteSTPTransferService.prototype = {
         logger.error(`${__filename}::perform::catch`);
         logger.error(error);
         return responseHelper.error({
-          internal_error_identifier: '`s_stp_e_1`',
+          internal_error_identifier: 's_stp_e_1',
           api_error_identifier: 'unhandled_catch_response',
           debug_options: {}
         });
@@ -75,8 +75,19 @@ ExecuteSTPTransferService.prototype = {
    * @return {promise<result>}
    */
   asyncPerform: async function() {
-    const oThis = this,
-      transactionLogModel = oThis.ic().getTransactionLogModel(),
+    const oThis = this;
+
+    if (basicHelper.isMainSubEnvironment()) {
+      let response = responseHelper.error({
+        internal_error_identifier: 's_stp_e_11',
+        api_error_identifier: 'transfer_prohibited',
+        debug_options: {}
+      });
+
+      return Promise.reject(response);
+    }
+
+    const transactionLogModel = oThis.ic().getTransactionLogModel(),
       configStrategy = oThis.ic().configStrategy;
 
     await oThis._fetchFromBtCache();

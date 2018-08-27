@@ -71,6 +71,16 @@ simulateRandomTransactionKlass.prototype = {
   asyncPerform: async function() {
     const oThis = this;
 
+    if (basicHelper.isMainSubEnvironment()) {
+      let response = responseHelper.error({
+        internal_error_identifier: 's_tr_srt_11',
+        api_error_identifier: 'random_transaction_prohibited',
+        debug_options: {}
+      });
+
+      return Promise.reject(response);
+    }
+
     // Fetch client branded token
     await oThis.fetchClientBrandedToken();
 

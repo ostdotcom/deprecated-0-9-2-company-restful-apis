@@ -5,11 +5,13 @@
 *
 * */
 
+const BigNumber = require('bignumber.js');
+
 const rootPrefix = '../../..',
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  BigNumber = require('bignumber.js');
+  basicHelper = require(rootPrefix + '/helpers/basic');
 
 require(rootPrefix + '/lib/providers/platform');
 
@@ -59,8 +61,19 @@ TransferSimpleToken.prototype = {
    * @return {promise<result>}
    */
   asyncPerform: async function() {
-    const oThis = this,
-      weiConversion = new BigNumber('1000000000000000000'),
+    const oThis = this;
+
+    if (basicHelper.isMainSubEnvironment()) {
+      let response = responseHelper.error({
+        internal_error_identifier: 's_t_tst_1',
+        api_error_identifier: 'grant_prohibited',
+        debug_options: {}
+      });
+
+      return Promise.reject(response);
+    }
+
+    const weiConversion = new BigNumber('1000000000000000000'),
       platform = oThis
         .ic()
         .getPlatformProvider()
