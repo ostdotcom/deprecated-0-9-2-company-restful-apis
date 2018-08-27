@@ -35,7 +35,9 @@ UpdatePriceOraclePricePoints.prototype = {
     const oThis = this,
       instanceComposer = new InstanceComposer(configStrategy);
 
-    if (Object.keys(configStrategy.OST_UTILITY_PRICE_ORACLES).length == 0) {
+    configStrategy.OST_UTILITY_PRICE_ORACLES = JSON.parse(configStrategy.OST_UTILITY_PRICE_ORACLES);
+
+    if (Object.keys(configStrategy.OST_UTILITY_PRICE_ORACLES).length === 0) {
       throw 'Price oracle contracts not defined';
     }
 

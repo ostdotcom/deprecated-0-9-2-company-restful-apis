@@ -116,7 +116,7 @@ const ConfigStrategyModelSpecificPrototype = {
   getByIds: async function(ids) {
     const oThis = this;
 
-    if (ids.length == 0) {
+    if (ids.length === 0) {
       return Promise.reject(
         responseHelper.error({
           internal_error_identifier: 'm_tb_dsfhh_y_1',
@@ -184,8 +184,7 @@ const ConfigStrategyModelSpecificPrototype = {
       key == 'OST_VALUE_GETH_RPC_PROVIDERS' ||
       key == 'OST_VALUE_GETH_WS_PROVIDERS'
     ) {
-      let newval = JSON.parse(value);
-      return newval;
+      return JSON.parse(value);
     }
     return value;
   },
@@ -245,7 +244,7 @@ const ConfigStrategyModelSpecificPrototype = {
   getGroupIdsByStrategyIds: async function(strategyIdsArray) {
     const oThis = this;
 
-    if (strategyIdsArray.length == 0) {
+    if (strategyIdsArray.length === 0) {
       logger.error('Empty strategy Ids array was passed');
       return Promise.reject(
         responseHelper.error({
@@ -349,6 +348,7 @@ const ConfigStrategyModelSpecificPrototype = {
   },
 
   /**
+   * Update a strategy id.
    *
    * @param strategy_id
    * @param updatedConfigStrategyParams
