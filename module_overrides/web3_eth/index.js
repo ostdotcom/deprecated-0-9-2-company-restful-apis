@@ -9,14 +9,16 @@ const BasePackage = require(basePackage),
 
 const rootPrefix = '../..';
 
-// Please declare your require variables here.
-let nonceManagerKlass, responseHelper, logger, coreConstants;
+// Please declare your require variable here.
+let nonceManagerKlass, responseHelper, logger, coreConstants, valueChainGasPriceCacheKlass;
 
 // NOTE :: Please define all your requires inside the function
 function initRequires() {
   nonceManagerKlass = nonceManagerKlass || require(rootPrefix + '/module_overrides/web3_eth/nonce_manager');
   responseHelper = responseHelper || require(rootPrefix + '/lib/formatter/response');
   logger = logger || require(rootPrefix + '/lib/logger/custom_console_logger');
+  valueChainGasPriceCacheKlass =
+    valueChainGasPriceCacheKlass || require(rootPrefix + '/lib/shared_cache_management/estimate_value_chain_gas_price');
   coreConstants = coreConstants || require(rootPrefix + '/config/core_constants');
 }
 
@@ -174,27 +176,27 @@ const Derived = function() {
        * Sets the chain gas price for the transaction.
        *
        */
-      const setRawTxGasPrice = function() {
-        if (clientId === '0' && chainKind === 'value') {
-          chainGasPrice = coreConstants.OST_VALUE_GAS_PRICE;
-        } else if (clientId === '0' && chainKind === 'utility') {
-          chainGasPrice = coreConstants.OST_UTILITY_GAS_PRICE;
-        } else if (clientId !== '0' && chainKind === 'value') {
-          chainGasPrice = configStrategy.OST_VALUE_GAS_PRICE;
-        } else if (clientId !== '0' && chainKind === 'utility') {
-          chainGasPrice = configStrategy.OST_UTILITY_GAS_PRICE;
+      const setRawTxGasPrice = async function() {
+        if (String(chainKind).toLowerCase() === 'value') {
+          let valueChainGasPriceCacheObj = new valueChainGasPriceCacheKlass(),
+            chainGasPriceRsp = await valueChainGasPriceCacheObj.fetch();
+
+          chainGasPrice = chainGasPriceRsp.data;
+        } else {
+          if (clientId === '0') {
+            chainGasPrice = coreConstants.OST_UTILITY_GAS_PRICE;
+          } else {
+            chainGasPrice = configStrategy.OST_UTILITY_GAS_PRICE;
+          }
         }
 
         bnChainGasPrice = new BigNumber(chainGasPrice);
 
-        if (bnGasPrice.isNaN() || bnGasPrice.lessThan(1)) {
-          if (bnChainGasPrice.isZero()) {
-            logger.debug('WARN :: Gas Price for chainKind', chainKind, 'is zero.');
-          } else {
-            rawTx.gasPrice = chainGasPrice;
-            logger.debug('Auto-corrected gas price to', rawTx.gasPrice);
-            console.trace('WARN :: sendTransaction called without setting gas price.\nPlease see trace for more info');
-          }
+        if (bnChainGasPrice.isZero()) {
+          logger.debug('WARN :: Gas Price for chainKind', chainKind, 'is zero.');
+        } else {
+          rawTx.gasPrice = chainGasPrice;
+          logger.debug('Auto-corrected gas price to', rawTx.gasPrice);
         }
       };
 
@@ -263,6 +265,7 @@ const Derived = function() {
         const nonceManager = fetchNonceResult.data.nonceManager;
 
         logger.log('executeTx :: sendSignedTx initiated');
+
         await sendSignedTx(nonceManager);
       };
 

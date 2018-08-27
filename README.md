@@ -34,17 +34,17 @@
 ```bash
 > source set_env_vars.sh
 # Temporarily set redis caching engine for Platform and memcached for SAAS. We will set it permanently later on.
-> export OST_CACHING_ENGINE='redis'
-> export OST_DEFAULT_TTL='36000'
-> export OST_REDIS_HOST='127.0.0.1'
-> export OST_REDIS_PORT=6379
-> export OST_REDIS_PASS=st123
-> export OST_REDIS_TLS_ENABLED=0
-> export OST_MEMCACHE_SERVERS='127.0.0.1:11211'
-> export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform
-> export OST_UTILITY_GAS_PRICE='0x0'
-> export OST_VALUE_GAS_PRICE='0xBA43B7400'
-> echo "export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform" >> ~/.bash_profile
+export OST_CACHING_ENGINE='redis'
+export OST_DEFAULT_TTL='36000'
+export OST_REDIS_HOST='127.0.0.1'
+export OST_REDIS_PORT=6379
+export OST_REDIS_PASS=st123
+export OST_REDIS_TLS_ENABLED=0
+export OST_MEMCACHE_SERVERS='127.0.0.1:11211'
+export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform
+export OST_UTILITY_GAS_PRICE='0x0'
+export OST_VALUE_GAS_PRICE='0xBA43B7400'
+echo "export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform" >> ~/.bash_profile
 ```
 
 * Delete the Dynamo DB data file if it exists. The data file resides at "$HOME/openst-setup/logs/shared-local-instance.db". We do this because deploy.js file will initiate the DB file creation again. 
@@ -129,7 +129,6 @@ Run the following command after creating the database.
 ```
 
 * Execute commands related to DynamoDB migrations.
-  * Delete the Dynamo DB data file from "$HOME/openst-setup/logs/shared-local-instance.db". 
   * Create tables needed for DDB framework.
   ```bash
   node executables/ddb_related_data_migrations/create_init_ddb_tables.js
@@ -194,6 +193,13 @@ Run the following command after creating the database.
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
 > node executables/inter_comm/stake_and_mint_processor.js $HOME/openst-setup/logs/stake_and_mint_processor.data
+```
+
+* Start Stake Hunter Intercom in new terminal.
+```bash
+> source $HOME/openst-setup/openst_env_vars.sh
+> source set_env_vars.sh
+> node executables/inter_comm/stake_hunter.js $HOME/openst-setup/logs/stake_hunter.data
 ```
 
 * Start Processor to execute transactions in new terminal.

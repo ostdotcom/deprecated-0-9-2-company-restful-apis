@@ -198,13 +198,13 @@ function handle() {
 
   if (!PromiseQueueManager.getPendingCount()) {
     logger.log('SIGINT/SIGTERM handle :: No pending Promises.');
-    process.exit(0);
+    process.exit(1);
   }
 
   const checkForUnAckTasks = function() {
     if (PromiseQueueManager.getPendingCount() <= 0) {
       logger.log('SIGINT/SIGTERM handle :: No pending Promises.');
-      process.exit(0);
+      process.exit(1);
     } else {
       logger.info('waiting for open tasks to be done.');
       setTimeout(checkForUnAckTasks, 1000);

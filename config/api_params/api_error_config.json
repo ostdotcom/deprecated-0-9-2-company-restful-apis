@@ -69,6 +69,11 @@
     "code": "INSUFFICIENT_FUNDS",
     "message": "The account executing the transaction or transfer does not have sufficient funds to complete the transaction or transfer."
   },
+  "insufficient_gas": {
+    "http_code": "422",
+    "code": "INSUFFICIENT_GAS",
+    "message": "The account executing the transaction or transfer does not have sufficient gas(stPrime)."
+  },
   "invalid_airdrop_status": {
     "http_code": "422",
     "code": "UNPROCESSABLE_ENTITY",
@@ -353,6 +358,26 @@
     "http_code": "422",
     "code": "UNPROCESSABLE_ENTITY",
     "message": "Invalid balance was obtained."
+  },
+  "grant_prohibited": {
+    "http_code": "403",
+    "code": "GRANT_FORBIDDEN",
+    "message": "This API Endpoint is prohibited on Mainnet environment."
+  },
+  "transfer_prohibited": {
+    "http_code": "403",
+    "code": "TRANSFER_FORBIDDEN",
+    "message": "This API Endpoint is prohibited on Mainnet environment. If you wish to test the contract deployment functionality on Utility chain you can do so on Testnet environment."
+  },
+  "random_transaction_prohibited": {
+    "http_code": "403",
+    "code": "REQUEST_FORBIDDEN",
+    "message": "Cannot simulate random transaction for main env."
+  },
+  "route_prohibited_in_main": {
+    "http_code": "403",
+    "code": "REQUEST_FORBIDDEN",
+    "message": "The request is prohibited in the Main Environment."
   }
 
 }

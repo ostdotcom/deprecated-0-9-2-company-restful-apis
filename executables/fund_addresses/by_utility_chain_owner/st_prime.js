@@ -171,7 +171,8 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
    */
   _utilityChainMinBalanceFor: function(name) {
     const oThis = this,
-      nameData = oThis._utilityChainData[name];
+      utilityChainBalance = oThis._utilityChainBalanceRequirements(),
+      nameData = utilityChainBalance[name];
 
     if (!nameData) {
       logger.notify('e_fa_sp_ucbb_1', 'Invalid user name passed for getting data - ' + name);
@@ -192,7 +193,8 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
    */
   _utilityChainAddressFor: function(name) {
     const oThis = this,
-      nameData = oThis._utilityChainData[name];
+      utilityChainBalance = oThis._utilityChainBalanceRequirements(),
+      nameData = utilityChainBalance[name];
 
     if (!nameData) {
       logger.notify('e_fa_sp_ucaf_1', 'Invalid user name passed for getting data - ' + name);
@@ -204,19 +206,33 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
   },
 
   /**
-   * utility chain data for users
+   * utility chain Addresses and Min Balances
    *
-   * @constant
+   * @return {Map}
    *
-   * @private
    */
-  _utilityChainData: {
-    utilityChainOwner: { minBalance: '60', address: configStrategy.OST_UTILITY_CHAIN_OWNER_ADDR },
-    staker: { minBalance: '10', address: configStrategy.OST_STAKER_ADDR },
-    redeemer: { minBalance: '10', address: configStrategy.OST_REDEEMER_ADDR },
-    utilityRegistrar: { minBalance: '10', address: configStrategy.OST_UTILITY_REGISTRAR_ADDR },
-    utilityDeployer: { minBalance: '10', address: configStrategy.OST_UTILITY_DEPLOYER_ADDR },
-    utilityOps: { minBalance: '10', address: configStrategy.OST_UTILITY_OPS_ADDR }
+  _utilityChainBalanceRequirements: function() {
+    const oThis = this;
+
+    if (basicHelper.isProduction() || basicHelper.isMainSubEnvironment()) {
+      return {
+        utilityChainOwner: { minBalance: '10', address: configStrategy.OST_UTILITY_CHAIN_OWNER_ADDR },
+        staker: { minBalance: '1', address: configStrategy.OST_STAKER_ADDR },
+        redeemer: { minBalance: '1', address: configStrategy.OST_REDEEMER_ADDR },
+        utilityRegistrar: { minBalance: '1', address: configStrategy.OST_UTILITY_REGISTRAR_ADDR },
+        utilityDeployer: { minBalance: '1', address: configStrategy.OST_UTILITY_DEPLOYER_ADDR },
+        utilityOps: { minBalance: '1', address: configStrategy.OST_UTILITY_OPS_ADDR }
+      };
+    } else {
+      return {
+        utilityChainOwner: { minBalance: '60', address: configStrategy.OST_UTILITY_CHAIN_OWNER_ADDR },
+        staker: { minBalance: '10', address: configStrategy.OST_STAKER_ADDR },
+        redeemer: { minBalance: '10', address: configStrategy.OST_REDEEMER_ADDR },
+        utilityRegistrar: { minBalance: '10', address: configStrategy.OST_UTILITY_REGISTRAR_ADDR },
+        utilityDeployer: { minBalance: '10', address: configStrategy.OST_UTILITY_DEPLOYER_ADDR },
+        utilityOps: { minBalance: '10', address: configStrategy.OST_UTILITY_OPS_ADDR }
+      };
+    }
   },
 
   /**

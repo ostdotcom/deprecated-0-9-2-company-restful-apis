@@ -8,7 +8,8 @@
 
 const rootPrefix = '../..';
 
-const InstanceComposer = require(rootPrefix + '/instance_composer'),
+const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
   ProcessLocker = new ProcessLockerKlass();
 
@@ -83,8 +84,7 @@ const fs = require('fs'),
   BigNumber = require('bignumber.js'),
   uuid = require('uuid');
 
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+const responseHelper = require(rootPrefix + '/lib/formatter/response'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
   TransactionMeta = require(rootPrefix + '/app/models/transaction_meta'),
   transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log'),
@@ -165,7 +165,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     if (oThis.interruptSignalObtained) {
       logger.win('* Exiting Process after interrupt signal obtained.');
-      process.exit(0);
+      process.exit(1);
     }
 
     const processNewBlocksAsync = async function() {
@@ -237,7 +237,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
         if (oThis.interruptSignalObtained) {
           logger.win('* Exiting Process after interrupt signal obtained.');
-          process.exit(0);
+          process.exit(1);
         } else {
           oThis.reInit();
         }
@@ -732,7 +732,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     if (oThis.interruptSignalObtained) {
       logger.win('* Exiting Process after interrupt signal obtained.');
-      process.exit(0);
+      process.exit(1);
     }
   },
 

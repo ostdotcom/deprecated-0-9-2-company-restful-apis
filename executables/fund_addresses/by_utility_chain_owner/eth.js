@@ -33,6 +33,7 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
 
 const args = process.argv,
   config_file_path = args[2],
+  isChainSetUp = args[3],
   configStrategy = require(config_file_path),
   instanceComposer = new InstanceComposer(configStrategy),
   openStPlatform = instanceComposer.getPlatformProvider().getInstance();
@@ -42,7 +43,11 @@ const args = process.argv,
  *
  * @constructor
  */
-const FundUsersWithEthFromUtilityChainOwnerKlass = function() {};
+const FundUsersWithEthFromUtilityChainOwnerKlass = function(isChainSetUp) {
+  const oThis = this;
+
+  oThis.isChainSetUp = isChainSetUp;
+};
 
 FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
   /**
@@ -50,10 +55,11 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
    *
    */
   perform: async function() {
-    const oThis = this;
+    const oThis = this,
+      interestedUserNames = oThis._interestedUserNames();
 
-    for (var i in oThis._interestedUserNames) {
-      const userName = oThis._interestedUserNames[i];
+    for (let i in interestedUserNames) {
+      const userName = interestedUserNames[i];
 
       const minBalanceInWei = basicHelper.convertToWei(oThis._valueChainMinBalanceFor(userName)),
         ethereumAddress = oThis._valueChainAddressFor(userName),
@@ -170,7 +176,8 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
    */
   _valueChainMinBalanceFor: function(name) {
     const oThis = this,
-      nameData = oThis._valueChainData[name];
+      valueChainBalance = oThis._valueChainBalanceRequirements(),
+      nameData = valueChainBalance[name];
 
     if (!nameData) {
       logger.notify('e_fa_e_vcbb_1', 'Invalid user name passed for getting data - ' + name);
@@ -191,7 +198,8 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
    */
   _valueChainAddressFor: function(name) {
     const oThis = this,
-      nameData = oThis._valueChainData[name];
+      valueChainBalance = oThis._valueChainBalanceRequirements(),
+      nameData = valueChainBalance[name];
 
     if (!nameData) {
       logger.notify('e_fa_e_vcaf_1', 'Invalid user name passed for getting data - ' + name);
@@ -203,19 +211,33 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
   },
 
   /**
-   * value chain data for users
+   * value chain Addresses and Min Balances
    *
-   * @constant
+   * @return {Map}
    *
-   * @private
    */
-  _valueChainData: {
-    utilityChainOwner: { minBalance: '60', address: configStrategy.OST_UTILITY_CHAIN_OWNER_ADDR },
-    staker: { minBalance: '10', address: configStrategy.OST_STAKER_ADDR },
-    redeemer: { minBalance: '10', address: configStrategy.OST_REDEEMER_ADDR },
-    valueRegistrar: { minBalance: '10', address: configStrategy.OST_VALUE_REGISTRAR_ADDR },
-    valueDeployer: { minBalance: '10', address: configStrategy.OST_VALUE_DEPLOYER_ADDR },
-    valueOps: { minBalance: '10', address: configStrategy.OST_VALUE_OPS_ADDR }
+  _valueChainBalanceRequirements: function() {
+    const oThis = this;
+
+    if (basicHelper.isProduction() || basicHelper.isMainSubEnvironment()) {
+      return {
+        utilityChainOwner: { minBalance: '2', address: configStrategy.OST_UTILITY_CHAIN_OWNER_ADDR },
+        staker: { minBalance: '0.5', address: configStrategy.OST_STAKER_ADDR },
+        redeemer: { minBalance: '0', address: configStrategy.OST_REDEEMER_ADDR },
+        valueRegistrar: { minBalance: '0.5', address: configStrategy.OST_VALUE_REGISTRAR_ADDR },
+        valueDeployer: { minBalance: '0.9', address: configStrategy.OST_VALUE_DEPLOYER_ADDR },
+        valueOps: { minBalance: '0.5', address: configStrategy.OST_VALUE_OPS_ADDR }
+      };
+    } else {
+      return {
+        utilityChainOwner: { minBalance: '60', address: configStrategy.OST_UTILITY_CHAIN_OWNER_ADDR },
+        staker: { minBalance: '10', address: configStrategy.OST_STAKER_ADDR },
+        redeemer: { minBalance: '10', address: configStrategy.OST_REDEEMER_ADDR },
+        valueRegistrar: { minBalance: '10', address: configStrategy.OST_VALUE_REGISTRAR_ADDR },
+        valueDeployer: { minBalance: '10', address: configStrategy.OST_VALUE_DEPLOYER_ADDR },
+        valueOps: { minBalance: '10', address: configStrategy.OST_VALUE_OPS_ADDR }
+      };
+    }
   },
 
   /**
@@ -225,9 +247,29 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
    *
    * @private
    */
-  _interestedUserNames: ['staker', 'redeemer', 'valueRegistrar', 'valueDeployer', 'valueOps']
+  _interestedUserNames: function() {
+    const oThis = this;
+
+    if (oThis.isChainSetUp) {
+      return [
+        'staker',
+        // 'redeemer',
+        'valueRegistrar',
+        'valueDeployer',
+        'valueOps'
+      ];
+    } else {
+      return [
+        'staker',
+        // 'redeemer',
+        'valueRegistrar'
+        // 'valueDeployer',
+        // 'valueOps'
+      ];
+    }
+  }
 };
 
 // perform action
-const FundUsersWithEthObj = new FundUsersWithEthFromUtilityChainOwnerKlass();
+const FundUsersWithEthObj = new FundUsersWithEthFromUtilityChainOwnerKlass(isChainSetUp);
 FundUsersWithEthObj.perform();

@@ -21,7 +21,9 @@ const rootPrefix = '../../..',
   basicHelper = require(rootPrefix + '/helpers/basic'),
   managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
   ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/client_worker_managed_address_id'),
-  clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id');
+  clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id'),
+  apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
+  errorConfig = basicHelper.fetchErrorConfig(apiVersions.general);
 
 require(rootPrefix + '/lib/providers/platform');
 require(rootPrefix + '/lib/cache_management/client_active_worker_uuid');
@@ -43,38 +45,6 @@ const FundClientAddressKlass = function(params) {
 };
 
 FundClientAddressKlass.prototype = {
-  /**
-   * Minimum balance
-   *
-   * @constant
-   * @private
-   */
-  _MIN_BALANCE: basicHelper.convertToWei(1),
-
-  /**
-   * Minimum balance for reserve address after which alerts will be sent
-   *
-   * @constant
-   * @private
-   */
-  _MIN_ALERT_BALANCE_RESERVE: basicHelper.convertToWei(10),
-
-  /**
-   * Minimum balance for reserve address
-   *
-   * @constant
-   * @private
-   */
-  _MIN_AVAILABLE_BALANCE_RESERVE: basicHelper.convertToWei(1.1),
-
-  /**
-   * To Transfer Balance
-   *
-   * @constant
-   * @private
-   */
-  _TO_TRANSFER: basicHelper.convertToWei(1),
-
   /**
    * perform
    *
@@ -188,7 +158,7 @@ FundClientAddressKlass.prototype = {
           oThis.reserveAddrObj.ethereum_address,
           reservePassphraseD,
           workerAddrObj.ethereum_address,
-          oThis._TO_TRANSFER
+          basicHelper.transferSTPrimeToWorker()
         );
 
         if (transferBalanceResponse.isSuccess()) {
@@ -218,7 +188,7 @@ FundClientAddressKlass.prototype = {
         oThis.reserveAddrObj.ethereum_address,
         reservePassphraseD,
         oThis.airdropHolderAddrObj.ethereum_address,
-        oThis._TO_TRANSFER
+        basicHelper.transferSTPrimeToBudgetHolder()
       );
     }
 
@@ -234,7 +204,7 @@ FundClientAddressKlass.prototype = {
   _checkBalanceOfReserveAddress: async function() {
     const oThis = this,
       ethereumAddress = oThis.reserveAddrObj.ethereum_address,
-      minReserveAddrBalanceToProceedInWei = oThis._MIN_AVAILABLE_BALANCE_RESERVE,
+      minReserveAddrBalanceToProceedInWei = basicHelper.reserveAlertBalanceWei(),
       platformProvider = oThis.ic().getPlatformProvider(),
       openSTPlaform = platformProvider.getInstance(),
       fetchBalanceObj = new openSTPlaform.services.balance.simpleTokenPrime({ address: ethereumAddress }),
@@ -249,8 +219,9 @@ FundClientAddressKlass.prototype = {
     if (balanceBigNumberInWei.lessThan(minReserveAddrBalanceToProceedInWei)) {
       return responseHelper.error({
         internal_error_identifier: 's_a_fca_1',
-        api_error_identifier: 'insufficient_funds',
-        debug_options: { clientId: oThis.clientId }
+        api_error_identifier: 'insufficient_gas',
+        debug_options: { clientId: oThis.clientId },
+        error_config: errorConfig
       });
     }
 
@@ -283,7 +254,7 @@ FundClientAddressKlass.prototype = {
 
     const ethBalanceBigNumber = basicHelper.convertToBigNumber(balanceResponse.data.balance);
 
-    if (ethBalanceBigNumber.lessThan(oThis._MIN_BALANCE)) {
+    if (ethBalanceBigNumber.lessThan(basicHelper.isSTPrimeTransferRequiredBal())) {
       return Promise.resolve(true);
     } else {
       return Promise.resolve(false);

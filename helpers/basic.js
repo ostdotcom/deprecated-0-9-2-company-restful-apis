@@ -14,7 +14,8 @@ const rootPrefix = '..',
   v1ParamErrorConfig = require(rootPrefix + '/config/api_params/v1/error_config'),
   v1Dot1ParamErrorConfig = require(rootPrefix + '/config/api_params/v1.1/error_config'),
   internalParamErrorConfig = require(rootPrefix + '/config/api_params/internal/error_config'),
-  apiErrorConfig = require(rootPrefix + '/config/api_params/api_error_config');
+  apiErrorConfig = require(rootPrefix + '/config/api_params/api_error_config'),
+  coreConstants = require(rootPrefix + '/config/core_constants');
 
 /**
  * Basic helper methods constructor
@@ -310,6 +311,103 @@ BasicHelperKlass.prototype = {
    */
   isGreaterThanMinWei: function(str) {
     return this.convertToBigNumber(str) >= this.convertToBigNumber(10).toPower(18);
+  },
+
+  /**
+   * check if sub environment is main
+   *
+   * @return {Boolean}
+   */
+  isProduction: function() {
+    return coreConstants.ENVIRONMENT == 'production';
+  },
+
+  /**
+   * check if sub environment is main
+   *
+   * @return {Boolean}
+   */
+  isMainSubEnvironment: function() {
+    return coreConstants.SUB_ENVIRONMENT == 'main';
+  },
+
+  /**
+   * check if sub environment is Sandbox
+   *
+   * @return {Boolean}
+   */
+  isSandboxSubEnvironment: function() {
+    return coreConstants.SUB_ENVIRONMENT == 'main';
+  },
+
+  /**
+   * Alert If ST Prime Balance is below this balance.
+   *
+   * @return {Map}
+   *
+   */
+  reserveAlertBalanceWei: function() {
+    const oThis = this;
+
+    if (oThis.isMainSubEnvironment()) {
+      return oThis.convertToWei(0.05);
+    } else {
+      return oThis.convertToWei(0.5);
+    }
+  },
+
+  /**
+   * ST Prime Balance to Transfer to Workers address
+   *
+   * @return {Map}
+   *
+   */
+  transferSTPrimeToWorker: function() {
+    const oThis = this;
+
+    if (oThis.isMainSubEnvironment()) {
+      return oThis.convertToWei(0.5);
+    } else {
+      return oThis.convertToWei(1);
+    }
+  },
+
+  /**
+   * ST Prime Balance to Transfer to Budget Holder address
+   *
+   * @return {Map}
+   *
+   */
+  transferSTPrimeToBudgetHolder: function() {
+    const oThis = this;
+
+    if (oThis.isMainSubEnvironment()) {
+      return oThis.convertToWei(0.05);
+    } else {
+      return oThis.convertToWei(1);
+    }
+  },
+
+  /**
+   * ST Prime Balance transfer if balance is below this balance.
+   *
+   * @return {Map}
+   *
+   */
+  isSTPrimeTransferRequiredBal: function() {
+    const oThis = this;
+
+    if (oThis.isMainSubEnvironment()) {
+      return oThis.convertToWei(0.01);
+    } else {
+      return oThis.convertToWei(0.5);
+    }
+  },
+
+  pauseForSeconds: async function(timeInSeconds) {
+    setTimeout(function() {
+      return Promise.resolve();
+    }, timeInSeconds * 1000);
   }
 };
 

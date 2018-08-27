@@ -143,7 +143,7 @@ function handle() {
 
   if (!PromiseQueueManager.getPendingCount() && !unAckCount) {
     console.log('SIGINT/SIGTERM handle :: No pending Promises.');
-    process.exit(0);
+    process.exit(1);
   }
 
   // The OLD Way - Begin
@@ -153,7 +153,7 @@ function handle() {
     }
     if (PromiseQueueManager.getPendingCount() <= 0 || unAckCount <= 0) {
       console.log('SIGINT/SIGTERM handle :: No pending Promises.');
-      process.exit(0);
+      process.exit(1);
     } else {
       logger.info('waiting for open tasks to be done.');
       setTimeout(f, 1000);

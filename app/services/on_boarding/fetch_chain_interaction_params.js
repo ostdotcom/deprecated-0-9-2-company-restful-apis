@@ -10,6 +10,7 @@
 const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  valueChainGasPriceCacheKlass = require(rootPrefix + '/lib/shared_cache_management/estimate_value_chain_gas_price'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
 /**
@@ -50,9 +51,13 @@ FetchChainInteractionParams.prototype = {
    * @return {result} - returns an object of Result
    *
    */
-  asyncPerform: function() {
+  asyncPerform: async function() {
     const oThis = this,
       configStrategy = oThis.ic().configStrategy;
+
+    let valueChainGasPriceCacheObj = new valueChainGasPriceCacheKlass(),
+      chainGasPriceRsp = await valueChainGasPriceCacheObj.fetch(),
+      chainGasPrice = chainGasPriceRsp.data;
 
     if (!oThis.clientId) {
       return Promise.resolve(
@@ -73,7 +78,8 @@ FetchChainInteractionParams.prototype = {
       value_chain_geth_rpc_provider: configStrategy.OST_VALUE_GETH_RPC_PROVIDER,
       value_chain_geth_ws_provider: configStrategy.OST_VALUE_GETH_WS_PROVIDER,
       simple_token_contract_addr: configStrategy.OST_SIMPLE_TOKEN_CONTRACT_ADDR,
-      staker_addr: configStrategy.OST_STAKER_ADDR
+      staker_addr: configStrategy.OST_STAKER_ADDR,
+      value_chain_gas_price: chainGasPrice
     };
 
     return Promise.resolve(responseHelper.successWithData(responseData));
