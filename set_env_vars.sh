@@ -18,6 +18,12 @@ export OST_RMQ_USERNAME='guest'
 export OST_RMQ_PASSWORD='guest'
 export OST_RMQ_HEARTBEATS='30'
 
+#For redis
+export OST_REDIS_HOST='127.0.0.1'
+export OST_REDIS_PORT='6379'
+export OST_REDIS_PASS='st123'
+export OST_REDIS_TLS_ENABLED='0'
+
 # Database details
 export CR_MYSQL_CONNECTION_POOL_SIZE='3'
 
