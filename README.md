@@ -52,6 +52,10 @@ export OST_UTILITY_GAS_PRICE='0x0'
 ```
 
 * Update the addresses in uc_1000.json config strategy from ~/openst-setup/bin/utility-chain-1000/openst_platform_config.json.
+    * This file uses config strategy for utility chain-id 1000 by default. If you are updating the addresses for some other chain-id, please make the necessary changes in the script.
+    ```bash
+    node tools/setup/platform/address_update.js
+    ```
 
 * Start Utility Chain.
 ```bash
@@ -100,6 +104,14 @@ Run the following command after creating the database.
   
 * Close all existing processes (for eg. utility chain, mysql, memcached, etc.) before proceeding further. 
 
+* Use the seeder to fill the config_strategies table.
+```bash
+node executables/one_timers/config_strategy_seed.js managed_address_salt_id path_to_company-restful-apis/uc_1000.json
+```
+
+* Add group ID as "1" in config_strategies table for the following kinds: ["ES", "Dynamo", "Dax", "Memcached", "Redis",  "Utility geth", "Utility constants", "Auto scaling"]
+                                         
+                                         
 # Start SAAS Services
 
 * Start Redis.
@@ -224,12 +236,13 @@ o.perform();
 * Start all services.
 ```bash
 NOTE: Create the file if not present.
-> vim $HOME/openst-setup/logs/block_scanner_execute_transaction.data
+> vim $HOME/openst-setup/data/utility-chain-1000/block_scanner_execute_transaction.data
   {"lastProcessedBlock":0}
   
-> source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> node start_services.js
+> node executables/one_timers/config_strategy_seed.js managed_address_salt_id path_to_company-restful-apis/uc_1000.json
+> node start_value_services.js path_to_company-restful-apis/uc_1000.json
+> node start_utility_services.js path_to_company-restful-apis/uc_1000.json
 
 ```
 

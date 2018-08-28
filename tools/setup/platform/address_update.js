@@ -1,5 +1,15 @@
+/**
+ * This script is used to copy addresses from openst_platform_config.json to the config strategy being used.
+ *
+ * The script defaults to use chain id 1000. Please make the necessary changes in the file paths for updating addresses
+ * for a different utility chain id.
+ *
+ * @module tools/setup/platform/address_update.js
+ */
+
 'use strict';
-const rootPrefix = '.',
+
+const rootPrefix = '../../..',
   fs = require('fs');
 
 let originalConfigStrategy = require(rootPrefix + '/uc_1000.json'),
