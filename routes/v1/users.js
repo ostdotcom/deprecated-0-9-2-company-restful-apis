@@ -15,7 +15,7 @@ require(rootPrefix + '/app/services/client_users/fetch_user');
 
 /**
  *
- * @name Edit an existing UserOST_CACHE_ENGINE
+ * @name Edit an existing User
  *
  * @route {POST} {base_url}/users/:id
  *
