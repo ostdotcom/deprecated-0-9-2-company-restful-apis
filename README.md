@@ -46,7 +46,7 @@ export OST_UTILITY_GAS_PRICE='0x0'
 
 * Delete the Dynamo DB data file if it exists. The data file resides at "$HOME/openst-setup/logs/shared-local-instance.db". We do this because deploy.js file will initiate the DB file creation again. 
 
-* Setup Platform.
+* Setup Platform. Change utility chain id in the further steps accordingly.
 ```
 > node tools/setup/platform/deploy.js path_to_company-restful-apis/uc_1000.json
 ```
@@ -104,7 +104,7 @@ Run the following command after creating the database.
   
 * Close all existing processes (for eg. utility chain, mysql, memcached, etc.) before proceeding further. 
 
-* Use the seeder to fill the config_strategies table.
+* Use the seeder script to fill config_strategies table.
 ```bash
 node executables/one_timers/config_strategy_seed.js managed_address_salt_id path_to_company-restful-apis/uc_1000.json
 ```
@@ -233,17 +233,21 @@ o = new c({from_address: '0x6bEeE57355885BAd8018814A0B0E93F368148c37', to_addres
 o.perform();
 ```
 
-* Start all services.
+* Start all services. Change utility chain id accordingly.
 ```bash
 NOTE: Create the file if not present.
 > vim $HOME/openst-setup/data/utility-chain-1000/block_scanner_execute_transaction.data
   {"lastProcessedBlock":0}
   
 > source set_env_vars.sh
-> node executables/one_timers/config_strategy_seed.js managed_address_salt_id path_to_company-restful-apis/uc_1000.json
 > node start_value_services.js path_to_company-restful-apis/uc_1000.json
 > node start_utility_services.js path_to_company-restful-apis/uc_1000.json
+```
 
+* Start block scanner. Change utility chain id accordingly.
+```bash
+> touch $HOME/openst-setup/logs/block_scanner_benchmark-1000.csv
+> node executables/block_scanner/for_tx_status_and_balance_sync.js 1 ~/openst-setup/data/utility-chain-1000/block_scanner_execute_transaction.data ~/openst-setup/bin/utility-chain-1000/openst_platform_config.json ~/openst-setup/logs/block_scanner_benchmark-1000.csv >> ~/openst-setup/logs/utility-chain-1000/block_scanner_execute_transaction.log
 ```
 
 * Don't forget to start the cronjobs. 
