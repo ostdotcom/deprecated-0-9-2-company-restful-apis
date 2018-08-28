@@ -33,90 +33,49 @@
 * Export ENV variables before platform setup.
 ```bash
 > source set_env_vars.sh
-# Temporarily set redis caching engine for Platform and memcached for SAAS. We will set it permanently later on.
-> export OST_CACHING_ENGINE='redis'
-> export OST_DEFAULT_TTL='36000'
-> export OST_REDIS_HOST='127.0.0.1'
-> export OST_REDIS_PORT=6379
-> export OST_REDIS_PASS=st123
-> export OST_REDIS_TLS_ENABLED=0
-> export OST_MEMCACHE_SERVERS='127.0.0.1:11211'
-> export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform
-> export OST_UTILITY_GAS_PRICE='0x0'
-> export OST_VALUE_GAS_PRICE='0xBA43B7400'
-> echo "export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform" >> ~/.bash_profile
+export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform
+echo "export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform" >> ~/.bash_profile
+```
+
+* Fill up entries in the chain_geth_providers table.
+
+* Set utility gas price as "0" during setup.
+```bash
+export OST_UTILITY_GAS_PRICE='0x0'
 ```
 
 * Delete the Dynamo DB data file if it exists. The data file resides at "$HOME/openst-setup/logs/shared-local-instance.db". We do this because deploy.js file will initiate the DB file creation again. 
 
 * Setup Platform.
 ```
-> node tools/setup/platform/deploy.js
+> node tools/setup/platform/deploy.js path_to_company-restful-apis/uc_1000.json
 ```
 
-* Update environment variables in $HOME/openst-setup/openst_env_vars.sh.
-```bash
-> vim $HOME/openst-setup/openst_env_vars.sh
-# Enable Redis for platform.
-export OST_CACHING_ENGINE='redis'
-export OST_DEFAULT_TTL='36000'
-export OST_REDIS_HOST='127.0.0.1'
-export OST_REDIS_PORT=6379
-export OST_REDIS_PASS=st123
-export OST_REDIS_TLS_ENABLED=0
-
-# Enable memcached for SAAS.
-export OST_MEMCACHE_SERVERS='127.0.0.1:11211'
-
-# Enable RabbitMQ for platform.
-export OST_RMQ_SUPPORT='1'
-export OST_RMQ_HOST='127.0.0.1'
-export OST_RMQ_PORT='5672'
-export OST_RMQ_USERNAME='guest'
-export OST_RMQ_PASSWORD='guest'
-export OST_RMQ_HEARTBEATS='30'
-```
+* Update the addresses in uc_1000.json config strategy from ~/openst-setup/bin/utility-chain-1000/openst_platform_config.json.
 
 * Start Utility Chain.
 ```bash
-> source $HOME/openst-setup/openst_env_vars.sh
-> sh $HOME/openst-setup/bin/run-utility.sh
+> sh ~/openst-setup/bin/utility-chain-1000/run-utility.sh 
 ```
 
 * Setup Price Oracle.
 ```bash
-> vim $HOME/openst-setup/openst_env_vars.sh
-export OST_UTILITY_PRICE_ORACLES='{}'
-
-> source $HOME/openst-setup/openst_env_vars.sh
-> source set_env_vars.sh
-> node tools/setup/price-oracle/deploy.js
+> node tools/setup/price-oracle/deploy.js path_to_company-restful-apis/uc_1000.json
 
 NOTE: Once the script runs successfully, you will get a price oracle address displayed in green color.  
-Copy that address and replace it with "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" in the command below.
-
-> vim $HOME/openst-setup/openst_env_vars.sh
-# 3rd party contract address
-export OST_UTILITY_PRICE_ORACLES='{"OST":{"USD":"0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}}'
+Copy that address for "OST_UTILITY_PRICE_ORACLES" variable in the utility chain config strategy file.
 ```
 
 * Setup Workers Contract.
 ```bash
-> source $HOME/openst-setup/openst_env_vars.sh
-> source set_env_vars.sh
-> node tools/setup/payments/set_worker.js
+> node tools/setup/payments/set_worker.js path_to_company-restful-apis/uc_1000.json
 
 NOTE: Once the script runs successfully, you will get a workers contract address displayed in green color.  
-Copy that address and replace it with "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" in the command below.
-
-> vim $HOME/openst-setup/openst_env_vars.sh
-# 3rd party contract address
-export OST_UTILITY_WORKERS_CONTRACT_ADDRESS='0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+Copy that address for "OST_UTILITY_WORKERS_CONTRACT_ADDRESS" variable in the utility chain config strategy file.
 ```
 
 * Run OpenST Payments migrations.
 ```bash
-> source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
 NOTE: Manually create database in MySQL mentioned in $OP_MYSQL_DATABASE.  
 Run the following command after creating the database. 
@@ -131,11 +90,12 @@ Run the following command after creating the database.
 * Execute commands related to DynamoDB migrations.
   * Create tables needed for DDB framework.
   ```bash
-  node executables/ddb_related_data_migrations/create_init_ddb_tables.js
+  source set_env_vars.sh
+  node executables/ddb_related_data_migrations/create_init_ddb_tables.js path_to_company-restful-apis/uc_1000.json
   ```
   * Create a fixed number of shards for all entities (number is in this file).
   ```bash
-  node executables/ddb_related_data_migrations/create_shards.js
+  node executables/ddb_related_data_migrations/create_shards.js path_to_company-restful-apis/uc_1000.json
   ```
   
 * Close all existing processes (for eg. utility chain, mysql, memcached, etc.) before proceeding further. 
