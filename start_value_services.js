@@ -132,10 +132,10 @@ StartServicesKlass.prototype = {
     servicesList.push(cmd);
     oThis._asyncCommand(cmd);
 
-    // logger.step('** Starting SAAS App');
-    // cmd = 'node app.js' + ' >> ' + homeAbsolutePath + '/openst-setup/logs/node_app.log';
-    // servicesList.push(cmd);
-    // oThis._asyncCommand(cmd);
+    logger.step('** Starting SAAS App');
+    cmd = 'node app.js' + ' >> ' + homeAbsolutePath + '/openst-setup/logs/node_app.log';
+    servicesList.push(cmd);
+    oThis._asyncCommand(cmd);
 
     logger.win(
       '\n** Congratulations! All services are up and running. \n' +
