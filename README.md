@@ -30,10 +30,11 @@
 > brew services start rabbitmq
 ```
 
-* Export ENV variables before platform setup.
+* Export ENV variables before platform setup. Update the config strategy path accordingly.
 ```bash
 > source set_env_vars.sh
 export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform
+export CONFIG_STRATEGY_PATH=path_to_company-restful-apis/uc_1000.json
 echo "export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform" >> ~/.bash_profile
 ```
 
@@ -48,7 +49,7 @@ export OST_UTILITY_GAS_PRICE='0x0'
 
 * Setup Platform. Change utility chain id in the further steps accordingly.
 ```
-> node tools/setup/platform/deploy.js path_to_company-restful-apis/uc_1000.json
+> node tools/setup/platform/deploy.js $CONFIG_STRATEGY_PATH
 ```
 
 * Update the addresses in uc_1000.json config strategy from ~/openst-setup/bin/utility-chain-1000/openst_platform_config.json.
@@ -64,18 +65,18 @@ export OST_UTILITY_GAS_PRICE='0x0'
 
 * Setup Price Oracle.
 ```bash
-> node tools/setup/price-oracle/deploy.js path_to_company-restful-apis/uc_1000.json
+> node tools/setup/price-oracle/deploy.js $CONFIG_STRATEGY_PATH
 
 NOTE: Once the script runs successfully, you will get a price oracle address displayed in green color.  
-Copy that address for "OST_UTILITY_PRICE_ORACLES" variable in the utility chain config strategy file.
+Copy that address for "OST_UTILITY_PRICE_ORACLES" variable in the utility chain config strategy file (uc_1000.json).
 ```
 
 * Setup Workers Contract.
 ```bash
-> node tools/setup/payments/set_worker.js path_to_company-restful-apis/uc_1000.json
+> node tools/setup/payments/set_worker.js $CONFIG_STRATEGY_PATH
 
 NOTE: Once the script runs successfully, you will get a workers contract address displayed in green color.  
-Copy that address for "OST_UTILITY_WORKERS_CONTRACT_ADDRESS" variable in the utility chain config strategy file.
+Copy that address for "OST_UTILITY_WORKERS_CONTRACT_ADDRESS" variable in the utility chain config strategy file (uc_1000.json).
 ```
 
 * Run OpenST Payments migrations.
@@ -95,18 +96,18 @@ Run the following command after creating the database.
   * Create tables needed for DDB framework.
   ```bash
   source set_env_vars.sh
-  node executables/ddb_related_data_migrations/create_init_ddb_tables.js path_to_company-restful-apis/uc_1000.json
+  node executables/ddb_related_data_migrations/create_init_ddb_tables.js $CONFIG_STRATEGY_PATH
   ```
   * Create a fixed number of shards for all entities (number is in this file).
   ```bash
-  node executables/ddb_related_data_migrations/create_shards.js path_to_company-restful-apis/uc_1000.json
+  node executables/ddb_related_data_migrations/create_shards.js $CONFIG_STRATEGY_PATH
   ```
   
 * Close all existing processes (for eg. utility chain, mysql, memcached, etc.) before proceeding further. 
 
 * Use the seeder script to fill config_strategies table.
 ```bash
-node executables/one_timers/config_strategy_seed.js managed_address_salt_id path_to_company-restful-apis/uc_1000.json
+node executables/one_timers/config_strategy_seed.js managed_address_salt_id $CONFIG_STRATEGY_PATH
 ```
 
 * Add group ID as "1" in config_strategies table for the following kinds: ["ES", "Dynamo", "Dax", "Memcached", "Redis",  "Utility geth", "Utility constants", "Auto scaling"]
@@ -240,14 +241,14 @@ NOTE: Create the file if not present.
   {"lastProcessedBlock":0}
   
 > source set_env_vars.sh
-> node start_value_services.js path_to_company-restful-apis/uc_1000.json
-> node start_utility_services.js path_to_company-restful-apis/uc_1000.json
+> node start_value_services.js $CONFIG_STRATEGY_PATH
+> node start_utility_services.js $CONFIG_STRATEGY_PATH
 ```
 
 * Start block scanner. Change utility chain id accordingly.
 ```bash
 > touch $HOME/openst-setup/logs/block_scanner_benchmark-1000.csv
-> node executables/block_scanner/for_tx_status_and_balance_sync.js 1 ~/openst-setup/data/utility-chain-1000/block_scanner_execute_transaction.data ~/openst-setup/bin/utility-chain-1000/openst_platform_config.json ~/openst-setup/logs/block_scanner_benchmark-1000.csv >> ~/openst-setup/logs/utility-chain-1000/block_scanner_execute_transaction.log
+> node executables/block_scanner/for_tx_status_and_balance_sync.js 1 ~/openst-setup/data/utility-chain-1000/block_scanner_execute_transaction.data $CONFIG_STRATEGY_PATH ~/openst-setup/logs/block_scanner_benchmark-1000.csv >> ~/openst-setup/logs/utility-chain-1000/block_scanner_execute_transaction.log
 ```
 
 * Don't forget to start the cronjobs. 
