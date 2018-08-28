@@ -242,7 +242,7 @@ const NonceCacheKlassPrototype = {
         } else {
           let syncNonceResp = await oThis._syncNonce();
           logger.log('NM :: acquireLockAndReturn :: syncNonceResp: ', syncNonceResp.getDebugData());
-          if(syncNonceResp.isFailure()){
+          if (syncNonceResp.isFailure()) {
             await oThis._releaseLock();
           }
           return syncNonceResp;
@@ -493,7 +493,7 @@ const NonceCacheKlassPrototype = {
     for (let i = oThis.gethWsProviders.length - 1; i >= 0; i--) {
       const gethURL = oThis.gethWsProviders[i];
 
-      const web3Provider = oThis.nonceHelper.getWeb3Instance(gethURL, oThis.chain_kind);
+      const web3Provider = oThis.nonceHelper.getWeb3Instance(gethURL, oThis.chainKind);
       allNoncePromise.push(oThis.nonceHelper.getNonceFromGethNode(oThis.address, web3Provider));
       allPendingTransactionPromise.push(oThis.nonceHelper.getPendingTransactionsFromGethNode(web3Provider));
     }

@@ -43,7 +43,7 @@ seedConfigStrategies.prototype = {
     await oThis.seed_utility_geth_params();
     await oThis.seed_value_constants_params();
     await oThis.seed_value_geth_params();
-    await oThis.populateChainGethProviders();
+
     console.log('Success');
     process.exit(0);
   },
@@ -122,13 +122,15 @@ seedConfigStrategies.prototype = {
 
   seed_value_constants_params: async function() {
     let value_constants_params = {};
+
     value_constants_params['OST_VALUE_GAS_PRICE'] = env_list.OST_VALUE_GAS_PRICE;
     value_constants_params['OST_OPENSTVALUE_CONTRACT_ADDR'] = env_list.OST_OPENSTVALUE_CONTRACT_ADDR;
     value_constants_params['OST_VALUE_REGISTRAR_ADDR'] = env_list.OST_VALUE_REGISTRAR_ADDR;
     value_constants_params['OST_VALUE_REGISTRAR_PASSPHRASE'] = env_list.OST_VALUE_REGISTRAR_PASSPHRASE;
     value_constants_params['OST_VALUE_DEPLOYER_ADDR'] = env_list.OST_VALUE_DEPLOYER_ADDR;
     value_constants_params['OST_VALUE_DEPLOYER_PASSPHRASE'] = env_list.OST_VALUE_DEPLOYER_PASSPHRASE;
-
+    value_constants_params['OST_VALUE_ADMIN_ADDR'] = env_list.OST_VALUE_ADMIN_ADDR;
+    value_constants_params['OST_VALUE_ADMIN_PASSPHRASE'] = env_list.OST_VALUE_ADMIN_PASSPHRASE;
     value_constants_params['OST_VALUE_OPS_ADDR'] = env_list.OST_VALUE_OPS_ADDR;
     value_constants_params['OST_VALUE_OPS_PASSPHRASE'] = env_list.OST_VALUE_OPS_PASSPHRASE;
     value_constants_params['OST_VALUE_REGISTRAR_CONTRACT_ADDR'] = env_list.OST_VALUE_REGISTRAR_CONTRACT_ADDR;
