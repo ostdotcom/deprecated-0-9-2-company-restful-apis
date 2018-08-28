@@ -110,7 +110,7 @@ Run the following command after creating the database.
 node executables/one_timers/config_strategy_seed.js managed_address_salt_id $CONFIG_STRATEGY_PATH
 ```
 
-* Add group ID as "1" in config_strategies table for the following kinds: ["ES", "Dynamo", "Dax", "Memcached", "Redis",  "Utility geth", "Utility constants", "Auto scaling"]
+* Add group ID as "1" in config_strategies table for the following kinds: ["1", "2", "3", "4", "8",  "9", "10", "11"]
                                          
                                          
 # Start SAAS Services
