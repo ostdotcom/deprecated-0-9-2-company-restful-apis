@@ -128,8 +128,30 @@ const CriticalChainInteractionLogModelSpecificPrototype = {
       data.response_data = JSON.stringify(data.response_data);
     }
 
+    // mysql sample duplicate error response
+    // {"code":"ER_DUP_ENTRY","errno":1062,"sqlMessage":"Duplicate entry '263-7' for key 'parent_activity_type_uniq'",
+    // "sqlState":"23000","index":0,"sql":"INSERT INTO `critical_chain_interaction_logs` (`parent_id`, `client_id`, `activity_type`, `status`,
+    // `chain_type`, `request_params`, `response_data`, `updated_at`, `created_at`) VALUES ('263', '1028', '7', '2', '1', '{}', '{}',
+    // '2018-08-28 19:31:42.409', '2018-08-28 19:31:42.409')"}
+
     const oThis = this,
-      dbRecord = await oThis.insert(data).fire();
+      dbRecord = await oThis.insert(data).fire().catch(function (error) {
+        if(error){
+          if(error.code == criticalChainInteractionLogConst.ER_DUP_ENTRY){
+            return Promise.reject(responseHelper.error({
+              internal_error_identifier: 'ER_DUP_ENTRY_a_m_ccil_1',
+              api_error_identifier: '',
+              debug_options: {error: error}
+            }));
+          } else {
+            return Promise.reject(responseHelper.error({
+              internal_error_identifier: 'a_m_ccil_2',
+              api_error_identifier: 'db_insert_failed',
+              debug_options: {error: error}
+            }));
+          }
+        }
+      });
 
     var idToFlush = data.parent_id;
 
@@ -141,7 +163,8 @@ const CriticalChainInteractionLogModelSpecificPrototype = {
 
     oThis.flushPendingTxsCache(data.client_token_id);
 
-    return Promise.resolve(dbRecord);
+    return Promise.resolve(responseHelper.successWithData({dbRecord: dbRecord}));
+
   },
 
   /**
