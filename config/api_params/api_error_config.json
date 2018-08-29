@@ -134,6 +134,11 @@
     "code": "BAD_REQUEST",
     "message": "At least one parameter is invalid or missing. See \"err.error_data\" array for more details."
   },
+  "duplicate_entry": {
+    "http_code": "422",
+    "code": "BAD_REQUEST",
+    "message": "At least one parameter is invalid or missing. See \"err.error_data\" array for more details."
+  },
   "criticalChainInteractionLog_not_found": {
     "http_code": "404",
     "code": "NOT_FOUND",
@@ -340,6 +345,11 @@
     "message": "At least one parameter is invalid or missing. See \"err.error_data\" array for more details."
   },
   "ddb_insert_failed": {
+    "http_code": "500",
+    "code": "SOMETHING_WENT_WRONG",
+    "message": "Something went wrong"
+  },
+  "db_insert_failed": {
     "http_code": "500",
     "code": "SOMETHING_WENT_WRONG",
     "message": "Something went wrong"
