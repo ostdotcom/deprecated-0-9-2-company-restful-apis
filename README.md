@@ -57,6 +57,7 @@ export OST_UTILITY_GAS_PRICE='0x0'
     ```bash
     node tools/setup/platform/address_update.js
     ```
+    * Make sure to pass the absolute path of the config file in all places in the above script. 
 
 * Start Utility Chain.
 ```bash
@@ -83,8 +84,9 @@ Copy that address for "OST_UTILITY_WORKERS_CONTRACT_ADDRESS" variable in the uti
 ```bash
 > source set_env_vars.sh
 NOTE: Manually create database in MySQL mentioned in $OP_MYSQL_DATABASE.  
-Run the following command after creating the database. 
+Run the following commands after creating the database. 
 > node node_modules/@openstfoundation/openst-payments/migrations/create_tables.js
+> node node_modules/@openstfoundation/openst-payments/migrations/alter_table_for_chain_id_column.js $CONFIG_STRATEGY_PATH
 ```
 
 * Start Dynamo DB.
