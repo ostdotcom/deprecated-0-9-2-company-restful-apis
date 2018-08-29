@@ -115,16 +115,6 @@ StartOnBoardingKlass.prototype = {
       );
     }
 
-    if (!oThis.airdropParams || !oThis.airdropParams.airdrop_amount || !oThis.airdropParams.airdrop_user_list_type) {
-      return Promise.reject(
-        responseHelper.error({
-          internal_error_identifier: 's_ob_s_4',
-          api_error_identifier: 'invalid_api_params',
-          debug_options: { airdropParams: oThis.airdropParams }
-        })
-      );
-    }
-
     return Promise.resolve(responseHelper.successWithData({}));
   }
 };
