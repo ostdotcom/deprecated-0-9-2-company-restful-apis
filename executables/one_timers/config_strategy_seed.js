@@ -3,13 +3,14 @@
 /*
 * This file is used to populate config_strategies table and chain_geth_providers table.
 *
-* Usage:  node executables/one_timers/config_strategy_seed.js managed_address_salt_id [config file path]
+* Usage:  node executables/one_timers/config_strategy_seed.js managed_address_salt_id group_id [config file path]
 *
-* Pass managed_address_salt_id as argument when running this script.
+* Pass managed_address_salt_id, and group_id as arguments when running this script.
 *
 *
 * */
-const env_list = process.argv[3] ? require(process.argv[3]) : process.env;
+const group_id = process.argv[3];
+const env_list = process.argv[4] ? require(process.argv[4]) : process.env;
 
 const rootPrefix = '../..',
   configStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
@@ -55,7 +56,7 @@ seedConfigStrategies.prototype = {
     redis_params['OST_REDIS_PASS'] = env_list.OST_REDIS_PASS;
     redis_params['OST_REDIS_TLS_ENABLED'] = env_list.OST_REDIS_TLS_ENABLED;
     const configStrategy = new configStrategyModel();
-    await configStrategy.create('redis', process.argv[2], redis_params).then();
+    await configStrategy.create('redis', process.argv[2], redis_params, group_id).then();
   },
 
   seed_dynamo_params: async function() {
@@ -72,7 +73,7 @@ seedConfigStrategies.prototype = {
 
     const configStrategy = new configStrategyModel();
 
-    await configStrategy.create('dynamo', process.argv[2], dynamo_params).then();
+    await configStrategy.create('dynamo', process.argv[2], dynamo_params, group_id).then();
   },
 
   seed_dax_params: async function() {
@@ -86,7 +87,7 @@ seedConfigStrategies.prototype = {
 
     const configStrategy = new configStrategyModel();
 
-    await configStrategy.create('dax', process.argv[2], dax_params).then();
+    await configStrategy.create('dax', process.argv[2], dax_params, group_id).then();
   },
 
   seed_memcached_params: async function() {
@@ -95,7 +96,7 @@ seedConfigStrategies.prototype = {
 
     const configStrategy = new configStrategyModel();
 
-    await configStrategy.create('memcached', process.argv[2], memcached_params).then();
+    await configStrategy.create('memcached', process.argv[2], memcached_params, group_id).then();
   },
 
   seed_in_memory_params: async function() {
@@ -153,7 +154,7 @@ seedConfigStrategies.prototype = {
 
     const configStrategy = new configStrategyModel();
 
-    await configStrategy.create('utility_geth', process.argv[2], utility_geth_params).then();
+    await configStrategy.create('utility_geth', process.argv[2], utility_geth_params, group_id).then();
   },
 
   seed_utility_constants_params: async function() {
@@ -181,7 +182,7 @@ seedConfigStrategies.prototype = {
 
     const configStrategy = new configStrategyModel();
 
-    await configStrategy.create('utility_constants', process.argv[2], utility_constants_params).then();
+    await configStrategy.create('utility_constants', process.argv[2], utility_constants_params, group_id).then();
   },
 
   seed_autoscaling_params: async function() {
@@ -197,7 +198,7 @@ seedConfigStrategies.prototype = {
 
     const configStrategy = new configStrategyModel();
 
-    await configStrategy.create('autoscaling', process.argv[2], autoscaling_params).then();
+    await configStrategy.create('autoscaling', process.argv[2], autoscaling_params, group_id).then();
   },
 
   seed_es_params: async function() {
@@ -209,7 +210,7 @@ seedConfigStrategies.prototype = {
 
     const configStrategy = new configStrategyModel();
 
-    await configStrategy.create('es', process.argv[2], es_params).then();
+    await configStrategy.create('es', process.argv[2], es_params, group_id).then();
   },
 
   seed_constants_params: async function() {

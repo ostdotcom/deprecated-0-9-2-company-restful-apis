@@ -49,13 +49,17 @@ const ConfigStrategyModelSpecificPrototype = {
   * @return {Promise<integer>} - returns a Promise with integer of strategy id.
   *
   */
-  create: async function(kind, managedAddressSaltId, configStrategyParams) {
+  create: async function(kind, managedAddressSaltId, configStrategyParams, groupId) {
     const oThis = this,
       strategyKindInt = invertedKinds[kind],
       configStrategyParamsString = JSON.stringify(configStrategyParams);
 
     if (strategyKindInt === undefined) {
       throw 'Error: Improper kind parameter';
+    }
+
+    if (groupId === undefined) {
+      groupId = NULL;
     }
 
     if (!configStrategyParams) {
@@ -94,6 +98,7 @@ const ConfigStrategyModelSpecificPrototype = {
       let encryptedConfigStrategyParams = localCipher.encrypt(response.data.addressSalt, configStrategyParamsString);
 
       const data = {
+        group_id: groupId,
         kind: strategyKindInt,
         params: encryptedConfigStrategyParams,
         managed_address_salts_id: managedAddressSaltId,
