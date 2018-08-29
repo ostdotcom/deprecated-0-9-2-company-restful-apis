@@ -59,7 +59,7 @@ const ConfigStrategyModelSpecificPrototype = {
     }
 
     if (groupId === undefined) {
-      groupId = NULL;
+      groupId = null;
     }
 
     if (!configStrategyParams) {

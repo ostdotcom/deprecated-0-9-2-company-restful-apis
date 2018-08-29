@@ -109,7 +109,7 @@ Run the following commands after creating the database.
 
 * Use the seeder script to fill config_strategies table.
 ```bash
-node executables/one_timers/config_strategy_seed.js managed_address_salt_id $CONFIG_STRATEGY_PATH
+node executables/one_timers/config_strategy_seed.js managed_address_salt_id group_id $CONFIG_STRATEGY_PATH
 ```
 
 * Add group ID as "1" in config_strategies table for the following kinds: ["ES", "Dynamo", "Dax", "Memcached", "Redis",  "Utility geth", "Utility constants", "Auto scaling"]
