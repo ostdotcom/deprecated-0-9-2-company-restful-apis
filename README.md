@@ -104,7 +104,11 @@ Run the following commands after creating the database.
   ```bash
   node executables/ddb_related_data_migrations/create_shards.js $CONFIG_STRATEGY_PATH
   ```
+  
 * Move the shared-local-instance.db file from $HOME/openst-setup/logs/ to $HOME/openst-setup/bin/utility-chain-[id]/
+```bash
+mv ~/openst-setup/logs/shared-local-instance.db ~/openst-setup/logs/utility-chain-1000/
+```
   
 * Close all existing processes (for eg. utility chain, mysql, memcached, etc.) before proceeding further. 
 
