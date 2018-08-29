@@ -104,6 +104,7 @@ Run the following commands after creating the database.
   ```bash
   node executables/ddb_related_data_migrations/create_shards.js $CONFIG_STRATEGY_PATH
   ```
+* Move the shared-local-instance.db file from $HOME/openst-setup/logs/ to $HOME/openst-setup/bin/utility-chain-[id]/
   
 * Close all existing processes (for eg. utility chain, mysql, memcached, etc.) before proceeding further. 
 
@@ -111,9 +112,6 @@ Run the following commands after creating the database.
 ```bash
 node executables/one_timers/config_strategy_seed.js managed_address_salt_id group_id $CONFIG_STRATEGY_PATH
 ```
-
-* Add group ID as "1" in config_strategies table for the following kinds: ["ES", "Dynamo", "Dax", "Memcached", "Redis",  "Utility geth", "Utility constants", "Auto scaling"]
-                                         
                                          
 # Start SAAS Services
 
@@ -210,7 +208,7 @@ Use the file path in the following command:
 * Start Cronjobs.
 ```base
 # Every hour
-node executables/update_price_oracle_price_points.js >> log/update_price_oracle_price_points.log
+node executables/update_price_oracle_price_points.js $CONFIG_STRATEGY_PATH >> log/update_price_oracle_price_points.log
 # Every five minutes
 node executables/rmq_subscribers/send_error_emails.js >> log/send_error_emails.log
 # Every minute
