@@ -2,7 +2,7 @@
 
 /**
  *
- * Usage: node executables/update_realtime_gas_price.js 'process_id'
+ * Usage: node executables/update_realtime_gas_price.js 'process_id' 'path_to_config_strategy_file'
  *
  *
  */
@@ -11,7 +11,8 @@ const rootPrefix = '..',
   ProcessLocker = new ProcessLockerKlass();
 
 const args = process.argv,
-  processId = args[2];
+  processId = args[2],
+  configStrategy = require(args[3]);
 
 ProcessLocker.canStartProcess({ process_title: 'update_realtime_gasprice-' + processId });
 
@@ -23,10 +24,6 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger.js'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   valueChainGasPriceCacheKlass = require(rootPrefix + '/lib/shared_cache_management/estimate_value_chain_gas_price');
-
-const args = process.argv,
-  config_file_path = args[2],
-  configStrategy = require(config_file_path);
 
 /**
  *
@@ -72,9 +69,10 @@ UpdateRealTimeGasPrice.prototype = {
         gasPriceToBeSubmittedHex = '0x' + maxGasPriceBN.toString(16);
         valueChainGasPriceCacheObj._setCache(gasPriceToBeSubmittedHex);
       }
-      logger.info('Value chain gas price is set to:', gasPriceToBeSubmittedHex);
+      logger.info('Value chain gas price cache is set to:', gasPriceToBeSubmittedHex);
       return Promise.resolve(responseHelper.successWithData(gasPriceToBeSubmittedHex));
     }
+    logger.info('Value chain gas price cache is not set');
     return Promise.resolve(responseHelper.successWithData({}));
   }
 };
@@ -82,7 +80,8 @@ UpdateRealTimeGasPrice.prototype = {
 // perform action
 const UpdateRealTimeGasPriceObj = new UpdateRealTimeGasPrice();
 UpdateRealTimeGasPriceObj.perform().then(async function(a) {
+  logger.info('Cron last run at', Date.now());
   setTimeout(function() {
     process.exit(0);
-  }, 5000); //To kill the process after 10 seconds expecting that the cache will be set by then.
+  }, 5000); //To kill the process after 5 seconds expecting that the cache will be set by then.
 });
