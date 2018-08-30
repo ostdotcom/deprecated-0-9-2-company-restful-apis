@@ -8,7 +8,7 @@ require(rootPrefix + '/module_overrides/index');
  *
  * Set up Platform
  *
- * @module tools/setup/platform/deploy_another_utility_chain
+ * @module tools/setup/platform/deploy_another_utility_chain configStrategyPath
  *
  */
 
