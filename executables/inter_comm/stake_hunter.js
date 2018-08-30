@@ -14,10 +14,13 @@ const rootPrefix = '../..';
 
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
-
-const openStPlatform = require('@openstfoundation/openst-platform');
+require(rootPrefix + '/lib/providers/platform');
 
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  openStPlatform = oThis
+    .ic()
+    .getPlatformProvider()
+    .getInstance(),
   StakeHunterInterCommKlass = openStPlatform.services.interComm.stakeHunter;
 
 const args = process.argv,

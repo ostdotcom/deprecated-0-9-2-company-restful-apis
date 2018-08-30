@@ -45,7 +45,7 @@ seedConfigStrategies.prototype = {
     await oThis.seed_value_constants_params();
     await oThis.seed_value_geth_params();
 
-    console.log('Success');
+    logger.log('Success');
     process.exit(0);
   },
 

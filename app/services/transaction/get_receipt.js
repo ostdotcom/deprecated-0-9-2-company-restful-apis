@@ -1,7 +1,5 @@
 'use strict';
 
-const openStPlatform = require('@openstfoundation/openst-platform');
-
 const rootPrefix = '../../..',
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),

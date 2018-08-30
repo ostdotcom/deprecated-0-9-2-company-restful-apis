@@ -10,7 +10,8 @@
 'use strict';
 
 const rootPrefix = '../../..',
-  fs = require('fs');
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+fs = require('fs');
 
 let originalConfigStrategy = require(rootPrefix + '/uc_1000.json'),
   homeAbsolutePath = process.env.HOME,
@@ -47,7 +48,7 @@ originalConfigStrategy['OST_VALUE_ADMIN_ADDR'] = correctConfigStrategy['OST_VALU
 // Please pass absolute file path here.
 fs.writeFile(process.cwd() + '/uc_1000.json', JSON.stringify(originalConfigStrategy), 'utf8', function(err) {
   if (err) {
-    return console.log(err);
+    return logger.log(err);
   }
-  console.log('The config strategy addresses were updated.');
+  logger.log('The config strategy addresses were updated.');
 });
