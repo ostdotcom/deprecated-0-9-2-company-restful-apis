@@ -13,7 +13,7 @@ const rootPrefix = '..',
 }*/
 
 //Config for DynamoDB and DAX
-var ddbConnectionConfig = {
+let ddbConnectionConfig = {
   OS_DAX_API_VERSION: process.env.OS_DAX_API_VERSION,
   OS_DAX_ACCESS_KEY_ID: process.env.OS_DAX_ACCESS_KEY_ID,
   OS_DAX_SECRET_ACCESS_KEY: process.env.OS_DAX_SECRET_ACCESS_KEY,

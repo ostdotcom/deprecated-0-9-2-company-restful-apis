@@ -1,8 +1,17 @@
 const rootPrefix = '../..',
-  ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service'),
-  dynamoDBFormatter = require(rootPrefix + '/lib/elasticsearch/helpers/dynamo_formatters'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   manifest = require(rootPrefix + '/lib/elasticsearch/manifest'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+
+require(rootPrefix + '/lib/providers/storage');
+
+const args = process.argv,
+  config_file_path = args[2],
+  configStrategy = require(config_file_path),
+  instanceComposer = new InstanceComposer(configStrategy),
+  storageProvider = instanceComposer.getStorageProvider(),
+  openSTStorage = storageProvider.getInstance(),
+  ddbServiceObj = openSTStorage.dynamoDBService;
 
 const eventName = 'INSERT';
 
@@ -16,13 +25,13 @@ InsertESTransactionLog.prototype = {
   },
 
   insertRecordsInES: function(tableName, recordIds) {
-    var oThis = this,
+    const oThis = this,
       queryParams = oThis.getQueryParams(tableName, recordIds);
     if (!queryParams) return false;
     ddbServiceObj
       .batchGetItem(queryParams)
       .then(function(response) {
-        var oThis = this,
+        const oThis = this,
           data = response && response.data,
           dataResponse = data && data.Responses,
           records = dataResponse && dataResponse[tableName];
@@ -47,8 +56,8 @@ InsertESTransactionLog.prototype = {
   },
 
   getQueryParams: function(tableName, recordIds) {
-    var oThis = this,
-      queryParams = oThis.queryParams,
+    const oThis = this;
+    let queryParams = oThis.queryParams,
       requestItems = queryParams['RequestItems'],
       len = recordIds && recordIds.length,
       cnt,

@@ -1,13 +1,24 @@
 'use strict';
 
 const rootPrefix = '../..',
-  ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   dynamoDBFormatter = require(rootPrefix + '/lib/elasticsearch/helpers/dynamo_formatters'),
   InsertInESKlass = require(rootPrefix + '/executables/es_related/insert_from_transaction_log_ddb_to_es'),
   insertInESobj = new InsertInESKlass(),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   commonValidator = require(rootPrefix + '/lib/validators/common');
+
+require(rootPrefix + '/lib/providers/storage');
+
+const args = process.argv,
+  config_file_path = args[2],
+  shardName = args[3],
+  configStrategy = require(config_file_path),
+  instanceComposer = new InstanceComposer(configStrategy),
+  storageProvider = instanceComposer.getStorageProvider(),
+  openSTStorage = storageProvider.getInstance(),
+  ddbServiceObj = openSTStorage.dynamoDBService;
 
 const Limit = 20;
 
@@ -102,11 +113,11 @@ MigrateDataFromDDbToES.prototype = {
 };
 
 const usageDemo = function() {
-  logger.log('usage:', 'node ./executables/es_related/migrate_all_data_from_ddb_to_es.js shardName');
+  logger.log(
+    'usage:',
+    'node ./executables/es_related/migrate_all_data_from_ddb_to_es.js configStrategy_file_path shardName'
+  );
 };
-
-const args = process.argv,
-  shardName = args[2];
 
 const validateAndSanitize = function() {
   if (commonValidator.isVarNull(shardName)) {

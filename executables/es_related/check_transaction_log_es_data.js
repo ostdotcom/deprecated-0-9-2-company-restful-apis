@@ -1,8 +1,18 @@
 const rootPrefix = '../..',
-  ddbServiceObj = require(rootPrefix + '/lib/dynamoDB_service'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   dynamoDBFormatter = require(rootPrefix + '/lib/elasticsearch/helpers/dynamo_formatters'),
   manifest = require(rootPrefix + '/lib/elasticsearch/manifest'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+
+require(rootPrefix + '/lib/providers/storage');
+
+const args = process.argv,
+  config_file_path = args[2],
+  configStrategy = require(config_file_path),
+  instanceComposer = new InstanceComposer(configStrategy),
+  storageProvider = instanceComposer.getStorageProvider(),
+  openSTStorage = storageProvider.getInstance(),
+  ddbServiceObj = openSTStorage.dynamoDBService;
 
 const tables = ['s_sb_transaction_logs_shard_001', 's_sb_transaction_logs_shard_002'];
 const Limit = 20;
