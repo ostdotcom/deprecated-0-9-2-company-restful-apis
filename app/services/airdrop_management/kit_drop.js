@@ -21,6 +21,7 @@ require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
  * @param {object} params - external passed parameters
  * @param {number} params.client_id - client id
  * @param {number} params.token_symbol - token symbol
+ * @param {number} params.client_token_id - client_token_id for airdrop
  * @param {Boolean} params.airdropped (optional) - true: already airdropped, false: never airdropped
  * @param {object} params.amount -
  * @param {string} params.user_ids (optional) - specific set of users can get shortlisted for airdrop.
@@ -29,7 +30,7 @@ require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
  *
  */
 const StartAirdropForKitKlass = function(params) {
-  var oThis = this;
+  const oThis = this;
 
   oThis.clientId = params.client_id;
   oThis.tokenSymbol = params.token_symbol;
@@ -146,13 +147,13 @@ StartAirdropForKitKlass.prototype = {
       }
     }
 
-    var btSecureCache = new BTSecureCacheKlass({ tokenSymbol: oThis.tokenSymbol });
+    let btSecureCache = new BTSecureCacheKlass({ tokenSymbol: oThis.tokenSymbol });
     const cacheRsp = await btSecureCache.fetch();
     if (cacheRsp.isFailure()) {
       return Promise.reject(cacheRsp);
     }
 
-    if (oThis.clientId != cacheRsp.data.client_id) {
+    if (oThis.clientId !== cacheRsp.data.client_id) {
       return Promise.reject(
         responseHelper.error({
           internal_error_identifier: 's_am_kd_5',
@@ -187,7 +188,7 @@ StartAirdropForKitKlass.prototype = {
     const oThis = this;
 
     if (oThis.userIds) {
-      var invalidUuids = false;
+      let invalidUuids = false;
       const uuidsAddressInfo = await new ManagedAddressModel()
         .select('*')
         .where(['uuid in (?)', oThis.userIds])
@@ -223,15 +224,15 @@ StartAirdropForKitKlass.prototype = {
     const oThis = this,
       ManagedAddressesCacheKlass = oThis.ic().getManagedAddressCache();
 
-    var macObj = new ManagedAddressesCacheKlass({ uuids: [oThis.clientBrandedToken.reserve_address_uuid] });
-    var addr = await macObj.fetch();
+    let macObj = new ManagedAddressesCacheKlass({ uuids: [oThis.clientBrandedToken.reserve_address_uuid] });
+    let addr = await macObj.fetch();
     if (addr.isFailure()) {
       return Promise.reject(addr);
     }
 
-    var reserveAddressObj = addr.data[oThis.clientBrandedToken.reserve_address_uuid];
+    let reserveAddressObj = addr.data[oThis.clientBrandedToken.reserve_address_uuid];
 
-    var params = { client_id: oThis.clientId };
+    let params = { client_id: oThis.clientId };
     if (oThis.airdropUserListType == clientAirdropConst.neverAirdroppedAddressesAirdropListType) {
       params['property_unset_bit_value'] = new ManagedAddressModel().invertedProperties[
         managedAddressesConst.airdropGrantProperty
@@ -244,8 +245,8 @@ StartAirdropForKitKlass.prototype = {
     if (oThis.userIds) {
       params['uuids'] = oThis.userIds;
     }
-    var response = await new ManagedAddressModel().getFilteredActiveUsersCount(params);
-    if (!response[0] || response[0].total_count == 0) {
+    let response = await new ManagedAddressModel().getFilteredActiveUsersCount(params);
+    if (!response[0] || response[0].total_count === 0) {
       return Promise.reject(
         responseHelper.paramValidationError({
           internal_error_identifier: 's_am_kd_7',
@@ -264,7 +265,7 @@ StartAirdropForKitKlass.prototype = {
       erc20_address: oThis.clientBrandedToken.token_erc20_address
     });
 
-    var resp = await obj.perform();
+    let resp = await obj.perform();
     if (resp.isFailure()) {
       return Promise.reject(
         responseHelper.error({
@@ -275,7 +276,7 @@ StartAirdropForKitKlass.prototype = {
       );
     }
 
-    var amountInWei = basicHelper.convertToWei(oThis.airdropAmount);
+    let amountInWei = basicHelper.convertToWei(oThis.airdropAmount);
     if (amountInWei.mul(response[0].total_count).toNumber() > resp.data.balance) {
       return Promise.reject(
         responseHelper.paramValidationError({
