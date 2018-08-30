@@ -539,7 +539,10 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     if (eventGeneratingContractAddresses.length > 0) {
       // from these addresses create a map of addresses of which are ERC20 address
-      let cacheObj = new Erc20ContractAddressCacheKlass({ addresses: eventGeneratingContractAddresses }),
+      let cacheObj = new Erc20ContractAddressCacheKlass({
+          addresses: eventGeneratingContractAddresses,
+          chain_id: configStrategy.OST_UTILITY_CHAIN_ID
+        }),
         cacheFetchRsp = await cacheObj.fetch();
       if (cacheFetchRsp.isFailure()) {
         return Promise.reject(cacheFetchRsp);

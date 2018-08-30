@@ -305,9 +305,11 @@ SetupToken.prototype = {
    *
    */
   createClientToken: async function() {
-    const oThis = this;
+    const oThis = this,
+      configStrategy = oThis.ic().configStrategy;
 
     oThis.clientTokenObj = {
+      chain_id: configStrategy.OST_UTILITY_CHAIN_ID,
       client_id: oThis.clientId,
       symbol: oThis.symbol,
       symbol_icon: oThis.symbol_icon,
