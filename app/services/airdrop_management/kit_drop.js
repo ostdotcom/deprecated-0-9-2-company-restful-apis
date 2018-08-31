@@ -22,9 +22,9 @@ require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
  * @param {number} params.client_id - client id
  * @param {number} params.token_symbol - token symbol
  * @param {number} params.client_token_id - client_token_id for airdrop
- * @param {Boolean} params.airdropped (optional) - true: already airdropped, false: never airdropped
- * @param {object} params.amount -
- * @param {string} params.user_ids (optional) - specific set of users can get shortlisted for airdrop.
+ * @param {Boolean} [params.airdropped] - true: already airdropped, false: never airdropped
+ * @param {object} params.amount - airdrop amount
+ * @param {string} [params.user_ids] - specific set of users can get shortlisted for airdrop.
  *
  * @constructor
  *
@@ -196,7 +196,7 @@ StartAirdropForKitKlass.prototype = {
       if (uuidsAddressInfo.length < oThis.userIds.length) {
         invalidUuids = true;
       }
-      for (var i = 0; i < uuidsAddressInfo.length; i++) {
+      for (let i = 0; i < uuidsAddressInfo.length; i++) {
         if (uuidsAddressInfo[i].client_id !== oThis.clientId) {
           invalidUuids = true;
         }
@@ -233,11 +233,11 @@ StartAirdropForKitKlass.prototype = {
     let reserveAddressObj = addr.data[oThis.clientBrandedToken.reserve_address_uuid];
 
     let params = { client_id: oThis.clientId };
-    if (oThis.airdropUserListType == clientAirdropConst.neverAirdroppedAddressesAirdropListType) {
+    if (oThis.airdropUserListType === clientAirdropConst.neverAirdroppedAddressesAirdropListType) {
       params['property_unset_bit_value'] = new ManagedAddressModel().invertedProperties[
         managedAddressesConst.airdropGrantProperty
       ];
-    } else if (oThis.airdropUserListType == clientAirdropConst.everAirdroppedAddressesAirdropListType) {
+    } else if (oThis.airdropUserListType === clientAirdropConst.everAirdroppedAddressesAirdropListType) {
       params['property_set_bit_value'] = new ManagedAddressModel().invertedProperties[
         managedAddressesConst.airdropGrantProperty
       ];
