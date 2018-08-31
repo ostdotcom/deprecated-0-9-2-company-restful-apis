@@ -6,7 +6,8 @@
  * @module executables/block_scanner/for_tx_status_and_balance_sync
  */
 
-const rootPrefix = '../..'
+const rootPrefix = '../..',
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger')
 ;
 
 const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker')
@@ -41,7 +42,7 @@ const validateAndSanitize = function () {
     usageDemo();
     process.exit(1);
   }
-  
+
 };
 
 // validate and sanitize the input params
@@ -60,8 +61,7 @@ const fs = require('fs')
   , uuid = require('uuid')
 ;
 
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
+const responseHelper = require(rootPrefix + '/lib/formatter/response')
   , chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
   , TransactionMeta = require(rootPrefix + '/app/models/transaction_meta')
   , transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log')
@@ -154,7 +154,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     if (oThis.interruptSignalObtained) {
       logger.win('* Exiting Process after interrupt signal obtained.');
-      process.exit(0);
+      process.exit(1);
     }
 
     const processNewBlocksAsync = async function () {
@@ -217,7 +217,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
         if (oThis.interruptSignalObtained) {
           logger.win('* Exiting Process after interrupt signal obtained.');
-          process.exit(0);
+          process.exit(1);
         } else {
           oThis.reInit();
         }
@@ -656,11 +656,11 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         ;
 
         clientIdToTxLogModelObjectMap[clientId] = clientIdToTxLogModelObjectMap[clientId] || new transactionLogModelDdb({
-            client_id: clientId,
-            ddb_service: ddbServiceObj,
-            auto_scaling: autoscalingServiceObj,
-            shard_name: shardName
-          });
+          client_id: clientId,
+          ddb_service: ddbServiceObj,
+          auto_scaling: autoscalingServiceObj,
+          shard_name: shardName
+        });
 
         promiseArray.push(clientIdToTxLogModelObjectMap[clientId].updateItem(toProcessData.data));
 
@@ -752,7 +752,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     if (oThis.interruptSignalObtained) {
       logger.win('* Exiting Process after interrupt signal obtained.');
-      process.exit(0);
+      process.exit(1);
     }
   },
 

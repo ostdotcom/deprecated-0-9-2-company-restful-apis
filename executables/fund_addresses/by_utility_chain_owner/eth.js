@@ -38,7 +38,13 @@ const chainInteractionConstants = require(rootPrefix + '/config/chain_interactio
  *
  * @constructor
  */
-const FundUsersWithEthFromUtilityChainOwnerKlass = function () {};
+const FundUsersWithEthFromUtilityChainOwnerKlass = function (isChainSetUp) {
+
+  const oThis = this;
+
+  oThis.isChainSetUp = isChainSetUp;
+
+};
 
 FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
 
@@ -48,10 +54,12 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
    */
   perform: async function () {
 
-    const oThis = this;
+    const oThis = this
+      , interestedUserNames = oThis._interestedUserNames()
+    ;
 
-    for (var i in oThis._interestedUserNames) {
-      const userName = oThis._interestedUserNames[i];
+    for (let i in interestedUserNames) {
+      const userName = interestedUserNames[i];
 
       const minBalanceInWei = basicHelper.convertToWei(oThis._valueChainMinBalanceFor(userName))
         , ethereumAddress = oThis._valueChainAddressFor(userName)
@@ -183,7 +191,8 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
    */
   _valueChainMinBalanceFor: function (name) {
     const oThis = this
-      , nameData = oThis._valueChainData[name]
+      , valueChainBalance = basicHelper.valueChainBalanceRequirements()
+      , nameData = valueChainBalance[name]
     ;
 
     if (!nameData) {
@@ -208,7 +217,8 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
    */
   _valueChainAddressFor: function (name) {
     const oThis = this
-      , nameData = oThis._valueChainData[name]
+      , valueChainBalance = basicHelper.valueChainBalanceRequirements()
+      , nameData = valueChainBalance[name]
     ;
 
     if (!nameData) {
@@ -224,38 +234,57 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
   },
 
   /**
-   * value chain data for users
-   *
-   * @constant
-   *
-   * @private
-   */
-  _valueChainData: {
-    utilityChainOwner: {minBalance: '60', address: chainInteractionConstants.UTILITY_CHAIN_OWNER_ADDR},
-    staker: {minBalance: '10', address: chainInteractionConstants.STAKER_ADDR},
-    redeemer: {minBalance: '10', address: chainInteractionConstants.REDEEMER_ADDR},
-    valueRegistrar: {minBalance: '10', address: chainInteractionConstants.VALUE_REGISTRAR_ADDR},
-    valueDeployer: {minBalance: '10', address: chainInteractionConstants.VALUE_DEPLOYER_ADDR},
-    valueOps: {minBalance: '10', address: chainInteractionConstants.VALUE_OPS_ADDR}
-  },
-
-  /**
    * User names to refill if threshold reach
    *
    * @constant
    *
    * @private
    */
-  _interestedUserNames: [
-    'staker',
-    'redeemer',
-    'valueRegistrar',
-    'valueDeployer',
-    'valueOps'
-  ]
+  _interestedUserNames: function() {
+
+    const oThis = this;
+
+    if (oThis.isChainSetUp) {
+      return [
+        'staker',
+        // 'redeemer',
+        'valueRegistrar',
+        'valueDeployer',
+        'valueOps'
+      ]
+    } else {
+      return [
+        'staker',
+        // 'redeemer',
+        'valueRegistrar'
+        // 'valueDeployer',
+        // 'valueOps'
+      ]
+    }
+
+  },
 
 };
 
+const usageDemo = function () {
+  logger.log('usage:', 'node ./executables/fund_addresses/by_utility_chain_owner/eth.js true');
+};
+
+const args = process.argv;
+
+let isChainSetUp = args[2];
+
+const validateAndSanitize = function () {
+
+  if (!isChainSetUp) {
+    isChainSetUp = false;
+  }
+
+};
+
+// validate and sanitize the input params
+validateAndSanitize();
+
 // perform action
-const FundUsersWithEthObj = new FundUsersWithEthFromUtilityChainOwnerKlass();
+const FundUsersWithEthObj = new FundUsersWithEthFromUtilityChainOwnerKlass(isChainSetUp);
 FundUsersWithEthObj.perform();

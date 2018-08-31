@@ -18,8 +18,11 @@ const rootPrefix = '../..'
 const getWeb3Instance = function (gethURL, chainKind) {
   const existingInstance = web3InstanceMap[gethURL];
   if (existingInstance){
+    logger.log("Using existing web3 Instance of gethURL - " + gethURL + " and chainKind " + chainKind);
     return existingInstance;
   }
+
+  logger.log("Creating new web3 Instance of gethURL - " + gethURL + " and chainKind " + chainKind);
 
   const newInstance =  new OstWeb3(gethURL, null, {
     providerOptions: {

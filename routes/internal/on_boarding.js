@@ -28,6 +28,17 @@ router.post('/start', function (req, res, next) {
 router.post('/grant-test-ost', function (req, res, next) {
   const performer = function() {
 
+    if (basicHelper.isMainSubEnvironment()) {
+
+      let response = responseHelper.error({
+        internal_error_identifier: 'r_ob_gto_1',
+        api_error_identifier: 'grant_prohibited',
+        debug_options: {}
+      });
+
+      return response.renderResponse(res, errorConfig);
+    }
+
     const decodedParams = req.decodedParams
       , ethAddress = decodedParams.ethereum_address
       , amount = decodedParams.amount
@@ -63,6 +74,17 @@ router.post('/grant-test-ost', function (req, res, next) {
 /* Grant test OST to user */
 router.post('/grant-eth', function (req, res, next) {
   const performer = function() {
+
+    if (basicHelper.isMainSubEnvironment()) {
+
+      let response = responseHelper.error({
+        internal_error_identifier: 'r_ob_gto_1',
+        api_error_identifier: 'grant_prohibited',
+        debug_options: {}
+      });
+
+      return response.renderResponse(res, errorConfig);
+    }
 
     const decodedParams = req.decodedParams
       , ethAddress = decodedParams.ethereum_address

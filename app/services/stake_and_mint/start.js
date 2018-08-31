@@ -88,7 +88,7 @@ StartStakeAndMintKlass.prototype = {
    */
   validateAndSanitize: function() {
 
-    var oThis = this;
+    const oThis = this;
 
     if(!oThis.clientId || !oThis.clientTokenId || !oThis.tokenSymbol){
       return Promise.reject(responseHelper.error({
@@ -98,8 +98,7 @@ StartStakeAndMintKlass.prototype = {
       }));
     }
 
-    if (!oThis.stakeAndMintParams || !oThis.stakeAndMintParams.bt_to_mint ||
-        !oThis.stakeAndMintParams.st_prime_to_mint || !oThis.stakeAndMintParams.client_eth_address ||
+    if (!oThis.stakeAndMintParams || !oThis.stakeAndMintParams.client_eth_address ||
         !oThis.stakeAndMintParams.transaction_hash) {
 
       return Promise.reject(responseHelper.error({
@@ -108,6 +107,21 @@ StartStakeAndMintKlass.prototype = {
         debug_options: {stakeAndMintParams: oThis.stakeAndMintParams}
       }));
 
+    }
+
+    if(!oThis.stakeAndMintParams.bt_to_mint){
+      oThis.stakeAndMintParams.bt_to_mint = 0;
+    }
+    if(!oThis.stakeAndMintParams.st_prime_to_mint){
+      oThis.stakeAndMintParams.st_prime_to_mint = 0;
+    }
+    
+    if ( parseInt(oThis.stakeAndMintParams.bt_to_mint) === 0 && parseInt(oThis.stakeAndMintParams.st_prime_to_mint) === 0) {
+      return Promise.reject(responseHelper.error({
+        internal_error_identifier: 's_sm_s_4',
+        api_error_identifier: 'invalid_api_params',
+        debug_options: {stakeAndMintParams: oThis.stakeAndMintParams}
+      }));
     }
 
     return Promise.resolve(responseHelper.successWithData({}));

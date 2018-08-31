@@ -78,13 +78,9 @@ const signature = {
       {
         "parameter": "client_token_id",
         "error_identifier": "missing_client_token_id"
-      },
-      {
-        "parameter": "airdrop_params",
-        "error_identifier": "missing_airdrop_params"
       }
     ],
-    "optional":[]
+    "optional":["airdrop_params"]
   },
   "setup_bt": {
     "mandatory":[

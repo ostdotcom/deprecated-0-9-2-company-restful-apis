@@ -191,6 +191,7 @@ EditBrandedTokenKlass.prototype = {
     publish_data.symbol = oThis.brandedTokenRecordObject.symbol;
     publish_data.uuid = oThis.brandedTokenRecordObject.token_uuid;
     publish_data.created_at = new Date(oThis.brandedTokenRecordObject.created_at).getTime() / 1000;
+    publish_data.simple_stake_contract_addr = oThis.brandedTokenRecordObject.simple_stake_contract_addr;
 
     if(Object.keys(publish_data).length == 0 || !oThis.brandedTokenRecordObject.token_erc20_address){
       return Promise.resolve(responseHelper.successWithData({}));
