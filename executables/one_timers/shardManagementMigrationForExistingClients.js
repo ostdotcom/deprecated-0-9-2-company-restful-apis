@@ -83,7 +83,6 @@ MigrateDataFromDdbShardsToClientConfigStrategies.prototype = {
 
       let clientErc20AddressRsp = await oThis._fetchErc20Address(clientId);
 
-      console.log('clientErc20AddressRsp', clientErc20AddressRsp);
       if (clientErc20AddressRsp.data.length === 0) {
         continue;
       }
