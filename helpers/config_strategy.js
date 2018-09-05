@@ -3,7 +3,9 @@
 const rootPrefix = '..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   clientConfigStrategyCacheKlass = require(rootPrefix + '/lib/shared_cache_management/client_config_strategies'),
+  configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  ConfigStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
   configStrategyCacheKlass = require(rootPrefix + '/lib/shared_cache_multi_management/config_strategy');
 
 /**
@@ -50,6 +52,31 @@ ConfigStrategyKlass.prototype = {
 
     Object.assign(finalConfigStrategyFlatHash, dynamoDbShardNames);
     return Promise.resolve(responseHelper.successWithData(finalConfigStrategyFlatHash));
+  },
+
+  getStrategyIdForKind: async function(clientId, kind) {
+    let clientConfigStrategyCacheObj = new clientConfigStrategyCacheKlass({ clientId: clientId }),
+      strategyIdsFetchRsp = await clientConfigStrategyCacheObj.fetch(),
+      strategyIdForKind = [];
+
+    if (strategyIdsFetchRsp.isFailure()) {
+      return Promise.reject(strategyIdsFetchRsp);
+    }
+
+    let strategyIdsArray = strategyIdsFetchRsp.data.configStrategyIds;
+
+    let strategyKindtoIdMapRsp = await new ConfigStrategyModel()
+      .select(['id', 'kind'])
+      .where(['id in (?)', strategyIdsArray])
+      .fire();
+
+    for (let index = 0; index < strategyKindtoIdMapRsp.length; index++) {
+      if (String(strategyKindtoIdMapRsp[index].kind) === configStrategyConstants.invertedKinds[kind]) {
+        strategyIdForKind.push(strategyKindtoIdMapRsp[index].id);
+      }
+    }
+
+    return Promise.resolve(responseHelper.successWithData(strategyIdForKind));
   }
 };
 
