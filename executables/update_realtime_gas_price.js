@@ -22,7 +22,6 @@ const dynamicGasPriceProvider = require('@ostdotcom/ost-dynamic-gas-price'),
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger.js'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
-  InstanceComposer = require(rootPrefix + '/instance_composer'),
   valueChainGasPriceCacheKlass = require(rootPrefix + '/lib/shared_cache_management/estimate_value_chain_gas_price');
 
 /**
@@ -35,13 +34,12 @@ const UpdateRealTimeGasPrice = function() {
 
 UpdateRealTimeGasPrice.prototype = {
   perform: async function() {
-    const oThis = this,
-      instanceComposer = new InstanceComposer(configStrategy);
+    const oThis = this;
 
     let estimatedGasPriceFloat = 0,
       valueChainGasPriceCacheObj = new valueChainGasPriceCacheKlass(),
-      chainIdInternal = configStrategy.OST_VALUE_CHAIN_ID;
-    let retrycount = 10;
+      chainIdInternal = configStrategy.OST_VALUE_CHAIN_ID,
+      retrycount = 10;
 
     while (retrycount > 0 && estimatedGasPriceFloat == 0) {
       estimatedGasPriceFloat = await dynamicGasPriceProvider.dynamicGasPrice.get(chainIdInternal);
