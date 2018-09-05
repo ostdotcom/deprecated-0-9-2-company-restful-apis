@@ -388,6 +388,11 @@
     "http_code": "403",
     "code": "REQUEST_FORBIDDEN",
     "message": "The request is prohibited in the Main Environment."
+  },
+  "invalid_shard_name": {
+    "http_code": "422",
+    "code": "UNPROCESSABLE_ENTITY",
+    "message": "Invalid Shard Name"
   }
 
 }

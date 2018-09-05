@@ -98,7 +98,8 @@ GetTransactionsService.prototype = {
       transactionLogModel = oThis.ic().getTransactionLogModel();
 
     let transactionFetchResponse = await new transactionLogModel({
-      client_id: oThis.clientId
+      client_id: oThis.clientId,
+      shard_name: oThis.ic().configStrategy.TRANSACTION_LOG_SHARD_NAME
     }).batchGetItem([oThis.transactionUuid]);
 
     let transactionLogData = transactionFetchResponse.data[oThis.transactionUuid];

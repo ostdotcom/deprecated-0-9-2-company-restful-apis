@@ -642,7 +642,8 @@ ExecuteTransactionService.prototype = {
     let start_time = Date.now();
 
     await new transactionLogModel({
-      client_id: oThis.clientId
+      client_id: oThis.clientId,
+      shard_name: configStrategy.TRANSACTION_LOG_SHARD_NAME
     }).updateItem(oThis.transactionLogData);
 
     console.log('------- Time taken', (Date.now() - start_time) / 1000);

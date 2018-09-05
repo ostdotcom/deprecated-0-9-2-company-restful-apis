@@ -11,6 +11,8 @@ const rootPrefix = '../..';
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
+  ConfigStartegyHelper = require(rootPrefix + '/helpers/config_strategy'),
+  configStrategyHelper = new ConfigStartegyHelper(),
   ProcessLocker = new ProcessLockerKlass();
 
 require(rootPrefix + '/lib/providers/platform');
@@ -629,14 +631,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     if (Object.keys(oThis.clientIdsMap).length === 0) return {};
 
-    const getManagedShardResponse = await ddbServiceObj.shardManagement().getManagedShard({
-      entity_type: DynamoEntityTypesConst.transactionLogEntityType,
-      identifiers: Object.keys(oThis.clientIdsMap)
-    });
-
     logger.debug('-------oThis.dataToUpdate----', oThis.dataToUpdate);
-
-    if (getManagedShardResponse.isFailure()) return Promise.reject(getManagedShardResponse);
 
     let promiseArray = [],
       batchNo = 1,
@@ -652,7 +647,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       for (let i = 0; i < batchedData.length; i++) {
         let toProcessData = batchedData[i],
           clientId = toProcessData.client_id,
-          shardName = getManagedShardResponse.data.items[clientId].shardName;
+          response = await configStrategyHelper.getConfigStrategy(clientId),
+          shardName = response.data.TRANSACTION_LOG_SHARD_NAME;
 
         clientIdToTxLogModelObjectMap[clientId] =
           clientIdToTxLogModelObjectMap[clientId] ||
@@ -1070,10 +1066,13 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       let clientId = clientIds[k],
         dataToInsert = formattedTransactionsData[clientId];
 
+      let response = await configStrategyHelper.getConfigStrategy(clientId);
+
       logger.info(`starting _insertDataInTransactionLogs clientId : ${clientId} length : ${dataToInsert.length}`);
 
       let rsp = await new transactionLogModel({
-        client_id: clientId
+        client_id: clientId,
+        shard_name: response.data.TRANSACTION_LOG_SHARD_NAME
       }).batchPutItem(dataToInsert, 10);
     }
 
@@ -1095,13 +1094,37 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
     let erc20ContractAddresses = Object.keys(balanceAdjustmentMap);
 
+    // TODO: Similar cache hit in the file, check avoid feasibility
+    let Erc20ContractAddressCacheKlass = ic.getErc20ContractAddressCache();
+
+    let erc20ContractAddressesData = {};
+
+    if (erc20ContractAddresses.length > 0) {
+      let cacheObj = new Erc20ContractAddressCacheKlass({
+          addresses: erc20ContractAddresses,
+          chain_id: configStrategy.OST_UTILITY_CHAIN_ID
+        }),
+        cacheFetchRsp = await cacheObj.fetch();
+
+      if (cacheFetchRsp.isFailure()) {
+        return Promise.reject(cacheFetchRsp);
+      }
+
+      erc20ContractAddressesData = cacheFetchRsp.data;
+    }
+
     for (let k = 0; k < erc20ContractAddresses.length; k++) {
       let erc20ContractAddress = erc20ContractAddresses[k];
+
+      let clientId = erc20ContractAddressesData[erc20ContractAddress].client_id;
+
+      let response = configStrategyHelper.getConfigStrategy(clientId);
 
       let userBalancesSettlementsData = balanceAdjustmentMap[erc20ContractAddress],
         tokenBalanceModelObj = new tokenBalanceModelDdb({
           erc20_contract_address: erc20ContractAddress,
-          chain_id: configStrategy.OST_UTILITY_CHAIN_ID
+          chain_id: configStrategy.OST_UTILITY_CHAIN_ID,
+          shard_name: response.data.TOKEN_BALANCE_SHARD_NAME
         }),
         promises = [],
         userAddresses = Object.keys(userBalancesSettlementsData);

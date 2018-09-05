@@ -150,7 +150,8 @@ CheckBalances.prototype = {
       // console.log('promiseResponses', JSON.stringify(promiseResponses));
 
       let balancesFromDdbRsp = await new TokenBalanceModel({
-        erc20_contract_address: erc20_address
+        erc20_contract_address: erc20_address,
+        shard_name: configStrategy.TOKEN_BALANCE_SHARD_NAME
       }).getBalance({ ethereum_addresses: addresses });
 
       // console.log('balancesFromDdbRsp', balancesFromDdbRsp);

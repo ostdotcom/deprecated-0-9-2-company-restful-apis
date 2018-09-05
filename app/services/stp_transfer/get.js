@@ -93,7 +93,8 @@ GetStPTransferService.prototype = {
       transactionLogModel = oThis.ic().getTransactionLogModel();
 
     let transactionLogResponse = await new transactionLogModel({
-      client_id: oThis.client_id
+      client_id: oThis.client_id,
+      shard_name: oThis.ic().configStrategy.TRANSACTION_LOG_SHARD_NAME
     }).batchGetItem([oThis.transactionUuid]);
 
     if (!transactionLogResponse.data[oThis.transactionUuid]) {

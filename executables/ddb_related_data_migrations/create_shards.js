@@ -101,7 +101,7 @@ CreateShards.prototype = {
     for (let index = 1; index <= oThis.transactionLogShardCount; index++) {
       logger.info('starting to create transactionLogShard : ', index);
       let shardName = coreConstants.DYNAMODB_TABLE_NAME_PREFIX + 'transaction_logs_shard_00' + index;
-      let createRsp = await new transactionLogModel({}).createAndRegisterShard(shardName);
+      let createRsp = await new transactionLogModel({}).createShard(shardName);
       if (createRsp.isFailure()) {
         return Promise.reject(createRsp);
       }

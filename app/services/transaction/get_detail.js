@@ -113,7 +113,8 @@ GetTransactionDetailKlass.prototype = {
     }
 
     let transactionFetchResponse = await new transactionLogModel({
-      client_id: oThis.clientId
+      client_id: oThis.clientId,
+      shard_name: oThis.ic().configStrategy.TRANSACTION_LOG_SHARD_NAME
     }).batchGetItem(oThis.transactionUuids);
 
     let transactionLogRecordsHash = transactionFetchResponse.data;

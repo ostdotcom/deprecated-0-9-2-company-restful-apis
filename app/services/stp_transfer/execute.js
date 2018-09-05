@@ -102,7 +102,8 @@ ExecuteSTPTransferService.prototype = {
     await oThis.enqueueTxForExecution();
 
     let dbResponse = await new transactionLogModel({
-      client_id: oThis.clientId
+      client_id: oThis.clientId,
+      shard_name: configStrategy.TRANSACTION_LOG_SHARD_NAME
     }).batchGetItem([oThis.transactionUuid]);
 
     if (!dbResponse.data) {
@@ -299,7 +300,8 @@ ExecuteSTPTransferService.prototype = {
     };
 
     let insertedRec = await new transactionLogModel({
-      client_id: oThis.clientId
+      client_id: oThis.clientId,
+      shard_name: oThis.TRANSACTION_LOG_SHARD_NAME
     }).updateItem(dataToInsert);
 
     if (!insertedRec.data) {

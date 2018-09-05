@@ -8,14 +8,12 @@
 const rootPrefix = '../..',
   util = require(rootPrefix + '/lib/util'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  DynamodbEntityTypesConst = require(rootPrefix + '/lib/global_constant/dynamodb_entity_types'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
   errorConfig = basicHelper.fetchErrorConfig(apiVersions.general),
   BigNumber = require('bignumber.js'),
-  InstanceComposer = require(rootPrefix + '/instance_composer'),
-  DynamoEntityTypesConst = require(rootPrefix + '/lib/global_constant/dynamodb_entity_types');
+  InstanceComposer = require(rootPrefix + '/instance_composer');
 
 require(rootPrefix + '/lib/providers/storage');
 
@@ -59,64 +57,24 @@ const TransactionLogModel = function(params) {
     openSTStorage = storageProvider.getInstance();
 
   oThis.clientId = params.client_id;
-  oThis.shardName = params.shard_name || null;
+  oThis.shardName = params.shard_name;
   oThis.ddbServiceObj = openSTStorage.dynamoDBService;
-  oThis.shardHelper = new openSTStorage.model.ShardHelper(
-    DynamodbEntityTypesConst.transactionLogEntityType,
-    oThis.clientId,
-    oThis.shardName,
-    longToShortNamesMap,
-    shortToLongNamesMap
-  );
+
+  oThis.dynamoBase = new openSTStorage.model.DynamoBase();
 };
 
 const transactionLogModelSpecificPrototype = {
-  /**
-   * Allocate
-   *
-   * @return {promise<result>}
-   */
-  allocate: function() {
-    const oThis = this;
-
-    return oThis.shardHelper.allocate();
-  },
-
-  /**
-   * Has allocated shard?
-   *
-   * @return {promise<result>}
-   */
-  hasAllocatedShard: function() {
-    const oThis = this;
-
-    return oThis.shardHelper.hasAllocatedShard();
-  },
-
   /**
    * Create and register shard
    *
    * @return {promise<result>}
    */
-  createAndRegisterShard: function(shardName) {
+  createShard: function(shardName) {
     const oThis = this;
 
-    oThis.setTableSchema(shardName);
+    let tableSchema = oThis.getTableSchema(shardName);
 
-    return oThis.shardHelper.createAndRegisterShard(shardName);
-  },
-
-  /**
-   * Get shard
-   *
-   * @return {promise<result>}
-   */
-  _getShard: async function() {
-    const oThis = this;
-
-    await oThis.shardHelper._getShard();
-
-    oThis.shardName = oThis.shardHelper.shardName;
+    return oThis.dynamoBase.createShard(shardName, tableSchema);
   },
 
   /**
@@ -130,7 +88,7 @@ const transactionLogModelSpecificPrototype = {
   shortNameFor: function(longName) {
     const oThis = this;
 
-    return oThis.shardHelper.shortNameFor(longName);
+    return longToShortNamesMap[longName];
   },
 
   /**
@@ -144,7 +102,7 @@ const transactionLogModelSpecificPrototype = {
   longNameFor: function(shortName) {
     const oThis = this;
 
-    return oThis.shardHelper.longNameFor(shortName);
+    return shortToLongNamesMap[shortName];
   },
 
   /**
@@ -152,7 +110,7 @@ const transactionLogModelSpecificPrototype = {
    *
    * @return {object}
    */
-  setTableSchema: function(shardName) {
+  getTableSchema: function(shardName) {
     // This method is used in base class
     const oThis = this;
 
@@ -174,7 +132,7 @@ const transactionLogModelSpecificPrototype = {
       }
     };
 
-    return oThis.shardHelper.setTableSchema(tableSchema);
+    return tableSchema;
   },
 
   /**
@@ -195,7 +153,16 @@ const transactionLogModelSpecificPrototype = {
       unprocessedItemsRetryCount = 0;
     }
 
-    await oThis._getShard();
+    if (!oThis.shardName) {
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'l_m_tl_1',
+          api_error_identifier: 'invalid_shard_name',
+          debug_options: {},
+          error_config: errorConfig
+        })
+      );
+    }
 
     let dataBatchNo = 1,
       formattedErrorCount = 1,
@@ -296,7 +263,16 @@ const transactionLogModelSpecificPrototype = {
       unprocessedKeysRetryCount = 0;
     }
 
-    await oThis._getShard();
+    if (!oThis.shardName) {
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'l_m_tl_1',
+          api_error_identifier: 'invalid_shard_name',
+          debug_options: {},
+          error_config: errorConfig
+        })
+      );
+    }
 
     let getKeys = [],
       shortNameForTxUuid = oThis.shortNameFor('transaction_uuid');
@@ -395,7 +371,16 @@ const transactionLogModelSpecificPrototype = {
       );
     }
 
-    await oThis._getShard();
+    if (!oThis.shardName) {
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'l_m_tl_1',
+          api_error_identifier: 'invalid_shard_name',
+          debug_options: {},
+          error_config: errorConfig
+        })
+      );
+    }
 
     const txLogsParams = {
       TableName: oThis.shardName,
@@ -408,18 +393,6 @@ const transactionLogModelSpecificPrototype = {
     const updateResponse = await oThis.ddbServiceObj.updateItem(txLogsParams, 10);
 
     return Promise.resolve(responseHelper.successWithData(updateResponse));
-  },
-
-  /**
-   * Shard Identifier
-   *
-   * @return {string}
-   */
-  _shardIdentifier: function() {
-    // This method is used in base class
-    const oThis = this;
-
-    return oThis.clientId;
   },
 
   /**
