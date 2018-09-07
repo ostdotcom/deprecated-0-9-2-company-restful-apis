@@ -2,7 +2,7 @@
 
 const rootPrefix = '..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  clientConfigStrategyCacheKlass = require(rootPrefix + '/lib/shared_cache_management/client_config_strategies'),
+  clientConfigStrategyCacheKlass = require(rootPrefix + '/lib/shared_cache_multi_management/client_config_strategies'),
   configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   ConfigStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
@@ -23,17 +23,19 @@ ConfigStrategyKlass.prototype = {
    * @return {Promise<Object>} Hash of config strategy
    */
   getConfigStrategy: async function(clientId) {
-    let clientConfigStrategyCacheObj = new clientConfigStrategyCacheKlass({ clientId: clientId }),
-      strategyIdsFetchRsp = await clientConfigStrategyCacheObj.fetch();
+    let clientConfigStrategyCacheObj = new clientConfigStrategyCacheKlass({ clientIds: [clientId] }),
+      fetchCacheRsp = await clientConfigStrategyCacheObj.fetch();
 
-    if (strategyIdsFetchRsp.isFailure()) {
-      return Promise.reject(strategyIdsFetchRsp);
+    if (fetchCacheRsp.isFailure()) {
+      return Promise.reject(fetchCacheRsp);
     }
 
-    let strategyIdsArray = strategyIdsFetchRsp.data.configStrategyIds,
+    let cacheData = fetchCacheRsp.data[clientId];
+
+    let strategyIdsArray = cacheData.configStrategyIds,
       configStrategyCacheObj = new configStrategyCacheKlass({ strategyIds: strategyIdsArray }),
       configStrategyFetchRsp = await configStrategyCacheObj.fetch(),
-      dynamoDbShardNames = strategyIdsFetchRsp.data.shard_names;
+      dynamoDbShardNames = cacheData.shard_names;
 
     if (configStrategyFetchRsp.isFailure()) {
       return Promise.reject(configStrategyFetchRsp);

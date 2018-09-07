@@ -11,8 +11,7 @@ const rootPrefix = '../..';
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
-  ConfigStartegyHelper = require(rootPrefix + '/helpers/config_strategy'),
-  configStrategyHelper = new ConfigStartegyHelper(),
+  configStrategyCacheKlass = require(rootPrefix + '/lib/shared_cache_multi_management/client_config_strategies'),
   ProcessLocker = new ProcessLockerKlass();
 
 require(rootPrefix + '/lib/providers/platform');
@@ -91,12 +90,9 @@ const responseHelper = require(rootPrefix + '/lib/formatter/response'),
   TransactionMeta = require(rootPrefix + '/app/models/transaction_meta'),
   transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log'),
   commonValidator = require(rootPrefix + '/lib/validators/common'),
-  ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
-  ManagedAddressesModel = require(rootPrefix + '/app/models/managed_address'),
-  DynamoEntityTypesConst = require(rootPrefix + '/lib/global_constant/dynamodb_entity_types');
+  ManagedAddressModel = require(rootPrefix + '/app/models/managed_address');
 
-const PostAirdropPayKlass = openStPayments.services.airdropManager.postAirdropPay,
-  tokenBalanceModelDdb = openSTStorage.model.TokenBalance,
+const tokenBalanceModelDdb = openSTStorage.model.TokenBalance,
   coreAbis = openStPlatform.abis;
 
 abiDecoder.addABI(coreAbis.airdrop);
@@ -214,11 +210,30 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           oThis.granularTimeTaken.push('generateToUpdateDataForKnownTx-' + (Date.now() - oThis.startTime) + 'ms');
 
         // Construct the data to be inserted for unknown transaction.
-        await oThis.generateToUpdateDataForUnKnownTx();
+        let dataToUpdateForUnknownTx = await oThis.generateToUpdateDataForUnKnownTx();
         if (oThis.benchmarkFilePath)
           oThis.granularTimeTaken.push('generateToUpdateDataForUnKnownTx-' + (Date.now() - oThis.startTime) + 'ms');
 
+        let clientIdsMap = {};
+
+        // uniq!
+        for (let o = 0; o < dataToUpdateForUnknownTx.data.clientIds.length; o++) {
+          clientIdsMap[dataToUpdateForUnknownTx.data.clientIds[o]] = 1;
+        }
+        for (let clientId in oThis.recognizedTxUuidsGroupedByClientId) {
+          clientIdsMap[clientId] = 1;
+        }
+
+        if (Object.keys(clientIdsMap) > 0) {
+          let ShardMap = await oThis.fetchShardNamesForClients(Object.keys(clientIdsMap));
+
+          Object.assign(oThis.clientIdShardsMap, ShardMap);
+        }
+
+        await oThis.updateDataForUnknownTx(dataToUpdateForUnknownTx.data);
+
         await oThis.updateTransactionLogs();
+
         if (oThis.benchmarkFilePath)
           oThis.granularTimeTaken.push('updateTransactionLogs-' + (Date.now() - oThis.startTime) + 'ms');
 
@@ -398,6 +413,14 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     const oThis = this,
       batchSize = 500;
 
+    let clients = Object.keys(oThis.recognizedTxUuidsGroupedByClientId);
+
+    oThis.clientIdShardsMap = {};
+
+    if (clients.length > 0) {
+      oThis.clientIdShardsMap = await oThis.fetchShardNamesForClients(clients);
+    }
+
     for (let clientId in oThis.recognizedTxUuidsGroupedByClientId) {
       let txUuids = oThis.recognizedTxUuidsGroupedByClientId[clientId],
         batchNo = 1;
@@ -431,7 +454,19 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
             );
             let postAirdropParams = oThis.txUuidToPostReceiptProcessParamsMap[txUuid];
 
+            let shardConfig = oThis.clientIdShardsMap[clientId];
+
+            let finalConfig = ic.configStrategy;
+
+            Object.assign(finalConfig, shardConfig);
+
+            let instanceComposer = new InstanceComposer(finalConfig),
+              paymentsProvider = instanceComposer.getPaymentsProvider(),
+              openStPayments = paymentsProvider.getInstance(),
+              PostAirdropPayKlass = openStPayments.services.airdropManager.postAirdropPay;
+
             logger.debug('--111111111111111------postAirdropParams--', postAirdropParams);
+
             if (postAirdropParams) {
               postAirdropParams = JSON.parse(postAirdropParams);
               const postAirdropPay = new PostAirdropPayKlass(postAirdropParams, decodedEvents, txReceipt.status);
@@ -510,7 +545,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
         if (addressesToFetchSet.length === 0) break;
 
-        const managedAddressResults = await new ManagedAddressesModel().getByEthAddresses(addressesToFetchSet);
+        const managedAddressResults = await new ManagedAddressModel().getByEthAddresses(addressesToFetchSet);
 
         for (let i = 0; i < managedAddressResults.length; i++) {
           oThis.addressToDetailsMap[managedAddressResults[i].ethereum_address.toLowerCase()] = managedAddressResults[i];
@@ -528,7 +563,9 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       txHashToShortListedEventsMap = {},
       Erc20ContractAddressCacheKlass = ic.getErc20ContractAddressCache();
 
-    let erc20ContractAddressesData = {};
+    let erc20ContractAddressesData = {},
+      erc20ContractAddressClientIdMap = {},
+      clientIds = [];
 
     for (let i = 0; i < oThis.unRecognizedTxHashes.length; i++) {
       let txHash = oThis.unRecognizedTxHashes[i],
@@ -560,12 +597,14 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         let txReceiptLogElement = txReceipt.logs[j],
           contractAddress = txReceiptLogElement.address.toLowerCase(),
           eventSignature = txReceiptLogElement.topics[0],
-          isKnownBTContract = erc20ContractAddressesData[contractAddress],
+          knownBTContractData = erc20ContractAddressesData[contractAddress],
           isTransferEvent = eventSignature === oThis.TransferEventSignature;
 
-        if (isKnownBTContract && isTransferEvent) {
+        if (knownBTContractData && isTransferEvent) {
           txHashToShortListedEventsMap[txHash] = txHashToShortListedEventsMap[txHash] || [];
           txHashToShortListedEventsMap[txHash].push(txReceiptLogElement);
+          clientIds.push(knownBTContractData['client_id']);
+          erc20ContractAddressClientIdMap[contractAddress] = knownBTContractData['client_id'];
         }
       }
     }
@@ -588,11 +627,17 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       txHashTransferEventsMap: txHashTransferEventsMap,
       affectedAddresses: affectedAddresses
     };
+
     let formattedTransactionsData = await oThis._fetchFormattedTransactionsForMigration(params);
 
-    await oThis._insertDataInTransactionLogs(formattedTransactionsData);
-
-    await oThis._settleBalancesInDb(balanceAdjustmentMap);
+    return Promise.resolve(
+      responseHelper.successWithData({
+        formattedTransactionsData: formattedTransactionsData,
+        balanceAdjustmentMap: balanceAdjustmentMap,
+        erc20ContractAddressClientIdMap: erc20ContractAddressClientIdMap,
+        clientIds: clientIds
+      })
+    );
   },
 
   /**
@@ -619,13 +664,37 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     return txHashDecodedEventsMap;
   },
 
+  fetchShardNamesForClients: async function(clientIds) {
+    const oThis = this,
+      clientConfigStrategyCacheObj = new configStrategyCacheKlass({ clientIds: clientIds }),
+      strategiesFetchRsp = await clientConfigStrategyCacheObj.fetch(),
+      clientIdShardsMap = {};
+
+    if (strategiesFetchRsp.isFailure()) {
+      return Promise.reject(strategiesFetchRsp);
+    }
+
+    for (let clientId in strategiesFetchRsp.data) {
+      clientIdShardsMap[parseInt(clientId)] = strategiesFetchRsp.data[clientId]['shard_names'];
+    }
+
+    return Promise.resolve(clientIdShardsMap);
+  },
+
+  updateDataForUnknownTx: async function(unknownTxsData) {
+    const oThis = this;
+
+    await oThis._insertDataInTransactionLogs(unknownTxsData.formattedTransactionsData);
+
+    await oThis._settleBalancesInDb(unknownTxsData);
+  },
+
   /**
    * Update transaction logs table
    */
   updateTransactionLogs: async function() {
     const oThis = this,
-      transactionLogModel = ic.getTransactionLogModel(),
-      ddbServiceObj = openSTStorage.dynamoDBService;
+      transactionLogModel = ic.getTransactionLogModel();
 
     logger.debug('-------oThis.clientIdsMap----', oThis.clientIdsMap);
 
@@ -647,8 +716,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       for (let i = 0; i < batchedData.length; i++) {
         let toProcessData = batchedData[i],
           clientId = toProcessData.client_id,
-          response = await configStrategyHelper.getConfigStrategy(clientId),
-          shardName = response.data.TRANSACTION_LOG_SHARD_NAME;
+          shardName = oThis.clientIdShardsMap[clientId].TRANSACTION_LOG_SHARD_NAME;
 
         clientIdToTxLogModelObjectMap[clientId] =
           clientIdToTxLogModelObjectMap[clientId] ||
@@ -1066,13 +1134,11 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       let clientId = clientIds[k],
         dataToInsert = formattedTransactionsData[clientId];
 
-      let response = await configStrategyHelper.getConfigStrategy(clientId);
-
       logger.info(`starting _insertDataInTransactionLogs clientId : ${clientId} length : ${dataToInsert.length}`);
 
       let rsp = await new transactionLogModel({
         client_id: clientId,
-        shard_name: response.data.TRANSACTION_LOG_SHARD_NAME
+        shard_name: oThis.clientIdShardsMap[clientId].TRANSACTION_LOG_SHARD_NAME
       }).batchPutItem(dataToInsert, 10);
     }
 
@@ -1086,45 +1152,26 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    *
    * @returns {promise<result>}
    */
-  _settleBalancesInDb: async function(balanceAdjustmentMap) {
-    const oThis = this,
-      ddbServiceObj = openSTStorage.dynamoDBService;
+  _settleBalancesInDb: async function(unknownTxsData) {
+    const oThis = this;
 
     logger.info('starting _settleBalancesInDb');
 
-    let erc20ContractAddresses = Object.keys(balanceAdjustmentMap);
+    console.log('clientIdShardsMap2', oThis.clientIdShardsMap);
 
-    // TODO: Similar cache hit in the file, check avoid feasibility
-    let Erc20ContractAddressCacheKlass = ic.getErc20ContractAddressCache();
-
-    let erc20ContractAddressesData = {};
-
-    if (erc20ContractAddresses.length > 0) {
-      let cacheObj = new Erc20ContractAddressCacheKlass({
-          addresses: erc20ContractAddresses,
-          chain_id: configStrategy.OST_UTILITY_CHAIN_ID
-        }),
-        cacheFetchRsp = await cacheObj.fetch();
-
-      if (cacheFetchRsp.isFailure()) {
-        return Promise.reject(cacheFetchRsp);
-      }
-
-      erc20ContractAddressesData = cacheFetchRsp.data;
-    }
+    let erc20ContractAddresses = Object.keys(unknownTxsData.balanceAdjustmentMap),
+      erc20ContractAddressClientIdMap = unknownTxsData.erc20ContractAddressClientIdMap;
 
     for (let k = 0; k < erc20ContractAddresses.length; k++) {
       let erc20ContractAddress = erc20ContractAddresses[k];
 
-      let clientId = erc20ContractAddressesData[erc20ContractAddress].client_id;
+      let clientId = erc20ContractAddressClientIdMap[erc20ContractAddress];
 
-      let response = configStrategyHelper.getConfigStrategy(clientId);
-
-      let userBalancesSettlementsData = balanceAdjustmentMap[erc20ContractAddress],
+      let userBalancesSettlementsData = unknownTxsData.balanceAdjustmentMap[erc20ContractAddress],
         tokenBalanceModelObj = new tokenBalanceModelDdb({
           erc20_contract_address: erc20ContractAddress,
           chain_id: configStrategy.OST_UTILITY_CHAIN_ID,
-          shard_name: response.data.TOKEN_BALANCE_SHARD_NAME
+          shard_name: oThis.clientIdShardsMap[clientId].TOKEN_BALANCE_SHARD_NAME
         }),
         promises = [],
         userAddresses = Object.keys(userBalancesSettlementsData);
