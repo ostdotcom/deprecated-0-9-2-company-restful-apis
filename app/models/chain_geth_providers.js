@@ -23,7 +23,7 @@ ChainGethProvidersModel.prototype = Object.create(ModelBaseKlass.prototype);
 /*
  * Public methods
  */
-const ChainGethProvidersModelModelSpecificPrototype = {
+const ChainGethProvidersModelSpecificPrototype = {
   tableName: 'chain_geth_providers',
 
   // Convert integers to kinds.
@@ -356,6 +356,6 @@ const ChainGethProvidersModelModelSpecificPrototype = {
   }
 };
 
-Object.assign(ChainGethProvidersModel.prototype, ChainGethProvidersModelModelSpecificPrototype);
+Object.assign(ChainGethProvidersModel.prototype, ChainGethProvidersModelSpecificPrototype);
 
 module.exports = ChainGethProvidersModel;
