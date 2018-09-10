@@ -10,7 +10,6 @@ const rootPrefix = '../..',
   ClientConfigStrategiesModel = require(rootPrefix + '/app/models/client_config_strategies'),
   ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
   configStrategyHelper = require(rootPrefix + '/helpers/config_strategy'),
-  dynamoDBFormatter = require(rootPrefix + '/lib/elasticsearch/helpers/dynamo_formatters'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   commonValidator = require(rootPrefix + '/lib/validators/common');
 

@@ -57,7 +57,7 @@ ConfigStrategyKlass.prototype = {
   },
 
   getStrategyIdForKind: async function(clientId, kind) {
-    let clientConfigStrategyCacheObj = new clientConfigStrategyCacheKlass({ clientId: clientId }),
+    let clientConfigStrategyCacheObj = new clientConfigStrategyCacheKlass({ clientIds: [clientId] }),
       strategyIdsFetchRsp = await clientConfigStrategyCacheObj.fetch(),
       strategyIdForKind = [];
 
