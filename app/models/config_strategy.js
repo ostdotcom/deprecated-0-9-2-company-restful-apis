@@ -207,15 +207,21 @@ const ConfigStrategyModelSpecificPrototype = {
       throw 'Error: Improper kind parameter';
     }
 
-    let query = oThis
-        .select(['id', 'group_id'])
-        .where('kind = ' + strategyKindInt + ' AND (group_id = ' + groupId + ' OR group_id IS NULL)'),
-      queryResult = await query.fire(),
-      strategyIdsArray = [];
+    let groupIdClause = null;
 
-    for (let i = 0; i < queryResult.length; i++) {
-      strategyIdsArray.push(queryResult[i].id);
+    if (group_id) {
+      groupIdClause = ' AND (group_id = ' + groupId + ' OR group_id IS NULL)';
     }
+
+    let query = oThis.select(['id', 'group_id']).where('kind = ' + strategyKindInt);
+
+    if (groupIdClause) {
+      query.where(groupIdClause);
+    }
+
+    logger.info('====query', query);
+
+    let queryResult = await query.fire();
 
     return Promise.resolve(responseHelper.successWithData(queryResult));
   },
@@ -394,9 +400,14 @@ const ConfigStrategyModelSpecificPrototype = {
         logger.error('Error', err);
       });
 
-    if (isParamPresent !== null) {
+    if (isParamPresent !== null && isParamPresent != strategy_id) {
       //If configStrategyParams is already present in database then id of that param is sent
-      logger.error('The config strategy is already present in database with id: ', isParamPresent);
+      logger.error(
+        'There is a config strategy already present with these params. Id present:',
+        id,
+        'Id getting updated:',
+        strategy_id
+      );
       return Promise.reject(
         responseHelper.error({
           internal_error_identifier: 'm_tb_cs_3',
@@ -428,6 +439,7 @@ const ConfigStrategyModelSpecificPrototype = {
       params: encryptedUpdatedConfigStrategyParams,
       hashed_params: hashedUpdatedConfigStrategyParams
     };
+
     const dbId = await new ConfigStrategyModel()
       .update(data)
       .where({ id: strategy_id })
