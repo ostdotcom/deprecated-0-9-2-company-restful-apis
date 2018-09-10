@@ -210,7 +210,7 @@ const ConfigStrategyModelSpecificPrototype = {
     let groupIdClause = null;
 
     if (group_id) {
-      groupIdClause = ' AND (group_id = ' + groupId + ' OR group_id IS NULL)';
+      groupIdClause = ' (group_id = ' + groupId + ' OR group_id IS NULL)';
     }
 
     let query = oThis.select(['id', 'group_id']).where('kind = ' + strategyKindInt);

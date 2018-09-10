@@ -7,7 +7,7 @@ node executables/ddb_related_data_migrations/create_init_ddb_tables.js
 2. Create a fixed number of shards for all entities (number is in this file)
 
 ``` node.js
-node executables/ddb_related_data_migrations/create_shards.js
+node executables/ddb_related_data_migrations/create_init_shards.js
 ```
 
 3. Manually setup point in time recovery for all tables

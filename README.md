@@ -103,7 +103,7 @@ Run the following commands after creating the database.
   ```
   * Create a fixed number of shards for all entities (number is in this file).
   ```bash
-  node executables/ddb_related_data_migrations/create_shards.js $CONFIG_STRATEGY_PATH
+  node executables/ddb_related_data_migrations/create_init_shards.js $CONFIG_STRATEGY_PATH
   ```
   
 * Move the shared-local-instance.db file from $HOME/openst-setup/logs/ to $HOME/openst-setup/bin/utility-chain-{id}/

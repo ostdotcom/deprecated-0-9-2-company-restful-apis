@@ -70,6 +70,8 @@ seedConfigStrategies.prototype = {
     dynamo_params['OS_DYNAMODB_LOGGING_ENABLED'] = env_list.OS_DYNAMODB_LOGGING_ENABLED;
     dynamo_params['OS_DYNAMODB_TABLE_NAME_PREFIX'] = env_list.OS_DYNAMODB_TABLE_NAME_PREFIX;
     dynamo_params['OS_DAX_ENABLED'] = env_list.OS_DAX_ENABLED;
+    dynamo_params['OS_DYNAMODB_TOKEN_BALANCE_SHARDS_ARRAY'] = env_list.OS_DYNAMODB_TOKEN_BALANCE_SHARDS_ARRAY;
+    dynamo_params['OS_DYNAMODB_TRANSACTION_LOG_SHARDS_ARRAY'] = env_list.OS_DYNAMODB_TRANSACTION_LOG_SHARDS_ARRAY;
 
     const configStrategy = new configStrategyModel();
 

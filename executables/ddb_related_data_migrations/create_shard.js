@@ -3,8 +3,7 @@
 const rootPrefix = '../..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  InstanceComposer = require(rootPrefix + '/instance_composer'),
-  coreConstants = require(rootPrefix + '/config/core_constants');
+  InstanceComposer = require(rootPrefix + '/instance_composer');
 
 require(rootPrefix + '/lib/providers/storage');
 require(rootPrefix + '/app/models/transaction_log');
@@ -12,6 +11,8 @@ require(rootPrefix + '/app/models/transaction_log');
 const args = process.argv,
   config_file_path = args[2],
   configStrategy = require(config_file_path),
+  shard_type = args[3],
+  shard_name = args[4],
   instanceComposer = new InstanceComposer(configStrategy),
   storageProvider = instanceComposer.getStorageProvider(),
   openSTStorage = storageProvider.getInstance(),
@@ -26,9 +27,6 @@ const args = process.argv,
  */
 const CreateShards = function() {
   const oThis = this;
-
-  oThis.tokenBalancesShardCount = 2;
-  oThis.transactionLogShardCount = 2;
 };
 
 CreateShards.prototype = {
@@ -63,9 +61,13 @@ CreateShards.prototype = {
   asyncPerform: async function() {
     const oThis = this;
 
-    await oThis.createTokenBalancesShards();
+    if (shard_type == 'token_balance') {
+      await oThis.createTokenBalancesShards();
+    }
 
-    await oThis.createTransactionLogShards();
+    if (shard_type == 'transaction_log') {
+      await oThis.createTransactionLogShards();
+    }
 
     return Promise.resolve(responseHelper.successWithData({}));
   },
@@ -78,13 +80,11 @@ CreateShards.prototype = {
   createTokenBalancesShards: async function() {
     const oThis = this;
 
-    for (let index = 1; index <= oThis.tokenBalancesShardCount; index++) {
-      logger.info('starting to create tokenBalancesShard : ', index);
-      let shardName = coreConstants.DYNAMODB_TABLE_NAME_PREFIX + 'token_balances_shard_00' + index;
-      let createRsp = await new openSTStorage.model.TokenBalance({}).createAndRegisterShard(shardName);
-      if (createRsp.isFailure()) {
-        return Promise.reject(createRsp);
-      }
+    logger.info('starting to create tokenBalancesShard : ', shard_name);
+    let createRsp = await new openSTStorage.model.TokenBalance({}).createShard(shard_name);
+
+    if (createRsp.isFailure()) {
+      return Promise.reject(createRsp);
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -98,13 +98,10 @@ CreateShards.prototype = {
   createTransactionLogShards: async function() {
     const oThis = this;
 
-    for (let index = 1; index <= oThis.transactionLogShardCount; index++) {
-      logger.info('starting to create transactionLogShard : ', index);
-      let shardName = coreConstants.DYNAMODB_TABLE_NAME_PREFIX + 'transaction_logs_shard_00' + index;
-      let createRsp = await new transactionLogModel({}).createShard(shardName);
-      if (createRsp.isFailure()) {
-        return Promise.reject(createRsp);
-      }
+    logger.info('starting to create transactionLogShard : ', shard_name);
+    let createRsp = await new transactionLogModel({}).createShard(shard_name);
+    if (createRsp.isFailure()) {
+      return Promise.reject(createRsp);
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -124,6 +121,6 @@ object
   });
 
 /*
-*  node executables/ddb_related_data_migrations/create_shards.js ~/config.json
+*  node executables/ddb_related_data_migrations/create_init_shards.js ~/config.json 'token_balance/transaction_log' 'shard_name'
 *
 * */
