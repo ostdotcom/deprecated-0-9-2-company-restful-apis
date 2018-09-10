@@ -216,12 +216,12 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
         let clientIdsMap = {};
 
-        // uniq!
+        // Remove already fetched client ids
         for (let o = 0; o < dataToUpdateForUnknownTx.data.clientIds.length; o++) {
           clientIdsMap[dataToUpdateForUnknownTx.data.clientIds[o]] = 1;
         }
         for (let clientId in oThis.recognizedTxUuidsGroupedByClientId) {
-          clientIdsMap[clientId] = 1;
+          delete clientIdsMap[clientId];
         }
 
         if (Object.keys(clientIdsMap) > 0) {
