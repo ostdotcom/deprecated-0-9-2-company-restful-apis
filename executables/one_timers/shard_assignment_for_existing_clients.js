@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * node ./executables/one_timers/shardManagementMigrationForExistingClients.js configStrategy_file_path
+ * node ./executables/one_timers/shard_assignment_for_existing_clients.js configStrategy_file_path
  * @type {string}
  */
 const rootPrefix = '../..',
@@ -74,11 +74,11 @@ MigrateDataFromDdbShardsToClientConfigStrategies.prototype = {
 
       let transactionLogShardNameRsp = await oThis._fetchDdbDetails(clientId, 'transactionLog');
 
-      if (transactionLogShardNameRsp.data.Count === 0) {
+      if (transactionLogShardNameRsp.isFailure() || transactionLogShardNameRsp.data.data.Count === 0) {
         continue;
       }
 
-      auxilary_data.TRANSACTION_LOG_SHARD_NAME = transactionLogShardNameRsp.data.Items[0].SN.S;
+      auxilary_data.TRANSACTION_LOG_SHARD_NAME = transactionLogShardNameRsp.data.data.Items[0].SN.S;
 
       let clientErc20AddressRsp = await oThis._fetchErc20Address(clientId);
 
@@ -90,15 +90,19 @@ MigrateDataFromDdbShardsToClientConfigStrategies.prototype = {
 
       let tokenBalanceShardNameRsp = await oThis._fetchDdbDetails(clientErc20Address, 'tokenBalance');
 
-      if (tokenBalanceShardNameRsp.data.Count === 0) {
+      if (transactionLogShardNameRsp.isFailure() || tokenBalanceShardNameRsp.data.data.Count === 0) {
         continue;
       }
 
-      auxilary_data.TOKEN_BALANCE_SHARD_NAME = transactionLogShardNameRsp.data.Items[0].SN.S;
+      auxilary_data.TOKEN_BALANCE_SHARD_NAME = transactionLogShardNameRsp.data.data.Items[0].SN.S;
 
       let configStrategyHelperObj = new configStrategyHelper(),
         strategyIdKindRspArray = await configStrategyHelperObj.getStrategyIdForKind(clientId, 'dynamo'),
         finalAuxilaryDataToInsert = JSON.stringify(auxilary_data);
+
+      if (strategyIdKindRspArray.isFailure()) {
+        continue;
+      }
 
       if (strategyIdKindRspArray.data.length > 0) {
         let strategyIdKindToUpdate = strategyIdKindRspArray.data[0],
@@ -152,7 +156,7 @@ MigrateDataFromDdbShardsToClientConfigStrategies.prototype = {
 
     let dDbRsp = await ddbServiceObj.query(queryParams);
 
-    return Promise.resolve(responseHelper.successWithData(dDbRsp.data));
+    return Promise.resolve(responseHelper.successWithData(dDbRsp));
   },
 
   _fetchErc20Address: async function(client_id) {
@@ -173,7 +177,7 @@ MigrateDataFromDdbShardsToClientConfigStrategies.prototype = {
 const usageDemo = function() {
   logger.log(
     'usage:',
-    'node ./executables/one_timers/shardManagementMigrationForExistingClients.js configStrategy_file_path'
+    'node ./executables/one_timers/shard_assignment_for_existing_clients.js configStrategy_file_path'
   );
 };
 

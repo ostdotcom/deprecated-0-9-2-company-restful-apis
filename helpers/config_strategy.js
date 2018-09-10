@@ -65,7 +65,7 @@ ConfigStrategyKlass.prototype = {
       return Promise.reject(strategyIdsFetchRsp);
     }
 
-    let strategyIdsArray = strategyIdsFetchRsp.data.configStrategyIds;
+    let strategyIdsArray = strategyIdsFetchRsp.data[clientId].configStrategyIds;
 
     let strategyKindtoIdMapRsp = await new ConfigStrategyModel()
       .select(['id', 'kind'])
