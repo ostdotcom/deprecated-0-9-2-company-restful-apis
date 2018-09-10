@@ -24,8 +24,6 @@ const args = process.argv,
   openSTStorage = storageProvider.getInstance(),
   ddbServiceObj = openSTStorage.dynamoDBService;
 
-const Limit = 20;
-
 function MigrateDataFromDdbShardsToClientConfigStrategies(params) {
   const oThis = this;
 
