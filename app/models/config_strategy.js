@@ -404,7 +404,7 @@ const ConfigStrategyModelSpecificPrototype = {
       //If configStrategyParams is already present in database then id of that param is sent
       logger.error(
         'There is a config strategy already present with these params. Id present:',
-        id,
+        isParamPresent,
         'Id getting updated:',
         strategy_id
       );
