@@ -207,19 +207,11 @@ const ConfigStrategyModelSpecificPrototype = {
       throw 'Error: Improper kind parameter';
     }
 
-    let groupIdClause = null;
-
-    if (group_id) {
-      groupIdClause = ' (group_id = ' + groupId + ' OR group_id IS NULL)';
-    }
-
     let query = oThis.select(['id', 'group_id']).where('kind = ' + strategyKindInt);
 
-    if (groupIdClause) {
-      query.where(groupIdClause);
+    if (group_id) {
+      query.where([' (group_id = ? OR group_id IS NULL)', group_id]);
     }
-
-    logger.info('====query', query);
 
     let queryResult = await query.fire();
 
