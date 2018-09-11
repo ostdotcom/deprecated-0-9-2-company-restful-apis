@@ -60,7 +60,7 @@ const TransactionLogModel = function(params) {
   oThis.shardName = params.shard_name;
   oThis.ddbServiceObj = openSTStorage.dynamoDBService;
 
-  oThis.dynamoBase = new openSTStorage.model.DynamoBase();
+  oThis.shardHelper = new openSTStorage.model.ShardHelper();
 };
 
 const transactionLogModelSpecificPrototype = {
@@ -74,7 +74,7 @@ const transactionLogModelSpecificPrototype = {
 
     let tableSchema = oThis.getTableSchema(shardName);
 
-    return oThis.dynamoBase.createShard(shardName, tableSchema);
+    return oThis.shardHelper.createShard(shardName, tableSchema);
   },
 
   /**
@@ -156,7 +156,7 @@ const transactionLogModelSpecificPrototype = {
     if (!oThis.shardName) {
       return Promise.reject(
         responseHelper.error({
-          internal_error_identifier: 'l_m_tl_1',
+          internal_error_identifier: 'l_m_tl_bpi_1',
           api_error_identifier: 'invalid_shard_name',
           debug_options: {},
           error_config: errorConfig
@@ -222,7 +222,7 @@ const transactionLogModelSpecificPrototype = {
               );
               return Promise.reject(
                 responseHelper.error({
-                  internal_error_identifier: 'l_m_tl_1',
+                  internal_error_identifier: 'l_m_tl_bpi_2',
                   api_error_identifier: 'ddb_batch_write_failed',
                   debug_options: {
                     unProcessedCount: unprocessedItems[oThis.shardName].length
@@ -266,7 +266,7 @@ const transactionLogModelSpecificPrototype = {
     if (!oThis.shardName) {
       return Promise.reject(
         responseHelper.error({
-          internal_error_identifier: 'l_m_tl_1',
+          internal_error_identifier: 'l_m_tl_bgi_1',
           api_error_identifier: 'invalid_shard_name',
           debug_options: {},
           error_config: errorConfig
@@ -374,7 +374,7 @@ const transactionLogModelSpecificPrototype = {
     if (!oThis.shardName) {
       return Promise.reject(
         responseHelper.error({
-          internal_error_identifier: 'l_m_tl_1',
+          internal_error_identifier: 'l_m_tl_ui_1',
           api_error_identifier: 'invalid_shard_name',
           debug_options: {},
           error_config: errorConfig

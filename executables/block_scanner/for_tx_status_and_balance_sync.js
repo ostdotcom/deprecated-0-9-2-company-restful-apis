@@ -664,6 +664,11 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     return txHashDecodedEventsMap;
   },
 
+  /**
+   * Fetch shard names for given clients
+   *
+   * @returns {promise<result>}
+   */
   fetchShardNamesForClients: async function(clientIds) {
     const oThis = this,
       clientConfigStrategyCacheObj = new configStrategyCacheKlass({ clientIds: clientIds }),
@@ -681,6 +686,11 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     return Promise.resolve(clientIdShardsMap);
   },
 
+  /**
+   * update transaction logs and settle balances in Db
+   *
+   * @returns {promise<result>}
+   */
   updateDataForUnknownTx: async function(unknownTxsData) {
     const oThis = this;
 

@@ -35,14 +35,13 @@ ConfigStrategyKlass.prototype = {
     let strategyIdsArray = cacheData.configStrategyIds,
       configStrategyCacheObj = new configStrategyCacheKlass({ strategyIds: strategyIdsArray }),
       configStrategyFetchRsp = await configStrategyCacheObj.fetch(),
-      dynamoDbShardNames = cacheData.shard_names;
+      finalConfigStrategyFlatHash = cacheData.shard_names;
 
     if (configStrategyFetchRsp.isFailure()) {
       return Promise.reject(configStrategyFetchRsp);
     }
 
-    let finalConfigStrategyFlatHash = {},
-      configStrategyIdToDetailMap = configStrategyFetchRsp.data;
+    let configStrategyIdToDetailMap = configStrategyFetchRsp.data;
 
     for (let configStrategyId in configStrategyIdToDetailMap) {
       let configStrategy = configStrategyIdToDetailMap[configStrategyId];
@@ -52,7 +51,6 @@ ConfigStrategyKlass.prototype = {
       }
     }
 
-    Object.assign(finalConfigStrategyFlatHash, dynamoDbShardNames);
     return Promise.resolve(responseHelper.successWithData(finalConfigStrategyFlatHash));
   },
 

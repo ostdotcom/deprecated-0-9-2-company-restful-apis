@@ -49,7 +49,7 @@ PopulateShardNamesArrayInStrategy.prototype = {
 
     let strategyObj = new ConfigStrategyModel();
 
-    let result = await strategyObj.getStrategyIdsByKindAndGroupId('dynamo');
+    let result = await strategyObj._getStrategyIdsByKindAndGroupId('dynamo');
 
     if (result.isFailure()) {
       return result;

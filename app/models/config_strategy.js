@@ -198,7 +198,7 @@ const ConfigStrategyModelSpecificPrototype = {
    *
    * @param {string}:
    */
-  getStrategyIdsByKindAndGroupId: async function(kind, group_id) {
+  _getStrategyIdsByKindAndGroupId: async function(kind, group_id) {
     const oThis = this,
       strategyKindInt = invertedKinds[kind],
       groupId = group_id;
