@@ -1,19 +1,23 @@
+'use strict';
+
 /**
- * Usage: executables/one_timers/blockchain_metrics_script.js provider_endpoint start_block_number end_block_number
  *
+ * This script is used to get the tx related metrics for blockNumbers specified in arguments.
+ * Usage: node executables/one_timers/blockchain_metrics_script.js 'providerEndpoint' startBlockNumber endBlockNumber
  *
- * @type {Array}
  */
+
 const args = process.argv,
   provider = args[2],
   startBlock = args[3],
   endBlock = args[4];
 
-const Web3 = require('web3');
-let web3 = new Web3(provider);
+const Web3 = require('web3'),
+  web3 = new Web3(provider);
 
-let totalBlockTxCount = 0,
-  totalTxCount = 0;
+let totalTxCount = 0,
+  totalSuccessCount = 0,
+  totalFailureCount = 0;
 
 const GetCount = function() {};
 
@@ -23,11 +27,29 @@ GetCount.prototype = {
       end = parseInt(endBlock);
 
     for (let i = st; i <= end; i++) {
-      let totalBlockTxCount = await web3.eth.getBlockTransactionCount(i);
+      let successCount = 0,
+        failureCount = 0;
 
-      console.log('For Block Number: ' + i + ' has total Tx : ' + JSON.stringify(totalBlockTxCount));
+      let totalBlockTxCount = await web3.eth.getBlockTransactionCount(i),
+        blockData = await web3.eth.getBlock(i, true);
+
+      if (blockData.transactions.length !== 0) {
+        let transactionsArray = blockData.transactions;
+        for (let index in transactionsArray) {
+          let transactionData = transactionsArray[index],
+            transactionReceipt = await web3.eth.getTransactionReceipt(transactionData.hash);
+
+          if (transactionReceipt.status) {
+            successCount++;
+          } else {
+            failureCount++;
+          }
+        }
+      }
 
       totalTxCount = totalTxCount + totalBlockTxCount;
+      totalSuccessCount = totalSuccessCount + successCount;
+      totalFailureCount = totalFailureCount + failureCount;
     }
   }
 };
@@ -35,12 +57,20 @@ GetCount.prototype = {
 let obj = new GetCount();
 
 obj.perform().then(function(r) {
-  let averageTxCount = totalTxCount / (endBlock - startBlock);
+  console.log('Total number of Blocks: ', endBlock - startBlock);
+  console.log('Total transaction count (Cumulative txCount): ', totalTxCount);
+  console.log('Total success count: ', totalSuccessCount);
+  console.log('Total failure count: ', totalFailureCount);
 
-  console.log('\ntotalTxCount for given range (Cumulative txCount): ', totalTxCount);
+  if (endBlock === startBlock) {
+    //To handle case when only 1 block is needed.
+    console.log('Average transaction count for given range', totalTxCount);
+  } else {
+    let averageTxCount = totalTxCount / (endBlock - startBlock);
+    console.log('Average transaction count for given range', averageTxCount);
+  }
 
-  console.log('\naverageTxCount for given range', averageTxCount);
+  console.log('====Script Finished====');
 
-  console.log('====Finished====');
   process.exit(0);
 });
