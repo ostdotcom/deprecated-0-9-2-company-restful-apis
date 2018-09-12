@@ -60,7 +60,11 @@ const TransactionLogModel = function(params) {
   oThis.shardName = params.shard_name;
   oThis.ddbServiceObj = openSTStorage.dynamoDBService;
 
-  oThis.shardHelper = new openSTStorage.model.ShardHelper();
+  oThis.tableSchema = oThis.getTableSchema(oThis.shardName);
+
+  oThis.shardHelper = new openSTStorage.model.ShardHelper({
+    table_schema: oThis.tableSchema
+  });
 };
 
 const transactionLogModelSpecificPrototype = {
@@ -69,12 +73,10 @@ const transactionLogModelSpecificPrototype = {
    *
    * @return {promise<result>}
    */
-  createShard: function(shardName) {
+  createShard: function() {
     const oThis = this;
 
-    let tableSchema = oThis.getTableSchema(shardName);
-
-    return oThis.shardHelper.createShard(shardName, tableSchema);
+    return oThis.shardHelper.createShard(oThis.shardName);
   },
 
   /**

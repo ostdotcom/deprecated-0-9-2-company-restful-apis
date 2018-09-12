@@ -17,6 +17,9 @@ const args = process.argv,
   openSTStorage = storageProvider.getInstance(),
   transactionLogModel = instanceComposer.getTransactionLogModel();
 
+let token_balance_shard_array = [];
+let transaction_log_shard_array = [];
+
 /**
  *
  * @param params
@@ -67,6 +70,11 @@ CreateShards.prototype = {
 
     await oThis.createTransactionLogShards();
 
+    logger.win({
+      token_balance_shard_array: token_balance_shard_array,
+      transaction_log_shard_array: transaction_log_shard_array
+    });
+
     return Promise.resolve(responseHelper.successWithData({}));
   },
 
@@ -80,8 +88,9 @@ CreateShards.prototype = {
 
     for (let index = 1; index <= oThis.tokenBalancesShardCount; index++) {
       logger.info('starting to create tokenBalancesShard : ', index);
-      let shardName = coreConstants.DYNAMODB_TABLE_NAME_PREFIX + 'token_balances_shard_00' + index;
-      let createRsp = await new openSTStorage.model.TokenBalance({}).createShard(shardName);
+      let shardName = coreConstants.DYNAMODB_TABLE_NAME_PREFIX + 'shard_5' + index;
+      token_balance_shard_array.push(shardName);
+      let createRsp = await new openSTStorage.model.TokenBalance({ shard_name: shardName }).createShard();
       if (createRsp.isFailure()) {
         return Promise.reject(createRsp);
       }
@@ -100,8 +109,9 @@ CreateShards.prototype = {
 
     for (let index = 1; index <= oThis.transactionLogShardCount; index++) {
       logger.info('starting to create transactionLogShard : ', index);
-      let shardName = coreConstants.DYNAMODB_TABLE_NAME_PREFIX + 'transaction_logs_shard_00' + index;
-      let createRsp = await new transactionLogModel({}).createShard(shardName);
+      let shardName = coreConstants.DYNAMODB_TABLE_NAME_PREFIX + '_shard_5' + index;
+      transaction_log_shard_array.push(shardName);
+      let createRsp = await new transactionLogModel({ shard_name: shardName }).createShard();
       if (createRsp.isFailure()) {
         return Promise.reject(createRsp);
       }
