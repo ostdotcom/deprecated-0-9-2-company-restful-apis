@@ -98,7 +98,7 @@ CreateShards.prototype = {
     const oThis = this;
 
     logger.info('starting to create tokenBalancesShard : ', shard_name);
-    let createRsp = await new openSTStorage.model.TokenBalance({}).createShard(shard_name);
+    let createRsp = await new openSTStorage.model.TokenBalance({ shard_name: shard_name }).createShard();
 
     if (createRsp.isFailure()) {
       return Promise.reject(createRsp);
@@ -116,7 +116,7 @@ CreateShards.prototype = {
     const oThis = this;
 
     logger.info('starting to create transactionLogShard : ', shard_name);
-    let createRsp = await new transactionLogModel({}).createShard(shard_name);
+    let createRsp = await new transactionLogModel({ shard_name: shard_name }).createShard();
     if (createRsp.isFailure()) {
       return Promise.reject(createRsp);
     }
