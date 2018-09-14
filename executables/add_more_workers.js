@@ -185,7 +185,7 @@ addMoreWorkersKlass.prototype = {
         let r = await generateEthAddress.perform();
 
         if (r.isFailure()) {
-          return Promise.resolve(r);
+          return Promise.reject(r);
         }
 
         const resultData = r.data[r.data.result_type];
@@ -217,7 +217,7 @@ addMoreWorkersKlass.prototype = {
       });
     };
 
-    return await wait();
+    return wait();
   },
 
   setclientIdSymbolMap: async function() {
@@ -333,5 +333,5 @@ addMoreWorkersKlass.prototype = {
   }
 };
 
-const obj = new addMoreWorkersKlass({ startClientId: 1000, endClientId: 1000, newWorkersCnt: 4, clientIds: [] });
-obj.perform().then(logger.debug);
+const obj = new addMoreWorkersKlass({newWorkersCnt: 400, clientIds: [1230] });
+obj.perform().then(function(r) {console.log('DONE! Result:', r); process.exit(0);});
