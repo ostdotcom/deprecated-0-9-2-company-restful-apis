@@ -665,9 +665,9 @@ ExecuteTransactionService.prototype = {
     const rateLimitCrossed = await new ClientTrxRateCacheKlass({
       client_id: oThis.clientId
     }).transactionRateLimitCrossed();
-    if (rateLimitCrossed.isSuccess() && rateLimitCrossed.data.limitCrossed) {
-      topicName = 'slow.transaction.execute';
-    }
+    // if (rateLimitCrossed.isSuccess() && rateLimitCrossed.data.limitCrossed) {
+    //   topicName = 'slow.transaction.execute';
+    // }
 
     let rateLimitCount = rateLimitCrossed.data.rateLimitCount;
 
