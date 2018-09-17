@@ -14,8 +14,8 @@ node executables/ddb_related_data_migrations/create_init_shards.js
 node executables/ddb_related_data_migrations/assign_dynamoDB_shards.js
 ```
 
-[test link]('create_init_shards.js')
-[test link2]('../../executables/es_related/benchmark_select_queries.js')
+[test link](create_init_shards.js)
+[test link2](../../executables/es_related/benchmark_select_queries.js)
 
 5. Migrate token balances & transaction_logs data (for type = 1 and those who made it to a block) to DDB table (start and end block number to be passed as params in the below command)
 
