@@ -3,9 +3,17 @@
 /**
  * This executable / script is intermediate communicator between value chain and utility chain used for the registering branded token.
  *
- * <br>It listens to the ProposedBrandedToken event emitted by proposeBrandedToken method of openSTUtility contract.
+ * It listens to the ProposedBrandedToken event emitted by proposeBrandedToken method of openSTUtility contract.
  * On getting this event, it calls registerBrandedToken method of utilityRegistrar contract followed
  * by calling registerUtilityToken method of valueRegistrar contract.
+ *
+ * Usage: node executables/inter_comm/register_branded_token.js filePath configStrategyFilePath
+ *
+ * Command Line Parameters Description:
+ * filePath: file path for last ProcessedBlock and last Processed Transaction Index.
+ * configStrategyFilePath: path to the file which is storing the config strategy info.
+ *
+ * Example: node executables/inter_comm/register_branded_token.js $HOME/openst-setup/logs/register_branded_token.data ~/config.json
  *
  * @module executables/inter_comm/register_branded_token
  */
@@ -24,6 +32,8 @@ const usageDemo = function() {
     'usage:',
     'node ./executables/inter_comm/register_branded_token.js blockNoFilePath configStrategyFilePath'
   );
+  logger.log('* blockNoFilePath is the file path for last ProcessedBlock and last Processed Transaction Index.');
+  logger.log('* configStrategyFilePath is the path to the file which is storing the config strategy info.');
 };
 
 const args = process.argv,

@@ -1,13 +1,25 @@
 'use strict';
-
 /**
  * This executable / script is intermediate communicator between value chain and utility chain used for
  * calling process staking if NOT called before process minting is called.
  *
- * <br>It listens to the ProcessedMint event emitted by processMinting method of openSTUtility contract.
+ * It listens to the ProcessedMint event emitted by processMinting method of openSTUtility contract.
  * On getting this event, it calls processStaking method of openSTValue contract if not called already.
  *
+ * Usage: node executables/inter_comm/stake_hunter.js filePath configStrategyFilePath
+ *
+ * Command Line Parameters Description:
+ * filePath: file path for last ProcessedBlock and last Processed Transaction Index
+ * configStrategyFilePath: path to the file which is storing the config strategy info.
+ *
+ * Example: node executables/inter_comm/stake_hunter.js $HOME/openst-setup/logs/stake_hunter.data ~/config.json
+ *
  * @module executables/inter_comm/stake_hunter
+ */
+/**
+ *
+ *
+ * @module
  */
 
 const rootPrefix = '../..';

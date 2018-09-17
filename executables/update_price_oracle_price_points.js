@@ -1,7 +1,14 @@
 'use strict';
-
 /**
- * Update price oracle price points
+ * This script will update price oracle price points using ost-price-oracle npm package.
+ * This fetches OST Current price in given currency from coin market cap and sets it in price oracle.
+ *
+ * Usage: node executables/update_price_oracle_price_points.js configStrategyFilePath
+ *
+ * Command Line Parameters Description:
+ * configStrategyFilePath: config strategy file to fetch OST_PRICE_ORACLES
+ *
+ * Example: node executables/update_price_oracle_price_points.js ~/config.js
  *
  * @module executables/update_price_oracle_price_points
  */
@@ -18,8 +25,29 @@ const conversionRateConstants = require(rootPrefix + '/lib/global_constant/conve
 require(rootPrefix + '/app/services/conversion_rates/update_ost_fiat_rates_in_price_oracle');
 
 const args = process.argv,
-  config_file_path = args[2],
-  configStrategy = require(config_file_path);
+  configStrategyFilePath = args[2];
+
+let configStrategy = {};
+
+// Usage demo.
+const usageDemo = function() {
+  logger.log('usage:', 'node executables/update_price_oracle_price_points.js config_file_path');
+  logger.log('* config Strategy FilePath is the path to the file which is storing the config strategy info.');
+};
+
+// Validate and sanitize the command line arguments.
+const validateAndSanitize = function() {
+  if (!configStrategyFilePath) {
+    logger.error('Config strategy file path is NOT passed in the arguments.');
+    usageDemo();
+    process.exit(1);
+  }
+
+  configStrategy = require(configStrategyFilePath);
+};
+
+// Validate and sanitize the input params.
+validateAndSanitize();
 
 /**
  * Update price oracle price points constructor
@@ -40,7 +68,7 @@ UpdatePriceOraclePricePoints.prototype = {
     }
 
     for (var baseCurrency in configStrategy.OST_UTILITY_PRICE_ORACLES) {
-      console.log('====baseCurrency', configStrategy.OST_UTILITY_PRICE_ORACLES[baseCurrency]);
+      logger.log('====baseCurrency', configStrategy.OST_UTILITY_PRICE_ORACLES[baseCurrency]);
       if (baseCurrency == conversionRateConstants.ost_currency()) {
         var quoteCurrencies = configStrategy.OST_UTILITY_PRICE_ORACLES[baseCurrency];
         for (var quoteCurrency in quoteCurrencies) {

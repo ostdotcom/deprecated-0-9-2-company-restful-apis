@@ -1,11 +1,11 @@
 'use strict';
 
 /**
+ * This script will execute transactions by subscribing to RMQ events.
  *
- * Start Airdrop for a client token by subscribing to RMQ events.<br><br>
+ * Usage: node executables/rmq_subscribers/execute_transaction_temp.js
  *
- * @module executables/rmq_subscribers/start_airdrop
- *
+ * @module executables/rmq_subscribers/execute_transaction_temp
  */
 const rootPrefix = '../..';
 

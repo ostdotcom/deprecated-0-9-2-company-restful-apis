@@ -3,13 +3,11 @@
 /**
  * Refill ST PRIME to required client addresses
  *
- * <br><br>Reserve funds following addresses with ST Prime:
- * <ol>
- *   <li>Airdrop fund manager address</li>
- *   <li>Worker address</li>
- * </ol>
+ * Reserve funds following addresses with ST Prime:
+ * 1. Airdrop fund manager address
+ * 2. Worker address
  *
- * <br><br>Here we go in batches for client ids and for each client id, the respective reserve funds the respective
+ * Here we go in batches for client ids and for each client id, the respective reserve funds the respective
  * client addresses with ST Prime.
  *
  * @module executables/fund_addresses/by_reserve/st_prime

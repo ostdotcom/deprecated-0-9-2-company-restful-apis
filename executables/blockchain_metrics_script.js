@@ -3,7 +3,9 @@
 /**
  *
  * This script is used to get the tx related metrics for blockNumbers specified in arguments.
+ *
  * Usage: node executables/one_timers/blockchain_metrics_script.js 'providerEndpoint' startBlockNumber endBlockNumber
+ * Example: node executables/one_timers/blockchain_metrics_script.js 'ws://127.0.0.1:19547' 1000 1500
  *
  */
 

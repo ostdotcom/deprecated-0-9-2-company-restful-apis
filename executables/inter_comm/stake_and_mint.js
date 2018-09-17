@@ -1,10 +1,17 @@
 'use strict';
-
 /**
  * This executable / script is intermediate communicator between value chain and utility chain used for the stake and mint.
  *
- * <br>It listens to the StakingIntentDeclared event emitted by stake method of openSTValue contract.
+ * It listens to the StakingIntentDeclared event emitted by stake method of openSTValue contract.
  * On getting this event, it calls confirmStakingIntent method of utilityRegistrar contract.
+ *
+ * Usage: node executables/inter_comm/stake_and_mint.js filePath configStrategyFilePath
+ *
+ * Command Line Parameters Description:
+ * filePath: file path for last ProcessedBlock and last Processed Transaction Index
+ * configStrategyFilePath: path to the file which is storing the config strategy info.
+ *
+ * Example: node executables/inter_comm/stake_and_mint.js $HOME/openst-setup/logs/stake_and_mint.data ~/config.json
  *
  * @module executables/inter_comm/stake_and_mint
  */
@@ -21,6 +28,8 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
 
 const usageDemo = function() {
   logger.log('usage:', 'node ./executables/inter_comm/stake_and_mint.js blockNoFilePath configStrategyFilePath');
+  logger.log('* blockNoFilePath is the file path for last ProcessedBlock and last Processed Transaction Index.');
+  logger.log('* configStrategyFilePath is the path to the file which is storing the config strategy info.');
 };
 
 const args = process.argv,

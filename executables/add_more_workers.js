@@ -1,5 +1,17 @@
 'use strict';
 
+/**
+ * This script will add workers for specified number of clients.
+ * It will add 4 new workers by default.
+ * This can be done in 2 ways -
+ * 1. addition of workers can be done by specifying first and last client id (add workers for each client in this range).
+ * 2. specify clientIds array to add workers for specific clients
+ *
+ * Usage: node executables/add_more_workers.js
+ *
+ * @module executables/add_more_workers
+ */
+
 const rootPrefix = '..';
 
 //Always Include Module overrides First
@@ -21,6 +33,19 @@ const ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/clie
 
 require(rootPrefix + '/app/services/address/generate');
 require(rootPrefix + '/lib/providers/payments');
+
+/**
+ * Add new workers constructor
+ *
+ * @param {object} params -
+ * @param {number} params.startClientId - first client id for sequential addition of workers
+ * @param {number} params.endClientId - last client id for sequential addition of workers
+ * @param {array} [params.clientIds] - array of clientIds for whom workers to be added
+ * @param {number} params.newWorkersCnt - number of workers to be added.
+ *
+ * @constructor
+ *
+ */
 
 const addMoreWorkersKlass = function(params) {
   const oThis = this;

@@ -1,14 +1,12 @@
 'use strict';
 
 /*
-*
-*
-* Usage :  node executables/one_timers/insert_managed_address_salt_id.js
-*
 * This script will insert a new salt id in managed_addresses_salt.
 *
+* Usage : node executables/one_timers/insert_managed_address_salt_id.js
 *
-* */
+*
+*/
 
 const rootPrefix = '../..',
   kmsWrapperKlass = require(rootPrefix + '/lib/authentication/kms_wrapper'),

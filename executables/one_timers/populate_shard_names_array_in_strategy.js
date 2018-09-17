@@ -103,7 +103,7 @@ PopulateShardNamesArrayInStrategy.prototype = {
       let dDbRsp = await ddbServiceObj.scan(scanParams);
 
       if (dDbRsp.isFailure()) {
-        console.log('==== NOT PROCESSING SHARDS FOR STRATEGY ID: ', strategyId, 'due to error');
+        logger.log('==== NOT PROCESSING SHARDS FOR STRATEGY ID: ', strategyId, 'due to error');
         break;
       }
 
@@ -153,10 +153,10 @@ const object = new PopulateShardNamesArrayInStrategy();
 object
   .perform()
   .then(function(a) {
-    console.log(JSON.stringify(a.toHash()));
+    logger.log(JSON.stringify(a.toHash()));
     process.exit(0);
   })
   .catch(function(a) {
-    console.error(JSON.stringify(a));
+    logger.error(JSON.stringify(a));
     process.exit(1);
   });

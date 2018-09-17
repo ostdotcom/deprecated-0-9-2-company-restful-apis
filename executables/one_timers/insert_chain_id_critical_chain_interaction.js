@@ -1,13 +1,13 @@
+'use strict';
+
 /**
- *
- *
  * This script will enter chain ids in critical_chain_interaction_logs table.
- * Usage: node executables/one_timers/insert_chain_id_critical_chain_interaction.js
+ * Script uses VALUE and UTILITY chain ids from chain interaction constants from config
  *
+ * Usage: node executables/one_timers/insert_chain_id_critical_chain_interaction.jsExample:
  *
  */
 
-'use strict';
 const rootPrefix = '../..',
   coreConstants = require(rootPrefix + '/config/core_constants'),
   chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants'),

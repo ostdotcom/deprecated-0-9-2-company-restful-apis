@@ -4,10 +4,10 @@
  * This is used to create Token Balances Shard and Transaction Log Shard using openSTStorage Provider.
  * Default prefix for shard names are 'token_balances_shard_00' and 'transaction_logs_shard_00'.
  *
- * Usage: node executables/ddb_related_data_migrations/create_init_shards.js configStrategyFilePath
- * Example: node executables/ddb_related_data_migrations/create_init_shards.js ~/config.json
+ * Usage: node executables/one_timers/ddb_related_data_migrations/create_init_shards.js configStrategyFilePath
+ * Example: node executables/one_timers/ddb_related_data_migrations/create_init_shards.js ~/config.json
  *
- * @module executables/ddb_related_data_migrations/create_init_shards
+ * @module executables/one_timers/ddb_related_data_migrations/create_init_shards.js
  */
 
 const rootPrefix = '../..',
@@ -157,10 +157,10 @@ const object = new CreateShards();
 object
   .perform()
   .then(function(a) {
-    console.log(a.toHash());
+    logger.log(a.toHash());
     process.exit(1);
   })
   .catch(function(a) {
-    console.log(a);
+    logger.log(a);
     process.exit(1);
   });

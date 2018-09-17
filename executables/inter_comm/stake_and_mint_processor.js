@@ -1,12 +1,19 @@
 'use strict';
-
 /**
  * This service is intermediate communicator between value chain and utility chain used for process staking and process minting.
  *
- * <br>It listens to the StakingIntentConfirmed event emitted by confirmStakingIntent method of openSTUtility contract.
+ * It listens to the StakingIntentConfirmed event emitted by confirmStakingIntent method of openSTUtility contract.
  * On getting this event, it calls processStaking method of openStValue contract
  * followed by calling processMinting method of openStUtility contract
  * followed by calling claim of branded token contract / simple token prime contract.
+ *
+ * Usage: node executables/inter_comm/stake_and_mint_processor.js filePath configStrategyFilePath
+ *
+ * Command Line Parameters Description:
+ * filePath: file path for last ProcessedBlock and last Processed Transaction Index
+ * configStrategyFilePath: path to the file which is storing the config strategy info.
+ *
+ * Example: node executables/inter_comm/stake_and_mint_processor.js $HOME/openst-setup/logs/stake_and_mint_processor.data ~/config.json
  *
  * @module executables/inter_comm/stake_and_mint_processor
  */
@@ -26,6 +33,8 @@ const usageDemo = function() {
     'usage:',
     'node ./executables/inter_comm/stake_and_mint_processor.js blockNoFilePath configStrategyFilePath'
   );
+  logger.log('* blockNoFilePath is the file path for last ProcessedBlock and last Processed Transaction Index.');
+  logger.log('* configStrategyFilePath is the path to the file which is storing the config strategy info.');
 };
 
 const args = process.argv,

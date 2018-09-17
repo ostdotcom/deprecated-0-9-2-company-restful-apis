@@ -1,11 +1,10 @@
 'use strict';
-
 /**
+ * This is script to get error emails from RabbitMQ. Aggregate them and send emails.
  *
- * Get Error Emails from RabbitMQ. Aggregate them and send emails .<br><br>
+ * Usage: node executables/rmq_subscribers/send_error_emails.js
  *
  * @module executables/rmq_subscribers/send_error_emails
- *
  */
 
 // Include Process Locker File

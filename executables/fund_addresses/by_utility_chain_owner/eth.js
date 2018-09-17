@@ -1,22 +1,24 @@
 'use strict';
-
 /**
  * Refill ETH to required service addresses
+ * If utility chain owner's ETH goes down to a certain number, emails will be sent and manually ETH will be transferred by funder address.
  *
- * <br><br>Utility chain owner refills following addresses with ETH:
- * <ol>
- *   <li> Staker</li>
- *   <li> Redeemer</li>
- *   <li> Value Registrar</li>
- *   <li> Value Deployer</li>
- *   <li> Value Ops</li>
- * </ol>
+ * Utility chain owner refills following addresses with ETH:
+ *   1. Staker
+ *   2. Redeemer
+ *   3. Utility Registrar
+ *   4. Utility Deployer
+ *   5. Utility Ops
  *
- * <br><br>If utility chain owner's ETH goes down to a certain number, emails will be sent and
- * manually ETH will be transferred by funder address.
+ * Usage: node executables/fund_addresses/by_utility_chain_owner/eth.js configStrategyFilePath isChainSetUp
+ *
+ * Command Line Parameters Description:
+ * configStrategyFilePath: path to the file which is storing the config strategy info.
+ * isChainSetUp: path to the file which is storing the benchmarking info.
  *
  * @module executables/fund_addresses/by_utility_chain_owner/eth
  */
+
 const rootPrefix = '../../..';
 
 //Always Include Module overrides First
@@ -32,10 +34,40 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
 const args = process.argv,
-  config_file_path = args[2],
-  isChainSetUp = args[3],
-  configStrategy = require(config_file_path),
-  instanceComposer = new InstanceComposer(configStrategy),
+  configStrategyFilePath = args[2],
+  isChainSetUp = args[3];
+
+let configStrategy = {};
+
+// Usage demo.
+const usageDemo = function() {
+  logger.log(
+    'usage:',
+    'node ./executables/fund_addresses/by_utility_chain_owner/eth.js configStrategyFilePath isChainSetUp'
+  );
+  logger.log('* configStrategyFilePath is the path to the file which is storing the config strategy info.');
+};
+
+// Validate and sanitize the command line arguments.
+const validateAndSanitize = function() {
+  if (!isChainSetUp) {
+    logger.error('isChainSetUp parameter is NOT passed in the arguments.');
+    usageDemo();
+    process.exit(1);
+  }
+
+  if (!configStrategyFilePath) {
+    logger.error('Config strategy file path is NOT passed in the arguments.');
+    usageDemo();
+    process.exit(1);
+  }
+
+  configStrategy = require(configStrategyFilePath);
+};
+
+// Validate and sanitize the input params.
+validateAndSanitize();
+const instanceComposer = new InstanceComposer(configStrategy),
   openStPlatform = instanceComposer.getPlatformProvider().getInstance();
 
 /**

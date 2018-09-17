@@ -1,6 +1,8 @@
 'use strict';
 
 /**
+ * This script will assign shard name for existing clients.
+ *
  * node ./executables/one_timers/shard_assignment_for_existing_clients.js configStrategy_file_path
  * @type {string}
  */

@@ -2,8 +2,9 @@
 
 /**
  * This file is used to populate chain_id in table - client_branded_tokens for existing clients
+ * For multi-chain system, combination of client_id and chain_id will be unique for each chain.
  *
- * Usage:  node executables/one_timers/populate_chain_id_in_client_branded_tokens.js
+ * Usage: node executables/one_timers/populate_chain_id_in_client_branded_tokens.js
  *
  *
  **/

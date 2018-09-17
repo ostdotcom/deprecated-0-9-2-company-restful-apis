@@ -5,7 +5,6 @@
  *
  * Usage:  node executables/one_timers/old_clients_seed.js
  *
- *
  **/
 const rootPrefix = '../..',
   clientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),

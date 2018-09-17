@@ -1,11 +1,17 @@
 'use strict';
 
 /**
+ * This script will execute transactions by subscribing to RMQ events.
  *
- * Execute transactions by subscribing to RMQ events.<br><br>
+ * Usage: node executables/rmq_subscribers/execute_transaction.js processId [slowProcessor]
+ *
+ * Command Line Parameters Description:
+ * processId: process id to start the process
+ * [slowProcessor]: another queue for slower transactions
+ *
+ * Example: node executables/rmq_subscribers/execute_transaction.js 1
  *
  * @module executables/rmq_subscribers/execute_transaction
- *
  */
 
 const rootPrefix = '../..';
@@ -20,7 +26,7 @@ const args = process.argv,
   processId = args[2],
   slowProcessor = args[3];
 
-var unAckCount = 0;
+let unAckCount = 0;
 
 ProcessLocker.canStartProcess({
   process_title: 'executables_rmq_subscribers_execute_transaction' + processId + '-' + (slowProcessor || '')

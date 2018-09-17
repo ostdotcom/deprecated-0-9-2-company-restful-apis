@@ -1,5 +1,11 @@
 'use strict';
-
+/**
+ * This is script to log all RMQ events in a table.
+ *
+ * Usage: node executables/rmq_subscribers/log_all_events.js
+ *
+ * @module executables/rmq_subscribers/factory
+ */
 /**
  *
  * Log all RMQ events in a table.<br><br>

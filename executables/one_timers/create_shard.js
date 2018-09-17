@@ -1,13 +1,14 @@
+'use strict';
+
 /*
-*  Script for creating new shard
+*  Script for creating new shard using OpenSTStorage provider
 *
-*  Pre-checks - config provided in the input should contain key, OS_DYNAMODB_TRANSACTION_LOG_SHARDS_ARRAY with data
+*  Pre-checks - config file provided in the input should contain key, OS_DYNAMODB_TRANSACTION_LOG_SHARDS_ARRAY with data
 *
-*  node executables/ddb_related_data_migrations/create_init_shards.js ~/config.json 'token_balance/transaction_log' 'shard_name'
+*  Usage: node executables/one_timers/create_shard.js configStrategyFilePath 'shard_type' 'shard_name'
+*  Example: node executables/one_timers/create_shard.js ~/config.json 'token_balance'|'transaction_log' transaction_logs_shard_001
 *
 * */
-
-'use strict';
 
 const rootPrefix = '../..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
@@ -19,17 +20,37 @@ require(rootPrefix + '/app/models/transaction_log');
 
 const args = process.argv,
   config_file_path = args[2],
-  configStrategy = require(config_file_path),
   shard_type = args[3],
   shard_name = args[4],
-  instanceComposer = new InstanceComposer(configStrategy),
-  storageProvider = instanceComposer.getStorageProvider(),
-  openSTStorage = storageProvider.getInstance(),
-  transactionLogModel = instanceComposer.getTransactionLogModel(),
-  ddbServiceObj = openSTStorage.dynamoDBService,
   ClientConfigStrategyModel = require(rootPrefix + '/app/models/client_config_strategies'),
   ConfigStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
   ConfigStrategyCacheKlass = require(rootPrefix + '/lib/shared_cache_multi_management/config_strategy');
+
+let configStrategy = {};
+
+const usageDemo = function() {
+  logger.log('usage:', 'node executables/one_timers/create_shard.js configStrategyFilePath');
+  logger.log('* configStrategyFilePath is the path to the file which is storing the config strategy info.');
+};
+
+// Validate and sanitize the command line arguments.
+const validateAndSanitize = function() {
+  if (!configStrategy) {
+    logger.error('Config strategy file path is NOT passed in the arguments.');
+    usageDemo();
+    process.exit(1);
+  }
+  configStrategy = require(config_file_path);
+};
+
+// Validate and sanitize the input params.
+validateAndSanitize();
+
+const instanceComposer = new InstanceComposer(configStrategy),
+  storageProvider = instanceComposer.getStorageProvider(),
+  openSTStorage = storageProvider.getInstance(),
+  transactionLogModel = instanceComposer.getTransactionLogModel(),
+  ddbServiceObj = openSTStorage.dynamoDBService;
 
 /**
  *
@@ -160,7 +181,7 @@ CreateShards.prototype = {
   },
 
   /**
-   * c
+   * Update Strategy id
    *
    * @returns {promise}
    */

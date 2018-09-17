@@ -3,17 +3,20 @@
 /**
  * Refill ST PRIME to required service addresses
  *
- * <br><br>Utility chain owner refills following addresses with ST PRIME:
- * <ol>
- *   <li> Staker</li>
- *   <li> Redeemer</li>
- *   <li> Utility Registrar</li>
- *   <li> Utility Deployer</li>
- *   <li> Utility Ops</li>
- * </ol>
+ * Utility chain owner refills following addresses with ST PRIME:
+ *   1. Staker
+ *   2. Redeemer
+ *   3. Utility Registrar
+ *   4. Utility Deployer
+ *   5. Utility Ops
  *
- * <br><br>If utility chain owner's ST PRIME goes down to a certain number, emails will be sent and
+ * If utility chain owner's ST PRIME goes down to a certain number, emails will be sent and
  * manually ST PRIME will be transferred by funder address.
+ *
+ * Usage: node executables/fund_addresses/by_utility_chain_owner/st_prime.js configStrategyFilePath
+ *
+ * Command Line Parameters Description:
+ * configStrategyFilePath: path to the file which is storing the config strategy info.
  *
  * @module executables/fund_addresses/by_utility_chain_owner/st_prime
  */
@@ -33,9 +36,39 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
 const args = process.argv,
-  config_file_path = args[2],
-  configStrategy = require(config_file_path),
-  instanceComposer = new InstanceComposer(configStrategy),
+  configStrategyFilePath = args[2];
+
+let configStrategy = {};
+
+// Usage demo.
+const usageDemo = function() {
+  logger.log(
+    'usage:',
+    'node ./executables/block_scanner/for_tx_status_and_balance_sync.js processLockId datafilePath configStrategyFilePath [benchmarkFilePath]'
+  );
+  logger.log(
+    '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
+  );
+  logger.log('* datafilePath is the path to the file which is storing the last block scanned info.');
+  logger.log('* configStrategyFilePath is the path to the file which is storing the config strategy info.');
+  logger.log('* benchmarkFilePath is the path to the file which is storing the benchmarking info.');
+};
+
+// Validate and sanitize the command line arguments.
+const validateAndSanitize = function() {
+  if (!configStrategyFilePath) {
+    logger.error('Config strategy file path is NOT passed in the arguments.');
+    usageDemo();
+    process.exit(1);
+  }
+
+  configStrategy = require(configStrategyFilePath);
+};
+
+// Validate and sanitize the input params.
+validateAndSanitize();
+
+const instanceComposer = new InstanceComposer(configStrategy),
   openStPlatform = instanceComposer.getPlatformProvider().getInstance();
 
 /**

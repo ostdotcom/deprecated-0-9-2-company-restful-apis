@@ -1,7 +1,17 @@
 'use strict';
 
 /**
- * This is the base class for block scanners.
+ * This block scanner has 2 main responsibilities:
+ * 1. Marking the transaction status as mined.
+ * 2. Settle the balance credit to the receiver and also settle the delta of pessimistic debit amount and actual debited amount from the sender.
+ *
+ * Usage: node executables/block_scanner/for_tx_status_and_balance_sync.js processLockId datafilePath configStrategyFilePath [benchmarkFilePath]
+ *
+ * Command Line Parameters Description:
+ * processLockId: processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.
+ * datafilePath: path to the file which is storing the last block scanned info.
+ * configStrategyFilePath: path to the file which is storing the config strategy info.
+ * [benchmarkFilePath]: path to the file which is storing the benchmarking info.
  *
  * @module executables/block_scanner/for_tx_status_and_balance_sync
  */
@@ -75,15 +85,13 @@ ProcessLocker.canStartProcess({ process_title: 'executables_block_scanner_execut
 
 const fs = require('fs'),
   abiDecoder = require('abi-decoder'),
+  BigNumber = require('bignumber.js'),
+  uuid = require('uuid'),
   ic = new InstanceComposer(configStrategy),
   platformProvider = ic.getPlatformProvider(),
-  openStPlatform = platformProvider.getInstance(),
-  paymentsProvider = ic.getPaymentsProvider(),
-  openStPayments = paymentsProvider.getInstance(),
   storageProvider = ic.getStorageProvider(),
-  openSTStorage = storageProvider.getInstance(),
-  BigNumber = require('bignumber.js'),
-  uuid = require('uuid');
+  openStPlatform = platformProvider.getInstance(),
+  openSTStorage = storageProvider.getInstance();
 
 const responseHelper = require(rootPrefix + '/lib/formatter/response'),
   coreConstants = require(rootPrefix + '/config/core_constants'),

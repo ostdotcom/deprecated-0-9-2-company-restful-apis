@@ -1,12 +1,12 @@
 'use strict';
-
 /**
+ * This is script to start airdrop for a client token by subscribing to RMQ events.
  *
- * Start Airdrop for a client token by subscribing to RMQ events.<br><br>
+ * Usage: node executables/rmq_subscribers/start_airdrop.js
  *
  * @module executables/rmq_subscribers/start_airdrop
- *
  */
+
 const rootPrefix = '../..';
 
 //Always Include Module overrides First

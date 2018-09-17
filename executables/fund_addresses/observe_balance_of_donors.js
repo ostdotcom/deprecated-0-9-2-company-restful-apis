@@ -1,7 +1,11 @@
 'use strict';
-
 /**
  * Observe balances of Donors
+ *
+ * Usage: node executables/fund_addresses/observe_balance_of_donors.js configStrategyFilePath
+ *
+ * Command Line Parameters Description:
+ * configStrategyFilePath: path to the file which is storing the config strategy info.
  *
  * @module executables/fund_addresses/observe_balance_of_donors
  */
@@ -13,9 +17,29 @@ const rootPrefix = '../..',
 require(rootPrefix + '/lib/providers/platform');
 
 const args = process.argv,
-  config_file_path = args[2],
-  configStrategy = require(config_file_path),
-  instanceComposer = new InstanceComposer(configStrategy),
+  configStrategyFilePath = args[2];
+
+let configStrategy = {};
+
+// Usage demo.
+const usageDemo = function() {
+  logger.log('usage:', 'node executables/fund_addresses/observe_balance_of_donors.js configStrategyFilePath');
+  logger.log('* configStrategyFilePath is the path to the file which is storing the config strategy info.');
+};
+
+// Validate and sanitize the command line arguments.
+const validateAndSanitize = function() {
+  if (!configStrategyFilePath) {
+    logger.error('Config strategy file path is NOT passed in the arguments.');
+    usageDemo();
+    process.exit(1);
+  }
+  configStrategy = require(configStrategyFilePath);
+};
+
+// Validate and sanitize the input params.
+validateAndSanitize();
+const instanceComposer = new InstanceComposer(configStrategy),
   openStPlatform = instanceComposer.getPlatformProvider().getInstance();
 
 /**

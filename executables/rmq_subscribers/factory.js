@@ -1,10 +1,17 @@
 'use strict';
-
 /**
- * Factory for all rabbitmq subscribers.<br><br>
+ * This is factory for all RabbitMQ subscribers.
+ *
+ * Usage: node executables/rmq_subscribers/factory.js processLockId queueSuffix topicsToSubscribe
+ *
+ * Command Line Parameters Description:
+ * processLockId: processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.
+ * queueSuffix: queueSuffix is the suffix to be used for getting the queue name.
+ * topicsToSubscribe: topicsToSubscribe is a JSON stringified version of topics to be subscribed for this RMQ subscriber.
+ *
+ * Example: node executables/rmq_subscribers/factory.js 1 'rmq_subscribers_factory_1' '["on_boarding.#","airdrop_allocate_tokens"]'
  *
  * @module executables/rmq_subscribers/factory
- *
  */
 const rootPrefix = '../..';
 

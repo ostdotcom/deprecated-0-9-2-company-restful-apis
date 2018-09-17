@@ -3,19 +3,63 @@
 /*
 * This file is used to populate config_strategies table and chain_geth_providers table.
 *
-* Usage:  node executables/one_timers/config_strategy_seed.js managed_address_salt_id group_id [config file path]
+* Usage: node executables/one_timers/config_strategy_seed.js managed_address_salt_id group_id [configFilePath]
 *
-* Pass managed_address_salt_id, and group_id as arguments when running this script.
+* Command Line Parameters Description:
+* managed_address_salt_id:
+* group_id: Group ID is used for VPC cluster.
+* configFilePath: Config strategy file path is necessary for seeding strategy in table.
 *
+* Note: config file should contain all service kinds present in this sheet: https://docs.google.com/spreadsheets/d/1DL55AZjgvaRM3S9JDVFJrfEA66aZBBab_PtJimzMzVo/edit#gid=0
+*
+* Example: node executables/one_timers/config_strategy_seed.js 60010 1 ~/config.json
 *
 * */
-const group_id = process.argv[3];
-const env_list = process.argv[4] ? require(process.argv[4]) : process.env;
 
 const rootPrefix = '../..',
   configStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
   ChainGethProviderModel = require(rootPrefix + '/app/models/chain_geth_providers'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+
+const group_id = process.argv[3];
+const managed_address_salt_id = process.argv[2];
+let env_list;
+
+const usageDemo = function() {
+  logger.log(
+    'usage:',
+    'node executables/one_timers/config_strategy_seed.js managed_address_salt_id group_id [configStrategyFilePath]'
+  );
+  logger.log(
+    '* Managed address salt ID can be found in Managed address Salts table. It is used to encrypt the config strategies.'
+  );
+  logegr.log(
+    '* If managed address salt id is not present, use this script to insert new salt id: executables/one_timers/insert_managed_address_salt_id.js'
+  );
+};
+
+// Validate and sanitize the command line arguments.
+const validateAndSanitize = function() {
+  if (!managed_address_salt_id) {
+    logger.error('Managed address salt ID is NOT passed in the arguments.');
+    usageDemo();
+    process.exit(1);
+  }
+  if (!group_id) {
+    logger.error('Group ID is NOT passed in the arguments.');
+    usageDemo();
+    process.exit(1);
+  }
+  if (!env_list) {
+    logger.error('Config strategy file path is NOT passed in the arguments.');
+    usageDemo();
+    process.exit(1);
+  }
+  env_list = process.argv[4] ? require(process.argv[4]) : process.env;
+};
+
+// Validate and sanitize the input params.
+validateAndSanitize();
 
 const seedConfigStrategies = function() {};
 
@@ -45,7 +89,7 @@ seedConfigStrategies.prototype = {
     await oThis.seed_value_constants_params();
     await oThis.seed_value_geth_params();
 
-    logger.log('Success');
+    logger.log('Successfully seeded all config parameters!! ');
     process.exit(0);
   },
 
