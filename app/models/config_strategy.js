@@ -565,12 +565,35 @@ const ConfigStrategyModelSpecificPrototype = {
 
     for (let index in kindParamsArrayNotToEncrypt) {
       let paramsKey = kindParamsArrayNotToEncrypt[index];
+
+      //To check if all the required keys are present in the params passed.
+      if (configStrategyParams[paramsKey] === undefined) {
+        logger.error(`[${paramsKey}] is not present in the hash passed for ${strategyKindName} kind`);
+        return Promise.reject(
+          responseHelper.error({
+            internal_error_identifier: 'a_mo_cs_c_9',
+            api_error_identifier: 'something_went_wrong',
+            debug_options: {}
+          })
+        );
+      }
       hashNotToEncrypt[paramsKey] = configStrategyParams[paramsKey];
     }
 
     for (let index in kindParamsArrayToEncrypt) {
       let paramsKey = kindParamsArrayToEncrypt[index];
 
+      //To check if all the required keys are present in the params passed.
+      if (configStrategyParams[paramsKey] === undefined) {
+        logger.error(`[${paramsKey}] is not present in the hash passed for ${strategyKindName} kind`);
+        return Promise.reject(
+          responseHelper.error({
+            internal_error_identifier: 'a_mo_cs_c_10',
+            api_error_identifier: 'something_went_wrong',
+            debug_options: {}
+          })
+        );
+      }
       hashToEncrypt[paramsKey] = configStrategyParams[paramsKey];
     }
 
@@ -600,8 +623,7 @@ const ConfigStrategyModelSpecificPrototype = {
         responseHelper.error({
           internal_error_identifier: 'm_tb_dshh_y_1',
           api_error_identifier: 'something_went_wrong',
-          debug_options: {},
-          error_config: errorConfig
+          debug_options: {}
         })
       );
     }
