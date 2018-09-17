@@ -1,5 +1,15 @@
 'use strict';
 
+/**
+ * This is used to create Token Balances Shard and Transaction Log Shard using openSTStorage Provider.
+ * Default prefix for shard names are 'token_balances_shard_00' and 'transaction_logs_shard_00'.
+ *
+ * Usage: node executables/ddb_related_data_migrations/create_init_shards.js configStrategyFilePath
+ * Example: node executables/ddb_related_data_migrations/create_init_shards.js ~/config.json
+ *
+ * @module executables/ddb_related_data_migrations/create_init_shards
+ */
+
 const rootPrefix = '../..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
@@ -10,15 +20,37 @@ require(rootPrefix + '/lib/providers/storage');
 require(rootPrefix + '/app/models/transaction_log');
 
 const args = process.argv,
-  config_file_path = args[2],
-  configStrategy = require(config_file_path),
-  instanceComposer = new InstanceComposer(configStrategy),
+  config_file_path = args[2];
+
+let token_balance_shard_array = [],
+  transaction_log_shard_array = [],
+  configStrategy = {};
+
+const usageDemo = function() {
+  logger.log(
+    'usage:',
+    'node node executables/ddb_related_data_migrations/create_init_shards.js configStrategyFilePath'
+  );
+  logger.log('* configStrategyFilePath is the path to the file which is storing the config strategy info.');
+};
+
+// Validate and sanitize the command line arguments.
+const validateAndSanitize = function() {
+  if (!configStrategy) {
+    logger.error('Config strategy file path is NOT passed in the arguments.');
+    usageDemo();
+    process.exit(1);
+  }
+  configStrategy = require(config_file_path);
+};
+
+// Validate and sanitize the input params.
+validateAndSanitize();
+
+const instanceComposer = new InstanceComposer(configStrategy),
   storageProvider = instanceComposer.getStorageProvider(),
   openSTStorage = storageProvider.getInstance(),
   transactionLogModel = instanceComposer.getTransactionLogModel();
-
-let token_balance_shard_array = [];
-let transaction_log_shard_array = [];
 
 /**
  *
@@ -79,7 +111,7 @@ CreateShards.prototype = {
   },
 
   /**
-   * create token balances shards
+   * create Token Balances Shards
    *
    * @returns {promise}
    */
@@ -100,7 +132,7 @@ CreateShards.prototype = {
   },
 
   /**
-   * create transaction logs shards
+   * Create Transaction Logs Shards
    *
    * @returns {promise}
    */
@@ -132,8 +164,3 @@ object
     console.log(a);
     process.exit(1);
   });
-
-/*
-*  node executables/ddb_related_data_migrations/create_init_shards.js ~/config.json
-*
-* */
