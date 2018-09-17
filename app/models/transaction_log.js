@@ -422,9 +422,6 @@ const transactionLogModelSpecificPrototype = {
 
     let formattedRowData = oThis._keyObj(rowData);
 
-    // TODO: Handle these column here
-    // post_receipt_process_params: 'prpp',
-
     if (rowData.hasOwnProperty('transaction_hash')) {
       formattedRowData[oThis.shortNameFor('transaction_hash')] = { S: rowData['transaction_hash'].toLowerCase() };
     }
