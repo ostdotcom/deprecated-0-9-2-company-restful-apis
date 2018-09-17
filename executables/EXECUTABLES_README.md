@@ -46,6 +46,21 @@ This is a continuous cron, which listens to start airdrop event and triggers air
 ### Add more workers
 This is an on-demand executable, which adds workers to given list of clients. For more info, refer [here](../executables/add_more_workers.js)
 
+### Block chain metrics
+This is an on-demand executable, which provides the no of transactions that are submitted, successful, failed in a range of blocks. For more info, refer [here](../executables/blockchain_metrics_script.js)
+
+### Check balances
+This is an on-demand executable, which checks compares balances from DDB and Chain for given clients. For more info, refer [here](../executables/check_balances.js)
+
+### Create initial shards
+This is an setup time only script, which helps in creating initial shards. Fore more info, refer [here](../executables/create_init_shards.js)
+
+### Create shard
+This is an on-demand executable, which creates a shard and adds them to config strategy. For more info, refer [here](../executables/create_shard.js)
+
+### Sync Dynamo balance with chain
+This is an on-demand executable, which helps in clearing messed up balances in dynamo to sync with on-chain balances. For more info, refer [here](../executables/sync_ddb_balance_with_chain.js)
+
 ### Update price points
 This is a periodic cron, which updates price points to latest. For more info, refer [here](../executables/update_price_oracle_price_points.js)
 
