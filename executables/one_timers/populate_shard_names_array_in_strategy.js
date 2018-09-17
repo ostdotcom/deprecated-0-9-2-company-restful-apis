@@ -146,7 +146,7 @@ PopulateShardNamesArrayInStrategy.prototype = {
 };
 
 const usageDemo = function() {
-  logger.log('usage:', 'node ./executables/one_timers/shardManagementMigration.js');
+  logger.log('usage:', 'node ./executables/one_timers/populate_shard_names_array_in_strategy.js');
 };
 
 const object = new PopulateShardNamesArrayInStrategy();
