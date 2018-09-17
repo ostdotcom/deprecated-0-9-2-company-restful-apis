@@ -131,8 +131,9 @@ SyncDdbBalancesWithChain.prototype = {
 };
 
 // const jsonStr = '{"0x4F739d40dB7509Fac8789a9Ff7bd3f86132738E2":["0xdcb2ec51c8c4632ae0039befef861fd1de2cd616","0xb9f6d4c885e8653f66fbf4f1a87d2db0835c70e8","0x16b8e5c5cf4532969746d9c97c5c233b3647c105","0x06c18b69b13b38a2ed0d0c1146c2ed340ed4e7e5","0x8837741e2ede243927679e2b9c290243140dafc7","0x8187f120d3d2aa0fd32df04bc1cf8a148beadf1f","0x924efb75845b8a5b93e00f864391894360315bdb","0x79f720d773619edea6aa91ce9553983bf36ce87f","0xab3e3db1362b2b91663b22ff277f039eaf1b8cdb","0xfec3033dd1e9de348e13169ed7c53dd6e03b28a1","0xb5c0d3fc77ec5422c0a16cdf652c764d29df5961","0x53dd4f876e922877ba57921ee2f8200bc4ce9963","0x1cb5860593729a7ff4d0ca7d0bc101a4544b19a9"]}';
-const jsonStr = '{"0x841f82a034d7a0453d915b11574b10afe0be35eb": ["0x069d4cd6bf876772ec474c0b2ef013bd93b0892f"]}';
-const object = new SyncDdbBalancesWithChain(JSON.parse(jsonStr));
+const erc20AddressToAdressesMapStr =
+  '{"0x841f82a034d7a0453d915b11574b10afe0be35eb": ["0x069d4cd6bf876772ec474c0b2ef013bd93b0892f"]}';
+const object = new SyncDdbBalancesWithChain(JSON.parse(erc20AddressToAdressesMapStr));
 object
   .perform()
   .then(function(a) {

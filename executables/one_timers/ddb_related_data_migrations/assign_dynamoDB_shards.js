@@ -12,6 +12,8 @@
 //   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
 //   errorConfig = basicHelper.fetchErrorConfig(apiVersions.internal);
 //
+// require(rootPrefix + '/lib/on_boarding/assign_shards');
+//
 // /**
 //  *
 //  * @param params
