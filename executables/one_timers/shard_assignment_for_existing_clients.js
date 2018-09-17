@@ -15,20 +15,9 @@ const rootPrefix = '../..',
 
 require(rootPrefix + '/lib/providers/storage');
 
-const args = process.argv,
-  config_file_path = args[2],
-  configStrategy = require(config_file_path),
-  instanceComposer = new InstanceComposer(configStrategy),
-  shardName = configStrategy.OS_DYNAMODB_TABLE_NAME_PREFIX + 'managed_shards',
-  storageProvider = instanceComposer.getStorageProvider(),
-  openSTStorage = storageProvider.getInstance(),
-  ddbServiceObj = openSTStorage.dynamoDBService;
+const args = process.argv;
 
-function MigrateDataFromDdbShardsToClientConfigStrategies(params) {
-  const oThis = this;
-
-  oThis.shardName = params.shard_name;
-}
+function MigrateDataFromDdbShardsToClientConfigStrategies(params) {}
 
 MigrateDataFromDdbShardsToClientConfigStrategies.prototype = {
   /**
@@ -62,50 +51,71 @@ MigrateDataFromDdbShardsToClientConfigStrategies.prototype = {
   asyncPerform: async function() {
     const oThis = this;
 
-    let distinctClientIdsRsp = await oThis._fetchClientIds(),
-      distinctClientIds = distinctClientIdsRsp.data;
+    let clientIdErc20AddrMapRsp = await oThis._fetchClientIdErc20AddrMap(),
+      clientIdErc20AddrMap = clientIdErc20AddrMapRsp.data;
 
-    for (let id in distinctClientIds) {
-      let clientId = distinctClientIds[id],
-        auxilary_data = {},
-        clientErc20Address = null;
+    for (let clientId in clientIdErc20AddrMap) {
+      logger.info(` starting for [${clientId}]`);
 
-      let transactionLogShardNameRsp = await oThis._fetchDdbDetails(clientId, 'transactionLog');
+      let auxilary_data = {},
+        configStrategyRsp = await new configStrategyHelper().getConfigStrategy(clientId);
+
+      if (configStrategyRsp.isFailure()) {
+        logger.error(`[${clientId}] failed to fetch configStrategyRsp: `, configStrategyRsp.toHash());
+        continue;
+      }
+
+      let configStrategy = configStrategyRsp.data,
+        instanceComposer = new InstanceComposer(configStrategy),
+        shardName = configStrategy.OS_DYNAMODB_TABLE_NAME_PREFIX + 'managed_shards',
+        storageProvider = instanceComposer.getStorageProvider(),
+        openSTStorage = storageProvider.getInstance(),
+        ddbServiceObj = openSTStorage.dynamoDBService;
+
+      let transactionLogShardNameRsp = await oThis._fetchDdbDetails(
+        shardName,
+        ddbServiceObj,
+        clientId,
+        'transactionLog'
+      );
 
       if (transactionLogShardNameRsp.isFailure() || transactionLogShardNameRsp.data.data.Count === 0) {
+        logger.error(`[${clientId}] failed to fetch shard fro transactionLog: `, transactionLogShardNameRsp.toHash());
         continue;
       }
 
       auxilary_data.TRANSACTION_LOG_SHARD_NAME = transactionLogShardNameRsp.data.data.Items[0].SN.S;
 
-      let clientErc20AddressRsp = await oThis._fetchErc20Address(clientId);
+      let clientErc20Address = clientIdErc20AddrMap[clientId].toLowerCase();
 
-      if (clientErc20AddressRsp.data.length === 0) {
-        continue;
-      }
+      let tokenBalanceShardNameRsp = await oThis._fetchDdbDetails(
+        shardName,
+        ddbServiceObj,
+        clientErc20Address,
+        'tokenBalance'
+      );
 
-      clientErc20Address = clientErc20AddressRsp.data[0].toLowerCase();
-
-      let tokenBalanceShardNameRsp = await oThis._fetchDdbDetails(clientErc20Address, 'tokenBalance');
-
-      if (transactionLogShardNameRsp.isFailure() || tokenBalanceShardNameRsp.data.data.Count === 0) {
+      if (tokenBalanceShardNameRsp.isFailure() || tokenBalanceShardNameRsp.data.data.Count === 0) {
+        logger.error(`[${clientId}] failed to fetch shard fro tokenBalance: `, tokenBalanceShardNameRsp.toHash());
         continue;
       }
 
       auxilary_data.TOKEN_BALANCE_SHARD_NAME = transactionLogShardNameRsp.data.data.Items[0].SN.S;
 
+      logger.debug(`[${clientId}] auxilary_data: `, auxilary_data);
+
       let configStrategyHelperObj = new configStrategyHelper(),
-        strategyIdKindRspArray = await configStrategyHelperObj.getStrategyIdForKind(clientId, 'dynamo'),
-        finalAuxilaryDataToInsert = JSON.stringify(auxilary_data);
+        strategyIdKindRspArray = await configStrategyHelperObj.getStrategyIdForKind(clientId, 'dynamo');
 
       if (strategyIdKindRspArray.isFailure()) {
+        logger.error(`[${clientId}] failed to fetch which id is to be updated: `, strategyIdKindRspArray.toHash());
         continue;
       }
 
       if (strategyIdKindRspArray.data.length > 0) {
         let strategyIdKindToUpdate = strategyIdKindRspArray.data[0],
-          insertRsp = await new ClientConfigStrategiesModel()
-            .update({ auxilary_data: finalAuxilaryDataToInsert })
+          updateRsp = await new ClientConfigStrategiesModel()
+            .update({ auxilary_data: JSON.stringify(auxilary_data) })
             .where(['client_id = ? AND config_strategy_id = ?', clientId, strategyIdKindToUpdate])
             .fire();
       }
@@ -113,25 +123,30 @@ MigrateDataFromDdbShardsToClientConfigStrategies.prototype = {
   },
 
   /**
-   * Fetches distinct client ids present in the client config strategies table.
+   * Fetches distinct client id and erc20 addr map
    *
    * @returns {Promise<any>}
    * @private
    */
-  _fetchClientIds: async function() {
+  _fetchClientIdErc20AddrMap: async function() {
     const oThis = this;
 
-    let clientIdsResponse = await new ClientConfigStrategiesModel()
-        .select(['client_id'])
-        .group_by(['client_id'])
+    let dbRows = await new ClientBrandedTokenModel()
+        .select('client_id,token_erc20_address,airdrop_contract_addr,simple_stake_contract_addr')
         .fire(),
-      distinctClientIds = [];
+      clientIdErc20AddrMap = {};
 
-    for (let id in clientIdsResponse) {
-      distinctClientIds.push(clientIdsResponse[id].client_id);
+    for (let index in dbRows) {
+      let dbRow = dbRows[index];
+
+      if (!dbRow.token_erc20_address || !dbRow.airdrop_contract_addr || !dbRow.simple_stake_contract_addr) {
+        logger.debug(`ignoring client_id ${dbRow.client_id} as setup not complete`);
+        continue;
+      }
+      clientIdErc20AddrMap[dbRow.client_id] = dbRow.token_erc20_address;
     }
 
-    return Promise.resolve(responseHelper.successWithData(distinctClientIds));
+    return Promise.resolve(responseHelper.successWithData(clientIdErc20AddrMap));
   },
 
   /**
@@ -141,10 +156,10 @@ MigrateDataFromDdbShardsToClientConfigStrategies.prototype = {
    * @returns {Promise<any>}
    * @private
    */
-  _fetchDdbDetails: async function(identifier, entityType) {
+  _fetchDdbDetails: async function(shardName, ddbServiceObj, identifier, entityType) {
     const oThis = this;
 
-    let queryParams = { TableName: oThis.shardName };
+    let queryParams = { TableName: shardName };
 
     queryParams.KeyConditionExpression = 'ID=:a and ET=:b';
     queryParams.ExpressionAttributeValues = {
@@ -155,42 +170,14 @@ MigrateDataFromDdbShardsToClientConfigStrategies.prototype = {
     let dDbRsp = await ddbServiceObj.query(queryParams);
 
     return Promise.resolve(responseHelper.successWithData(dDbRsp));
-  },
-
-  _fetchErc20Address: async function(client_id) {
-    let clientBrandedTokenRsp = await new ClientBrandedTokenModel()
-        .select(['token_erc20_address'])
-        .where(['client_id = ?', client_id])
-        .fire(),
-      erc20address = [];
-
-    if (clientBrandedTokenRsp.length > 0) {
-      erc20address.push(clientBrandedTokenRsp[0].token_erc20_address);
-    }
-
-    return Promise.resolve(responseHelper.successWithData(erc20address));
   }
 };
 
 const usageDemo = function() {
-  logger.log(
-    'usage:',
-    'node ./executables/one_timers/shard_assignment_for_existing_clients.js configStrategy_file_path'
-  );
+  logger.log('usage:', 'node ./executables/one_timers/shard_assignment_for_existing_clients.js');
 };
 
-const validateAndSanitize = function() {
-  if (commonValidator.isVarNull(config_file_path)) {
-    logger.error('config strategy file path is NOT present in the arguments.');
-    usageDemo();
-    process.exit(1);
-  }
-};
-
-// validate and sanitize the input params
-validateAndSanitize();
-
-const object = new MigrateDataFromDdbShardsToClientConfigStrategies({ shard_name: shardName });
+const object = new MigrateDataFromDdbShardsToClientConfigStrategies({});
 object
   .perform()
   .then(function(a) {
