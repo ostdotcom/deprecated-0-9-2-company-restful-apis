@@ -65,8 +65,8 @@ StartServicesKlass.prototype = {
       homeAbsolutePath +
       '/openst-setup/logs/utility-chain-' +
       utilityChainId;
-    +' -port 8001';
-    servicesList.push(cmd);
+    // + ' -port 8001'
+    // servicesList.push(cmd);
     oThis._asyncCommand(cmd);
 
     // Start Utility Chain

@@ -18,8 +18,8 @@ const rootPrefix = '../../..',
  * Fetch status of Airdrop initiated
  *
  * @param {object} params - external passed parameters
- * @param {number} params.client_id (Mandatory) - client id
- * @param {string} params.airdrop_uuid (Mandatory) - uuid of the airdrop for which status get.
+ * @param {string} params.airdrop_uuid - uuid of the airdrop for which status get.
+ * @param {number} [params.client_id] - client id
  *
  * @module services/airdrop_management/get_airdrop_status
  */
@@ -62,13 +62,13 @@ GetAirdropStatusKlass.prototype = {
   asyncPerform: async function() {
     const oThis = this;
 
-    var response = await new ClientAirdropModel()
+    let response = await new ClientAirdropModel()
       .select('*')
       .where(['airdrop_uuid=?', oThis.airdropUuid])
       .fire();
     if (response[0]) {
-      var record = response[0];
-      if (record.client_id != oThis.clientId) {
+      let record = response[0];
+      if (record.client_id !== oThis.clientId) {
         return Promise.reject(
           responseHelper.error({
             internal_error_identifier: 's_am_gas_2',
@@ -77,15 +77,16 @@ GetAirdropStatusKlass.prototype = {
           })
         );
       }
-      var current_status = 'pending';
-      if (record.status == new ClientAirdropModel().invertedStatuses[clientAirdropConst.completeStatus]) {
+      let current_status = 'pending';
+      if (record.status === new ClientAirdropModel().invertedStatuses[clientAirdropConst.completeStatus]) {
         current_status = 'complete';
-      } else if (record.status == new ClientAirdropModel().invertedStatuses[clientAirdropConst.failedStatus]) {
+      } else if (record.status === new ClientAirdropModel().invertedStatuses[clientAirdropConst.failedStatus]) {
         current_status = 'failed';
       }
 
       const airdropEntityData = {
         id: oThis.airdropUuid,
+        amount: record.common_airdrop_amount_in_wei,
         current_status: current_status,
         steps_complete: new ClientAirdropModel().getAllBits('steps_complete', record.steps_complete)
       };

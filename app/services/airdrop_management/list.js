@@ -21,10 +21,11 @@ const rootPrefix = '../../..',
  *
  * @param {object} params - external passed parameters
  * @param {number} params.client_id (Mandatory) - client id
- * @param {number} params.page_no (optional) - page no
- * @param {number} params.order_by (optional) - order by
- * @param {number} params.order (optional) - order
- * @param {number} params.limit (optional) - limit
+ * @param {number} [params.page_no] - page no
+ * @param {number} [params.order_by] - order by
+ * @param {number} [params.order] - order
+ * @param {number} [params.limit] - limit
+ * @param {string} [params.current_status] - current_status
  *
  * @module app/services/airdrop_management/list
  */
@@ -97,10 +98,10 @@ ListAirdropsKlass.prototype = {
     let airdropsList = [],
       hasMore = false;
 
-    for (var i = 0; i < queryResponse.length; i++) {
+    for (let i = 0; i < queryResponse.length; i++) {
       const record = queryResponse[i];
 
-      if (i == oThis.limit) {
+      if (i === oThis.limit) {
         // as we fetched limit + 1, ignore that extra one
         hasMore = true;
         continue;
@@ -118,7 +119,7 @@ ListAirdropsKlass.prototype = {
       airdropsList.push(airdropEntityFormatterRsp.data);
     }
 
-    var next_page_payload = {};
+    let next_page_payload = {};
 
     if (hasMore) {
       next_page_payload = {
@@ -216,7 +217,7 @@ ListAirdropsKlass.prototype = {
 
     if (oThis.currentStatusString) {
       oThis.currentStatusForFiltering = basicHelper.commaSeperatedStrToArray(oThis.currentStatusString);
-      for (var i = 0; i < oThis.currentStatusForFiltering.length; i++) {
+      for (let i = 0; i < oThis.currentStatusForFiltering.length; i++) {
         if (
           ![
             clientAirdropConst.incompleteStatus,
