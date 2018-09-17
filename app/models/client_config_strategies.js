@@ -71,7 +71,7 @@ const ClientConfigStrategiesModelSpecificPrototype = {
     const oThis = this;
 
     return oThis
-      .select(['client_id', 'config_strategy_id'])
+      .select(['client_id', 'config_strategy_id', 'auxilary_data'])
       .where({ client_id: clientId })
       .fire();
   },
@@ -87,7 +87,7 @@ const ClientConfigStrategiesModelSpecificPrototype = {
     const oThis = this;
 
     return oThis
-      .select(['client_id', 'config_strategy_id'])
+      .select(['client_id', 'config_strategy_id', 'auxilary_data'])
       .where(['client_id IN (?)', clientIds])
       .fire();
   },

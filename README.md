@@ -96,14 +96,17 @@ Run the following commands after creating the database.
 ```
 
 * Execute commands related to DynamoDB migrations.
-  * Create tables needed for DDB framework.
-  ```bash
-  source set_env_vars.sh
-  node executables/ddb_related_data_migrations/create_init_ddb_tables.js $CONFIG_STRATEGY_PATH
-  ```
   * Create a fixed number of shards for all entities (number is in this file).
   ```bash
-  node executables/ddb_related_data_migrations/create_shards.js $CONFIG_STRATEGY_PATH
+  source set_env_vars.sh
+  node executables/ddb_related_data_migrations/create_init_shards.js $CONFIG_STRATEGY_PATH
+  ```
+  
+  Pick up the hash printed in green in previous step export shard arrays appropriately.
+  
+  ```bash
+    export OS_DYNAMODB_TOKEN_BALANCE_SHARDS_ARRAY='["token_balances_shard_01101","token_balances_shard_01102"]'
+    export OS_DYNAMODB_TRANSACTION_LOG_SHARDS_ARRAY='["transaction_log_shard_001", "transaction_log_shard_002"]'
   ```
   
 * Move the shared-local-instance.db file from $HOME/openst-setup/logs/ to $HOME/openst-setup/bin/utility-chain-{id}/

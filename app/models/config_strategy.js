@@ -49,13 +49,24 @@ const ConfigStrategyModelSpecificPrototype = {
   * @return {Promise<integer>} - returns a Promise with integer of strategy id.
   *
   */
-  create: async function(kind, managedAddressSaltId, configStrategyParams, groupId) {
+  create: async function(kind, managed_address_salt_id, config_strategy_params, group_id) {
     const oThis = this,
       strategyKindInt = invertedKinds[kind],
-      configStrategyParamsString = JSON.stringify(configStrategyParams);
+      configStrategyParams = config_strategy_params,
+      managedAddressSaltId = managed_address_salt_id;
+
+    let groupId = group_id;
 
     if (strategyKindInt === undefined) {
-      throw 'Error: Improper kind parameter';
+      logger.error('Improper Kind parameter');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'a_mo_cs_c_1',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {},
+          error_config: errorConfig
+        })
+      );
     }
 
     if (groupId === undefined) {
@@ -63,31 +74,53 @@ const ConfigStrategyModelSpecificPrototype = {
     }
 
     if (!configStrategyParams) {
-      throw 'Config Strategy params hash cannot be null';
+      logger.error('Config Strategy params hash cannot be null');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'a_mo_cs_c_2',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {},
+          error_config: errorConfig
+        })
+      );
     }
 
-    let isParamPresent = null,
-      hashedConfigStrategyParams = localCipher.getShaHashedText(configStrategyParamsString);
+    let strategyIdPresentInDB = null,
+      hashedConfigStrategyParamsResponse = await oThis._getSHAOf(kind, configStrategyParams);
+    if (hashedConfigStrategyParamsResponse.isFailure()) {
+      logger.error('Error while creating SHA of params');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'a_mo_cs_c_3',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {},
+          error_config: errorConfig
+        })
+      );
+    }
+
+    let hashedConfigStrategyParams = hashedConfigStrategyParamsResponse.data;
 
     await new ConfigStrategyModel()
       .getByParams(hashedConfigStrategyParams)
       .then(function(result) {
-        isParamPresent = result;
+        strategyIdPresentInDB = result;
       })
       .catch(function(err) {
         logger.error('Error', err);
       });
 
-    if (isParamPresent !== null) {
-      //If configStrategyParams is already present in database then id of that param is sent
-      logger.info('The given params is already present in database with id:', isParamPresent);
-      return Promise.resolve(isParamPresent);
+    if (strategyIdPresentInDB !== null) {
+      //If configStrategyParamsNotToEncrypt is already present in database then id of that param is sent
+      logger.info('The given params is already present in database with id:', strategyIdPresentInDB);
+      return Promise.resolve(strategyIdPresentInDB);
     } else {
-      let response = await oThis.getDecryptedSalt(managedAddressSaltId);
-      if (response.isFailure()) {
+      let separateHashesResponse = await oThis._getSeparateHashes(kind, configStrategyParams);
+      if (separateHashesResponse.isFailure()) {
+        logger.error('Error while segregating params into encrypted hash and unencrypted hash');
         return Promise.reject(
           responseHelper.error({
-            internal_error_identifier: 'm_tb_dshh_y_1',
+            internal_error_identifier: 'a_mo_cs_c_4',
             api_error_identifier: 'something_went_wrong',
             debug_options: {},
             error_config: errorConfig
@@ -95,12 +128,29 @@ const ConfigStrategyModelSpecificPrototype = {
         );
       }
 
-      let encryptedConfigStrategyParams = localCipher.encrypt(response.data.addressSalt, configStrategyParamsString);
+      let hashToEncrypt = separateHashesResponse.data.hashToEncrypt,
+        hashNotToEncrypt = separateHashesResponse.data.hashNotToEncrypt,
+        encryptedHashResponse = await oThis._getEncryption(hashToEncrypt, managedAddressSaltId);
+      if (encryptedHashResponse.isFailure()) {
+        logger.error('Error while encrypting data');
+        return Promise.reject(
+          responseHelper.error({
+            internal_error_identifier: 'a_mo_cs_c_5',
+            api_error_identifier: 'something_went_wrong',
+            debug_options: {},
+            error_config: errorConfig
+          })
+        );
+      }
+
+      let encryptedHash = encryptedHashResponse.data,
+        hashNotToEncryptString = JSON.stringify(hashNotToEncrypt);
 
       const data = {
         group_id: groupId,
         kind: strategyKindInt,
-        params: encryptedConfigStrategyParams,
+        encrypted_params: encryptedHash,
+        unencrypted_params: hashNotToEncryptString,
         managed_address_salts_id: managedAddressSaltId,
         hashed_params: hashedConfigStrategyParams
       };
@@ -133,7 +183,7 @@ const ConfigStrategyModelSpecificPrototype = {
     }
 
     const queryResult = await oThis
-      .select(['id', 'params', 'kind', 'managed_address_salts_id'])
+      .select(['id', 'encrypted_params', 'unencrypted_params', 'kind', 'managed_address_salts_id'])
       .where(['id IN (?)', ids])
       .fire();
 
@@ -160,10 +210,13 @@ const ConfigStrategyModelSpecificPrototype = {
 
       let localDecryptedParams = localCipher.decrypt(
         decryptedSalts[queryResult[i].managed_address_salts_id],
-        queryResult[i].params
+        queryResult[i].encrypted_params
       );
 
-      const localJsonObj = JSON.parse(localDecryptedParams, oThis._dataReviver);
+      let localJsonObj = JSON.parse(localDecryptedParams, oThis._dataReviver),
+        unencryptedParamsJsonObj = JSON.parse(queryResult[i].unencrypted_params);
+
+      Object.assign(localJsonObj, unencryptedParamsJsonObj);
 
       let Result = {},
         strategyKind = kinds[queryResult[i].kind];
@@ -198,7 +251,7 @@ const ConfigStrategyModelSpecificPrototype = {
    *
    * @param {string}:
    */
-  getStrategyIdsByKindAndGroupId: async function(kind, group_id) {
+  _getStrategyIdsByKindAndGroupId: async function(kind, group_id) {
     const oThis = this,
       strategyKindInt = invertedKinds[kind],
       groupId = group_id;
@@ -207,15 +260,13 @@ const ConfigStrategyModelSpecificPrototype = {
       throw 'Error: Improper kind parameter';
     }
 
-    let query = oThis
-        .select(['id', 'group_id'])
-        .where('kind = ' + strategyKindInt + ' AND (group_id = ' + groupId + ' OR group_id IS NULL)'),
-      queryResult = await query.fire(),
-      strategyIdsArray = [];
+    let query = oThis.select(['id', 'group_id']).where('kind = ' + strategyKindInt);
 
-    for (let i = 0; i < queryResult.length; i++) {
-      strategyIdsArray.push(queryResult[i].id);
+    if (group_id) {
+      query.where([' (group_id = ? OR group_id IS NULL)', group_id]);
     }
+
+    let queryResult = await query.fire();
 
     return Promise.resolve(responseHelper.successWithData(queryResult));
   },
@@ -353,17 +404,19 @@ const ConfigStrategyModelSpecificPrototype = {
   },
 
   /**
-   * Update a strategy id.
    *
-   * @param strategy_id
-   * @param updatedConfigStrategyParams
+   * @param(integer) strategy_id
+   * @param(object) configStrategyParams
+   * @param configStrategyParamsNotToEncrypt
    * @returns {Promise<*>}
    */
-  updateStrategyId: async function(strategy_id, updatedConfigStrategyParams) {
+  updateStrategyId: async function(strategy_id, config_strategy_params) {
     const oThis = this,
+      strategyId = strategy_id,
+      configStrategyParams = config_strategy_params,
       queryResult = await new ConfigStrategyModel()
-        .select(['managed_address_salts_id'])
-        .where({ id: strategy_id })
+        .select(['managed_address_salts_id', 'kind'])
+        .where({ id: strategyId })
         .fire();
 
     if (queryResult.length === 0) {
@@ -378,25 +431,39 @@ const ConfigStrategyModelSpecificPrototype = {
       );
     }
 
-    const managedAddressSaltId = queryResult[0].managed_address_salts_id,
-      updatedConfigStrategyParamsString = JSON.stringify(updatedConfigStrategyParams);
+    let finalDataToInsertInDb = {},
+      strategyKind = queryResult[0].kind,
+      managedAddressSaltId = queryResult[0].managed_address_salts_id,
+      strategyKindName = configStrategyConstants.kinds[strategyKind],
+      shaEncryptionOfStrategyParamsResponse = await oThis._getSHAOf(strategyKindName, configStrategyParams);
+    if (shaEncryptionOfStrategyParamsResponse.isFailure()) {
+      logger.error('Error while creating SHA of params');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'a_mo_cs_c_7',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {},
+          error_config: errorConfig
+        })
+      );
+    }
 
-    let isParamPresent = null,
-      hashedUpdatedConfigStrategyParams = localCipher.getShaHashedText(updatedConfigStrategyParamsString);
+    let shaEncryptionOfStrategyParams = shaEncryptionOfStrategyParamsResponse.data,
+      strategyIdPresentInDB = null;
 
-    //To check if the updated config strategy is already present in the database table.
+    //Checks if the data sent to update is already present in database at some other row.
     await new ConfigStrategyModel()
-      .getByParams(hashedUpdatedConfigStrategyParams)
+      .getByParams(shaEncryptionOfStrategyParams)
       .then(function(result) {
-        isParamPresent = result;
+        strategyIdPresentInDB = result;
       })
       .catch(function(err) {
         logger.error('Error', err);
       });
 
-    if (isParamPresent !== null) {
+    if (strategyIdPresentInDB !== null && strategyIdPresentInDB != strategyId) {
       //If configStrategyParams is already present in database then id of that param is sent
-      logger.error('The config strategy is already present in database with id: ', isParamPresent);
+      logger.error('The config strategy is already present in database with id: ', strategyIdPresentInDB);
       return Promise.reject(
         responseHelper.error({
           internal_error_identifier: 'm_tb_cs_3',
@@ -407,11 +474,13 @@ const ConfigStrategyModelSpecificPrototype = {
       );
     }
 
-    let response = await oThis.getDecryptedSalt(managedAddressSaltId);
-    if (response.isFailure()) {
+    //Segregate data to encrypt and data not to encrypt
+    let separateHashesResponse = await oThis._getSeparateHashes(strategyKindName, configStrategyParams);
+    if (separateHashesResponse.isFailure()) {
+      logger.error('Error while segregating params into encrypted hash and unencrypted hash');
       return Promise.reject(
         responseHelper.error({
-          internal_error_identifier: 'm_tb_cs_2',
+          internal_error_identifier: 'a_mo_cs_c_8',
           api_error_identifier: 'something_went_wrong',
           debug_options: {},
           error_config: errorConfig
@@ -419,21 +488,128 @@ const ConfigStrategyModelSpecificPrototype = {
       );
     }
 
-    let encryptedUpdatedConfigStrategyParams = await localCipher.encrypt(
-      response.data.addressSalt,
-      updatedConfigStrategyParamsString
-    );
+    let hashToEncrypt = separateHashesResponse.data.hashToEncrypt,
+      hashNotToEncrypt = separateHashesResponse.data.hashNotToEncrypt,
+      encryptedHashResponse = await oThis._getEncryption(hashToEncrypt, managedAddressSaltId);
 
-    const data = {
-      params: encryptedUpdatedConfigStrategyParams,
-      hashed_params: hashedUpdatedConfigStrategyParams
-    };
+    if (encryptedHashResponse.isFailure()) {
+      logger.error('Error while encrypting data');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'a_mo_cs_c_9',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {},
+          error_config: errorConfig
+        })
+      );
+    }
+    let encryptedHash = encryptedHashResponse.data;
+
+    finalDataToInsertInDb.encrypted_params = encryptedHash;
+    finalDataToInsertInDb.unencrypted_params = JSON.stringify(hashNotToEncrypt);
+    finalDataToInsertInDb.hashed_params = shaEncryptionOfStrategyParams;
+
     const dbId = await new ConfigStrategyModel()
-      .update(data)
-      .where({ id: strategy_id })
+      .update(finalDataToInsertInDb)
+      .where({ id: strategyId })
       .fire();
 
     return Promise.resolve(responseHelper.successWithData({}));
+  },
+
+  /**
+   *
+   * @param (string) strategy_kind ('dynamo' or 'dax' etc)
+   * @param (object) params_hash (complete hash of that strategy)
+   *
+   * @return {Promise<Promise<never> | Promise<any>>}
+   *
+   * @private
+   */
+  _getSHAOf: async function(strategy_kind, params_hash) {
+    //Check in both param hash if the required keys are present.
+    const oThis = this,
+      paramsHash = params_hash,
+      strategyKindName = strategy_kind,
+      identifierKeysArray = configStrategyConstants.identifierKeys[strategyKindName];
+
+    let finalHashToGetShaOf = {};
+
+    for (let index in identifierKeysArray) {
+      let keyName = identifierKeysArray[index];
+      finalHashToGetShaOf[keyName] = paramsHash[keyName];
+    }
+
+    let finalHashToGetShaOfString = JSON.stringify(finalHashToGetShaOf),
+      shaOfStrategyParams = localCipher.getShaHashedText(finalHashToGetShaOfString);
+
+    return Promise.resolve(responseHelper.successWithData(shaOfStrategyParams));
+  },
+
+  /**
+   *
+   * @param(string) strategy_kind
+   * @param(object) params_hash
+   * @returns {Promise<any>}
+   * @private
+   */
+  _getSeparateHashes: async function(strategy_kind, params_hash) {
+    const oThis = this,
+      strategyKindName = strategy_kind,
+      configStrategyParams = params_hash;
+
+    let kindParamsArrayToEncrypt = configStrategyConstants.keysToEncrypt[strategyKindName],
+      kindParamsArrayNotToEncrypt = configStrategyConstants.keysTobeKeptUnencrypted[strategyKindName],
+      hashToEncrypt = {},
+      hashNotToEncrypt = {};
+
+    for (let index in kindParamsArrayNotToEncrypt) {
+      let paramsKey = kindParamsArrayNotToEncrypt[index];
+      hashNotToEncrypt[paramsKey] = configStrategyParams[paramsKey];
+    }
+
+    for (let index in kindParamsArrayToEncrypt) {
+      let paramsKey = kindParamsArrayToEncrypt[index];
+
+      hashToEncrypt[paramsKey] = configStrategyParams[paramsKey];
+    }
+
+    let returnHash = {
+      hashToEncrypt: hashToEncrypt,
+      hashNotToEncrypt: hashNotToEncrypt
+    };
+
+    return Promise.resolve(responseHelper.successWithData(returnHash));
+  },
+
+  /**
+   *
+   * @param(object) params_to_encrypt
+   * @param(integer) managed_address_salt_id
+   * @returns {Promise<*>}
+   * @private
+   */
+  _getEncryption: async function(params_to_encrypt, managed_address_salt_id) {
+    const oThis = this,
+      paramsToEncrypt = params_to_encrypt,
+      managedAddressSaltId = managed_address_salt_id;
+
+    let response = await oThis.getDecryptedSalt(managedAddressSaltId);
+    if (response.isFailure()) {
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'm_tb_dshh_y_1',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {},
+          error_config: errorConfig
+        })
+      );
+    }
+
+    let paramsToEncryptString = JSON.stringify(paramsToEncrypt),
+      encryptedConfigStrategyParams = localCipher.encrypt(response.data.addressSalt, paramsToEncryptString);
+
+    return Promise.resolve(responseHelper.successWithData(encryptedConfigStrategyParams));
   }
 };
 

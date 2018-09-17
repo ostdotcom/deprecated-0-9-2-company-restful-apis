@@ -87,7 +87,8 @@ SyncDdbBalancesWithChain.prototype = {
 
     let batchNo = 1,
       tokenBalanceObj = new TokenBalanceModel({
-        erc20_contract_address: erc20_address
+        erc20_contract_address: erc20_address,
+        shard_name: configStrategy.TOKEN_BALANCE_SHARD_NAME
       });
 
     while (true) {
