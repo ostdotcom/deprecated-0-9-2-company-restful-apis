@@ -105,7 +105,7 @@ Run the following commands after creating the database.
   Pick up the hash printed in green in previous step export shard arrays appropriately.
   
   ```bash
-    export OS_DYNAMODB_TOKEN_BALANCE_SHARDS_ARRAY='["token_balances_shard_01101","token_balances_shard_01102"]'
+    export OS_DYNAMODB_TOKEN_BALANCE_SHARDS_ARRAY='["token_balances_shard_001","token_balances_shard_002"]'
     export OS_DYNAMODB_TRANSACTION_LOG_SHARDS_ARRAY='["transaction_log_shard_001", "transaction_log_shard_002"]'
   ```
   

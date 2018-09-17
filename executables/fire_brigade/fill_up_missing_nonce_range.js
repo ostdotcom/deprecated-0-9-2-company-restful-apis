@@ -1,21 +1,40 @@
+/**
+ * This script is used to fill the missing nonce.
+ *
+ * @module executables/fire_brigade/fill_up_missing_nonce
+ */
+
 const rootPrefix = '..',
   nonceHelperKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_helper'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   FillUpMissingNonceKlass = require(rootPrefix + '/fire_brigade/fill_up_missing_nonce');
 
+/**
+ * parameters
+ *
+ * @param {object} params - external passed parameters
+ * @param {String} params.from_address - from_address
+ * @param {String} params.to_address - to_address
+ * @param {String} params.chain_kind - chain_kind (value | utilty)
+ * @param {Integer} params.missing_nonce - missing_nonce
+ * @param {array} params.geth_providers - geth_provider (WS | RPC)
+ * @param {String} params.gas_price - gas_price
+ *
+ *
+ * @module executables/fire_brigade/fill_up_missing_nonce
+ */
+
 const FillUpMissingNonceRange = function(params) {
   const oThis = this;
   oThis.nonceHelper = new nonceHelperKlass();
-  oThis.toAddress = params.to_address.toLowerCase(); // String
-  oThis.chainKind = params.chain_kind; // String
-  oThis.gasPrice = params.gas_price; // String
-  oThis.gethProviders = params.geth_providers; // An array of providers is expected.
+  oThis.toAddress = params.to_address.toLowerCase();
+  oThis.chainKind = params.chain_kind;
+  oThis.gasPrice = params.gas_price;
+  oThis.gethProviders = params.geth_providers;
   oThis.allPendingTasks = [];
   oThis.isProccessing = false;
   oThis.currentIndex = 0;
 };
-// We expect an array of providers as an input. We can later change this to query chain_geth_providers table to fetch
-// the geth providers based on the chain id and the chain kind.
 
 FillUpMissingNonceRange.prototype = {
   perform: async function() {

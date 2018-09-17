@@ -1,3 +1,9 @@
+/**
+ * Script to clear nonce cache
+ *
+ * @module executables/fire_brigade/clear_nonce_cache
+ */
+
 const rootPrefix = '..',
   OpenStCache = require('@openstfoundation/openst-cache'),
   cacheManagementConst = require(rootPrefix + '/lib/global_constant/cache_management'),
@@ -5,6 +11,17 @@ const rootPrefix = '..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   SharedRedisProvider = require(rootPrefix + '/lib/providers/shared_redis'),
   fetchPrivateKeyKlass = require(rootPrefix + '/lib/shared_cache_management/address_private_key');
+
+/**
+ * parameters
+ *
+ * @param {object} params - external passed parameters
+ * @param {String} params.address - address
+ * @param {String} params.chain_kind - chain_kind (value | utilty)
+ * @param {Integer} params.chain_id - chain_id
+ *
+ *
+ */
 
 const ClearNonceCache = function(params) {
   const oThis = this;

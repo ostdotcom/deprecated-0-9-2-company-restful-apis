@@ -1,3 +1,8 @@
+/**
+ * This script is used to fill the missing nonce.
+ *
+ * @module executables/fire_brigade/fill_up_missing_nonce
+ */
 const Buffer = require('safe-buffer').Buffer,
   Tx = require('ethereumjs-tx');
 
@@ -6,15 +11,29 @@ const rootPrefix = '..',
   nonceHelperKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_helper'),
   nonceHelper = new nonceHelperKlass();
 
+/**
+ * parameters
+ *
+ * @param {object} params - external passed parameters
+ * @param {String} params.from_address - from_address
+ * @param {String} params.to_address - to_address
+ * @param {String} params.chain_kind - chain_kind (value | utilty)
+ * @param {Integer} params.missing_nonce - missing_nonce
+ * @param {String} params.geth_provider - geth_provider (WS | RPC)
+ * @param {String} params.gas_price - gas_price
+ *
+ *
+ */
+
 const FillUpMissingNonce = function(params) {
   const oThis = this;
 
-  oThis.fromAddress = params.from_address.toLowerCase(); // String
-  oThis.toAddress = params.to_address.toLowerCase(); // String
-  oThis.chainKind = params.chain_kind; // String
-  oThis.missingNonce = params.missing_nonce; // Integer
-  oThis.provider = params.geth_provider; // String
-  oThis.gasPrice = params.gas_price; // String
+  oThis.fromAddress = params.from_address.toLowerCase();
+  oThis.toAddress = params.to_address.toLowerCase();
+  oThis.chainKind = params.chain_kind;
+  oThis.missingNonce = params.missing_nonce;
+  oThis.provider = params.geth_provider;
+  oThis.gasPrice = params.gas_price;
   oThis.privateKeyObj = null;
   oThis.rawTx = null;
 };
