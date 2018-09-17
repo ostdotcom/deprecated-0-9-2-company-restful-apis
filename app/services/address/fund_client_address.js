@@ -290,7 +290,7 @@ FundClientAddressKlass.prototype = {
 
     if (transferResponse.isFailure()) {
       logger.notify(
-        'e_fa_e_teb_1',
+        'a_fca_tb_1',
         'Error in transfer of ' + transferAmountInWei + ' Wei Eth to Address - ' + recipientAddress,
         transferResponse,
         { clientId: oThis.clientId, ethereum_address: recipientAddress, amount_in_wei: transferAmountInWei }
