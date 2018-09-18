@@ -4,7 +4,7 @@
  * @module executables/fire_brigade/clear_nonce_cache
  */
 
-const rootPrefix = '..',
+const rootPrefix = '../..',
   OpenStCache = require('@openstfoundation/openst-cache'),
   cacheManagementConst = require(rootPrefix + '/lib/global_constant/cache_management'),
   configStrategyHelper = require(rootPrefix + '/helpers/config_strategy'),

@@ -6,7 +6,7 @@
 const Buffer = require('safe-buffer').Buffer,
   Tx = require('ethereumjs-tx');
 
-const rootPrefix = '..',
+const rootPrefix = '../..',
   fetchPrivateKeyKlass = require(rootPrefix + '/lib/shared_cache_management/address_private_key'),
   nonceHelperKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_helper'),
   nonceHelper = new nonceHelperKlass();
@@ -110,3 +110,15 @@ FillUpMissingNonce.prototype = {
 };
 
 module.exports = FillUpMissingNonce;
+
+/*
+
+Below is an example how to use this script on console
+========================================================================
+
+FillUp = require('./executables/fire_brigade/fill_up_missing_nonce');
+fillUp = new FillUp({ from_address: '0xBDF4C85e751C5FebCFf1d12bA9F0Fc4bd5fE83E2', to_address: '0xb98209453EAD1c7D6b3b8EC91F59d3a113a8dBf9', chain_kind: 'utility', missing_nonce: 5, geth_provider: 'ws://127.0.0.1:19547', gas_price: '1000000000'});
+
+fillUp.perform().then(console.log);
+
+*/

@@ -159,28 +159,28 @@ node executables/one_timers/config_strategy_seed.js managed_address_salt_id grou
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> node executables/inter_comm/register_branded_token.js $HOME/openst-setup/logs/register_branded_token.data
+> node executables/inter_comm/register_branded_token.js $HOME/openst-setup/logs/register_branded_token.data $CONFIG_STRATEGY_PATH
 ```
 
 * Start Stake & Mint Intercom in new terminal.
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> node executables/inter_comm/stake_and_mint.js $HOME/openst-setup/logs/stake_and_mint.data
+> node executables/inter_comm/stake_and_mint.js $HOME/openst-setup/logs/stake_and_mint.data $CONFIG_STRATEGY_PATH
 ```
 
 * Start Stake & Mint Processor Intercom in new terminal.
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> node executables/inter_comm/stake_and_mint_processor.js $HOME/openst-setup/logs/stake_and_mint_processor.data
+> node executables/inter_comm/stake_and_mint_processor.js $HOME/openst-setup/logs/stake_and_mint_processor.data $CONFIG_STRATEGY_PATH
 ```
 
 * Start Stake Hunter Intercom in new terminal.
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> node executables/inter_comm/stake_hunter.js $HOME/openst-setup/logs/stake_hunter.data
+> node executables/inter_comm/stake_hunter.js $HOME/openst-setup/logs/stake_hunter.data $CONFIG_STRATEGY_PATH
 ```
 
 * Start Processor to execute transactions in new terminal.
@@ -196,7 +196,7 @@ Use the file path in the following command:
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> node ./executables/block_scanner/for_tx_status_and_balance_sync.js 1 ~/openst-setup/logs/block_scanner_execute_transaction.data
+> node ./executables/block_scanner/for_tx_status_and_balance_sync.js 1 ~/openst-setup/logs/block_scanner_execute_transaction.data $CONFIG_STRATEGY_PATH <optional benchmarking file>
 ```
 
 * Start worker to process events.
@@ -237,7 +237,7 @@ node executables/rmq_subscribers/log_all_events.js >> log/log_all_events.log
 
 * Filling up missing nonce.
 ```
-c = require('./fire_brigade/fill_up_missing_nonce');
+c = require('./executables/fire_brigade/fill_up_missing_nonce');
 o = new c({from_address: '0x6bEeE57355885BAd8018814A0B0E93F368148c37', to_address: '0x180bA8f73897C0CB26d76265fC7868cfd936E617', chain_kind: 'value', missing_nonce: 25})
 o.perform();
 ```

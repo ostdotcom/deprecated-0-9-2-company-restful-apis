@@ -4,10 +4,10 @@
  * @module executables/fire_brigade/fill_up_missing_nonce
  */
 
-const rootPrefix = '..',
+const rootPrefix = '../..',
   nonceHelperKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_helper'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  FillUpMissingNonceKlass = require(rootPrefix + '/fire_brigade/fill_up_missing_nonce');
+  FillUpMissingNonceKlass = require(rootPrefix + '/executables/fire_brigade/fill_up_missing_nonce');
 
 /**
  * parameters
@@ -105,13 +105,11 @@ module.exports = FillUpMissingNonceRange;
 
 
 Below is the code to run on console. Update toAddress and chainKind below.
-====================================================================
-var toAddress = '0x053234F228c1C197b6Fd29830F0F35b4e49Afa9C';
-var chainKind = 'utility';
+====================================================================\
 
 var rootPrefix = '.';
-var FillUpMissingNonceRangeKlass = require(rootPrefix + '/fire_brigade/fill_up_missing_nonce_range');
-var fillUpObject = new FillUpMissingNonceRangeKlass(toAddress, chainKind);
+var FillUpMissingNonceRangeKlass = require(rootPrefix + '/executables/fire_brigade/fill_up_missing_nonce_range');
+var fillUpObject = new FillUpMissingNonceRangeKlass({to_address: '0xb98209453EAD1c7D6b3b8EC91F59d3a113a8dBf9', chain_kind: 'utility', gas_price: 0, geth_providers: ['ws://127.0.0.1:19547']});
 fillUpObject.perform().then(console.log);
 
 
