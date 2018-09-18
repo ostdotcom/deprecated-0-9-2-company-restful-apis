@@ -57,6 +57,8 @@ const Derived = function() {
     }
   };
 
+  Object.assign(oThis.unlockAccount, _unlockAccount);
+
   return oThis;
 };
 

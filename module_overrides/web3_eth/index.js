@@ -339,6 +339,8 @@ const Derived = function() {
     }
   };
 
+  Object.assign(oThis.sendTransaction, _sendTransaction);
+
   return oThis;
 };
 
