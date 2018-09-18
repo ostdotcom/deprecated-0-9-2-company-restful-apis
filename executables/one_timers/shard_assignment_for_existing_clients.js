@@ -102,7 +102,7 @@ MigrateDataFromDdbShardsToClientConfigStrategies.prototype = {
         continue;
       }
 
-      auxilary_data.TOKEN_BALANCE_SHARD_NAME = transactionLogShardNameRsp.data.data.Items[0].SN.S;
+      auxilary_data.TOKEN_BALANCE_SHARD_NAME = tokenBalanceShardNameRsp.data.data.Items[0].SN.S;
 
       logger.debug(`[${clientId}] auxilary_data: `, auxilary_data);
 
