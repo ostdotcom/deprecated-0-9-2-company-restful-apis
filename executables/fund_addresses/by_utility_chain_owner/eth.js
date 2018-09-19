@@ -10,10 +10,10 @@
  *   4. Utility Deployer
  *   5. Utility Ops
  *
- * Usage: node executables/fund_addresses/by_utility_chain_owner/eth.js configStrategyFilePath isChainSetUp
+ * Usage: node executables/fund_addresses/by_utility_chain_owner/eth.js group_id isChainSetUp
  *
  * Command Line Parameters Description:
- * configStrategyFilePath: path to the file which is storing the config strategy info.
+ * group_id: Group id for fetching config strategy
  * isChainSetUp: path to the file which is storing the benchmarking info.
  *
  * @module executables/fund_addresses/by_utility_chain_owner/eth
@@ -31,21 +31,19 @@ require(rootPrefix + '/lib/providers/platform');
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
 const args = process.argv,
-  configStrategyFilePath = args[2],
+  group_id = args[2],
   isChainSetUp = args[3];
 
 let configStrategy = {};
 
 // Usage demo.
 const usageDemo = function() {
-  logger.log(
-    'usage:',
-    'node ./executables/fund_addresses/by_utility_chain_owner/eth.js configStrategyFilePath isChainSetUp'
-  );
-  logger.log('* configStrategyFilePath is the path to the file which is storing the config strategy info.');
+  logger.log('usage:', 'node ./executables/fund_addresses/by_utility_chain_owner/eth.js group_id isChainSetUp');
+  logger.log('* group_id is needed for fetching config strategy');
 };
 
 // Validate and sanitize the command line arguments.
@@ -56,19 +54,15 @@ const validateAndSanitize = function() {
     process.exit(1);
   }
 
-  if (!configStrategyFilePath) {
-    logger.error('Config strategy file path is NOT passed in the arguments.');
+  if (!group_id) {
+    logger.error('Group id is not passed');
     usageDemo();
     process.exit(1);
   }
-
-  configStrategy = require(configStrategyFilePath);
 };
 
 // Validate and sanitize the input params.
 validateAndSanitize();
-const instanceComposer = new InstanceComposer(configStrategy),
-  openStPlatform = instanceComposer.getPlatformProvider().getInstance();
 
 /**
  * constructor for fund addresses with ETH
@@ -89,6 +83,11 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
   perform: async function() {
     const oThis = this,
       interestedUserNames = oThis._interestedUserNames();
+
+    let strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash();
+
+    configStrategy = configStrategyResp.data;
 
     for (let i in interestedUserNames) {
       const userName = interestedUserNames[i];
@@ -151,8 +150,12 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
    */
   _getEthBalance: async function(ethereumAddress) {
     const oThis = this,
+      instanceComposer = new InstanceComposer(configStrategy),
+      openStPlatform = instanceComposer.getPlatformProvider().getInstance(),
       fetchBalanceObj = new openStPlatform.services.balance.eth({ address: ethereumAddress }),
       balanceResponse = await fetchBalanceObj.perform();
+
+    oThis.openStPlatform = openStPlatform; // For later use
 
     if (balanceResponse.isFailure()) {
       logger.notify('e_fa_e_ceb_1', 'Error in fetching balance of Address', balanceResponse, {
@@ -177,7 +180,7 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
    */
   _transferEthBalance: async function(ethereumAddress, transferAmountInWei) {
     const oThis = this,
-      transferEthBalanceObj = new openStPlatform.services.transaction.transfer.eth({
+      transferEthBalanceObj = new oThis.openStPlatform.services.transaction.transfer.eth({
         sender_name: 'utilityChainOwner',
         recipient_address: ethereumAddress,
         amount_in_wei: transferAmountInWei,

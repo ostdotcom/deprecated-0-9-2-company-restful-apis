@@ -5,12 +5,12 @@
  * 1. Marking the transaction status as mined.
  * 2. Settle the balance credit to the receiver and also settle the delta of pessimistic debit amount and actual debited amount from the sender.
  *
- * Usage: node executables/block_scanner/for_tx_status_and_balance_sync.js processLockId datafilePath configStrategyFilePath [benchmarkFilePath]
+ * Usage: node executables/block_scanner/for_tx_status_and_balance_sync.js processLockId datafilePath group_id [benchmarkFilePath]
  *
  * Command Line Parameters Description:
  * processLockId: processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.
  * datafilePath: path to the file which is storing the last block scanned info.
- * configStrategyFilePath: path to the file which is storing the config strategy info.
+ * group_id: group_id to fetch config strategy
  * [benchmarkFilePath]: path to the file which is storing the benchmarking info.
  *
  * @module executables/block_scanner/for_tx_status_and_balance_sync
@@ -21,6 +21,7 @@ const rootPrefix = '../..';
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   configStrategyCacheKlass = require(rootPrefix + '/lib/shared_cache_multi_management/client_config_strategies'),
   ProcessLocker = new ProcessLockerKlass();
 
@@ -35,7 +36,7 @@ require(rootPrefix + '/lib/web3/interact/ws_interact');
 const args = process.argv,
   processLockId = args[2],
   datafilePath = args[3],
-  configStrategyFilePath = args[4].trim(),
+  group_id = args[4],
   benchmarkFilePath = args[5];
 
 let configStrategy = {};
@@ -44,13 +45,13 @@ let configStrategy = {};
 const usageDemo = function() {
   logger.log(
     'usage:',
-    'node ./executables/block_scanner/for_tx_status_and_balance_sync.js processLockId datafilePath configStrategyFilePath [benchmarkFilePath]'
+    'node ./executables/block_scanner/for_tx_status_and_balance_sync.js processLockId datafilePath group_id [benchmarkFilePath]'
   );
   logger.log(
     '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
   );
   logger.log('* datafilePath is the path to the file which is storing the last block scanned info.');
-  logger.log('* configStrategyFilePath is the path to the file which is storing the config strategy info.');
+  logger.log('* group_id is needed to fetch config strategy.');
   logger.log('* benchmarkFilePath is the path to the file which is storing the benchmarking info.');
 };
 
@@ -68,13 +69,11 @@ const validateAndSanitize = function() {
     process.exit(1);
   }
 
-  if (!configStrategyFilePath) {
-    logger.error('Config strategy file path is NOT passed in the arguments.');
+  if (!group_id) {
+    logger.error('group_id is not passed');
     usageDemo();
     process.exit(1);
   }
-
-  configStrategy = require(configStrategyFilePath);
 };
 
 // Validate and sanitize the input params.
@@ -86,12 +85,7 @@ ProcessLocker.canStartProcess({ process_title: 'executables_block_scanner_execut
 const fs = require('fs'),
   abiDecoder = require('abi-decoder'),
   BigNumber = require('bignumber.js'),
-  uuid = require('uuid'),
-  ic = new InstanceComposer(configStrategy),
-  platformProvider = ic.getPlatformProvider(),
-  storageProvider = ic.getStorageProvider(),
-  openStPlatform = platformProvider.getInstance(),
-  openSTStorage = storageProvider.getInstance();
+  uuid = require('uuid');
 
 const responseHelper = require(rootPrefix + '/lib/formatter/response'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
@@ -99,12 +93,6 @@ const responseHelper = require(rootPrefix + '/lib/formatter/response'),
   transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log'),
   commonValidator = require(rootPrefix + '/lib/validators/common'),
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address');
-
-const tokenBalanceModelDdb = openSTStorage.model.TokenBalance,
-  coreAbis = openStPlatform.abis;
-
-abiDecoder.addABI(coreAbis.airdrop);
-abiDecoder.addABI(coreAbis.brandedToken);
 
 const BlockScannerForTxStatusAndBalanceSync = function(params) {
   const oThis = this;
@@ -167,7 +155,23 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    */
   checkForNewBlocks: async function() {
     const oThis = this,
-      web3InteractFactory = ic.getWeb3InteractHelper();
+      web3InteractFactory = ic.getWeb3InteractHelper(),
+      strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash();
+
+    configStrategy = configStrategyResp.data;
+
+    const ic = new InstanceComposer(configStrategy),
+      platformProvider = ic.getPlatformProvider(),
+      storageProvider = ic.getStorageProvider(),
+      openStPlatform = platformProvider.getInstance(),
+      openSTStorage = storageProvider.getInstance(),
+      coreAbis = openStPlatform.abis;
+
+    oThis.tokenBalanceModelDdb = openSTStorage.model.TokenBalance;
+
+    abiDecoder.addABI(coreAbis.airdrop);
+    abiDecoder.addABI(coreAbis.brandedToken);
 
     if (oThis.interruptSignalObtained) {
       logger.win('* Exiting Process after interrupt signal obtained.');
@@ -1186,7 +1190,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       let clientId = erc20ContractAddressClientIdMap[erc20ContractAddress];
 
       let userBalancesSettlementsData = unknownTxsData.balanceAdjustmentMap[erc20ContractAddress],
-        tokenBalanceModelObj = new tokenBalanceModelDdb({
+        tokenBalanceModelObj = new oThis.tokenBalanceModelDdb({
           erc20_contract_address: erc20ContractAddress,
           chain_id: configStrategy.OST_UTILITY_CHAIN_ID,
           shard_name: oThis.clientIdShardsMap[clientId].TOKEN_BALANCE_SHARD_NAME

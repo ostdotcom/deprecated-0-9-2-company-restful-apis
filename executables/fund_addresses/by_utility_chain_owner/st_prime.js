@@ -13,10 +13,10 @@
  * If utility chain owner's ST PRIME goes down to a certain number, emails will be sent and
  * manually ST PRIME will be transferred by funder address.
  *
- * Usage: node executables/fund_addresses/by_utility_chain_owner/st_prime.js configStrategyFilePath
+ * Usage: node executables/fund_addresses/by_utility_chain_owner/st_prime.js group_id
  *
  * Command Line Parameters Description:
- * configStrategyFilePath: path to the file which is storing the config strategy info.
+ * group_id: group id for fetching config strategy
  *
  * @module executables/fund_addresses/by_utility_chain_owner/st_prime
  */
@@ -33,10 +33,11 @@ require(rootPrefix + '/lib/providers/platform');
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
 const args = process.argv,
-  configStrategyFilePath = args[2];
+  group_id = args[2];
 
 let configStrategy = {};
 
@@ -44,32 +45,27 @@ let configStrategy = {};
 const usageDemo = function() {
   logger.log(
     'usage:',
-    'node ./executables/block_scanner/for_tx_status_and_balance_sync.js processLockId datafilePath configStrategyFilePath [benchmarkFilePath]'
+    'node ./executables/block_scanner/for_tx_status_and_balance_sync.js processLockId datafilePath group_id [benchmarkFilePath]'
   );
   logger.log(
     '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
   );
   logger.log('* datafilePath is the path to the file which is storing the last block scanned info.');
-  logger.log('* configStrategyFilePath is the path to the file which is storing the config strategy info.');
+  logger.log('* group_id is needed for fetching config strategy');
   logger.log('* benchmarkFilePath is the path to the file which is storing the benchmarking info.');
 };
 
 // Validate and sanitize the command line arguments.
 const validateAndSanitize = function() {
-  if (!configStrategyFilePath) {
-    logger.error('Config strategy file path is NOT passed in the arguments.');
+  if (!group_id) {
+    logger.error('group_id is not passed');
     usageDemo();
     process.exit(1);
   }
-
-  configStrategy = require(configStrategyFilePath);
 };
 
 // Validate and sanitize the input params.
 validateAndSanitize();
-
-const instanceComposer = new InstanceComposer(configStrategy),
-  openStPlatform = instanceComposer.getPlatformProvider().getInstance();
 
 /**
  * constructor for fund addresses with ST PRIME
@@ -85,6 +81,11 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
    */
   perform: async function() {
     const oThis = this;
+
+    let strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash();
+
+    configStrategy = configStrategyResp.data;
 
     for (var i in oThis._interestedUserNames) {
       const userName = oThis._interestedUserNames[i];
@@ -147,8 +148,12 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
    */
   _getSTPrimeBalance: async function(ethereumAddress) {
     const oThis = this,
+      instanceComposer = new InstanceComposer(configStrategy),
+      openStPlatform = instanceComposer.getPlatformProvider().getInstance(),
       fetchBalanceObj = new openStPlatform.services.balance.simpleTokenPrime({ address: ethereumAddress }),
       balanceResponse = await fetchBalanceObj.perform();
+
+    oThis.openStPlatform = openStPlatform; // for later use
 
     if (balanceResponse.isFailure()) {
       logger.notify('e_fa_sp_ceb_1', 'Error in fetching balance of Address', balanceResponse, {
@@ -173,7 +178,7 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
    */
   _transferSTPrimeBalance: async function(ethereumAddress, transferAmountInWei) {
     const oThis = this,
-      transferSTPrimeBalanceObj = new openStPlatform.services.transaction.transfer.simpleTokenPrime({
+      transferSTPrimeBalanceObj = new oThis.openStPlatform.services.transaction.transfer.simpleTokenPrime({
         sender_name: 'utilityChainOwner',
         recipient_address: ethereumAddress,
         amount_in_wei: transferAmountInWei,

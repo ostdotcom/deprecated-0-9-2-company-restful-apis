@@ -4,11 +4,11 @@
  * This fetches an estimated gas price for which Transaction could get mined in less than 5 minutes.
  * source: 'https://ethgasstation.info/txPoolReport.php'
  *
- * Usage: node executables/update_realtime_gas_price.js processId configStrategyFilePath
+ * Usage: node executables/update_realtime_gas_price.js processId group_id
  *
  * Command Line Parameters Description:
  * processId: process id to start the process
- * configStrategyFilePath: config strategy file to fetch VALUE chain_id
+ * group_id: group id for fetching config strategy
  *
  * Example: node executables/update_realtime_gas_price.js 12345 ~/config.js
  *
@@ -21,7 +21,7 @@ const rootPrefix = '..',
 
 const args = process.argv,
   processId = args[2],
-  configStrategyFilePath = args[3];
+  group_id = args[3];
 
 ProcessLocker.canStartProcess({ process_title: 'update_realtime_gasprice-' + processId });
 
@@ -31,17 +31,18 @@ const dynamicGasPriceProvider = require('@ostdotcom/ost-dynamic-gas-price'),
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger.js'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   valueChainGasPriceCacheKlass = require(rootPrefix + '/lib/shared_cache_management/estimate_value_chain_gas_price');
 
 let configStrategy = {};
 
 // Usage demo.
 const usageDemo = function() {
-  logger.log('usage:', 'node executables/update_realtime_gas_price.js processId configStrategyFilePath');
+  logger.log('usage:', 'node executables/update_realtime_gas_price.js processId group_id');
   logger.log(
     '* processId is used for ensuring that no other process with the same processId can run on a given machine.'
   );
-  logger.log('* configStrategyFilePath is the path to the file which is storing the config strategy info.');
+  logger.log('* group_id is needed for fetching config strategy');
 };
 
 // Validate and sanitize the command line arguments.
@@ -52,13 +53,11 @@ const validateAndSanitize = function() {
     process.exit(1);
   }
 
-  if (!configStrategyFilePath) {
-    logger.error('Config strategy file path is NOT passed in the arguments.');
+  if (!group_id) {
+    logger.error('group_id is not passed');
     usageDemo();
     process.exit(1);
   }
-
-  configStrategy = require(configStrategyFilePath);
 };
 
 // Validate and sanitize the input params.
@@ -74,7 +73,11 @@ const UpdateRealTimeGasPrice = function() {
 
 UpdateRealTimeGasPrice.prototype = {
   perform: async function() {
-    const oThis = this;
+    const oThis = this,
+      strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash();
+
+    configStrategy = configStrategyResp.data;
 
     let estimatedGasPriceFloat = 0,
       valueChainGasPriceCacheObj = new valueChainGasPriceCacheKlass(),

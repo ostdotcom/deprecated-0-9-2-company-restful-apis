@@ -18,24 +18,19 @@ shell.config.silent = true;
 
 const InstanceComposer = require(rootPrefix + '/instance_composer'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger.js'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   homeAbsolutePath = process.env.HOME,
   binFolderAbsolutePath = homeAbsolutePath + '/openst-setup/bin';
 
 const args = process.argv,
-  configStrategyFilePath = args[2];
+  group_id = args[2];
 
-if (!configStrategyFilePath) {
-  logger.error(
-    'Please pass the config strategy for the value chain. Run the code as: \nnode start_value_services "value_chain_config_strategy_file_path"'
-  );
+if (!group_id) {
+  logger.error('Please pass group_id for fetching strategy. Run the code as: \nnode start_value_services group_id');
   process.exit(1);
 }
 
-const configStrategy = require(configStrategyFilePath),
-  ic = new InstanceComposer(configStrategy),
-  platformProvider = ic.getPlatformProvider(),
-  openSTPlaform = platformProvider.getInstance(),
-  valueChainStatus = openSTPlaform.services.utils.valueChainStatus;
+const strategyByGroupHelperObj = new StrategyByGroupHelper(group_id);
 
 /**
  * Constructor for start services
@@ -50,6 +45,12 @@ StartServicesKlass.prototype = {
    */
   perform: async function() {
     const oThis = this,
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(),
+      configStrategy = configStrategyResp.data,
+      ic = new InstanceComposer(configStrategy),
+      platformProvider = ic.getPlatformProvider(),
+      openSTPlaform = platformProvider.getInstance(),
+      valueChainStatus = openSTPlaform.services.utils.valueChainStatus,
       servicesList = [];
 
     // Start REDIS server

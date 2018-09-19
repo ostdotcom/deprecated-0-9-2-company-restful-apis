@@ -5,13 +5,13 @@
  * It listens to the StakingIntentDeclared event emitted by stake method of openSTValue contract.
  * On getting this event, it calls confirmStakingIntent method of utilityRegistrar contract.
  *
- * Usage: node executables/inter_comm/stake_and_mint.js filePath configStrategyFilePath
+ * Usage: node executables/inter_comm/stake_and_mint.js filePath group_id
  *
  * Command Line Parameters Description:
  * filePath: file path for last ProcessedBlock and last Processed Transaction Index
- * configStrategyFilePath: path to the file which is storing the config strategy info.
+ * group_id: group id for fetching config strategy
  *
- * Example: node executables/inter_comm/stake_and_mint.js $HOME/openst-setup/logs/stake_and_mint.data ~/config.json
+ * Example: node executables/inter_comm/stake_and_mint.js $HOME/openst-setup/logs/stake_and_mint.data group_id
  *
  * @module executables/inter_comm/stake_and_mint
  */
@@ -24,17 +24,18 @@ require(rootPrefix + '/module_overrides/index');
 require(rootPrefix + '/lib/providers/platform');
 
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
 const usageDemo = function() {
-  logger.log('usage:', 'node ./executables/inter_comm/stake_and_mint.js blockNoFilePath configStrategyFilePath');
+  logger.log('usage:', 'node ./executables/inter_comm/stake_and_mint.js blockNoFilePath group_id');
   logger.log('* blockNoFilePath is the file path for last ProcessedBlock and last Processed Transaction Index.');
-  logger.log('* configStrategyFilePath is the path to the file which is storing the config strategy info.');
+  logger.log('* group_id should be sent to fetch config strategy.');
 };
 
 const args = process.argv,
   filePath = args[2].trim(),
-  configStrategyFilePath = args[3].trim();
+  group_id = args[3];
 
 let configStrategy = {};
 
@@ -50,31 +51,46 @@ const validateAndSanitize = function() {
     process.exit(1);
   }
 
-  if (!configStrategyFilePath) {
-    logger.error('configStrategyFilePath Not Found!!');
+  if (!group_id) {
+    logger.error('group_id Not Found!!');
     process.exit(1);
   }
-
-  configStrategy = require(configStrategyFilePath);
 };
 
 // validate and sanitize the input params
 validateAndSanitize();
-
-const ic = new InstanceComposer(configStrategy),
-  platformProvider = ic.getPlatformProvider(),
-  openStPlatform = platformProvider.getInstance(),
-  StakeAndMintInterCommKlass = openStPlatform.services.interComm.stakeAndMint;
-
-const stakeAndMintInterCommObj = new StakeAndMintInterCommKlass({ file_path: filePath });
-stakeAndMintInterCommObj.registerInterruptSignalHandlers();
-stakeAndMintInterCommObj.init();
-
-logger.win('InterComm Script for Stake and Mint initiated.');
 
 process.on('uncaughtException', function(args) {
   logger.error('Received uncaughtException', args);
   setTimeout(function() {
     process.exit(1);
   }, 60000);
+});
+
+const StartIntercomm = function() {
+  const oThis = this;
+};
+
+StartIntercomm.prototype = {
+  perform: async function() {
+    const oThis = this,
+      strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(),
+      configStrategy = configStrategyResp.data,
+      ic = new InstanceComposer(configStrategy),
+      platformProvider = ic.getPlatformProvider(),
+      openStPlatform = platformProvider.getInstance(),
+      StakeAndMintInterCommKlass = openStPlatform.services.interComm.stakeAndMint;
+
+    const stakeAndMintInterCommObj = new StakeAndMintInterCommKlass({ file_path: filePath });
+    stakeAndMintInterCommObj.registerInterruptSignalHandlers();
+    stakeAndMintInterCommObj.init();
+
+    logger.win('InterComm Script for Stake and Mint initiated.');
+  }
+};
+
+let startIntercomm = new StartIntercomm();
+startIntercomm.perform().then(function(r) {
+  process.exit(0);
 });

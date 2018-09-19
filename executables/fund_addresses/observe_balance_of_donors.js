@@ -2,45 +2,43 @@
 /**
  * Observe balances of Donors
  *
- * Usage: node executables/fund_addresses/observe_balance_of_donors.js configStrategyFilePath
+ * Usage: node executables/fund_addresses/observe_balance_of_donors.js group_id
  *
  * Command Line Parameters Description:
- * configStrategyFilePath: path to the file which is storing the config strategy info.
+ * group_id: group id for fetching config strategy
  *
  * @module executables/fund_addresses/observe_balance_of_donors
  */
 
 const rootPrefix = '../..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
 require(rootPrefix + '/lib/providers/platform');
 
 const args = process.argv,
-  configStrategyFilePath = args[2];
+  group_id = args[2];
 
 let configStrategy = {};
 
 // Usage demo.
 const usageDemo = function() {
-  logger.log('usage:', 'node executables/fund_addresses/observe_balance_of_donors.js configStrategyFilePath');
-  logger.log('* configStrategyFilePath is the path to the file which is storing the config strategy info.');
+  logger.log('usage:', 'node executables/fund_addresses/observe_balance_of_donors.js group_id');
+  logger.log('* group_id is needed for fetching config strategy');
 };
 
 // Validate and sanitize the command line arguments.
 const validateAndSanitize = function() {
-  if (!configStrategyFilePath) {
-    logger.error('Config strategy file path is NOT passed in the arguments.');
+  if (!group_id) {
+    logger.error('Group id is not passed');
     usageDemo();
     process.exit(1);
   }
-  configStrategy = require(configStrategyFilePath);
 };
 
 // Validate and sanitize the input params.
 validateAndSanitize();
-const instanceComposer = new InstanceComposer(configStrategy),
-  openStPlatform = instanceComposer.getPlatformProvider().getInstance();
 
 /**
  *
@@ -54,7 +52,11 @@ const balanceObserververKlass = function() {
 
 balanceObserververKlass.prototype = {
   perform: async function() {
-    const oThis = this;
+    const oThis = this,
+      strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash();
+
+    configStrategy = configStrategyResp.data;
 
     await oThis._observeFoundationEthBalance();
 
@@ -113,7 +115,9 @@ balanceObserververKlass.prototype = {
    * @return {Promise}
    */
   _fetchEthBalance: function(address) {
-    const oThis = this;
+    const oThis = this,
+      instanceComposer = new InstanceComposer(configStrategy),
+      openStPlatform = instanceComposer.getPlatformProvider().getInstance();
 
     const obj = new openStPlatform.services.balance.eth({ address: address });
 

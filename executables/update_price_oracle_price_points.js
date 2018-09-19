@@ -3,12 +3,12 @@
  * This script will update price oracle price points using ost-price-oracle npm package.
  * This fetches OST Current price in given currency from coin market cap and sets it in price oracle.
  *
- * Usage: node executables/update_price_oracle_price_points.js configStrategyFilePath
+ * Usage: node executables/update_price_oracle_price_points.js groupId
  *
  * Command Line Parameters Description:
- * configStrategyFilePath: config strategy file to fetch OST_PRICE_ORACLES
+ * groupId: Group id to fetch the price oracles from strategy
  *
- * Example: node executables/update_price_oracle_price_points.js ~/config.js
+ * Example: node executables/update_price_oracle_price_points.js group_id
  *
  * @module executables/update_price_oracle_price_points
  */
@@ -20,30 +20,29 @@ require(rootPrefix + '/module_overrides/index');
 
 const conversionRateConstants = require(rootPrefix + '/lib/global_constant/conversion_rates'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
 require(rootPrefix + '/app/services/conversion_rates/update_ost_fiat_rates_in_price_oracle');
 
 const args = process.argv,
-  configStrategyFilePath = args[2];
+  group_id = args[2];
 
 let configStrategy = {};
 
 // Usage demo.
 const usageDemo = function() {
-  logger.log('usage:', 'node executables/update_price_oracle_price_points.js config_file_path');
+  logger.log('usage:', 'node executables/update_price_oracle_price_points.js group_id');
   logger.log('* config Strategy FilePath is the path to the file which is storing the config strategy info.');
 };
 
 // Validate and sanitize the command line arguments.
 const validateAndSanitize = function() {
-  if (!configStrategyFilePath) {
-    logger.error('Config strategy file path is NOT passed in the arguments.');
+  if (!group_id) {
+    logger.error('Group id is not passed in the input.');
     usageDemo();
     process.exit(1);
   }
-
-  configStrategy = require(configStrategyFilePath);
 };
 
 // Validate and sanitize the input params.
@@ -61,7 +60,12 @@ const UpdatePriceOraclePricePoints = function() {
 UpdatePriceOraclePricePoints.prototype = {
   perform: async function() {
     const oThis = this,
-      instanceComposer = new InstanceComposer(configStrategy);
+      strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash();
+
+    configStrategy = configStrategyResp.data;
+
+    let instanceComposer = new InstanceComposer(configStrategy);
 
     if (Object.keys(configStrategy.OST_UTILITY_PRICE_ORACLES).length === 0) {
       throw 'Price oracle contracts not defined';
@@ -92,4 +96,6 @@ UpdatePriceOraclePricePoints.prototype = {
 
 // perform action
 const UpdatePriceOraclePricePointObj = new UpdatePriceOraclePricePoints();
-UpdatePriceOraclePricePointObj.perform();
+UpdatePriceOraclePricePointObj.perform().then(function(r) {
+  process.exit(0);
+});

@@ -159,28 +159,28 @@ node executables/one_timers/config_strategy_seed.js managed_address_salt_id grou
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> node executables/inter_comm/register_branded_token.js $HOME/openst-setup/logs/register_branded_token.data $CONFIG_STRATEGY_PATH
+> node executables/inter_comm/register_branded_token.js $HOME/openst-setup/logs/register_branded_token.data group_id
 ```
 
 * Start Stake & Mint Intercom in new terminal.
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> node executables/inter_comm/stake_and_mint.js $HOME/openst-setup/logs/stake_and_mint.data $CONFIG_STRATEGY_PATH
+> node executables/inter_comm/stake_and_mint.js $HOME/openst-setup/logs/stake_and_mint.data group_id
 ```
 
 * Start Stake & Mint Processor Intercom in new terminal.
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> node executables/inter_comm/stake_and_mint_processor.js $HOME/openst-setup/logs/stake_and_mint_processor.data $CONFIG_STRATEGY_PATH
+> node executables/inter_comm/stake_and_mint_processor.js $HOME/openst-setup/logs/stake_and_mint_processor.data group_id
 ```
 
 * Start Stake Hunter Intercom in new terminal.
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> node executables/inter_comm/stake_hunter.js $HOME/openst-setup/logs/stake_hunter.data $CONFIG_STRATEGY_PATH
+> node executables/inter_comm/stake_hunter.js $HOME/openst-setup/logs/stake_hunter.data group_id
 ```
 
 * Start Processor to execute transactions in new terminal.
@@ -196,7 +196,7 @@ Use the file path in the following command:
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> node ./executables/block_scanner/for_tx_status_and_balance_sync.js 1 ~/openst-setup/logs/block_scanner_execute_transaction.data $CONFIG_STRATEGY_PATH <optional benchmarking file>
+> node ./executables/block_scanner/for_tx_status_and_balance_sync.js 1 ~/openst-setup/logs/block_scanner_execute_transaction.data group_id <optional benchmarking file>
 ```
 
 * Start worker to process events.
@@ -216,7 +216,7 @@ Use the file path in the following command:
 * Start Cronjobs.
 ```base
 # Every hour
-node executables/update_price_oracle_price_points.js $CONFIG_STRATEGY_PATH >> log/update_price_oracle_price_points.log
+node executables/update_price_oracle_price_points.js group_id >> log/update_price_oracle_price_points.log
 # Every five minutes
 node executables/rmq_subscribers/send_error_emails.js >> log/send_error_emails.log
 # Every minute
@@ -224,11 +224,11 @@ node executables/rmq_subscribers/start_airdrop.js >> log/start_airdrop.log
 # Every five minutes
 node executables/fund_addresses/by_reserve/st_prime.js >> log/fund_addresses_by_reserve_st_prime.log
 # Every five minutes
-node executables/fund_addresses/by_utility_chain_owner/eth.js >> log/fund_addresses_by_utility_chain_owner_eth.log
+node executables/fund_addresses/by_utility_chain_owner/eth.js group_id isChainSetUp(true/false) >> log/fund_addresses_by_utility_chain_owner_eth.log
 # Every five minutes
-node executables/fund_addresses/by_utility_chain_owner/st_prime.js >> log/fund_addresses_by_utility_chain_owner_st_prime.log
+node executables/fund_addresses/by_utility_chain_owner/st_prime.js group_id >> log/fund_addresses_by_utility_chain_owner_st_prime.log
 # Every five minutes
-node executables/fund_addresses/observe_balance_of_donors.js >> log/observe_balance_of_donors.log
+node executables/fund_addresses/observe_balance_of_donors.js group_id >> log/observe_balance_of_donors.log
 # Every minutes
 node executables/rmq_subscribers/log_all_events.js >> log/log_all_events.log
 ```
@@ -249,14 +249,14 @@ NOTE: Create the file if not present.
   {"lastProcessedBlock":0}
   
 > source set_env_vars.sh
-> node start_value_services.js $CONFIG_STRATEGY_PATH
-> node start_utility_services.js $CONFIG_STRATEGY_PATH
+> node start_value_services.js group_id
+> node start_utility_services.js group_id
 ```
 
 * Start block scanner. Change utility chain id accordingly.
 ```bash
 > touch $HOME/openst-setup/logs/block_scanner_benchmark-1000.csv
-> node executables/block_scanner/for_tx_status_and_balance_sync.js 1 ~/openst-setup/data/utility-chain-1000/block_scanner_execute_transaction.data $CONFIG_STRATEGY_PATH ~/openst-setup/logs/block_scanner_benchmark-1000.csv >> ~/openst-setup/logs/utility-chain-1000/block_scanner_execute_transaction.log
+> node executables/block_scanner/for_tx_status_and_balance_sync.js 1 ~/openst-setup/data/utility-chain-1000/block_scanner_execute_transaction.data group_id ~/openst-setup/logs/block_scanner_benchmark-1000.csv >> ~/openst-setup/logs/utility-chain-1000/block_scanner_execute_transaction.log
 ```
 
 * Don't forget to start the cronjobs. 

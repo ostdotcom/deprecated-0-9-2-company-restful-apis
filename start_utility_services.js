@@ -18,26 +18,20 @@ shell.config.silent = true;
 
 const InstanceComposer = require(rootPrefix + '/instance_composer'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger.js'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   homeAbsolutePath = process.env.HOME,
   startServicesHelper = require(rootPrefix +
     '/node_modules/@openstfoundation/openst-platform/tools/setup/start_services_helper');
 
 const args = process.argv,
-  configStrategyFilePath = args[2];
+  group_id = args[2];
 
-if (!configStrategyFilePath) {
-  logger.error(
-    'Please pass the config strategy for the utility chain. Run the code as: \nnode start_utility_services "utility_chain_config_strategy_file_path"'
-  );
+if (!group_id) {
+  logger.error('Please pass group_id for config fetching. Run the code as: \nnode start_utility_services group_id');
   process.exit(1);
 }
 
-const configStrategy = require(configStrategyFilePath),
-  ic = new InstanceComposer(configStrategy),
-  platformProvider = ic.getPlatformProvider(),
-  openSTPlaform = platformProvider.getInstance(),
-  utilityChainStatus = openSTPlaform.services.utils.utilityChainStatus,
-  utilityChainId = configStrategy.OST_UTILITY_CHAIN_ID;
+const strategyByGroupHelperObj = new StrategyByGroupHelper(group_id);
 
 /**
  * Constructor for start services
@@ -52,6 +46,13 @@ StartServicesKlass.prototype = {
    */
   perform: async function() {
     const oThis = this,
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(),
+      configStrategy = configStrategyResp.data,
+      ic = new InstanceComposer(configStrategy),
+      platformProvider = ic.getPlatformProvider(),
+      openSTPlaform = platformProvider.getInstance(),
+      utilityChainStatus = openSTPlaform.services.utils.utilityChainStatus,
+      utilityChainId = configStrategy.OST_UTILITY_CHAIN_ID,
       servicesList = [];
 
     // Start DynamoDB server
@@ -108,7 +109,7 @@ StartServicesKlass.prototype = {
       utilityChainId +
       '/' +
       'register_branded_token.data ' +
-      configStrategyFilePath +
+      group_id +
       ' >> ' +
       homeAbsolutePath +
       '/openst-setup/logs/utility-chain-' +
@@ -126,7 +127,7 @@ StartServicesKlass.prototype = {
       utilityChainId +
       '/' +
       'stake_and_mint.data ' +
-      configStrategyFilePath +
+      group_id +
       ' >> ' +
       homeAbsolutePath +
       '/openst-setup/logs/utility-chain-' +
@@ -144,7 +145,7 @@ StartServicesKlass.prototype = {
       utilityChainId +
       '/' +
       'stake_and_mint_processor.data ' +
-      configStrategyFilePath +
+      group_id +
       ' >> ' +
       homeAbsolutePath +
       '/openst-setup/logs/utility-chain-' +

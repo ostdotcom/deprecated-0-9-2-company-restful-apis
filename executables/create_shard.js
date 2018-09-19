@@ -3,23 +3,22 @@
 /*
 *  Script for creating new shard using OpenSTStorage provider
 *
-*  Pre-checks - config file provided in the input should contain key, OS_DYNAMODB_TRANSACTION_LOG_SHARDS_ARRAY with data
-*
-*  Usage: node executables/one_timers/create_shard.js configStrategyFilePath 'shard_type' 'shard_name'
-*  Example: node executables/one_timers/create_shard.js ~/config.json 'token_balance'|'transaction_log' transaction_logs_shard_001
+*  Usage: node executables/one_timers/create_shard.js group_id 'shard_type' 'shard_name'
+*  Example: node executables/one_timers/create_shard.js group_id 'token_balance'|'transaction_log' transaction_logs_shard_001
 *
 * */
 
 const rootPrefix = '../..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
 require(rootPrefix + '/lib/providers/storage');
 require(rootPrefix + '/app/models/transaction_log');
 
 const args = process.argv,
-  config_file_path = args[2],
+  group_id = args[2],
   shard_type = args[3],
   shard_name = args[4],
   ClientConfigStrategyModel = require(rootPrefix + '/app/models/client_config_strategies'),
@@ -29,28 +28,21 @@ const args = process.argv,
 let configStrategy = {};
 
 const usageDemo = function() {
-  logger.log('usage:', 'node executables/one_timers/create_shard.js configStrategyFilePath');
-  logger.log('* configStrategyFilePath is the path to the file which is storing the config strategy info.');
+  logger.log('usage:', 'node executables/one_timers/create_shard.js group_id');
+  logger.log('* group_id is needed for fetching config strategy');
 };
 
 // Validate and sanitize the command line arguments.
 const validateAndSanitize = function() {
-  if (!configStrategy) {
-    logger.error('Config strategy file path is NOT passed in the arguments.');
+  if (!group_id) {
+    logger.error('Group id is not passed');
     usageDemo();
     process.exit(1);
   }
-  configStrategy = require(config_file_path);
 };
 
 // Validate and sanitize the input params.
 validateAndSanitize();
-
-const instanceComposer = new InstanceComposer(configStrategy),
-  storageProvider = instanceComposer.getStorageProvider(),
-  openSTStorage = storageProvider.getInstance(),
-  transactionLogModel = instanceComposer.getTransactionLogModel(),
-  ddbServiceObj = openSTStorage.dynamoDBService;
 
 /**
  *
@@ -93,7 +85,17 @@ CreateShards.prototype = {
    * @returns {promise}
    */
   asyncPerform: async function() {
-    const oThis = this;
+    const oThis = this,
+      strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash();
+
+    configStrategy = configStrategyResp.data;
+
+    let instanceComposer = new InstanceComposer(configStrategy),
+      storageProvider = instanceComposer.getStorageProvider();
+
+    oThis.transactionLogModel = instanceComposer.getTransactionLogModel();
+    oThis.openSTStorage = storageProvider.getInstance();
 
     if (shard_type == 'token_balance') {
       await oThis.createTokenBalancesShards();
@@ -119,7 +121,7 @@ CreateShards.prototype = {
     const oThis = this;
 
     logger.info('starting to create tokenBalancesShard : ', shard_name);
-    let createRsp = await new openSTStorage.model.TokenBalance({ shard_name: shard_name }).createShard();
+    let createRsp = await new oThis.openSTStorage.model.TokenBalance({ shard_name: shard_name }).createShard();
 
     if (createRsp.isFailure()) {
       return Promise.reject(createRsp);
@@ -137,7 +139,7 @@ CreateShards.prototype = {
     const oThis = this;
 
     logger.info('starting to create transactionLogShard : ', shard_name);
-    let createRsp = await new transactionLogModel({ shard_name: shard_name }).createShard();
+    let createRsp = await new oThis.transactionLogModel({ shard_name: shard_name }).createShard();
     if (createRsp.isFailure()) {
       return Promise.reject(createRsp);
     }
@@ -158,7 +160,7 @@ CreateShards.prototype = {
       Limit: 1
     };
 
-    let response = await ddbServiceObj.scan(params);
+    let response = await oThis.openSTStorage.ddbServiceObj.scan(params);
 
     if (response.isFailure()) {
       console.error('==== Config passed seems to be incorrect. No clients found in Dynamo');
