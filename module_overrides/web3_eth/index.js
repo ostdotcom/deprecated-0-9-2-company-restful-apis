@@ -47,7 +47,7 @@ const Derived = function() {
   oThis.sendTransaction = function() {
     const rawTx = arguments['0'],
       fromAddress = rawTx.from,
-      host = oThis.currentProvider.host ? oThis.currentProvider.host : oThis.currentProvider.connection._url;
+      host = moUtils.getHost(oThis.currentProvider);
 
     if (moUtils.isUnlockable(fromAddress)) {
       return _sendTransaction.apply(this, arguments);
@@ -59,8 +59,6 @@ const Derived = function() {
 
       let txHashObtained = false,
         retryCount = 0;
-
-      const maxRetryFor = 2;
 
       const sendSignedTx = function(serializedTx) {
         const onTxHash = async function(hash) {
@@ -76,8 +74,7 @@ const Derived = function() {
         };
 
         const onError = async function(error) {
-          const nonceTooLowError = error.message.indexOf('nonce too low') > -1;
-          if (nonceTooLowError && retryCount < maxRetryFor) {
+          if (moUtils.isNonceTooLowError(error) && retryCount < moUtils.maxRetryCount) {
             logger.error('NONCE too low error. retrying with higher nonce.');
             retryCount = retryCount + 1;
 
