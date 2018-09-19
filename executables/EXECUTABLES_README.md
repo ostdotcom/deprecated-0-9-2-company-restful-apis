@@ -21,10 +21,10 @@ This is a periodic cron which observes the balance of donors. For further inform
 This is a continuous cron, which registers the branded token on value and utility chains, For more info, refer [here](../executables/inter_comm/register_branded_token.js)
 
 ##### Stake and mint intercomm
-This is a continuous cron, which stakes OST on value chain, For more info, refer [here](../executables/inter_comm/stake_and_mint.js)
+This is a continuous cron, and is an intermediate communicator between value chain and utility chain used for the stake and mint. For more info, refer [here](../executables/inter_comm/stake_and_mint.js)
 
 ##### Stake and mint processor intercomm
-This is a continuous cron, which mints branded tokens on utility chain, For more info, refer [here](../executables/inter_comm/stake_and_mint_processor.js)
+This is a continuous cron, and is an intermediate communicator between value chain and utility chain used for process staking and process minting, For more info, refer [here](../executables/inter_comm/stake_and_mint_processor.js)
 
 ##### Stake hunter intercomm
 This is a continuous cron, triggers process staking if not triggered already. For more info, refer [here](../executables/inter_comm/stake_hunter.js)

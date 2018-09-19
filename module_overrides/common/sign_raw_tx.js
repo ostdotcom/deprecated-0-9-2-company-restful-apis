@@ -19,10 +19,10 @@ function initRequires() {
   coreConstants = coreConstants || require(rootPrefix + '/config/core_constants');
 }
 
-const SignRawTx = function (rawTx) {
+const SignRawTx = function(rawTx) {
   const oThis = this;
 
-  logger.debug('arguments of sendTransaction', arguments)
+  logger.debug('arguments of sendTransaction', arguments);
 
   oThis.rawTx = rawTx;
 
@@ -31,15 +31,13 @@ const SignRawTx = function (rawTx) {
 };
 
 SignRawTx.prototype = {
-  perform: async function () {
+  perform: async function() {
     const oThis = this;
 
     oThis._sanitize();
-
-
   },
 
-  _sanitize: function () {
+  _sanitize: function() {
     const oThis = this;
 
     // convert to hex

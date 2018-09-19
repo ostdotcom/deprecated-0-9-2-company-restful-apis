@@ -143,9 +143,9 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   warmUpWeb3Pool: async function() {
     const oThis = this,
       strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
-      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(),
-      configStrategy = configStrategyResp.data;
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash();
 
+    configStrategy = configStrategyResp.data;
     oThis.ic = new InstanceComposer(configStrategy);
 
     const web3InteractFactory = oThis.ic.getWeb3InteractHelper();
