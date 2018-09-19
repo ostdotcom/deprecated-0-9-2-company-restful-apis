@@ -126,13 +126,13 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   /**
    * Starts the process of the script with initializing processor.
    */
-  init: function() {
+  init: async function() {
     const oThis = this;
 
     // Read this from a file.
     oThis.scannerData = JSON.parse(fs.readFileSync(oThis.filePath).toString());
 
-    oThis.warmUpWeb3Pool();
+    await oThis.warmUpWeb3Pool();
 
     oThis.checkForNewBlocks();
   },
@@ -140,9 +140,16 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   /**
    * Warm up web3 pool.
    */
-  warmUpWeb3Pool: function() {
+  warmUpWeb3Pool: async function() {
     const oThis = this,
-      web3InteractFactory = ic.getWeb3InteractHelper();
+      strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(),
+      configStrategy = configStrategyResp.data;
+
+    oThis.ic = new InstanceComposer(configStrategy);
+
+    const web3InteractFactory = oThis.ic.getWeb3InteractHelper();
+
     let web3PoolSize = coreConstants.OST_WEB3_POOL_SIZE;
 
     for (let i = 0; i < web3PoolSize; i++) {
@@ -154,16 +161,11 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    * Check for new blocks.
    */
   checkForNewBlocks: async function() {
-    const oThis = this,
-      web3InteractFactory = ic.getWeb3InteractHelper(),
-      strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
-      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash();
+    const oThis = this;
 
-    configStrategy = configStrategyResp.data;
-
-    const ic = new InstanceComposer(configStrategy),
-      platformProvider = ic.getPlatformProvider(),
-      storageProvider = ic.getStorageProvider(),
+    const web3InteractFactory = oThis.ic.getWeb3InteractHelper(),
+      platformProvider = oThis.ic.getPlatformProvider(),
+      storageProvider = oThis.ic.getStorageProvider(),
       openStPlatform = platformProvider.getInstance(),
       openSTStorage = storageProvider.getInstance(),
       coreAbis = openStPlatform.abis;
@@ -369,7 +371,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
   getTxReceiptsForBatch: async function(batchedTxHashes) {
     const oThis = this,
-      web3InteractFactory = ic.getWeb3InteractHelper();
+      web3InteractFactory = oThis.ic.getWeb3InteractHelper();
 
     let promiseArray = [],
       web3Interact = web3InteractFactory.getInstance('utility');
@@ -468,7 +470,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
             let shardConfig = oThis.clientIdShardsMap[clientId];
 
-            let finalConfig = ic.configStrategy;
+            let finalConfig = oThis.ic.configStrategy;
 
             Object.assign(finalConfig, shardConfig);
 
@@ -573,7 +575,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     const oThis = this,
       eventGeneratingContractAddresses = [],
       txHashToShortListedEventsMap = {},
-      Erc20ContractAddressCacheKlass = ic.getErc20ContractAddressCache();
+      Erc20ContractAddressCacheKlass = oThis.ic.getErc20ContractAddressCache();
 
     let erc20ContractAddressesData = {},
       erc20ContractAddressClientIdMap = {},
@@ -716,7 +718,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    */
   updateTransactionLogs: async function() {
     const oThis = this,
-      transactionLogModel = ic.getTransactionLogModel();
+      transactionLogModel = oThis.ic.getTransactionLogModel();
 
     logger.debug('-------oThis.clientIdsMap----', oThis.clientIdsMap);
 
@@ -848,8 +850,9 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    * Get highest block
    */
   refreshHighestBlock: async function() {
-    const oThis = this,
-      web3InteractFactory = ic.getWeb3InteractHelper();
+    const oThis = this;
+
+    const web3InteractFactory = oThis.ic.getWeb3InteractHelper();
 
     let web3Interact = web3InteractFactory.getInstance('utility');
 
@@ -1146,7 +1149,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
    */
   _insertDataInTransactionLogs: async function(formattedTransactionsData) {
     const oThis = this,
-      transactionLogModel = ic.getTransactionLogModel();
+      transactionLogModel = oThis.ic.getTransactionLogModel();
 
     logger.info('starting _insertDataInTransactionLogs');
 
@@ -1258,6 +1261,8 @@ const blockScannerObj = new BlockScannerForTxStatusAndBalanceSync({
   benchmark_file_path: benchmarkFilePath
 });
 blockScannerObj.registerInterruptSignalHandlers();
-blockScannerObj.init();
+blockScannerObj.init().then(function(r) {
+  logger.win('Blockscanner Started');
+});
 
 // InstanceComposer.register(BlockScannerForTxStatusAndBalanceSync, 'getBlockScannerForTxStatusAndBalanceSync', true);
