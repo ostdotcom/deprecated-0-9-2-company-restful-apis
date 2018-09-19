@@ -140,7 +140,7 @@ SignRawTx.prototype = {
     let rawTx = Object.assign({}, oThis.rawTx);
 
     oThis._signTransactionLocally = function() {
-      let tx = new Tx(rawTx);
+      let tx = new Tx(oThis.rawTx);
 
       tx.sign(privateKeyObj);
 
