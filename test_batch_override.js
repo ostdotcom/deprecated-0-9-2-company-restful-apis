@@ -16,10 +16,17 @@ coreConstants.ADDRESSES_TO_UNLOCK_VIA_KEYSTORE_FILE_MAP[spender.toLowerCase()] =
 
 function testBatch(batch) {
   //Unlock
-  let unlockRequest = web3.eth.personal.unlockAccount.request(spender, passphrase, 60000);
-  batch.add(unlockRequest, function(err, result) {
-    err && console.error('Unlock Failed:\n', err);
-    result && console.log('Unlock Successful:\n', result);
+  let senderUnlockRequest = web3.eth.personal.unlockAccount.request(spender, passphrase, 60000);
+  batch.add(senderUnlockRequest, function(err, result) {
+    err && console.error('!! Unlock Failed (spender):\n', err);
+    result && console.log('Unlock Successful (spender):\n', result);
+  });
+
+  //Unlock - Non-White listed.
+  let receiverUnlockRequest = web3.eth.personal.unlockAccount.request(receiver, passphrase, 60000);
+  batch.add(receiverUnlockRequest, function(err, result) {
+    err && console.error('!! Unlock Failed (receiver):\n', err);
+    result && console.log('Unlock Successful (receiver):\n', result);
   });
 
   //Send
@@ -32,11 +39,23 @@ function testBatch(batch) {
   });
 
   batch.add(sendTxRequest, function(err, result) {
-    err && console.error('sendTransaction Failed:\n', err);
+    err && console.error('!! sendTransaction Failed:\n', err);
     result && console.log('sendTransaction Successful:\n', result);
   });
 
   batch.execute();
+
+  //Test web3.eth.personal.unlockAccount
+  web3.eth.personal.unlockAccount(spender, passphrase, 60000, function(err, result) {
+    err && console.error('!! Unlock Failed (spender)(using web3.eth.personal.unlockAccount):\n', err);
+    result && console.log('Unlock Successful (spender)(using web3.eth.personal.unlockAccount):\n', result);
+  });
+
+  //Test web3.eth.personal.unlockAccount for non-whited address.
+  web3.eth.personal.unlockAccount(receiver, passphrase, 60000, function(err, result) {
+    err && console.error('!! Unlock Failed (receiver)(using web3.eth.personal.unlockAccount):\n', err);
+    result && console.log('Unlock Successful (receiver)(using web3.eth.personal.unlockAccount):\n', result);
+  });
 }
 
 function testMe() {

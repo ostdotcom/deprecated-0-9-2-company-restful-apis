@@ -119,7 +119,7 @@ SignRawTx.prototype = {
   _getPrivateKey: async function() {
     const oThis = this;
 
-    if(oThis.privateKeyObj) return;
+    if (oThis._signTransactionLocally !== SignRawTx.prototype._signTransactionLocally) return;
 
     const fetchPrivateKeyObj = new fetchPrivateKeyKlass({ address: oThis.fromAddress }),
       fetchPrivateKeyRsp = await fetchPrivateKeyObj.fetchDecryptedData();
@@ -135,7 +135,18 @@ SignRawTx.prototype = {
       privateKey = privateKey.substr(2);
     }
 
-    oThis.privateKeyObj = new Buffer(privateKey, 'hex');
+    //IMPORTANT: The below code is meant for security. Its not overhead. Its security.
+    let privateKeyObj = new Buffer(privateKey, 'hex');
+    let rawTx = Object.assign({}, oThis.rawTx);
+    oThis.rawTx = null;
+
+    oThis._signTransactionLocally = function() {
+      let tx = new Tx(rawTx);
+
+      tx.sign(privateKeyObj);
+
+      return tx.serialize();
+    };
     oThis.clientId = fetchPrivateKeyRsp.data['client_id'];
   },
 
@@ -149,7 +160,7 @@ SignRawTx.prototype = {
   _getChainInfo: async function() {
     const oThis = this;
 
-    if(oThis.chainId) return;
+    if (oThis.chainId) return;
 
     // Fetch details from cache.
     if (oThis.clientId === '0') {
@@ -269,11 +280,7 @@ SignRawTx.prototype = {
    * @private
    */
   _signTransactionLocally: function() {
-    let tx = new Tx(oThis.rawTx);
-
-    tx.sign(oThis.privateKeyObj);
-
-    return tx.serialize();
+    throw 'Key not available';
   }
 };
 

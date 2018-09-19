@@ -7,11 +7,12 @@ const BasePackage = require(basePackage);
 const rootPrefix = '../..';
 
 // Please declare your require variable here.
-let logger;
+let logger, moUtils;
 
 // NOTE :: Please define all your requires inside the function
 function initRequires() {
   logger = logger || require(rootPrefix + '/lib/logger/custom_console_logger');
+  moUtils = require(rootPrefix + '/module_overrides/common/utils');
 }
 
 // Module Override Code - Part 1
@@ -41,18 +42,16 @@ const Derived = function() {
   const _unlockAccount = oThis.unlockAccount;
 
   // over-riding unlockAccount method
-  oThis.unlockAccount = function() {
+  oThis.unlockAccount = function(address, password, unlockDuraction, callback) {
     logger.debug('HACKED unlockAccount INVOKED');
 
-    const coreConstants = require(rootPrefix + '/config/core_constants'),
-      addressToUnlock = arguments['0'];
-
     // if address has passphrase, use the base package unlock account.
-    if (coreConstants.ADDRESSES_TO_UNLOCK_VIA_KEYSTORE_FILE_MAP[addressToUnlock.toLowerCase()]) {
-      logger.info('WEB3_OVERRIDE: performing unlockAccount using passphrase for address:', addressToUnlock);
+    if (moUtils.isUnlockable(address)) {
+      logger.info('WEB3_OVERRIDE: performing unlockAccount using passphrase for address:', address);
       return _unlockAccount.apply(this, arguments);
     } else {
-      logger.info('WEB3_OVERRIDE: dummy response for unlockAccount for address:', addressToUnlock);
+      logger.info('WEB3_OVERRIDE: dummy response for unlockAccount for address:', address);
+      callback && callback(null, true);
       return Promise.resolve(true);
     }
   };
