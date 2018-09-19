@@ -183,9 +183,9 @@ SignRawTx.prototype = {
     }
     // Fetch details for a client.
     else {
-      let configStrategyHelperObj = new configStrategyHelper();
+      let configStrategyHelperObj = new configStrategyHelper(oThis.clientId);
 
-      let configStrategyResponse = await configStrategyHelperObj.getConfigStrategy(oThis.clientId);
+      let configStrategyResponse = await configStrategyHelperObj.get();
       if (configStrategyResponse.isFailure()) {
         return Promise.reject(configStrategyResponse);
       }
