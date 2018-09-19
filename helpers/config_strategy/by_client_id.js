@@ -142,7 +142,9 @@ ConfigStrategyByClientId.prototype = {
 
     //prepare a hash and return
     let configStrategyIdToDetailMap = configStrategyFetchRsp.data,
-      finalConfigStrategyHash = configStrategyIdToDetailMap[strategyId][kind];
+      finalConfigStrategyHash = {};
+
+    finalConfigStrategyHash[strategyId] = configStrategyIdToDetailMap[strategyId][kind];
 
     return Promise.resolve(responseHelper.successWithData(finalConfigStrategyHash));
   }
