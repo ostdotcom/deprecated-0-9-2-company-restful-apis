@@ -86,6 +86,20 @@ const ConfigStrategyModelSpecificPrototype = {
       );
     }
 
+    let validation = await oThis._validateSpecificParameterKeys(kind, configStrategyParams);
+
+    if (validation.isFailure()) {
+      logger.error('Specific validation failed');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'a_mo_cs_c_15',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {},
+          error_config: errorConfig
+        })
+      );
+    }
+
     let strategyIdPresentInDB = null,
       hashedConfigStrategyParamsResponse = await oThis._getSHAOf(kind, configStrategyParams);
     if (hashedConfigStrategyParamsResponse.isFailure()) {
@@ -435,8 +449,23 @@ const ConfigStrategyModelSpecificPrototype = {
     let finalDataToInsertInDb = {},
       strategyKind = queryResult[0].kind,
       managedAddressSaltId = queryResult[0].managed_address_salts_id,
-      strategyKindName = configStrategyConstants.kinds[strategyKind],
-      shaEncryptionOfStrategyParamsResponse = await oThis._getSHAOf(strategyKindName, configStrategyParams);
+      strategyKindName = configStrategyConstants.kinds[strategyKind];
+
+    let validation = await oThis._validateSpecificParameterKeys(strategyKindName, configStrategyParams);
+
+    if (validation.isFailure()) {
+      logger.error('Specific validation failed');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'a_mo_cs_c_16',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {},
+          error_config: errorConfig
+        })
+      );
+    }
+
+    let shaEncryptionOfStrategyParamsResponse = await oThis._getSHAOf(strategyKindName, configStrategyParams);
     if (shaEncryptionOfStrategyParamsResponse.isFailure()) {
       logger.error('Error while creating SHA of params');
       return Promise.reject(
@@ -633,6 +662,68 @@ const ConfigStrategyModelSpecificPrototype = {
       encryptedConfigStrategyParams = localCipher.encrypt(response.data.addressSalt, paramsToEncryptString);
 
     return Promise.resolve(responseHelper.successWithData(encryptedConfigStrategyParams));
+  },
+
+  /**
+   * This function will validate only utility constants, value_geth and utility_geth
+   * @param strategy_kind
+   * @param params_to_validate
+   * @returns {Promise<void>}
+   * @private
+   */
+  _validateSpecificParameterKeys: async function(strategy_kind, params_to_validate) {
+    const _oThis = this,
+      strategyKind = strategy_kind,
+      paramsToValidate = params_to_validate;
+
+    if (strategyKind === configStrategyConstants.utility_constants) {
+      const keyWhoseValueShouldBeAnObject = 'OST_UTILITY_PRICE_ORACLES';
+
+      let value = paramsToValidate[keyWhoseValueShouldBeAnObject];
+      if (value === undefined) {
+        logger.error(`[${keyWhoseValueShouldBeAnObject}] is not present in the params provided`);
+      }
+
+      if (typeof value !== 'object') {
+        logger.error(`[${keyWhoseValueShouldBeAnObject}] value should be an object.`);
+        return Promise.reject(
+          responseHelper.error({
+            internal_error_identifier: 'm_tb_dshh_y_2',
+            api_error_identifier: 'something_went_wrong',
+            debug_options: {}
+          })
+        );
+      }
+    } else if (
+      strategyKind === configStrategyConstants.value_geth ||
+      strategyKind === configStrategyConstants.utility_geth
+    ) {
+      let keysWhoseValueShouldBeAnArray = null;
+
+      if (strategyKind === configStrategyConstants.value_geth) {
+        keysWhoseValueShouldBeAnArray = ['OST_VALUE_GETH_RPC_PROVIDERS', 'OST_VALUE_GETH_WS_PROVIDERS'];
+      } else {
+        keysWhoseValueShouldBeAnArray = ['OST_UTILITY_GETH_RPC_PROVIDERS', 'OST_UTILITY_GETH_WS_PROVIDERS'];
+      }
+
+      for (let index in keysWhoseValueShouldBeAnArray) {
+        let keyWhoseValueToCheck = keysWhoseValueShouldBeAnArray[index],
+          value = paramsToValidate[keyWhoseValueToCheck];
+
+        if (!(value instanceof Array)) {
+          logger.error(`[${keyWhoseValueToCheck}] should be an array`);
+          return Promise.reject(
+            responseHelper.error({
+              internal_error_identifier: 'm_tb_dshh_y_3',
+              api_error_identifier: 'something_went_wrong',
+              debug_options: {}
+            })
+          );
+        }
+      }
+    }
+
+    return Promise.resolve(responseHelper.successWithData({}));
   }
 };
 
