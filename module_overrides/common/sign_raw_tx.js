@@ -138,7 +138,6 @@ SignRawTx.prototype = {
     //IMPORTANT: The below code is meant for security. Its not overhead. Its security.
     let privateKeyObj = new Buffer(privateKey, 'hex');
     let rawTx = Object.assign({}, oThis.rawTx);
-    oThis.rawTx = null;
 
     oThis._signTransactionLocally = function() {
       let tx = new Tx(rawTx);
