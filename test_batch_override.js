@@ -12,9 +12,12 @@ let amount = web3.utils.toWei('0.01');
 let gasPrice = '0x12A05F200';
 let gas = '30000';
 
+let gethSpender = spender;
+let remoteSpender = spender;
+
 coreConstants.ADDRESSES_TO_UNLOCK_VIA_KEYSTORE_FILE_MAP[spender.toLowerCase()] = 1;
 
-function testBatch(batch) {
+function testBatch(batch, spender) {
   //Unlock
   let senderUnlockRequest = web3.eth.personal.unlockAccount.request(spender, passphrase, 60000);
   batch.add(senderUnlockRequest, function(err, result) {
@@ -76,15 +79,12 @@ function testSingle(spender) {
 
 function testMe() {
   let batch1 = new web3.BatchRequest();
-  testBatch(batch1);
+  testBatch(batch1, gethSpender);
 
   let batch2 = new web3.eth.BatchRequest();
-  testBatch(batch2);
+  testBatch(batch2, remoteSpender);
 
-  let gethSpender = spender;
   testSingle(gethSpender);
-
-  let remoteSpender = spender;
   testSingle(remoteSpender);
 }
 
