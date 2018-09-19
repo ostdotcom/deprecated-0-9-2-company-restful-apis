@@ -43,37 +43,38 @@ let proto = {
     // hardcoded for now
     let provider = oBatch.getProvider(),
       host = moUtils.getHost(provider);
-    request.signRawTx =  request.signRawTx || new SignRawTx(host, rawTx);
+    request.signRawTx = request.signRawTx || new SignRawTx(host, rawTx);
 
     let serializedTx, err;
 
     request.tryCnt++;
-    await request.signRawTx.perform().then(function(result) {
-      serializedTx = result;
-      oBatch.sendSignedRequest( request, serializedTx );
-    }).catch(function (reason) {
-      logger.error('signRawTx error ::', reason);
-      err = reason;
-      request.callback && request.callback( err );
-    });
+    await request.signRawTx
+      .perform()
+      .then(function(result) {
+        serializedTx = result;
+        oBatch.sendSignedRequest(request, serializedTx);
+      })
+      .catch(function(reason) {
+        logger.error('signRawTx error ::', reason);
+        err = reason;
+        request.callback && request.callback(err);
+      });
   },
 
   //@Rachin/Kedar: Consider moving this logic to another class because batch should not create more instances of batch.
-  sendSignedRequest: function (request, serializedTx ) {
+  sendSignedRequest: function(request, serializedTx) {
     const oBatch = this;
     let callback = request.callback;
     let newRequestObject = {
       method: 'eth_sendRawTransaction',
-      params: [
-        '0x' + serializedTx.toString('hex')
-      ],
-      callback: callback
+      params: ['0x' + serializedTx.toString('hex')]
     };
 
     let newBatch = new OstBatchManager(oBatch.requestManager);
-    newBatch.add(newRequestObject, function (err, result) {
-      if ( result ){
-        request.signRawTx.markAsSuccess().catch( ()=> {
+    newBatch.add(newRequestObject, function(err, result) {
+      if (result) {
+        logger.info('calling request.signRawTx.markAsSuccess');
+        request.signRawTx.markAsSuccess().catch(() => {
           logger.warn('signRawTx.markAsSuccess threw an error. Redis seems to be donw.');
           //Do Nothing. Callback has been triggered.
         });
@@ -83,8 +84,9 @@ let proto = {
       }
 
       //We have failed. Is it nonce too low ?
-      if ( !moUtils.isNonceTooLowError( err ) || request.tryCnt >= moUtils.maxRetryCount ) {
-        request.signRawTx.markAsFailure().catch( ()=> {
+      if (!moUtils.isNonceTooLowError(err) || request.tryCnt >= moUtils.maxRetryCount) {
+        logger.info('calling request.signRawTx.markAsFailure');
+        request.signRawTx.markAsFailure().catch(() => {
           //Do Nothing. Callback has been triggered.
           logger.warn('signRawTx.markAsFailure threw an error. Redis seems to be donw.');
         });
@@ -93,18 +95,21 @@ let proto = {
       }
 
       //Nonce is too low and we can re-try.
-      request.signRawTx.markAsFailure( true ).then( () => {
-        return oBatch.signRequest( request );
-      }).catch(() => {
-        logger.warn('signRawTx.markAsFailure( true ) threw an error. Redis OR Geth seems to be donw.');
-        return callback(err, null);
-      });
-
+      logger.info('calling request.signRawTx.markAsFailure(true)');
+      request.signRawTx
+        .markAsFailure(true)
+        .then(() => {
+          return oBatch.signRequest(request);
+        })
+        .catch(() => {
+          logger.warn('signRawTx.markAsFailure( true ) threw an error. Redis OR Geth seems to be donw.');
+          return callback(err, null);
+        });
     });
     newBatch.execute();
   },
 
-  getProvider: function () {
+  getProvider: function() {
     const oBatch = this;
     return oBatch.requestManager.provider;
   },
