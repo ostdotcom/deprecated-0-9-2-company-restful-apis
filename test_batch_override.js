@@ -45,24 +45,33 @@ function testBatch(batch) {
   });
 
   batch.execute();
+}
+
+function testSingle(spender) {
+  //Send
+  let sendTxParams = {
+    from: spender,
+    to: receiver,
+    value: amount,
+    gasPrice: gasPrice,
+    gas: gas
+  };
 
   //Test web3.eth.personal.unlockAccount
-  web3.eth.personal.unlockAccount(spender, passphrase, 60000, function(err, result) {
-    err && console.error('!! Unlock Failed (spender)(using web3.eth.personal.unlockAccount):\n', err);
-    result && console.log('Unlock Successful (spender)(using web3.eth.personal.unlockAccount):\n', result);
-  });
-
-  //Test web3.eth.personal.unlockAccount for non-whited address.
-  web3.eth.personal.unlockAccount(receiver, passphrase, 60000, function(err, result) {
-    err && console.error('!! Unlock Failed (receiver)(using web3.eth.personal.unlockAccount):\n', err);
-    result && console.log('Unlock Successful (receiver)(using web3.eth.personal.unlockAccount):\n', result);
-  });
-
-  //Test web3.eth.sendTransaction
-  web3.eth.sendTransaction(sendTxParams, function(err, result) {
-    err && console.error('!! sendTransaction Failed (using web3.eth.sendTransaction):\n', err);
-    result && console.log('sendTransaction Successful (using web3.eth.sendTransaction):\n', result);
-  });
+  web3.eth.personal
+    .unlockAccount(spender, passphrase, 60000, function(err, result) {
+      err && console.error('!! Unlock Failed (spender)(using web3.eth.personal.unlockAccount):\n', err);
+      result && console.log('Unlock Successful (spender)(using web3.eth.personal.unlockAccount):\n', result);
+    })
+    .then(function() {
+      //Test web3.eth.sendTransaction
+      return web3.eth.sendTransaction(sendTxParams, function(err, result) {
+        err &&
+          console.error('!! sendTransaction Failed (using web3.eth.sendTransaction. spender:', spender, '):\n', err);
+        result &&
+          console.log('sendTransaction Successful (using web3.eth.sendTransaction) spender:', spender, '):\n', result);
+      });
+    });
 }
 
 function testMe() {
@@ -71,6 +80,12 @@ function testMe() {
 
   let batch2 = new web3.eth.BatchRequest();
   testBatch(batch2);
+
+  let gethSpender = spender;
+  testSingle(gethSpender);
+
+  let remoteSpender = spender;
+  testSingle(remoteSpender);
 }
 
 testMe();
