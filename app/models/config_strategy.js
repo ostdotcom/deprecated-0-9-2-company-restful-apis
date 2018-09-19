@@ -46,6 +46,7 @@ const ConfigStrategyModelSpecificPrototype = {
   * @param kind(eg. dynamo,dax etc)
   * @param managedAddressSaltId
   * @param configStrategyParams: It contains complete configuration of any particular kind
+  * @param group_id: Group Id to associate for the given params.(optional)
   * @return {Promise<integer>} - returns a Promise with integer of strategy id.
   *
   */
@@ -113,7 +114,7 @@ const ConfigStrategyModelSpecificPrototype = {
     if (strategyIdPresentInDB !== null) {
       //If configStrategyParamsNotToEncrypt is already present in database then id of that param is sent
       logger.info('The given params is already present in database with id:', strategyIdPresentInDB);
-      return Promise.resolve(strategyIdPresentInDB);
+      return Promise.resolve(responseHelper.successWithData(strategyIdPresentInDB));
     } else {
       let separateHashesResponse = await oThis._getSeparateHashes(kind, configStrategyParams);
       if (separateHashesResponse.isFailure()) {
@@ -157,7 +158,7 @@ const ConfigStrategyModelSpecificPrototype = {
 
       const dbId = await oThis.insert(data).fire();
 
-      return Promise.resolve(dbId.insertId);
+      return Promise.resolve(responseHelper.successWithData(dbId.insertId));
     }
   },
 
