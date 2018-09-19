@@ -196,10 +196,10 @@ SignRawTx.prototype = {
         utilityProviders = oThis.configStrategy.OST_UTILITY_GETH_WS_PROVIDERS;
 
       // We identify chain kind and geth providers in this manner to save one cache hit.
-      if (valueProviders.includes(host)) {
+      if (valueProviders.includes(oThis.host)) {
         oThis.chainKind = 'value';
         oThis.gethWsProviders = valueProviders;
-      } else if (utilityProviders.includes(host)) {
+      } else if (utilityProviders.includes(oThis.host)) {
         oThis.chainKind = 'utility';
         oThis.gethWsProviders = utilityProviders;
       }
