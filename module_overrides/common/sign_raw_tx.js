@@ -25,7 +25,7 @@ const initRequires = function() {
     valueChainGasPriceCacheKlass || require(rootPrefix + '/lib/shared_cache_management/estimate_value_chain_gas_price');
   coreConstants = coreConstants || require(rootPrefix + '/config/core_constants');
   ChainGethProvidersCache = require(rootPrefix + '/lib/shared_cache_management/chain_geth_providers');
-  configStrategyHelper = require(rootPrefix + '/helpers/config_strategy');
+  configStrategyHelper = require(rootPrefix + '/helpers/config_strategy/by_client_id');
   fetchPrivateKeyKlass = require(rootPrefix + '/lib/shared_cache_management/address_private_key');
 };
 
