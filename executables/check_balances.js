@@ -13,8 +13,7 @@
 
 const rootPrefix = '..',
   InstanceComposer = require(rootPrefix + '/instance_composer'),
-  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy'),
-  configStrategyHelper = new ConfigStrategyHelperKlass(),
+  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
   ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
@@ -137,7 +136,8 @@ CheckBalances.prototype = {
    */
   _checkForClient: async function(clientData) {
     const oThis = this,
-      configStrategyRsp = await configStrategyHelper.getConfigStrategy(clientData['client_id']),
+      configStrategyHelper = new ConfigStrategyHelperKlass(clientData['client_id']),
+      configStrategyRsp = await configStrategyHelper.get(),
       configStrategy = configStrategyRsp.data,
       ic = new InstanceComposer(configStrategy),
       platformProvider = ic.getPlatformProvider(),

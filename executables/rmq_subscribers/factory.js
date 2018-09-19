@@ -127,8 +127,7 @@ nonIcDrivenPerformers[notificationTopics.claimTokenOnUcStart] = IntercomStatusKl
 nonIcDrivenPerformers[notificationTopics.claimTokenOnUcDone] = IntercomStatusKlass;
 
 const InstanceComposer = require(rootPrefix + '/instance_composer'),
-  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy'),
-  configStrategyHelper = new ConfigStrategyHelperKlass();
+  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id');
 
 const promiseExecutor = function(onResolve, onReject, params) {
   // factory logic for deciding what action to perform here.
@@ -151,7 +150,9 @@ const promiseExecutor = function(onResolve, onReject, params) {
         return onResolve();
       });
   } else if (icDrivenTopicPerformers.hasOwnProperty(topic)) {
-    configStrategyHelper.getConfigStrategy(parsedParams.message.payload.client_id).then(function(configStrategyRsp) {
+    let configStrategyHelper = new ConfigStrategyHelperKlass(parsedParams.message.payload.client_id);
+
+    configStrategyHelper.get().then(function(configStrategyRsp) {
       if (configStrategyRsp.isFailure()) {
         return onReject(configStrategyRsp);
       }

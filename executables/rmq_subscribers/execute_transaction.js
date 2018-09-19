@@ -40,8 +40,7 @@ const openSTNotification = require('@openstfoundation/openst-notification'),
 //All Module Requires.
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
-  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy'),
-  configStrategyHelper = new ConfigStrategyHelperKlass();
+  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id');
 
 require(rootPrefix + '/lib/transactions/transfer_bt');
 
@@ -52,7 +51,8 @@ const promiseExecutor = function(onResolve, onReject, params) {
 
   const payload = parsedParams.message.payload;
 
-  configStrategyHelper.getConfigStrategy(payload.clientId).then(function(configStrategyRsp) {
+  let configStrategyHelper = new ConfigStrategyHelperKlass(payload.clientId);
+  configStrategyHelper.get().then(function(configStrategyRsp) {
     if (configStrategyRsp.isFailure()) {
       return Promise.reject(configStrategyRsp);
     }

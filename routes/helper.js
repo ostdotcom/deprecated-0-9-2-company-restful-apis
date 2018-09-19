@@ -5,7 +5,7 @@ const rootPrefix = '..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   apiParamsValidator = require(rootPrefix + '/lib/validators/api_params'),
-  ConfigStrategyHelper = require(rootPrefix + '/helpers/config_strategy'),
+  ConfigStrategyHelper = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
 const routeMethods = {
@@ -88,8 +88,8 @@ const routeMethods = {
   _fetchConfigStrategy: async function(client_id) {
     const oThis = this;
 
-    let configStrategyHelper = new ConfigStrategyHelper(),
-      configStrategyRsp = await configStrategyHelper.getConfigStrategy(client_id);
+    let configStrategyHelper = new ConfigStrategyHelper(client_id),
+      configStrategyRsp = await configStrategyHelper.get();
 
     if (configStrategyRsp.isFailure()) {
       return Promise.reject(configStrategyRsp);

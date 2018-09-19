@@ -101,12 +101,6 @@ const NonceCacheKlassPrototype = {
 
       let cacheObject = OpenStCache.getInstance(cacheConfigStrategy);
       oThis.cacheImplementer = cacheObject.cacheInstance;
-
-      if (oThis.chainKind === 'value') {
-        oThis.chainId = oThis.configStrategy.OST_VALUE_CHAIN_ID;
-      } else {
-        oThis.chainId = oThis.configStrategy.OST_UTILITY_CHAIN_ID;
-      }
     }
 
     // Set cache key for nonce

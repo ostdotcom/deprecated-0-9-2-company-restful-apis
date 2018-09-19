@@ -7,7 +7,7 @@
 const rootPrefix = '../..',
   OpenStCache = require('@openstfoundation/openst-cache'),
   cacheManagementConst = require(rootPrefix + '/lib/global_constant/cache_management'),
-  configStrategyHelper = require(rootPrefix + '/helpers/config_strategy'),
+  configStrategyHelper = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   SharedRedisProvider = require(rootPrefix + '/lib/providers/shared_redis'),
   fetchPrivateKeyKlass = require(rootPrefix + '/lib/shared_cache_management/address_private_key');
@@ -44,9 +44,9 @@ ClearNonceCache.prototype = {
     if (clientId === '0') {
       cacheObject = SharedRedisProvider.getInstance(oThis.consistentBehavior);
     } else {
-      let configStrategyHelperObj = new configStrategyHelper();
+      let configStrategyHelperObj = new configStrategyHelper(clientId);
 
-      let configStrategyResponse = await configStrategyHelperObj.getConfigStrategy(clientId);
+      let configStrategyResponse = await configStrategyHelperObj.get();
       if (configStrategyResponse.isFailure()) {
         return Promise.reject(configStrategyResponse);
       }

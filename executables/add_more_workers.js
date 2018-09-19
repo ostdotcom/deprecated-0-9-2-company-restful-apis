@@ -28,8 +28,7 @@ const ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/clie
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
   errorConfig = basicHelper.fetchErrorConfig(apiVersions.general),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
-  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy'),
-  configStrategyHelper = new ConfigStrategyHelperKlass();
+  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id');
 
 require(rootPrefix + '/app/services/address/generate');
 require(rootPrefix + '/lib/providers/payments');
@@ -164,7 +163,8 @@ addMoreWorkersKlass.prototype = {
         managedAddressInsertData = [],
         newWorkerUuids = [];
 
-      let getConfigStrategyRsp = await configStrategyHelper.getConfigStrategy(clientId);
+      let configStrategyHelper = new ConfigStrategyHelperKlass(clientId),
+        getConfigStrategyRsp = await configStrategyHelper.get();
 
       if (getConfigStrategyRsp.isFailure()) {
         return Promise.reject(getConfigStrategyRsp);

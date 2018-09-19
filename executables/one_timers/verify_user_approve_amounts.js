@@ -9,8 +9,7 @@ const rootPrefix = '..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
   errorConfig = basicHelper.fetchErrorConfig(apiVersions.general),
-  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy'),
-  configStrategyHelper = new ConfigStrategyHelperKlass(),
+  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 require(rootPrefix + '/lib/providers/platform');
 
@@ -105,7 +104,8 @@ VerifyUserApprovalAmountsKlass.prototype = {
           .where(['client_id = ?', clientId])
           .fire();
 
-      let getConfigStrategyRsp = await configStrategyHelper.getConfigStrategy(clientId);
+      let configStrategyHelper = new ConfigStrategyHelperKlass(clientId),
+        getConfigStrategyRsp = await configStrategyHelper.get();
 
       if (getConfigStrategyRsp.isFailure()) {
         return Promise.reject(getConfigStrategyRsp);

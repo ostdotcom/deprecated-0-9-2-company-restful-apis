@@ -73,7 +73,7 @@ const Derived = function() {
       const Web3PromiEvent = require('web3-core-promievent'),
         hackedReturnedPromiEvent = Web3PromiEvent(),
         ChainGethProvidersCache = require(rootPrefix + '/lib/shared_cache_management/chain_geth_providers'),
-        configStrategyHelper = require(rootPrefix + '/helpers/config_strategy'),
+        configStrategyHelper = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
         fetchPrivateKeyKlass = require(rootPrefix + '/lib/shared_cache_management/address_private_key');
 
       let txHashObtained = false,
@@ -149,9 +149,9 @@ const Derived = function() {
         }
         // Fetch details for a client.
         else {
-          let configStrategyHelperObj = new configStrategyHelper();
+          let configStrategyHelperObj = new configStrategyHelper(clientId);
 
-          let configStrategyResponse = await configStrategyHelperObj.getConfigStrategy(clientId);
+          let configStrategyResponse = await configStrategyHelperObj.get();
           if (configStrategyResponse.isFailure()) {
             return Promise.reject(configStrategyResponse);
           }
@@ -164,9 +164,11 @@ const Derived = function() {
           // We identify chain kind and geth providers in this manner to save one cache hit.
           if (valueProviders.includes(host)) {
             chainKind = 'value';
+            chainId = configStrategy.OST_VALUE_CHAIN_ID;
             gethWsProviders = valueProviders;
           } else if (utilityProviders.includes(host)) {
             chainKind = 'utility';
+            chainId = configStrategy.OST_UTILITY_CHAIN_ID;
             gethWsProviders = utilityProviders;
           }
         }

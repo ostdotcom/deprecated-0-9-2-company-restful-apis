@@ -9,8 +9,7 @@
  *
  **/
 const rootPrefix = '../..',
-  configStrategyHelper = require(rootPrefix + '/helpers/config_strategy'),
-  configStrategyHelperObj = new configStrategyHelper(),
+  configStrategyHelper = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
   ClientBrandedTokensModel = require(rootPrefix + '/app/models/client_branded_token');
 
 const PopulateChainId = function() {
@@ -32,7 +31,8 @@ PopulateChainId.prototype = {
     for (let i = 0; i < rowData.length; i++) {
       let clientId = rowData[i].client_id;
 
-      let response = await configStrategyHelperObj.getConfigStrategy(clientId);
+      let configStrategyHelperObj = new configStrategyHelper(clientId),
+        response = await configStrategyHelperObj.get();
 
       let config = response.data;
 

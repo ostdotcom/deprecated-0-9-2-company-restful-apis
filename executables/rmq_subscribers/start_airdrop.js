@@ -27,8 +27,7 @@ const openSTNotification = require('@openstfoundation/openst-notification');
 //All Module Requires.
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
-  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy'),
-  configStrategyHelper = new ConfigStrategyHelperKlass();
+  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id');
 
 require(rootPrefix + '/lib/airdrop_management/distribute_tokens/start');
 
@@ -52,7 +51,8 @@ openSTNotification.subscribeEvent.rabbit(
         criticalInteractionLogId = payload.critical_chain_interaction_log_id,
         userIds = payload.user_ids;
 
-      configStrategyHelper.getConfigStrategy(payload.client_id).then(function(configStrategyRsp) {
+      let configStrategyHelper = new ConfigStrategyHelperKlass(payload.client_id);
+      configStrategyHelper.get().then(function(configStrategyRsp) {
         let ic = new InstanceComposer(configStrategyRsp.data),
           startAirdropKlass = ic.getDistributeTokensStartClass(),
           startAirdrop = new startAirdropKlass({

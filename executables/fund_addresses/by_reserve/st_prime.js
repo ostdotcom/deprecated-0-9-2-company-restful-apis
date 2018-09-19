@@ -20,8 +20,7 @@ require(rootPrefix + '/module_overrides/index');
 
 const ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
-  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy'),
-  configStrategyHelper = new ConfigStrategyHelperKlass(),
+  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
 require(rootPrefix + '/app/services/address/fund_client_address');
@@ -76,8 +75,10 @@ FundUsersWithSTPrimeFromReserveKlass.prototype = {
       for (let i = 0; i < clientBrandedTokenRecords.length; i++) {
         if (!clientBrandedTokenRecords[i].airdrop_contract_addr) continue;
 
-        const clientId = clientBrandedTokenRecords[i].client_id,
-          getConfigStrategyRsp = await configStrategyHelper.getConfigStrategy(clientId);
+        const clientId = clientBrandedTokenRecords[i].client_id;
+
+        let configStrategyHelper = new ConfigStrategyHelperKlass(clientId),
+          getConfigStrategyRsp = await configStrategyHelper.get();
 
         if (getConfigStrategyRsp.isFailure()) {
           return Promise.reject(getConfigStrategyRsp);

@@ -20,7 +20,7 @@ const rootPrefix = '..',
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  configStrategyHelper = require(rootPrefix + '/helpers/config_strategy');
+  configStrategyHelper = require(rootPrefix + '/helpers/config_strategy/by_client_id');
 
 require(rootPrefix + '/lib/providers/platform');
 require(rootPrefix + '/lib/providers/storage');
@@ -135,7 +135,7 @@ SyncDdbBalancesWithChain.prototype = {
       knownBTContractData = erc20ContractAddressesData[erc20Address],
       clientId = knownBTContractData['client_id'];
 
-    let configStrategyHashRsp = await new configStrategyHelper({ clientId: clientId }).getConfigStrategy(clientId),
+    let configStrategyHashRsp = await new configStrategyHelper(clientId).get(),
       configStrategyHash = configStrategyHashRsp.data,
       shardName = configStrategyHash.TOKEN_BALANCE_SHARD_NAME;
 
