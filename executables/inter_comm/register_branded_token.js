@@ -92,6 +92,4 @@ StartIntercomm.prototype = {
 
 let startIntercomm = new StartIntercomm();
 
-startIntercomm.perform().then(function(r) {
-  process.exit(0);
-});
+startIntercomm.perform().then(function(r) {});

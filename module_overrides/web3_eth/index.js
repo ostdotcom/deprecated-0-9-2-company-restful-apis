@@ -9,7 +9,7 @@ const BasePackage = require(basePackage),
 
 const rootPrefix = '../..';
 
-const SignRawTx = require(rootPrefix + '/module_overrides/sign_raw_tx');
+const SignRawTx = require(rootPrefix + '/module_overrides/common/sign_raw_tx');
 
 // Please declare your require variable here.
 let nonceManagerKlass, responseHelper, logger, coreConstants, valueChainGasPriceCacheKlass;
@@ -328,7 +328,7 @@ const Derived = function() {
       };
 
       const asyncPerformer = async function() {
-        let signRawTxResponse = await (new SignRawTx(rawTx)).perform();
+        let signRawTxResponse = await new SignRawTx(rawTx).perform();
 
         executeTx();
 
