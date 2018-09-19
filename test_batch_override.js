@@ -30,13 +30,14 @@ function testBatch(batch) {
   });
 
   //Send
-  let sendTxRequest = web3.eth.sendTransaction.request({
+  let sendTxParams = {
     from: spender,
     to: receiver,
     value: amount,
     gasPrice: gasPrice,
     gas: gas
-  });
+  };
+  let sendTxRequest = web3.eth.sendTransaction.request(sendTxParams);
 
   batch.add(sendTxRequest, function(err, result) {
     err && console.error('!! sendTransaction Failed:\n', err);
@@ -55,6 +56,12 @@ function testBatch(batch) {
   web3.eth.personal.unlockAccount(receiver, passphrase, 60000, function(err, result) {
     err && console.error('!! Unlock Failed (receiver)(using web3.eth.personal.unlockAccount):\n', err);
     result && console.log('Unlock Successful (receiver)(using web3.eth.personal.unlockAccount):\n', result);
+  });
+
+  //Test web3.eth.sendTransaction
+  web3.eth.sendTransaction(sendTxParams, function(err, result) {
+    err && console.error('!! sendTransaction Failed (using web3.eth.sendTransaction):\n', err);
+    result && console.log('sendTransaction Successful (using web3.eth.sendTransaction):\n', result);
   });
 }
 
