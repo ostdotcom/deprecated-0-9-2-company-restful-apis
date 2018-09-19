@@ -68,6 +68,11 @@ process.on('uncaughtException', function(args) {
   }, 60000);
 });
 
+process.on('SIGINT', function(args) {
+  logger.error('Received SIGINT. Exiting');
+  process.exit(0);
+});
+
 const StartIntercomm = function() {
   const oThis = this;
 };
