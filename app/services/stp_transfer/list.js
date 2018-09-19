@@ -272,9 +272,11 @@ ListStpTransfersService.prototype = {
       return responseHelper.successWithData(transferLogData);
     }
 
+    let configStrategy = oThis.ic().configStrategy;
+
     let transactionResponse = await new transactionLogModel({
       client_id: oThis.clientId,
-      shard_name: oThis.ic().configStrategy.TRANSACTION_LOG_SHARD_NAME
+      shard_name: configStrategy.TRANSACTION_LOG_SHARD_NAME
     }).batchGetItem(oThis.transferUuids);
 
     if (!transactionResponse.data) {
@@ -286,6 +288,8 @@ ListStpTransfersService.prototype = {
         })
       );
     }
+
+    transactionResponse['utility_chain_id'] = configStrategy.OST_UTILITY_CHAIN_ID;
 
     return Promise.resolve(responseHelper.successWithData(transactionResponse.data));
   }
