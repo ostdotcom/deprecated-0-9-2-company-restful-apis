@@ -31,7 +31,7 @@ let unAckCount = 0;
 ProcessLocker.canStartProcess({
   process_title: 'executables_rmq_subscribers_execute_transaction' + processId + '-' + (slowProcessor || '')
 });
-//ProcessLocker.endAfterTime({time_in_minutes: 60});
+ProcessLocker.endAfterTime({ time_in_minutes: 30 });
 
 // Load external packages
 const openSTNotification = require('@openstfoundation/openst-notification'),
