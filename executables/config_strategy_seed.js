@@ -282,8 +282,7 @@ seedConfigStrategies.prototype = {
       valueRpcProviders = JSON.parse(env_list.OST_VALUE_GETH_RPC_PROVIDERS),
       valueWsProviders = JSON.parse(env_list.OST_VALUE_GETH_WS_PROVIDERS),
       utilityRpcProviders = JSON.parse(env_list.OST_UTILITY_GETH_RPC_PROVIDERS),
-      utilityWsProviders = JSON.parse(env_list.OST_UTILITY_GETH_WS_PROVIDERS),
-      status = JSON.parse;
+      utilityWsProviders = JSON.parse(env_list.OST_UTILITY_GETH_WS_PROVIDERS);
 
     // Value Chain
     for (let i = 0; i < valueRpcProviders.length; i++) {
@@ -292,8 +291,7 @@ seedConfigStrategies.prototype = {
           chain_id: parseInt(env_list.OST_VALUE_CHAIN_ID),
           chain_kind: 'value',
           ws_provider: valueWsProviders[i],
-          rpc_provider: valueRpcProviders[i],
-          status: 1
+          rpc_provider: valueRpcProviders[i]
         })
       );
     }
@@ -305,8 +303,7 @@ seedConfigStrategies.prototype = {
           chain_id: parseInt(env_list.OST_UTILITY_CHAIN_ID),
           chain_kind: 'utility',
           ws_provider: utilityWsProviders[i],
-          rpc_provider: utilityRpcProviders[i],
-          status: 1
+          rpc_provider: utilityRpcProviders[i]
         })
       );
     }
