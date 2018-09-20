@@ -334,7 +334,8 @@ ConfigStrategyByGroupId.prototype = {
    * If the kind is to be updated is value_geth or utility_geth the old_data parameters
    * @param(string) kind
    * @param params
-   * @param old_data
+   * @param {object}old_data (old_data = {'WS_Provider': '127.0.0.1:8545','RPC_Provider':'127.0.0.1:1845' }). This the old
+   * data which is to be replaced.
    * @returns {Promise<never>}
    */
   updateForKind: async function(kind, params, old_data) {
