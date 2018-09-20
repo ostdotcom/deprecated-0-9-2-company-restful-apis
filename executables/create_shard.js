@@ -3,12 +3,12 @@
 /*
 *  Script for creating new shard using OpenSTStorage provider
 *
-*  Usage: node executables/one_timers/create_shard.js group_id 'shard_type' 'shard_name'
-*  Example: node executables/one_timers/create_shard.js group_id 'token_balance'|'transaction_log' transaction_logs_shard_001
+*  Usage: node executables/create_shard.js group_id 'shard_type' 'shard_name'
+*  Example: node executables/create_shard.js group_id 'token_balance'|'transaction_log' transaction_logs_shard_001
 *
 * */
 
-const rootPrefix = '../..',
+const rootPrefix = '..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),

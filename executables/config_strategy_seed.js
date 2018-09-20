@@ -3,7 +3,7 @@
 /*
 * This file is used to populate config_strategies table and chain_geth_providers table.
 *
-* Usage: node executables/one_timers/config_strategy_seed.js managed_address_salt_id group_id [configFilePath]
+* Usage: node executables/config_strategy_seed.js managed_address_salt_id group_id [configFilePath]
 *
 * Command Line Parameters Description:
 * managed_address_salt_id:
@@ -12,11 +12,11 @@
 *
 * Note: config file should contain all service kinds present in this sheet: https://docs.google.com/spreadsheets/d/1DL55AZjgvaRM3S9JDVFJrfEA66aZBBab_PtJimzMzVo/edit#gid=0
 *
-* Example: node executables/one_timers/config_strategy_seed.js 60010 1 ~/config.json
+* Example: node executables/config_strategy_seed.js 60010 1 ~/config.json
 *
 * */
 
-const rootPrefix = '../..',
+const rootPrefix = '..',
   configStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
   ChainGethProviderModel = require(rootPrefix + '/app/models/chain_geth_providers'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');
@@ -28,13 +28,13 @@ let env_list;
 const usageDemo = function() {
   logger.log(
     'usage:',
-    'node executables/one_timers/config_strategy_seed.js managed_address_salt_id group_id [configStrategyFilePath]'
+    'node executables/config_strategy_seed.js managed_address_salt_id group_id [configStrategyFilePath]'
   );
   logger.log(
     '* Managed address salt ID can be found in Managed address Salts table. It is used to encrypt the config strategies.'
   );
-  logegr.log(
-    '* If managed address salt id is not present, use this script to insert new salt id: executables/one_timers/insert_managed_address_salt_id.js'
+  logger.log(
+    '* If managed address salt id is not present, use this script to insert new salt id: executables/insert_managed_address_salt_id.js'
   );
 };
 
@@ -50,12 +50,14 @@ const validateAndSanitize = function() {
     usageDemo();
     process.exit(1);
   }
+
+  env_list = process.argv[4] ? require(process.argv[4]) : process.env;
+
   if (!env_list) {
     logger.error('Config strategy file path is NOT passed in the arguments.');
     usageDemo();
     process.exit(1);
   }
-  env_list = process.argv[4] ? require(process.argv[4]) : process.env;
 };
 
 // Validate and sanitize the input params.
@@ -280,7 +282,8 @@ seedConfigStrategies.prototype = {
       valueRpcProviders = JSON.parse(env_list.OST_VALUE_GETH_RPC_PROVIDERS),
       valueWsProviders = JSON.parse(env_list.OST_VALUE_GETH_WS_PROVIDERS),
       utilityRpcProviders = JSON.parse(env_list.OST_UTILITY_GETH_RPC_PROVIDERS),
-      utilityWsProviders = JSON.parse(env_list.OST_UTILITY_GETH_WS_PROVIDERS);
+      utilityWsProviders = JSON.parse(env_list.OST_UTILITY_GETH_WS_PROVIDERS),
+      status = JSON.parse;
 
     // Value Chain
     for (let i = 0; i < valueRpcProviders.length; i++) {
@@ -289,7 +292,8 @@ seedConfigStrategies.prototype = {
           chain_id: parseInt(env_list.OST_VALUE_CHAIN_ID),
           chain_kind: 'value',
           ws_provider: valueWsProviders[i],
-          rpc_provider: valueRpcProviders[i]
+          rpc_provider: valueRpcProviders[i],
+          status: 1
         })
       );
     }
@@ -301,7 +305,8 @@ seedConfigStrategies.prototype = {
           chain_id: parseInt(env_list.OST_UTILITY_CHAIN_ID),
           chain_kind: 'utility',
           ws_provider: utilityWsProviders[i],
-          rpc_provider: utilityRpcProviders[i]
+          rpc_provider: utilityRpcProviders[i],
+          status: 1
         })
       );
     }

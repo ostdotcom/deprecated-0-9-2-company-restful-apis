@@ -4,13 +4,13 @@
  * This is used to create Token Balances Shard and Transaction Log Shard using openSTStorage Provider.
  * Default prefix for shard names are 'token_balances_shard_00' and 'transaction_logs_shard_00'.
  *
- * Usage: node executables/one_timers/ddb_related_data_migrations/create_init_shards.js configStrategyFilePath
- * Example: node executables/one_timers/ddb_related_data_migrations/create_init_shards.js ~/config.json
+ * Usage: node executables/create_init_shards.js configStrategyFilePath
+ * Example: node executables/create_init_shards.js ~/config.json
  *
- * @module executables/one_timers/ddb_related_data_migrations/create_init_shards.js
+ * @module executables/create_init_shards.js
  */
 
-const rootPrefix = '../..',
+const rootPrefix = '..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
@@ -35,7 +35,7 @@ const usageDemo = function() {
 
 // Validate and sanitize the command line arguments.
 const validateAndSanitize = function() {
-  if (!configStrategy) {
+  if (!config_file_path) {
     logger.error('Config strategy file path is NOT passed in the arguments.');
     usageDemo();
     process.exit(1);
