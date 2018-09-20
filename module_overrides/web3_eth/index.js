@@ -67,6 +67,7 @@ const Derived = function() {
             await signRawTx.markAsSuccess();
           }
           hackedReturnedPromiEvent.eventEmitter.emit('transactionHash', hash);
+          console.log(hackedReturnedPromiEvent.eventEmitter._events);
         };
 
         const onReceipt = function(receipt) {
@@ -103,13 +104,33 @@ const Derived = function() {
           logger.error(arguments);
         };
 
-        return oThis
-          .sendSignedTransaction('0x' + serializedTx.toString('hex'))
-          .once('transactionHash', onTxHash)
-          .once('receipt', onReceipt)
-          .on('error', onError)
-          .then(onResolve, onReject)
-          .catch(onReject);
+        // return oThis
+        //   .sendSignedTransaction('0x' + serializedTx.toString('hex'))
+        //   .once('transactionHash', onTxHash)
+        //   .once('receipt', onReceipt)
+        //   .on('error', onError)
+        //   .then(onResolve, onReject)
+        //   .catch(onReject);
+
+        let batchRequest = new oThis.BatchRequest();
+
+        let sendSignedTransactionRequest = oThis.sendSignedTransaction.request('0x' + serializedTx.toString('hex'));
+        sendSignedTransactionRequest.callback = function(err, txHash) {
+          try {
+            err && onError(err);
+          } catch (e) {}
+          try {
+            txHash && onTxHash(txHash);
+          } catch (e) {}
+          try {
+            orgCallback && orgCallback(err, txHash);
+          } catch (e) {}
+        };
+
+        batchRequest.add(sendSignedTransactionRequest);
+        batchRequest.execute();
+
+        return Promise.resolve();
       };
 
       const executeTx = async function() {
