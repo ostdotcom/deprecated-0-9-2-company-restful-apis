@@ -39,7 +39,9 @@ echo "export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-p
 ```
 
 * Fill up entries in the chain_geth_providers table.
-
+```
+node executables/chain_geth_providers_seed.js $CONFIG_STRATEGY_PATH
+```
 * Set utility gas price as "0" during setup.
 ```bash
 export OST_UTILITY_GAS_PRICE='0x0'
