@@ -42,7 +42,7 @@ const Derived = function() {
   //Safety Net
   oThis = output || oThis;
 
-  let fetchReceipt;
+  let fetchReceipt, getReceipt;
 
   const _sendTransaction = oThis.sendTransaction;
 
@@ -71,13 +71,17 @@ const Derived = function() {
           hackedReturnedPromiEvent.eventEmitter.emit('transactionHash', hash);
 
           if (hackedReturnedPromiEvent.eventEmitter._events['receipt']) {
-            console.log('Fetching Receipt');
-            fetchReceipt(hash).then(function(receipt) {
-              onReceipt(receipt);
-              onResolve(receipt);
-            });
+            logger.debug('Fetching Receipt for hash: ', hash);
+            fetchReceipt(hash)
+              .then(function(receipt) {
+                onReceipt(receipt);
+                onResolve(receipt);
+              })
+              .catch(function(reason) {
+                onReject && onReject(reason);
+              });
           } else {
-            console.log('No need for receipt. Resolving Promise with hash');
+            logger.debug('No need for receipt. Resolving Promise with hash');
             onResolve(hash);
           }
         };
@@ -175,6 +179,33 @@ const Derived = function() {
 
   Object.assign(oThis.sendTransaction, _sendTransaction);
 
+  getReceipt = function(txHash, resolve, reject, maxAttempts, timeInterval) {
+    if (maxAttempts > 0) {
+      oThis
+        .getTransactionReceipt(txHash)
+        .then(function(receipt) {
+          if (receipt) {
+            return resolve(receipt);
+          } else {
+            maxAttempts--;
+            setTimeout(getReceipt, timeInterval, txHash, resolve, reject, maxAttempts, timeInterval);
+          }
+        })
+        .catch(function(reason) {
+          if (maxAttempts > 0) {
+            //Ignore reason and retry.
+            maxAttempts--;
+            setTimeout(getReceipt, timeInterval, txHash, resolve, reject, maxAttempts, timeInterval);
+          } else {
+            //Throw the error out.
+            reject(reason);
+          }
+        });
+    } else {
+      return resolve(null);
+    }
+  };
+
   fetchReceipt = function(txHash) {
     return new Promise(function(resolve, reject) {
       // number of times it will attempt to fetch
@@ -182,23 +213,7 @@ const Derived = function() {
 
       // time interval
       const timeInterval = 15000;
-
-      var getReceipt = async function() {
-        if (maxAttempts > 0) {
-          const receipt = await oThis.getTransactionReceipt(txHash);
-
-          if (receipt) {
-            return resolve(receipt);
-          } else {
-            maxAttempts--;
-            setTimeout(getReceipt, timeInterval);
-          }
-        } else {
-          return resolve(null);
-        }
-      };
-
-      getReceipt();
+      setTimeout(getReceipt, timeInterval, txHash, resolve, reject, maxAttempts, timeInterval);
     });
   };
 
