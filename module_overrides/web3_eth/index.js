@@ -42,9 +42,11 @@ const Derived = function() {
   //Safety Net
   oThis = output || oThis;
 
+  let fetchReceipt;
+
   const _sendTransaction = oThis.sendTransaction;
 
-  oThis.sendTransaction = function() {
+  oThis.sendTransaction = function(orgRawTx, orgCallback) {
     const rawTx = arguments['0'],
       fromAddress = rawTx.from,
       host = moUtils.getHost(oThis.currentProvider);
@@ -67,7 +69,17 @@ const Derived = function() {
             await signRawTx.markAsSuccess();
           }
           hackedReturnedPromiEvent.eventEmitter.emit('transactionHash', hash);
-          console.log(hackedReturnedPromiEvent.eventEmitter._events);
+
+          if (hackedReturnedPromiEvent.eventEmitter._events['receipt']) {
+            console.log('Fetching Receipt');
+            fetchReceipt(hash).then(function(receipt) {
+              onReceipt(receipt);
+              onResolve(receipt);
+            });
+          } else {
+            console.log('No need for receipt. Resolving Promise with hash');
+            onResolve(hash);
+          }
         };
 
         const onReceipt = function(receipt) {
@@ -118,6 +130,7 @@ const Derived = function() {
         sendSignedTransactionRequest.callback = function(err, txHash) {
           try {
             err && onError(err);
+            err && onReject(err);
           } catch (e) {}
           try {
             txHash && onTxHash(txHash);
@@ -136,14 +149,17 @@ const Derived = function() {
       const executeTx = async function() {
         let serializedTx, err;
 
-        await signRawTx.perform().then(function(result) {
-          serializedTx = result;
-        }).catch(function (reason) {
-          logger.error('signRawTx error ::', reason);
-          err = reason;
-        });
+        await signRawTx
+          .perform()
+          .then(function(result) {
+            serializedTx = result;
+          })
+          .catch(function(reason) {
+            logger.error('signRawTx error ::', reason);
+            err = reason;
+          });
 
-        if(!serializedTx) {
+        if (!serializedTx) {
           hackedReturnedPromiEvent.reject({ message: err });
           return Promise.resolve();
         }
@@ -158,6 +174,33 @@ const Derived = function() {
   };
 
   Object.assign(oThis.sendTransaction, _sendTransaction);
+
+  fetchReceipt = function(txHash) {
+    return new Promise(function(resolve, reject) {
+      // number of times it will attempt to fetch
+      var maxAttempts = 50;
+
+      // time interval
+      const timeInterval = 15000;
+
+      var getReceipt = async function() {
+        if (maxAttempts > 0) {
+          const receipt = await oThis.getTransactionReceipt(txHash);
+
+          if (receipt) {
+            return resolve(receipt);
+          } else {
+            maxAttempts--;
+            setTimeout(getReceipt, timeInterval);
+          }
+        } else {
+          return resolve(null);
+        }
+      };
+
+      getReceipt();
+    });
+  };
 
   return oThis;
 };
