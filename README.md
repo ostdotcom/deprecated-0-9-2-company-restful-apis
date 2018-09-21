@@ -39,7 +39,9 @@ echo "export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-p
 ```
 
 * Fill up entries in the chain_geth_providers table.
-
+```
+node executables/chain_geth_providers_seed.js $CONFIG_STRATEGY_PATH
+```
 * Set utility gas price as "0" during setup.
 ```bash
 export OST_UTILITY_GAS_PRICE='0x0'
@@ -99,7 +101,7 @@ Run the following commands after creating the database.
   * Create a fixed number of shards for all entities (number is in this file).
   ```bash
   source set_env_vars.sh
-  node executables/ddb_related_data_migrations/create_init_shards.js $CONFIG_STRATEGY_PATH
+  node executables/create_init_shards.js $CONFIG_STRATEGY_PATH
   ```
   
   Pick up the hash printed in green in previous step export shard arrays appropriately.
@@ -118,7 +120,7 @@ mv ~/openst-setup/logs/shared-local-instance.db ~/openst-setup/logs/utility-chai
 
 * Use the seeder script to fill config_strategies table.
 ```bash
-node executables/one_timers/config_strategy_seed.js managed_address_salt_id group_id $CONFIG_STRATEGY_PATH
+node executables/config_strategy_seed.js managed_address_salt_id group_id $CONFIG_STRATEGY_PATH
 ```
                                          
 # Start SAAS Services
