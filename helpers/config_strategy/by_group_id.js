@@ -10,17 +10,18 @@ const rootPrefix = '../..',
   configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
   ConfigStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
   ChainGethProviderModel = require(rootPrefix + '/app/models/chain_geth_providers'),
+  ClientConfigStrategyModel = require(rootPrefix + '/app/models/client_config_strategies'),
   configStrategyCacheKlass = require(rootPrefix + '/lib/shared_cache_multi_management/config_strategy');
 
 /**
- * groupId is optional
- * @param groupId
+ * group_id is optional
+ * @param group_id
  * @constructor
  */
-const ConfigStrategyByGroupId = function(groupId) {
+const ConfigStrategyByGroupId = function(group_id) {
   const oThis = this;
 
-  oThis.groupId = groupId;
+  oThis.groupId = group_id;
 };
 
 ConfigStrategyByGroupId.prototype = {
@@ -255,6 +256,23 @@ ConfigStrategyByGroupId.prototype = {
         );
       }
 
+      //Check if same kind is present in the table already.
+      let queryResponse = await new ConfigStrategyModel()
+        .select(['id'])
+        .where(['kind = ?', strategyIdInt])
+        .fire();
+
+      if (queryResponse.length > 0) {
+        logger.error(`[${kind}] already exist in the table.`);
+        return Promise.reject(
+          responseHelper.error({
+            internal_error_identifier: 'h_cs_bgi_33',
+            api_error_identifier: 'something_went_wrong',
+            debug_options: {}
+          })
+        );
+      }
+
       let configStrategyModelObj = new ConfigStrategyModel(),
         insertResponse = await configStrategyModelObj.create(kind, managedAddressSaltId, params);
 
@@ -270,11 +288,29 @@ ConfigStrategyByGroupId.prototype = {
       }
     } else {
       //Group id is mandatory for the kind passed as argument.
+      //Check if same group id and kind does not exist in the table
       if (groupId === undefined) {
         logger.error(`To insert [${kind}] group id is mandatory.`);
         return Promise.reject(
           responseHelper.error({
             internal_error_identifier: 'h_cs_bgi_7',
+            api_error_identifier: 'something_went_wrong',
+            debug_options: {}
+          })
+        );
+      }
+
+      //Check if same kind is present in the table already.
+      let queryResponse = await new ConfigStrategyModel()
+        .select(['id'])
+        .where(['group_id = ? AND kind = ?', groupId, strategyIdInt])
+        .fire();
+
+      if (queryResponse.length > 0) {
+        logger.error(`Group Id [${groupId}] with kind [${kind}] already exists in the table.`);
+        return Promise.reject(
+          responseHelper.error({
+            internal_error_identifier: 'h_cs_bgi_34',
             api_error_identifier: 'something_went_wrong',
             debug_options: {}
           })
@@ -326,13 +362,203 @@ ConfigStrategyByGroupId.prototype = {
 
       await Promise.all(promises);
     }
+    return Promise.resolve(responseHelper.successWithData({}));
+  },
+
+  /**
+   * Sets the status of given strategy id as active.
+   *
+   * @param {number}strategy_id - strategy_id from config_strategies table
+   * @returns {Promise<*>}
+   */
+  activateByStrategyId: async function(strategy_id) {
+    const oThis = this,
+      activeStatus = configStrategyConstants.invertedStatuses[configStrategyConstants.activeStatus],
+      strategyId = strategy_id;
+
+    let queryResponse = await new ConfigStrategyModel()
+      .update({ status: activeStatus })
+      .where(['id = ?', strategyId])
+      .fire();
+
+    if (!queryResponse) {
+      logger.error('Error in setStatusActive');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'h_cs_bgi_30',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {}
+        })
+      );
+    }
+    if (queryResponse.affectedRows === 1) {
+      logger.info(`Status of strategy id: [${strategyId}] is now active.`);
+      return Promise.resolve(responseHelper.successWithData({}));
+    } else {
+      logger.error('Strategy Id not present in the table');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'h_cs_bgi_31',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {}
+        })
+      );
+    }
+  },
+
+  /**
+   * This function updates and sets status 'active' for given group_id.
+   *
+   * @returns {Promise<*>}
+   */
+  activate: async function() {
+    const oThis = this,
+      activeStatus = configStrategyConstants.invertedStatuses[configStrategyConstants.activeStatus],
+      groupId = oThis.groupId;
+
+    if (groupId === undefined) {
+      logger.error(`Group id is mandatory for this function.`);
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'h_cs_bgi_36',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {}
+        })
+      );
+    }
+
+    //This query includes NULL value of group_ids. This is done to activate the strategies for which group_ids are not needed.
+    let strategyIdResponse = await new ConfigStrategyModel()
+      .update({ status: activeStatus })
+      .where(['group_id = ? OR group_id IS NULL', groupId])
+      .fire();
+
+    if (strategyIdResponse) {
+      logger.info(`Group id [${groupId}] successfully activated.`);
+      //return Promise.resolve(responseHelper.successWithData({}));
+    } else {
+      logger.error('Error while activating strategy');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'h_cs_bgi_37',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {}
+        })
+      );
+    }
+    //Call getForKind method twice.
+
+    let utilityGethFlatHash = await oThis.getForKind('utility_geth'),
+      configStrategyIdInt = parseInt(Object.keys(utilityGethFlatHash.data)), //to get corresponding strategyId as number from hash
+      utilityGethPurehash = utilityGethFlatHash.data[configStrategyIdInt]; //Get pure hash for utility geth and value geth.
+
+    // Loop around geth_providers endpoint present in hash.
+    // For all the endpoints set the status active in chain_geth_providers.
+
+    let rpcProviderArray = utilityGethPurehash.OST_UTILITY_GETH_RPC_PROVIDERS;
+
+    for (let i = 0; i < rpcProviderArray.length; i++) {
+      let whereClause = ['rpc_provider = ?', rpcProviderArray[i]],
+        updateQueryResponse = await new ChainGethProviderModel()
+          .update({ status: activeStatus })
+          .where(whereClause)
+          .fire();
+    }
+
+    logger.info(`Status activated in Chain Geth Providers successfully. `);
+    return Promise.resolve(responseHelper.successWithData({}));
+  },
+
+  /**
+   * This function deactivates strategies of given group id.
+   *
+   * 1. get all strategy ids for the given group_id.
+   * 2. Check if any row contains these strategy ids in client_config_strategies table.
+   * 3. Only if response array's length is 0. then deactivate those group ids.
+   * else break the function.
+   *
+   * @returns {Promise<*>}
+   */
+  deactivate: async function() {
+    const oThis = this,
+      groupId = oThis.groupId;
+
+    if (groupId === undefined) {
+      logger.error(`Group id is mandatory for this function.`);
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'h_cs_bgi_35',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {}
+        })
+      );
+    }
+
+    //Fetch strategy ids for the given group id.
+    let queryResult = await new ConfigStrategyModel()
+        .select(['id'])
+        .where(['group_id = ?', groupId])
+        .fire(),
+      distinctStrategyIdArray = [];
+
+    for (let i = 0; i < queryResult.length; i++) {
+      distinctStrategyIdArray.push(queryResult[i].id);
+    }
+
+    //Check in client_config_strategy if those strategy ids exist in the table then don't deactivate those group ids.
+
+    let clientIdQueryResponse = await new ClientConfigStrategyModel()
+      .select(['client_id'])
+      .where(['config_strategy_id IN (?)', distinctStrategyIdArray])
+      .fire();
+
+    if (clientIdQueryResponse.length > 0) {
+      logger.error(`The given group id [${groupId}] has been assigned to some existing clients. Cannot deactivate `);
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'h_cs_bgi_38',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {}
+        })
+      );
+    }
+
+    let inActiveStatus = configStrategyConstants.invertedStatuses[configStrategyConstants.inActiveStatus],
+      queryResponse = await new ConfigStrategyModel()
+        .update({ status: inActiveStatus })
+        .where(['group_id = ?', groupId])
+        .fire();
+
+    if (!queryResponse) {
+      logger.error('Error in Deactivating group id');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'h_cs_bgi_32',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {}
+        })
+      );
+    }
+    if (queryResponse.affectedRows > 0) {
+      logger.info(`Status of group id: [${groupId}] is now deactive.`);
+      return Promise.resolve(responseHelper.successWithData({}));
+    } else {
+      logger.error('Strategy Id not present in the table');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'h_cs_bgi_33',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {}
+        })
+      );
+    }
   },
 
   /**
    * This function updates the strategy id for the given kind.
    * If chain_geth_providers table is to be updated then
    * If the kind is to be updated is value_geth or utility_geth the old_data parameters
-   * @param(string) kind
+   * @param {string} kind
    * @param params
    * @param {object}old_data (old_data = {'WS_Provider': '127.0.0.1:8545','RPC_Provider':'127.0.0.1:1845' }). This the old
    * data which is to be replaced.

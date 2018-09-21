@@ -292,12 +292,16 @@ const ConfigStrategyModelSpecificPrototype = {
    *
    * @return [Array]
    */
-  getDistinctGroupIds: async function() {
+  getDistinctActiveGroupIds: async function() {
     const oThis = this;
 
-    let distinctGroupIdArray = [];
+    let distinctGroupIdArray = [],
+      activeStatus = configStrategyConstants.invertedStatuses[configStrategyConstants.activeStatus];
 
-    let query = oThis.select('group_id').group_by('group_id'),
+    let query = oThis
+        .select('group_id')
+        .where(['status = ?', activeStatus])
+        .group_by('group_id'),
       queryResult = await query.fire();
 
     for (let i = 0; i < queryResult.length; i++) {

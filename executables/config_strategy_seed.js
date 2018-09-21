@@ -3,11 +3,11 @@
 /*
 * This file is used to populate config_strategies table and chain_geth_providers table.
 *
-* Usage: node executables/config_strategy_seed.js managed_address_salt_id group_id [configFilePath]
+* Usage: node executables/config_strategy_seed.js managed_address_salt_id group_id configFilePath
 *
 * Command Line Parameters Description:
-* managed_address_salt_id:
-* group_id: Group ID is used for VPC cluster.
+* managed_address_salt_id: from managed_address_salts table
+* group_id: Group ID is used for client.
 * configFilePath: Config strategy file path is necessary for seeding strategy in table.
 *
 * Note: config file should contain all service kinds present in this sheet: https://docs.google.com/spreadsheets/d/1DL55AZjgvaRM3S9JDVFJrfEA66aZBBab_PtJimzMzVo/edit#gid=0
