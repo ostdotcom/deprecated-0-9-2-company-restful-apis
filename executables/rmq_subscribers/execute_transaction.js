@@ -117,7 +117,7 @@ const publishToSlowQueue = async function(parsedParams) {
     .then(logger.debug, logger.error);
 };
 
-const prefetchCount = (slowProcessor || '') == 'slow' ? 25 : 100;
+const prefetchCount = 25;
 const PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseExecutor, {
   name: 'execute_tx_promise_queue_manager',
   timeoutInMilliSecs: 3 * 60 * 1000, //3 minutes
