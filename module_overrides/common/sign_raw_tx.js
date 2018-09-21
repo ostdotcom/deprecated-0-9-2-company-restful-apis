@@ -198,9 +198,11 @@ SignRawTx.prototype = {
       if (valueProviders.includes(oThis.host)) {
         oThis.chainKind = 'value';
         oThis.gethWsProviders = valueProviders;
+        oThis.chainId = oThis.configStrategy.OST_VALUE_CHAIN_ID;
       } else if (utilityProviders.includes(oThis.host)) {
         oThis.chainKind = 'utility';
         oThis.gethWsProviders = utilityProviders;
+        oThis.chainId = oThis.configStrategy.OST_UTILITY_CHAIN_ID;
       }
     }
 
