@@ -288,7 +288,7 @@ const ConfigStrategyModelSpecificPrototype = {
 
   /*
    *
-   * This function returns distinct group ids:
+   * This function returns distinct group ids whose status is currently 'active':
    *
    * @return [Array]
    */
