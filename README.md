@@ -27,14 +27,14 @@
 
 * Start RMQ for platform
 ```bash
-> brew services start rabbitmq
+> brew services restart rabbitmq
 ```
 
 * Export ENV variables before platform setup. Update the config strategy path accordingly.
 ```bash
 > source set_env_vars.sh
 export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform
-export CONFIG_STRATEGY_PATH=path_to_company-restful-apis/uc_1000.json
+export CONFIG_STRATEGY_PATH=$(pwd)/uc_1000.json
 echo "export OPENST_PLATFORM_PATH=$(pwd)/node_modules/@openstfoundation/openst-platform" >> ~/.bash_profile
 ```
 
