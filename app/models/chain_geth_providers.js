@@ -7,6 +7,7 @@
  */
 
 const rootPrefix = '../..',
+  configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
   ModelBaseKlass = require(rootPrefix + '/app/models/base');
 
@@ -184,9 +185,13 @@ const ChainGethProvidersModelSpecificPrototype = {
       RpcProviders = [],
       requiredChainId,
       requiredChainKind,
-      response = {};
+      response = {},
+      activeStatus = configStrategyConstants.invertedStatuses[configStrategyConstants.activeStatus];
 
-    let chainsInfo = await oThis.select('*').fire();
+    let chainsInfo = await oThis
+      .select('*')
+      .where(['status = ?', activeStatus])
+      .fire();
 
     for (let i = 0; i < chainsInfo.length; i++) {
       chainIds.push(chainsInfo[i].chain_id);
