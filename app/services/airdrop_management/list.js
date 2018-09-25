@@ -1,34 +1,35 @@
-"use strict";
+'use strict';
 
 /**
- * Schedule new airdrop task.
+ * List all the airdrops.
  *
- * @module app/services/airdrop_management/start
+ * @module app/services/airdrop_management/list
  */
 
-const rootPrefix = '../../..'
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , basicHelper = require(rootPrefix + '/helpers/basic')
-  , commonValidator = require(rootPrefix + '/lib/validators/common')
-  , clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop')
-  , ClientAirdropModel = require(rootPrefix + '/app/models/client_airdrop')
-  , AirdropEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/airdrop')
-;
+const rootPrefix = '../../..',
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  basicHelper = require(rootPrefix + '/helpers/basic'),
+  commonValidator = require(rootPrefix + '/lib/validators/common'),
+  clientAirdropConst = require(rootPrefix + '/lib/global_constant/client_airdrop'),
+  ClientAirdropModel = require(rootPrefix + '/app/models/client_airdrop'),
+  AirdropEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/airdrop'),
+  InstanceComposer = require(rootPrefix + '/instance_composer');
 
 /**
  * List all the airdrops
  *
  * @param {object} params - external passed parameters
  * @param {number} params.client_id (Mandatory) - client id
- * @param {number} params.page_no (optional) - page no
- * @param {number} params.order_by (optional) - order by
- * @param {number} params.order (optional) - order
- * @param {number} params.limit (optional) - limit
+ * @param {number} [params.page_no] - page no
+ * @param {number} [params.order_by] - order by
+ * @param {number} [params.order] - order
+ * @param {number} [params.limit] - limit
+ * @param {string} [params.current_status] - current_status
  *
  * @module app/services/airdrop_management/list
  */
-const ListAirdropsKlass = function (params) {
+const ListAirdropsKlass = function(params) {
   const oThis = this;
 
   oThis.clientId = params.client_id;
@@ -38,13 +39,12 @@ const ListAirdropsKlass = function (params) {
   oThis.limit = params.limit;
   oThis.airdropIdsString = params.id;
   oThis.airdropIdsForFiltering = [];
-  
+
   oThis.currentStatusString = params.current_status;
   oThis.currentStatusForFiltering = [];
 };
 
 ListAirdropsKlass.prototype = {
-
   /**
    *
    * Perform
@@ -52,24 +52,23 @@ ListAirdropsKlass.prototype = {
    * @return {Promise<result>}
    *
    */
-  perform: function(){
+  perform: function() {
     const oThis = this;
 
-    return oThis.asyncPerform()
-      .catch(function(error) {
-        logger.error(`${__filename}::perform::catch`);
-        logger.error(error);
+    return oThis.asyncPerform().catch(function(error) {
+      logger.error(`${__filename}::perform::catch`);
+      logger.error(error);
 
-        if (responseHelper.isCustomResult(error)){
-          return error;
-        } else {
-          return responseHelper.error({
-            internal_error_identifier: 's_am_l_1',
-            api_error_identifier: 'unhandled_catch_response',
-            debug_options: {}
-          });
-        }
-      });
+      if (responseHelper.isCustomResult(error)) {
+        return error;
+      } else {
+        return responseHelper.error({
+          internal_error_identifier: 's_am_l_1',
+          api_error_identifier: 'unhandled_catch_response',
+          debug_options: {}
+        });
+      }
+    });
   },
 
   /**
@@ -81,8 +80,7 @@ ListAirdropsKlass.prototype = {
    * @return {Promise<result>}
    *
    */
-  asyncPerform: async function(){
-
+  asyncPerform: async function() {
     const oThis = this;
 
     await oThis.validateAndSanitize();
@@ -97,17 +95,16 @@ ListAirdropsKlass.prototype = {
       current_statuses: oThis.currentStatusForFiltering
     });
 
-    let airdropsList = []
-      , hasMore = false
-    ;
+    let airdropsList = [],
+      hasMore = false;
 
-    for (var i = 0; i < queryResponse.length; i++) {
+    for (let i = 0; i < queryResponse.length; i++) {
       const record = queryResponse[i];
 
-      if (i == oThis.limit) {
+      if (i === oThis.limit) {
         // as we fetched limit + 1, ignore that extra one
         hasMore = true;
-        continue
+        continue;
       }
 
       const airdropEntityData = {
@@ -116,18 +113,15 @@ ListAirdropsKlass.prototype = {
         steps_complete: new ClientAirdropModel().getAllBits('steps_complete', record.steps_complete)
       };
 
-      const airdropEntityFormatter = new AirdropEntityFormatterKlass(airdropEntityData)
-        , airdropEntityFormatterRsp = await airdropEntityFormatter.perform()
-      ;
+      const airdropEntityFormatter = new AirdropEntityFormatterKlass(airdropEntityData),
+        airdropEntityFormatterRsp = await airdropEntityFormatter.perform();
 
       airdropsList.push(airdropEntityFormatterRsp.data);
-
     }
 
-    var next_page_payload = {};
+    let next_page_payload = {};
 
     if (hasMore) {
-
       next_page_payload = {
         order_by: oThis.orderBy,
         order: oThis.order,
@@ -146,17 +140,17 @@ ListAirdropsKlass.prototype = {
       if (!commonValidator.isVarNull(oThis.airdropped)) {
         next_page_payload.airdropped = oThis.airdropped;
       }
-
     }
 
-    return Promise.resolve(responseHelper.successWithData({
-      result_type: 'airdrops',
-      airdrops: airdropsList,
-      meta: {
-        next_page_payload: next_page_payload
-      }
-    }));
-
+    return Promise.resolve(
+      responseHelper.successWithData({
+        result_type: 'airdrops',
+        airdrops: airdropsList,
+        meta: {
+          next_page_payload: next_page_payload
+        }
+      })
+    );
   },
 
   /**
@@ -168,32 +162,35 @@ ListAirdropsKlass.prototype = {
    * @return {Promise<result>}
    *
    */
-  validateAndSanitize: async function () {
-
-    const oThis = this
-      , errors_object = [];
+  validateAndSanitize: async function() {
+    const oThis = this,
+      errors_object = [];
 
     let pageNoVas = commonValidator.validateAndSanitizePageNo(oThis.pageNo);
 
-    if(!pageNoVas[0]) {
-      return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_am_l_2',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_page_no'],
-        debug_options: {}
-      }));
+    if (!pageNoVas[0]) {
+      return Promise.reject(
+        responseHelper.paramValidationError({
+          internal_error_identifier: 's_am_l_2',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: ['invalid_page_no'],
+          debug_options: {}
+        })
+      );
     }
     oThis.pageNo = pageNoVas[1];
 
     let limitVas = commonValidator.validateAndSanitizeLimit(oThis.limit);
 
-    if(!limitVas[0]) {
-      return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_am_l_3',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: ['invalid_pagination_limit'],
-        debug_options: {}
-      }));
+    if (!limitVas[0]) {
+      return Promise.reject(
+        responseHelper.paramValidationError({
+          internal_error_identifier: 's_am_l_3',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: ['invalid_pagination_limit'],
+          debug_options: {}
+        })
+      );
     }
     oThis.limit = limitVas[1];
 
@@ -220,27 +217,35 @@ ListAirdropsKlass.prototype = {
 
     if (oThis.currentStatusString) {
       oThis.currentStatusForFiltering = basicHelper.commaSeperatedStrToArray(oThis.currentStatusString);
-      for(var i=0; i < oThis.currentStatusForFiltering.length; i++){
-        if (![clientAirdropConst.incompleteStatus,clientAirdropConst.processingStatus,clientAirdropConst.completeStatus,
-            clientAirdropConst.failedStatus].includes(oThis.currentStatusForFiltering[i])) {
+      for (let i = 0; i < oThis.currentStatusForFiltering.length; i++) {
+        if (
+          ![
+            clientAirdropConst.incompleteStatus,
+            clientAirdropConst.processingStatus,
+            clientAirdropConst.completeStatus,
+            clientAirdropConst.failedStatus
+          ].includes(oThis.currentStatusForFiltering[i])
+        ) {
           errors_object.push('invalid_current_status_airdrop_list');
         }
       }
     }
 
     if (errors_object.length > 0) {
-      return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_am_l_4',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: errors_object,
-        debug_options: {}
-      }));
+      return Promise.reject(
+        responseHelper.paramValidationError({
+          internal_error_identifier: 's_am_l_4',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: errors_object,
+          debug_options: {}
+        })
+      );
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
-
   }
-
 };
+
+InstanceComposer.registerShadowableClass(ListAirdropsKlass, 'getListAirdropsClass');
 
 module.exports = ListAirdropsKlass;

@@ -1,27 +1,22 @@
-"use strict";
+'use strict';
 
-const express = require('express')
-;
+const express = require('express');
 
-const rootPrefix = '../..'
-
+const rootPrefix = '../..',
   // Routes which wre implemented with V1.0 go here
 
-  , usersRoutes = require(rootPrefix + '/routes/v1/users')
-  , tokenRoutes = require(rootPrefix + '/routes/v1/token')
-  , actionRoutes = require(rootPrefix + '/routes/v1/actions')
-  , airdropsRoutes = require(rootPrefix + '/routes/v1/airdrops')
-  , transfersRoutes = require(rootPrefix + '/routes/v1/transfers')
-
+  usersRoutes = require(rootPrefix + '/routes/v1/users'),
+  tokenRoutes = require(rootPrefix + '/routes/v1/token'),
+  actionRoutes = require(rootPrefix + '/routes/v1/actions'),
+  airdropsRoutes = require(rootPrefix + '/routes/v1/airdrops'),
+  transfersRoutes = require(rootPrefix + '/routes/v1/transfers'),
   // Routes which were implemented with V1.1 go below this
 
-  , balancesRoutes = require(rootPrefix + '/routes/v1.1/balances')
-  , ledgerRoutes = require(rootPrefix + '/routes/v1.1/ledger')
-  , transactionsRoutes = require(rootPrefix + '/routes/v1.1/transactions')
-;
+  balancesRoutes = require(rootPrefix + '/routes/v1.1/balances'),
+  ledgerRoutes = require(rootPrefix + '/routes/v1.1/ledger'),
+  transactionsRoutes = require(rootPrefix + '/routes/v1.1/transactions');
 
-const router = express.Router()
-;
+const router = express.Router();
 
 router.use('/users', usersRoutes);
 

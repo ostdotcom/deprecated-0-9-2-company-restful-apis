@@ -1,16 +1,14 @@
-"use strict";
+'use strict';
 
-const express = require('express')
-;
+const express = require('express');
 
-const rootPrefix = '../..'
-  , routeHelper = require(rootPrefix + '/routes/helper')
-  , BalanceFormatter = require(rootPrefix + '/lib/formatter/entities/latest/balance')
-;
+const rootPrefix = '../..',
+  routeHelper = require(rootPrefix + '/routes/helper'),
+  BalanceFormatter = require(rootPrefix + '/lib/formatter/entities/latest/balance');
 
-const router = express.Router()
-;
+const router = express.Router();
 
+require(rootPrefix + '/app/services/balances/fetch');
 
 /**
  * Get balance of user
@@ -20,9 +18,7 @@ const router = express.Router()
  * @routeparam {String} :id - User uuid
  *
  */
-router.get('/:id', function (req, res, next) {
-
-  const getBalanceKlass = require(rootPrefix + '/app/services/balances/fetch');
+router.get('/:id', function(req, res, next) {
   req.decodedParams.apiName = 'get_balance';
   req.decodedParams.id = req.params.id;
 
@@ -37,7 +33,7 @@ router.get('/:id', function (req, res, next) {
     response.data.balance = balanceFormatterResponse.data;
   };
 
-  Promise.resolve(routeHelper.performer(req, res, next, getBalanceKlass, 'r_v1_b_1', null, dataFormatterFunc));
+  Promise.resolve(routeHelper.performer(req, res, next, 'getBalanceFetchClass', 'r_v1_b_1', null, dataFormatterFunc));
 });
 
 module.exports = router;

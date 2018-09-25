@@ -1,15 +1,16 @@
-"use strict";
+'use strict';
 
-const express = require('express')
-;
+const express = require('express');
 
-const rootPrefix = '../..'
-  , routeHelper = require(rootPrefix + '/routes/helper')
-  , TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/v1/transaction')
-;
+const rootPrefix = '../..',
+  routeHelper = require(rootPrefix + '/routes/helper'),
+  TransactionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/v1/transaction');
 
-const router = express.Router()
-;
+const router = express.Router();
+
+require(rootPrefix + '/app/services/transaction/execute');
+require(rootPrefix + '/app/services/transaction/get');
+require(rootPrefix + '/app/services/transaction/list/for_client_id');
 
 /**
  * @name Execute a transaction
@@ -22,17 +23,12 @@ const router = express.Router()
  * @routeparam {string<float>} :amount (optional) - amount to be used in the transaction - mandatory depending on action setup
  * @routeparam {string} :commission_percent (optional) - commission percent - mandatory depending on action setup
  */
-router.post('/', function (req, res, next) {
-
+router.post('/', function(req, res, next) {
   req.decodedParams.apiName = 'execute_transaction';
 
-  const ExecuteTransactionService = require(rootPrefix + '/app/services/transaction/execute');
-
   const dataFormatterFunc = async function(response) {
-
-    const transactionEntityFormatter = new TransactionEntityFormatterKlass(response.data)
-      , transactionEntityFormatterRsp = await transactionEntityFormatter.perform()
-    ;
+    const transactionEntityFormatter = new TransactionEntityFormatterKlass(response.data),
+      transactionEntityFormatterRsp = await transactionEntityFormatter.perform();
 
     delete response.data;
 
@@ -40,15 +36,11 @@ router.post('/', function (req, res, next) {
       result_type: 'transaction',
       transaction: transactionEntityFormatterRsp.data
     };
-
   };
 
-  Promise.resolve(routeHelper.performer(
-    req, res, next,
-    ExecuteTransactionService, 'r_v1_t_1',
-    null, dataFormatterFunc)
+  Promise.resolve(
+    routeHelper.performer(req, res, next, 'getExecuteTransactionService', 'r_v1_t_1', null, dataFormatterFunc)
   );
-
 });
 
 /**
@@ -63,42 +55,36 @@ router.post('/', function (req, res, next) {
  * @routeparam {string} :order (optional) - order list in 'desc' (default) or 'asc' order.
  * @routeparam {number} :limit (optional) - Min 1, Max 100, Default 10.
  */
-router.get('/', function (req, res, next) {
-
-  const GetTransactionListService = require(rootPrefix + '/app/services/transaction/list/for_client_id');
-
+router.get('/', function(req, res, next) {
   req.decodedParams.apiName = 'list_transactions';
 
   const dataFormatterFunc = async function(response) {
-
-    let transactionLogDDbRecords = response.data['transactionLogDDbRecords']
-      , transactionUuids = response.data['transactionUuids']
-      , transactionData = []
-    ;
+    let transactionLogDDbRecords = response.data['transactionLogDDbRecords'],
+      transactionUuids = response.data['transactionUuids'],
+      transactionData = [];
 
     delete response.data['transactionLogDDbRecords'];
     delete response.data['transactionUuids'];
 
-    for (let i=0; i<transactionUuids.length; i++) {
-
+    for (let i = 0; i < transactionUuids.length; i++) {
       let transactionUuid = transactionUuids[i];
       let data = transactionLogDDbRecords[transactionUuid];
-      if(!data) {continue}
+      if (!data) {
+        continue;
+      }
 
-      let transactionEntityFormatter = new TransactionEntityFormatterKlass(data)
-        , transactionEntityFormatterRsp = await transactionEntityFormatter.perform()
-      ;
+      let transactionEntityFormatter = new TransactionEntityFormatterKlass(data),
+        transactionEntityFormatterRsp = await transactionEntityFormatter.perform();
 
       transactionData.push(transactionEntityFormatterRsp.data);
-
     }
 
     response.data[response.data.result_type] = transactionData;
-
   };
 
-  Promise.resolve(routeHelper.performer(req, res, next, GetTransactionListService, 'r_v1_t_2', null, dataFormatterFunc));
-
+  Promise.resolve(
+    routeHelper.performer(req, res, next, 'getGetTransactionListByClientIdClass', 'r_v1_t_2', null, dataFormatterFunc)
+  );
 });
 
 /**
@@ -110,27 +96,24 @@ router.get('/', function (req, res, next) {
  *
  * @routeparam {number} :id (mandatory) - id of the transaction
  */
-router.get('/:id', function (req, res, next) {
-  const GetTransactionService = require(rootPrefix + '/app/services/transaction/get');
+router.get('/:id', function(req, res, next) {
   req.decodedParams.apiName = 'get_transaction';
   req.decodedParams.id = req.params.id;
 
-
   const dataFormatterFunc = async function(response) {
-
-    let transactionEntityFormatter = new TransactionEntityFormatterKlass(response.data)
-      , transactionEntityFormatterRsp = await transactionEntityFormatter.perform()
-    ;
+    let transactionEntityFormatter = new TransactionEntityFormatterKlass(response.data),
+      transactionEntityFormatterRsp = await transactionEntityFormatter.perform();
 
     delete response.data;
 
     response.data = {};
     response.data.result_type = 'transaction';
     response.data.transaction = transactionEntityFormatterRsp.data;
-
   };
 
-  Promise.resolve(routeHelper.performer(req, res, next, GetTransactionService, 'r_v1_t_3', null, dataFormatterFunc));
+  Promise.resolve(
+    routeHelper.performer(req, res, next, 'getGetTransactionsService', 'r_v1_t_3', null, dataFormatterFunc)
+  );
 });
 
 module.exports = router;

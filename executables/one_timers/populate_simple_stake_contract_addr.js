@@ -6,30 +6,31 @@ const rootPrefix = '../..',
   openStPlatform = require('@openstfoundation/openst-platform'),
   chainIntConstants = require(rootPrefix + '/config/chain_interaction_constants'),
   ClientBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/client_branded_token'),
-  ClientSecuredBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure')
-;
+  ClientSecuredBrandedTokenCacheKlass = require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
 
 const PopulateSimpleStakeContractAddr = {
-
   perform: async function() {
-
     const sleep = function(ms) {
-      return new Promise(function(resolve) {setTimeout(resolve, ms)});
+      return new Promise(function(resolve) {
+        setTimeout(resolve, ms);
+      });
     };
 
     await sleep(5000);
 
     let modelObj = new ClientBrandedTokenModel();
 
-    let dbRows = await modelObj.select('*').where({'client_id': '3548', 'simple_stake_contract_addr': '0x0000000000000000000000000000000000000000'}).fire();
+    let dbRows = await modelObj
+      .select('*')
+      .where({ client_id: '3548', simple_stake_contract_addr: '0x0000000000000000000000000000000000000000' })
+      .fire();
 
-    for(let i=0; i<dbRows.length; i++) {
-
+    for (let i = 0; i < dbRows.length; i++) {
       let dbRow = dbRows[i];
 
       console.log(`starting for ${dbRow.id}`);
 
-      if(!dbRow.token_uuid || !dbRow.token_erc20_address) {
+      if (!dbRow.token_uuid || !dbRow.token_erc20_address) {
         console.log(`ignoring ${dbRow.id}`);
       }
 
@@ -53,13 +54,15 @@ const PopulateSimpleStakeContractAddr = {
         }
       }
 
-      await new ClientBrandedTokenModel().update({simple_stake_contract_addr: dbRow.simple_stake_contract_addr})
-        .where(['id = ?', dbRow.id]).fire();
+      await new ClientBrandedTokenModel()
+        .update({ simple_stake_contract_addr: dbRow.simple_stake_contract_addr })
+        .where(['id = ?', dbRow.id])
+        .fire();
 
-      const clientBrandedTokenCache = new ClientBrandedTokenCacheKlass({'clientId': dbRow.client_id});
+      const clientBrandedTokenCache = new ClientBrandedTokenCacheKlass({ clientId: dbRow.client_id });
       clientBrandedTokenCache.clear();
 
-      const clientSecureBrandedTokenCache = new ClientSecuredBrandedTokenCacheKlass({'tokenSymbol': dbRow.symbol});
+      const clientSecureBrandedTokenCache = new ClientSecuredBrandedTokenCacheKlass({ tokenSymbol: dbRow.symbol });
       clientSecureBrandedTokenCache.clear();
 
       let publish_data = {};
@@ -74,29 +77,24 @@ const PopulateSimpleStakeContractAddr = {
 
       console.log(`publish_data for ${dbRow.id} : ${JSON.stringify(publish_data)}`);
 
-      await openSTNotification.publishEvent.perform(
-        {
-          topics: ['entity.branded_token'],
-          publisher: 'OST',
-          message: {
-            kind: 'shared_entity',
-            payload: {
-              entity: 'branded_token',
-              identifier: {
-                erc20_contract_address: dbRow.token_erc20_address,
-                chain_id: chainIntConstants.UTILITY_CHAIN_ID
-              },
-              operation: 'update',
-              data: publish_data
-            }
+      await openSTNotification.publishEvent.perform({
+        topics: ['entity.branded_token'],
+        publisher: 'OST',
+        message: {
+          kind: 'shared_entity',
+          payload: {
+            entity: 'branded_token',
+            identifier: {
+              erc20_contract_address: dbRow.token_erc20_address,
+              chain_id: chainIntConstants.UTILITY_CHAIN_ID
+            },
+            operation: 'update',
+            data: publish_data
           }
         }
-      );
-
+      });
     }
-
   }
-
 };
 
 module.exports = PopulateSimpleStakeContractAddr;

@@ -1,29 +1,25 @@
-"use strict";
+'use strict';
 
-const basePackage = 'web3-eth-personal'
-;
+const basePackage = 'web3-eth-personal';
 
-const BasePackage = require(basePackage)
-;
+const BasePackage = require(basePackage);
 
 const rootPrefix = '../..';
 
 // Please declare your require variable here.
-let logger;
+let logger, moUtils;
 
 // NOTE :: Please define all your requires inside the function
 function initRequires() {
   logger = logger || require(rootPrefix + '/lib/logger/custom_console_logger');
+  moUtils = require(rootPrefix + '/module_overrides/common/utils');
 }
 
 // Module Override Code - Part 1
-var requireData
-  , resolvedId
-  , resolvedFileName
-;
+var requireData, resolvedId, resolvedFileName;
 
 for (var k in require.cache) {
-  if (k.indexOf("/" + basePackage + "/src/index.js") > -1) {
+  if (k.indexOf('/' + basePackage + '/src/index.js') > -1) {
     requireData = require.cache[k];
     resolvedId = requireData.id;
     resolvedFileName = requireData.filename;
@@ -32,9 +28,8 @@ for (var k in require.cache) {
 }
 
 // Derived Class Definition/Implementation
-const Derived = function () {
-  var oThis = this
-  ;
+const Derived = function() {
+  var oThis = this;
 
   initRequires();
 
@@ -47,23 +42,21 @@ const Derived = function () {
   const _unlockAccount = oThis.unlockAccount;
 
   // over-riding unlockAccount method
-  oThis.unlockAccount = function () {
-
+  oThis.unlockAccount = function(address, password, unlockDuraction, callback) {
     logger.debug('HACKED unlockAccount INVOKED');
 
-    const chainInteractionConstants = require(rootPrefix + '/config/chain_interaction_constants')
-      , addressToUnlock = arguments['0']
-    ;
-
     // if address has passphrase, use the base package unlock account.
-    if (chainInteractionConstants.ADDRESSES_TO_UNLOCK_VIA_KEYSTORE_FILE_MAP[addressToUnlock.toLowerCase()]) {
-      logger.info('WEB3_OVERRIDE: performing unlockAccount using passphrase for address:', addressToUnlock);
+    if (moUtils.isUnlockable(address)) {
+      logger.info('WEB3_OVERRIDE: performing unlockAccount using passphrase for address:', address);
       return _unlockAccount.apply(this, arguments);
     } else {
-      logger.info('WEB3_OVERRIDE: dummy response for unlockAccount for address:', addressToUnlock);
-      return Promise.resolve(true)
+      logger.info('WEB3_OVERRIDE: dummy response for unlockAccount for address:', address);
+      callback && callback(null, true);
+      return Promise.resolve(true);
     }
   };
+
+  Object.assign(oThis.unlockAccount, _unlockAccount);
 
   return oThis;
 };

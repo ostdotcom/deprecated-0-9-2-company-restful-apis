@@ -1,84 +1,80 @@
-"use strict";
-
+'use strict';
 /**
+ * This is script to get error emails from RabbitMQ. Aggregate them and send emails.
  *
- * Get Error Emails from RabbitMQ. Aggregate them and send emails .<br><br>
+ * Usage: node executables/rmq_subscribers/send_error_emails.js
  *
  * @module executables/rmq_subscribers/send_error_emails
- *
  */
 
 // Include Process Locker File
-const rootPrefix = '../..'
-  , ProcessLockerKlass = require(rootPrefix + '/lib/process_locker')
-  , ProcessLocker = new ProcessLockerKlass()
-;
+const rootPrefix = '../..',
+  ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
+  ProcessLocker = new ProcessLockerKlass();
 
-ProcessLocker.canStartProcess({process_title: 'executables_rmq_subscribers_send_error_emails'});
-ProcessLocker.endAfterTime({time_in_minutes: 60});
+ProcessLocker.canStartProcess({ process_title: 'executables_rmq_subscribers_send_error_emails' });
+ProcessLocker.endAfterTime({ time_in_minutes: 60 });
 
 // Load external packages
-const openSTNotification = require('@openstfoundation/openst-notification')
-;
+const openSTNotification = require('@openstfoundation/openst-notification');
 
 //All Module Requires.
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , applicationMailerKlass = require(rootPrefix + '/lib/application_mailer')
-  , applicationMailer = new applicationMailerKlass()
-;
+const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  applicationMailerKlass = require(rootPrefix + '/lib/application_mailer'),
+  applicationMailer = new applicationMailerKlass();
 
 // global variable defined for email aggregation
 global.emailsAggregator = {};
 
 var waitingForEmail = false;
 
-openSTNotification.subscribeEvent.rabbit(["email_error.#"], {queue: 'send_error_email_from_restful_apis'},
-  function (msgContent) {
-    msgContent = JSON.parse(msgContent);
-    logger.debug('Consumed error message -> ', msgContent);
+openSTNotification.subscribeEvent.rabbit(['email_error.#'], { queue: 'send_error_email_from_restful_apis' }, function(
+  msgContent
+) {
+  msgContent = JSON.parse(msgContent);
+  logger.debug('Consumed error message -> ', msgContent);
 
-    const emailPayload = msgContent.message.payload;
-    var emailSubject = emailPayload.subject;
+  const emailPayload = msgContent.message.payload;
+  var emailSubject = emailPayload.subject;
 
-    // aggregate same errors for a while
-    if (global.emailsAggregator[emailSubject]) {
-      global.emailsAggregator[emailSubject].count++;
-    } else {
-      global.emailsAggregator[emailSubject] = emailPayload;
-      global.emailsAggregator[emailSubject].count = 1;
-    }
+  // aggregate same errors for a while
+  if (global.emailsAggregator[emailSubject]) {
+    global.emailsAggregator[emailSubject].count++;
+  } else {
+    global.emailsAggregator[emailSubject] = emailPayload;
+    global.emailsAggregator[emailSubject].count = 1;
+  }
 
-    // Wait for 3 sec to aggregate emails with subject line
-    if (!waitingForEmail) {
-      waitingForEmail = true;
-      setTimeout(function () {
-        sendAggregatedEmail();
-        waitingForEmail = false;
-      }, 30000);
-
-    }
-  });
+  // Wait for 3 sec to aggregate emails with subject line
+  if (!waitingForEmail) {
+    waitingForEmail = true;
+    setTimeout(function() {
+      sendAggregatedEmail();
+      waitingForEmail = false;
+    }, 30000);
+  }
+});
 
 /**
  * Send Emails Aggregated by subject
  *
  */
 function sendAggregatedEmail() {
-  logger.info("Sending Aggregated Emails");
+  logger.info('Sending Aggregated Emails');
   const send_for_email = JSON.parse(JSON.stringify(global.emailsAggregator));
   global.emailsAggregator = {};
 
   for (var subject in send_for_email) {
     var emailPayload = send_for_email[subject];
-    emailPayload.body = "Total Error Count: " + emailPayload.count + "\n" + emailPayload.body;
+    emailPayload.body = 'Total Error Count: ' + emailPayload.count + '\n' + emailPayload.body;
     applicationMailer.perform(emailPayload);
   }
-};
+}
 
 // Using a single function to handle multiple signals
 function handle() {
   logger.info('Received Signal');
-  var f = function () {
+  var f = function() {
     sendAggregatedEmail();
     process.exit(1);
   };

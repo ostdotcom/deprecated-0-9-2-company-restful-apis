@@ -1,53 +1,49 @@
-"use strict";
+'use strict';
 
-const rootPrefix = '../..'
-    , coreConstants = require(rootPrefix + '/config/core_constants')
-    , ModelBaseKlass = require(rootPrefix + '/app/models/base')
-    , criticalChainInteractionLogConst = require(rootPrefix + '/lib/global_constant/critical_chain_interaction_log')
-    , allMemcacheInstanceKlass = require(rootPrefix + '/lib/cache_management/all_memcache_instance')
-    , util = require(rootPrefix + '/lib/util')
-    , responseHelper = require(rootPrefix + '/lib/formatter/response')
-;
+const rootPrefix = '../..',
+  coreConstants = require(rootPrefix + '/config/core_constants'),
+  ModelBaseKlass = require(rootPrefix + '/app/models/base'),
+  criticalChainInteractionLogConst = require(rootPrefix + '/lib/global_constant/critical_chain_interaction_log'),
+  allMemcacheInstanceKlass = require(rootPrefix + '/lib/shared_cache_management/all_memcache_instance'),
+  util = require(rootPrefix + '/lib/util'),
+  responseHelper = require(rootPrefix + '/lib/formatter/response');
 
-const dbName = "company_saas_shared_"+coreConstants.SUB_ENVIRONMENT+"_"+coreConstants.ENVIRONMENT
-    , statuses = {
-        '1': criticalChainInteractionLogConst.queuedStatus,
-        '2': criticalChainInteractionLogConst.pendingStatus,
-        '3': criticalChainInteractionLogConst.processedStatus,
-        '4': criticalChainInteractionLogConst.failedStatus,
-        '5': criticalChainInteractionLogConst.timeoutStatus
-    }
-    , invertedStatuses = util.invert(statuses)
-    , chainTypes = {
-      '1': criticalChainInteractionLogConst.valueChainType,
-      '2': criticalChainInteractionLogConst.utilityChainType
-    }
-    , invertedChainTypes = util.invert(chainTypes)
-    , activityTypes = {
-      '1': criticalChainInteractionLogConst.requestOstActivityType,
-      '2': criticalChainInteractionLogConst.transferToStakerActivityType,
-      '3': criticalChainInteractionLogConst.grantEthActivityType,
-      '4': criticalChainInteractionLogConst.proposeBtActivityType,
-      '5': criticalChainInteractionLogConst.stakerInitialTransferActivityType,
-      '6': criticalChainInteractionLogConst.stakeApprovalStartedActivityType,
-      '7': criticalChainInteractionLogConst.stakeBtStartedActivityType,
-      '8': criticalChainInteractionLogConst.stakeStPrimeStartedActivityType,
-      '9': criticalChainInteractionLogConst.airdropUsersActivityType,
-      '10': criticalChainInteractionLogConst.deployAirdropActivityType,
-      '11': criticalChainInteractionLogConst.setopsAirdropActivityType,
-      '12': criticalChainInteractionLogConst.setWorkerActivityType,
-      '13': criticalChainInteractionLogConst.setPriceOracleActivityType,
-      '14': criticalChainInteractionLogConst.setAcceptedMarginActivityType
-    }
-    , invertedActivityTypes = util.invert(activityTypes)
-;
+const dbName = 'company_saas_shared_' + coreConstants.SUB_ENVIRONMENT + '_' + coreConstants.ENVIRONMENT,
+  statuses = {
+    '1': criticalChainInteractionLogConst.queuedStatus,
+    '2': criticalChainInteractionLogConst.pendingStatus,
+    '3': criticalChainInteractionLogConst.processedStatus,
+    '4': criticalChainInteractionLogConst.failedStatus,
+    '5': criticalChainInteractionLogConst.timeoutStatus
+  },
+  invertedStatuses = util.invert(statuses),
+  chainTypes = {
+    '1': criticalChainInteractionLogConst.valueChainType,
+    '2': criticalChainInteractionLogConst.utilityChainType
+  },
+  invertedChainTypes = util.invert(chainTypes),
+  activityTypes = {
+    '1': criticalChainInteractionLogConst.requestOstActivityType,
+    '2': criticalChainInteractionLogConst.transferToStakerActivityType,
+    '3': criticalChainInteractionLogConst.grantEthActivityType,
+    '4': criticalChainInteractionLogConst.proposeBtActivityType,
+    '5': criticalChainInteractionLogConst.stakerInitialTransferActivityType,
+    '6': criticalChainInteractionLogConst.stakeApprovalStartedActivityType,
+    '7': criticalChainInteractionLogConst.stakeBtStartedActivityType,
+    '8': criticalChainInteractionLogConst.stakeStPrimeStartedActivityType,
+    '9': criticalChainInteractionLogConst.airdropUsersActivityType,
+    '10': criticalChainInteractionLogConst.deployAirdropActivityType,
+    '11': criticalChainInteractionLogConst.setopsAirdropActivityType,
+    '12': criticalChainInteractionLogConst.setWorkerActivityType,
+    '13': criticalChainInteractionLogConst.setPriceOracleActivityType,
+    '14': criticalChainInteractionLogConst.setAcceptedMarginActivityType
+  },
+  invertedActivityTypes = util.invert(activityTypes);
 
-const CriticalChainInteractionLogModel = function () {
-
+const CriticalChainInteractionLogModel = function() {
   const oThis = this;
 
-  ModelBaseKlass.call(this, {dbName: dbName});
-
+  ModelBaseKlass.call(this, { dbName: dbName });
 };
 
 CriticalChainInteractionLogModel.prototype = Object.create(ModelBaseKlass.prototype);
@@ -56,7 +52,6 @@ CriticalChainInteractionLogModel.prototype = Object.create(ModelBaseKlass.protot
  * Public methods
  */
 const CriticalChainInteractionLogModelSpecificPrototype = {
-
   tableName: 'critical_chain_interaction_logs',
 
   statuses: statuses,
@@ -72,15 +67,15 @@ const CriticalChainInteractionLogModelSpecificPrototype = {
   invertedActivityTypes: invertedActivityTypes,
 
   enums: {
-    'status': {
+    status: {
       val: statuses,
       inverted: invertedStatuses
     },
-    'activity_type': {
+    activity_type: {
       val: activityTypes,
       inverted: invertedActivityTypes
     },
-    'chain_type': {
+    chain_type: {
       val: chainTypes,
       inverted: invertedChainTypes
     }
@@ -93,15 +88,17 @@ const CriticalChainInteractionLogModelSpecificPrototype = {
    *
    * @return {promise<object>}
    */
-  getByIds: async function(ids){
+  getByIds: async function(ids) {
+    const oThis = this,
+      dbRecords = await oThis
+        .select()
+        .where(['id IN (?)', ids])
+        .fire();
 
-    const oThis = this
-        , dbRecords = await oThis.select().where(['id IN (?)', ids]).fire();
+    var dbRecord = null,
+      formattedDbRecords = {};
 
-    var dbRecord = null
-        , formattedDbRecords = {};
-
-    for(var i=0; i<dbRecords.length; i++) {
+    for (var i = 0; i < dbRecords.length; i++) {
       dbRecord = dbRecords[i];
       dbRecord.request_params = JSON.parse(dbRecord.request_params || '{}');
       dbRecord.response_data = JSON.parse(dbRecord.response_data || '{}');
@@ -109,7 +106,6 @@ const CriticalChainInteractionLogModelSpecificPrototype = {
     }
 
     return formattedDbRecords;
-
   },
 
   /**
@@ -119,8 +115,7 @@ const CriticalChainInteractionLogModelSpecificPrototype = {
    *
    * @return {promise<object>}
    */
-  insertRecord: async function(data){
-
+  insertRecord: async function(data) {
     if (!data.request_params) {
       data.request_params = '{}';
     } else {
@@ -179,13 +174,11 @@ const CriticalChainInteractionLogModelSpecificPrototype = {
    *
    * @return {promise<result>}
    */
-  flushTxStatusDetailsCache: function(critical_chain_interaction_log_id){
+  flushTxStatusDetailsCache: function(critical_chain_interaction_log_id) {
+    const oThis = this,
+      allMemcacheInstance = new allMemcacheInstanceKlass();
 
-    const oThis = this
-        , allMemcacheInstance = new allMemcacheInstanceKlass();
-
-    allMemcacheInstance.clearCache(oThis.sharedCacheKeyPrefix() +'_c_tx_s_' + critical_chain_interaction_log_id);
-
+    allMemcacheInstance.clearCache(oThis.sharedCacheKeyPrefix() + '_c_tx_s_' + critical_chain_interaction_log_id);
   },
 
   /**
@@ -195,13 +188,11 @@ const CriticalChainInteractionLogModelSpecificPrototype = {
    *
    * @return {promise<result>}
    */
-  flushPendingTxsCache: function(client_token_id){
-
-    const oThis = this
-        , allMemcacheInstance = new allMemcacheInstanceKlass();
+  flushPendingTxsCache: function(client_token_id) {
+    const oThis = this,
+      allMemcacheInstance = new allMemcacheInstanceKlass();
 
     allMemcacheInstance.clearCache(oThis.sharedCacheKeyPrefix() + '_c_pci_ids_' + client_token_id);
-
   },
 
   /**
@@ -211,7 +202,12 @@ const CriticalChainInteractionLogModelSpecificPrototype = {
    *
    */
   sharedCacheKeyPrefix: function() {
-    return coreConstants.SHARED_MEMCACHE_KEY_PREFIX + coreConstants.ENVIRONMENT_SHORT + '_' + coreConstants.SUB_ENVIRONMENT_SHORT;
+    return (
+      coreConstants.SHARED_MEMCACHE_KEY_PREFIX +
+      coreConstants.ENVIRONMENT_SHORT +
+      '_' +
+      coreConstants.SUB_ENVIRONMENT_SHORT
+    );
   },
 
   /**
@@ -220,8 +216,7 @@ const CriticalChainInteractionLogModelSpecificPrototype = {
    * @return {promise<result>}
    *
    */
-  updateCriticalChainInteractionLog: async function (idToUpdate, dataToUpdate, txStatusDetailsCacheId, clientTokenId) {
-
+  updateCriticalChainInteractionLog: async function(idToUpdate, dataToUpdate, txStatusDetailsCacheId, clientTokenId) {
     const oThis = this;
 
     if (dataToUpdate.response_data) {
@@ -232,17 +227,17 @@ const CriticalChainInteractionLogModelSpecificPrototype = {
       dataToUpdate.request_params = JSON.stringify(dataToUpdate.request_params);
     }
 
-    await oThis.update(dataToUpdate).where({id: idToUpdate}).fire();
+    await oThis
+      .update(dataToUpdate)
+      .where({ id: idToUpdate })
+      .fire();
 
     oThis.flushTxStatusDetailsCache(txStatusDetailsCacheId);
 
     oThis.flushPendingTxsCache(clientTokenId);
 
     return Promise.resolve(responseHelper.successWithData({}));
-
-  },
-
-
+  }
 };
 
 Object.assign(CriticalChainInteractionLogModel.prototype, CriticalChainInteractionLogModelSpecificPrototype);

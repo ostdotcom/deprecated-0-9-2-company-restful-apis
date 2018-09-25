@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 function define(name, value) {
   Object.defineProperty(exports, name, {
@@ -8,38 +8,38 @@ function define(name, value) {
 }
 
 // Constants which are needed to interact with Utility Chain
-define("UTILITY_CHAIN_OWNER_ADDR", process.env.OST_UTILITY_CHAIN_OWNER_ADDR);
-define("STAKER_ADDR", process.env.OST_STAKER_ADDR);
-define("REDEEMER_ADDR", process.env.OST_REDEEMER_ADDR);
-define("VALUE_REGISTRAR_ADDR", process.env.OST_VALUE_REGISTRAR_ADDR);
-define("VALUE_DEPLOYER_ADDR", process.env.OST_VALUE_DEPLOYER_ADDR);
-define("VALUE_OPS_ADDR", process.env.OST_VALUE_OPS_ADDR);
+define('UTILITY_CHAIN_OWNER_ADDR', process.env.OST_UTILITY_CHAIN_OWNER_ADDR);
+define('STAKER_ADDR', process.env.OST_STAKER_ADDR);
+define('REDEEMER_ADDR', process.env.OST_REDEEMER_ADDR);
+define('VALUE_REGISTRAR_ADDR', process.env.OST_VALUE_REGISTRAR_ADDR);
+define('VALUE_DEPLOYER_ADDR', process.env.OST_VALUE_DEPLOYER_ADDR);
+define('VALUE_OPS_ADDR', process.env.OST_VALUE_OPS_ADDR);
 
-define("UTILITY_REGISTRAR_ADDR", process.env.OST_UTILITY_REGISTRAR_ADDR);
-define("UTILITY_OPS_ADDR", process.env.OST_UTILITY_OPS_ADDR);
+define('UTILITY_REGISTRAR_ADDR', process.env.OST_UTILITY_REGISTRAR_ADDR);
+define('UTILITY_OPS_ADDR', process.env.OST_UTILITY_OPS_ADDR);
 
-define("FOUNDATION_ADDR", process.env.OST_FOUNDATION_ADDR);
+define('FOUNDATION_ADDR', process.env.OST_FOUNDATION_ADDR);
 
-define("UTILITY_OPS_ADDR", process.env.OST_UTILITY_OPS_ADDR);
-define("UTILITY_OPS_PASSPHRASE", process.env.OST_UTILITY_OPS_PASSPHRASE);
+define('UTILITY_OPS_ADDR', process.env.OST_UTILITY_OPS_ADDR);
+define('UTILITY_OPS_PASSPHRASE', process.env.OST_UTILITY_OPS_PASSPHRASE);
 
-define("UTILITY_DEPLOYER_ADDR", process.env.OST_UTILITY_DEPLOYER_ADDR);
-define("UTILITY_DEPLOYER_PASSPHRASE", process.env.OST_UTILITY_DEPLOYER_PASSPHRASE);
+define('UTILITY_DEPLOYER_ADDR', process.env.OST_UTILITY_DEPLOYER_ADDR);
+define('UTILITY_DEPLOYER_PASSPHRASE', process.env.OST_UTILITY_DEPLOYER_PASSPHRASE);
 
-define("ST_PRIME_UUID", process.env.OST_OPENSTUTILITY_ST_PRIME_UUID);
+define('ST_PRIME_UUID', process.env.OST_OPENSTUTILITY_ST_PRIME_UUID);
 
 // Contract addresses
-define("SIMPLE_TOKEN_CONTRACT_ADDR", process.env.OST_SIMPLE_TOKEN_CONTRACT_ADDR);
-define("OPENSTUTILITY_CONTRACT_ADDR", process.env.OST_OPENSTUTILITY_CONTRACT_ADDR);
-define("STAKER_ADDR", process.env.OST_STAKER_ADDR);
+define('SIMPLE_TOKEN_CONTRACT_ADDR', process.env.OST_SIMPLE_TOKEN_CONTRACT_ADDR);
+define('OPENSTUTILITY_CONTRACT_ADDR', process.env.OST_OPENSTUTILITY_CONTRACT_ADDR);
+define('STAKER_ADDR', process.env.OST_STAKER_ADDR);
 
 const providerHostToChainKindMap = {};
 
 // Constants which are needed to interact with Utility Chain
-define("UTILITY_CHAIN_ID", process.env.OST_UTILITY_CHAIN_ID);
-define("UTILITY_GAS_PRICE", process.env.OST_UTILITY_GAS_PRICE);
-define("UTILITY_GETH_RPC_PROVIDER", process.env.OST_UTILITY_GETH_RPC_PROVIDER);
-define("UTILITY_GETH_WS_PROVIDER", process.env.OST_UTILITY_GETH_WS_PROVIDER);
+define('UTILITY_CHAIN_ID', process.env.OST_UTILITY_CHAIN_ID);
+define('UTILITY_GAS_PRICE', process.env.OST_UTILITY_GAS_PRICE);
+define('UTILITY_GETH_RPC_PROVIDER', process.env.OST_UTILITY_GETH_RPC_PROVIDER);
+define('UTILITY_GETH_WS_PROVIDER', process.env.OST_UTILITY_GETH_WS_PROVIDER);
 
 const OST_UTILITY_GETH_RPC_PROVIDERS = JSON.parse(process.env.OST_UTILITY_GETH_RPC_PROVIDERS);
 define('OST_UTILITY_GETH_RPC_PROVIDERS', OST_UTILITY_GETH_RPC_PROVIDERS);
@@ -47,27 +47,24 @@ define('OST_UTILITY_GETH_RPC_PROVIDERS', OST_UTILITY_GETH_RPC_PROVIDERS);
 const OST_UTILITY_GETH_WS_PROVIDERS = JSON.parse(process.env.OST_UTILITY_GETH_WS_PROVIDERS);
 define('OST_UTILITY_GETH_WS_PROVIDERS', OST_UTILITY_GETH_WS_PROVIDERS);
 
-for(var i = 0; i < OST_UTILITY_GETH_RPC_PROVIDERS.length; i ++) {
+for (var i = 0; i < OST_UTILITY_GETH_RPC_PROVIDERS.length; i++) {
   providerHostToChainKindMap[OST_UTILITY_GETH_RPC_PROVIDERS[i]] = 'utility';
 }
-if(process.env.OST_UTILITY_GETH_RPC_PROVIDER) {
+if (process.env.OST_UTILITY_GETH_RPC_PROVIDER) {
   providerHostToChainKindMap[process.env.OST_UTILITY_GETH_RPC_PROVIDER] = 'utility';
 }
-for(var i = 0; i < OST_UTILITY_GETH_WS_PROVIDERS.length; i ++) {
+for (var i = 0; i < OST_UTILITY_GETH_WS_PROVIDERS.length; i++) {
   providerHostToChainKindMap[OST_UTILITY_GETH_WS_PROVIDERS[i]] = 'utility';
 }
-if(process.env.OST_UTILITY_GETH_WS_PROVIDER) {
+if (process.env.OST_UTILITY_GETH_WS_PROVIDER) {
   providerHostToChainKindMap[process.env.OST_UTILITY_GETH_WS_PROVIDER] = 'utility';
 }
 
-
 // Constants which are needed to interact with Value Chain
-define("VALUE_CHAIN_ID", process.env.OST_VALUE_CHAIN_ID);
-define("VALUE_GAS_PRICE", process.env.OST_VALUE_GAS_PRICE);
-define("VALUE_GETH_RPC_PROVIDER", process.env.OST_VALUE_GETH_RPC_PROVIDER);
-define("VALUE_GETH_WS_PROVIDER", process.env.OST_VALUE_GETH_WS_PROVIDER);
-
-define("WEB3_POOL_SIZE", process.env.OST_WEB3_POOL_SIZE || 10);
+define('VALUE_CHAIN_ID', process.env.OST_VALUE_CHAIN_ID);
+define('VALUE_GAS_PRICE', process.env.OST_VALUE_GAS_PRICE);
+define('VALUE_GETH_RPC_PROVIDER', process.env.OST_VALUE_GETH_RPC_PROVIDER);
+define('VALUE_GETH_WS_PROVIDER', process.env.OST_VALUE_GETH_WS_PROVIDER);
 
 const OST_VALUE_GETH_RPC_PROVIDERS = JSON.parse(process.env.OST_VALUE_GETH_RPC_PROVIDERS);
 define('OST_VALUE_GETH_RPC_PROVIDERS', OST_VALUE_GETH_RPC_PROVIDERS);
@@ -75,17 +72,17 @@ define('OST_VALUE_GETH_RPC_PROVIDERS', OST_VALUE_GETH_RPC_PROVIDERS);
 const OST_VALUE_GETH_WS_PROVIDERS = JSON.parse(process.env.OST_VALUE_GETH_WS_PROVIDERS);
 define('OST_VALUE_GETH_WS_PROVIDERS', OST_VALUE_GETH_WS_PROVIDERS);
 
-for(var i = 0; i < OST_VALUE_GETH_RPC_PROVIDERS.length; i ++) {
+for (var i = 0; i < OST_VALUE_GETH_RPC_PROVIDERS.length; i++) {
   providerHostToChainKindMap[OST_VALUE_GETH_RPC_PROVIDERS[i]] = 'value';
 }
-if(process.env.OST_VALUE_GETH_RPC_PROVIDER) {
+if (process.env.OST_VALUE_GETH_RPC_PROVIDER) {
   providerHostToChainKindMap[process.env.OST_VALUE_GETH_RPC_PROVIDER] = 'value';
 }
 
-for(var i = 0; i < OST_VALUE_GETH_WS_PROVIDERS.length; i ++) {
+for (var i = 0; i < OST_VALUE_GETH_WS_PROVIDERS.length; i++) {
   providerHostToChainKindMap[OST_VALUE_GETH_WS_PROVIDERS[i]] = 'value';
 }
-if (process.env.OST_VALUE_GETH_WS_PROVIDER){
+if (process.env.OST_VALUE_GETH_WS_PROVIDER) {
   providerHostToChainKindMap[process.env.OST_VALUE_GETH_WS_PROVIDER] = 'value';
 }
 
@@ -95,9 +92,8 @@ define('GETH_PROVIDER_TO_CHAIN_KIND_MAP', providerHostToChainKindMap);
 var po_contracts = {};
 try {
   po_contracts = JSON.parse(process.env.OST_UTILITY_PRICE_ORACLES);
-} catch(err) {
-}
-define("UTILITY_PRICE_ORACLES", po_contracts);
+} catch (err) {}
+define('UTILITY_PRICE_ORACLES', po_contracts);
 
 //Workers contract address to setup workers and deploy airdropcontract
 define('UTILITY_WORKERS_CONTRACT_ADDRESS', process.env.OST_UTILITY_WORKERS_CONTRACT_ADDRESS);
@@ -107,7 +103,7 @@ define('UTILITY_WORKERS_CONTRACT_ADDRESS', process.env.OST_UTILITY_WORKERS_CONTR
 const addresses_to_unlock_via_keystore_file = ['OST_UTILITY_INITIAL_ST_PRIME_HOLDER_ADDR'];
 
 var addresses_to_unlock_via_keystore_file_map = {};
-for(var i=0; i<addresses_to_unlock_via_keystore_file.length; i++) {
+for (var i = 0; i < addresses_to_unlock_via_keystore_file.length; i++) {
   var addr = process.env[addresses_to_unlock_via_keystore_file[i]];
   if (addr) {
     addresses_to_unlock_via_keystore_file_map[addr.toLowerCase()] = 1;
@@ -115,9 +111,3 @@ for(var i=0; i<addresses_to_unlock_via_keystore_file.length; i++) {
 }
 
 define('ADDRESSES_TO_UNLOCK_VIA_KEYSTORE_FILE_MAP', addresses_to_unlock_via_keystore_file_map);
-
-//Gas price for mainnet
-define("MIN_VALUE_GAS_PRICE", process.env.MIN_VALUE_GAS_PRICE);
-define("MAX_VALUE_GAS_PRICE", process.env.MAX_VALUE_GAS_PRICE);
-define("DEFAULT_VALUE_GAS_PRICE", process.env.DEFAULT_VALUE_GAS_PRICE);
-define("BUFFER_VALUE_GAS_PRICE", process.env.BUFFER_VALUE_GAS_PRICE);

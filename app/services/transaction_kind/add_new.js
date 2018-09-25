@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * Add new transaction kind
@@ -6,17 +6,18 @@
  * @module app/services/transaction_kind/add_new
  *
  */
-const rootPrefix = '../../..'
-  , responseHelper = require(rootPrefix + '/lib/formatter/response')
-  , util = require(rootPrefix + '/lib/util')
-  , basicHelper = require(rootPrefix + '/helpers/basic')
-  , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-  , ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type')
-  , ClientTxKindCntCacheKlass = require(rootPrefix + '/lib/cache_management/client_transaction_type_count')
-  , clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types')
-  , ActionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/action')
-  , commonValidator = require(rootPrefix + '/lib/validators/common')
-;
+const rootPrefix = '../../..',
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  util = require(rootPrefix + '/lib/util'),
+  basicHelper = require(rootPrefix + '/helpers/basic'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  ClientTransactionTypeModel = require(rootPrefix + '/app/models/client_transaction_type'),
+  clientTxTypesConst = require(rootPrefix + '/lib/global_constant/client_transaction_types'),
+  ActionEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/action'),
+  commonValidator = require(rootPrefix + '/lib/validators/common');
+
+require(rootPrefix + '/lib/cache_management/client_transaction_type_count');
 
 /**
  * Add new transaction kind constructor
@@ -34,9 +35,8 @@ const rootPrefix = '../../..'
  * @constructor
  *
  */
-const AddNewAction = function (params) {
-  const oThis = this
-  ;
+const AddNewAction = function(params) {
+  const oThis = this;
 
   oThis.clientId = params.client_id;
   oThis.name = params.name;
@@ -51,29 +51,27 @@ const AddNewAction = function (params) {
 };
 
 AddNewAction.prototype = {
-
   /**
    * Perform
    *
    * @return {promise<result>}
    */
-  perform: function () {
+  perform: function() {
     const oThis = this;
 
-    return oThis.asyncPerform()
-      .catch(function (error) {
-        if (responseHelper.isCustomResult(error)) {
-          return error;
-        } else {
-          logger.error(`${__filename}::perform::catch`);
-          logger.error(error);
-          return responseHelper.error({
-            internal_error_identifier: 's_tk_an_4',
-            api_error_identifier: 'unhandled_catch_response',
-            debug_options: {}
-          });
-        }
-      })
+    return oThis.asyncPerform().catch(function(error) {
+      if (responseHelper.isCustomResult(error)) {
+        return error;
+      } else {
+        logger.error(`${__filename}::perform::catch`);
+        logger.error(error);
+        return responseHelper.error({
+          internal_error_identifier: 's_tk_an_4',
+          api_error_identifier: 'unhandled_catch_response',
+          debug_options: {}
+        });
+      }
+    });
   },
 
   /**
@@ -82,9 +80,8 @@ AddNewAction.prototype = {
    * @return {promise<result>}
    *
    */
-  asyncPerform: async function () {
-    const oThis = this
-    ;
+  asyncPerform: async function() {
+    const oThis = this;
 
     await oThis.validateParams();
 
@@ -102,10 +99,9 @@ AddNewAction.prototype = {
    *
    * @return {promise<result>}
    */
-  validateParams: async function () {
-    const oThis = this
-      , errors_object = []
-    ;
+  validateParams: async function() {
+    const oThis = this,
+      errors_object = [];
 
     oThis.currency = (oThis.currency || '').toUpperCase();
     oThis.name = oThis.name.trim();
@@ -120,10 +116,9 @@ AddNewAction.prototype = {
       errors_object.push('invalid_transactionkind');
     }
 
-    if(!commonValidator.isVarNull(oThis.amount) && !(oThis.amount >= 0)){
+    if (!commonValidator.isVarNull(oThis.amount) && !(oThis.amount >= 0)) {
       errors_object.push('invalid_amount');
     } else {
-
       if (oThis.currency == clientTxTypesConst.usdCurrencyType) {
         if (!commonValidator.validateArbitraryAmount(oThis.amount, oThis.arbitraryAmount)) {
           errors_object.push('invalid_amount_arbitrary_combination');
@@ -152,7 +147,7 @@ AddNewAction.prototype = {
       }
     }
 
-    if(oThis.kind != clientTxTypesConst.userToUserKind) {
+    if (oThis.kind != clientTxTypesConst.userToUserKind) {
       if (!commonValidator.isVarNull(oThis.commissionPercent)) {
         errors_object.push('invalid_commission_percent');
       }
@@ -162,24 +157,31 @@ AddNewAction.prototype = {
     } else {
       if (!commonValidator.commissionPercentValid(oThis.commissionPercent)) {
         errors_object.push('invalid_commission_percent');
-      } else if (!commonValidator.validateArbitraryCommissionPercent(oThis.commissionPercent, oThis.arbitraryCommission)) {
+      } else if (
+        !commonValidator.validateArbitraryCommissionPercent(oThis.commissionPercent, oThis.arbitraryCommission)
+      ) {
         errors_object.push('invalid_commission_arbitrary_combination');
       }
     }
 
-    let existingTKind = await new ClientTransactionTypeModel().getTransactionByName({clientId: oThis.clientId, name: oThis.name});
+    let existingTKind = await new ClientTransactionTypeModel().getTransactionByName({
+      clientId: oThis.clientId,
+      name: oThis.name
+    });
 
     if (existingTKind.length > 0) {
       errors_object.push('duplicate_transaction_name');
     }
 
     if (errors_object.length > 0) {
-      return Promise.reject(responseHelper.paramValidationError({
-        internal_error_identifier: 's_tk_an_2',
-        api_error_identifier: 'invalid_api_params',
-        params_error_identifiers: errors_object,
-        debug_options: {}
-      }));
+      return Promise.reject(
+        responseHelper.paramValidationError({
+          internal_error_identifier: 's_tk_an_2',
+          api_error_identifier: 'invalid_api_params',
+          params_error_identifiers: errors_object,
+          debug_options: {}
+        })
+      );
     }
 
     oThis.transactionKindObj.client_id = oThis.clientId;
@@ -199,9 +201,8 @@ AddNewAction.prototype = {
    *
    * @return {promise<result>}
    */
-  createTransactionKind: async function () {
-    const oThis = this
-    ;
+  createTransactionKind: async function() {
+    const oThis = this;
 
     const cloneObj = util.clone(oThis.transactionKindObj);
     cloneObj.kind = new ClientTransactionTypeModel().invertedKinds[cloneObj.kind];
@@ -219,9 +220,10 @@ AddNewAction.prototype = {
    *
    * @return {promise<result>}
    */
-  clearCache: function () {
-    const oThis = this
-      , cacheObj = new ClientTxKindCntCacheKlass({clientId: oThis.clientId});
+  clearCache: function() {
+    const oThis = this,
+      ClientTxKindCntCacheKlass = oThis.ic().getClientTransactionTypeCountCache(),
+      cacheObj = new ClientTxKindCntCacheKlass({ clientId: oThis.clientId });
 
     return cacheObj.clear();
   },
@@ -232,22 +234,26 @@ AddNewAction.prototype = {
    * @return {promise<result>} - returns a promise which resolves to an object of Result
    *
    */
-  returnResponse: async function () {
-    const oThis = this
-    ;
+  returnResponse: async function() {
+    const oThis = this;
 
-    const transactionTypeObj = await new ClientTransactionTypeModel().select('*').where({id: oThis.transactionKindObj.id}).fire();
+    const transactionTypeObj = await new ClientTransactionTypeModel()
+      .select('*')
+      .where({ id: oThis.transactionKindObj.id })
+      .fire();
     let actionEntityFormatter = new ActionEntityFormatterKlass(transactionTypeObj[0]);
 
     let actionEntityFormatterRsp = await actionEntityFormatter.perform();
 
-    return Promise.resolve(responseHelper.successWithData(
-      {
-        result_type: "action",
+    return Promise.resolve(
+      responseHelper.successWithData({
+        result_type: 'action',
         action: actionEntityFormatterRsp.data
-      }
-    ));
+      })
+    );
   }
 };
+
+InstanceComposer.registerShadowableClass(AddNewAction, 'getAddNewActionClass');
 
 module.exports = AddNewAction;

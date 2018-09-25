@@ -1,11 +1,10 @@
-"use strict";
+'use strict';
 
-const rootPrefix = '../../..'
-    , responseHelper = require(rootPrefix + '/lib/formatter/response')
-    , StakeAndMintRouterKlass = require(rootPrefix + '/lib/stake_and_mint/router')
-    , basicHelper = require(rootPrefix + '/helpers/basic')
-    , logger = require(rootPrefix + '/lib/logger/custom_console_logger')
-;
+const rootPrefix = '../../..',
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
+  StakeAndMintRouterKlass = require(rootPrefix + '/lib/stake_and_mint/router'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
 /**
  * Add new transaction kind constructor
@@ -23,41 +22,37 @@ const rootPrefix = '../../..'
  * @constructor
  *
  */
-const StartStakeAndMintKlass = function (params) {
-
+const StartStakeAndMintKlass = function(params) {
   var oThis = this;
 
   oThis.clientId = params.client_id;
   oThis.clientTokenId = params.client_token_id;
   oThis.tokenSymbol = params.token_symbol;
   oThis.stakeAndMintParams = params.stake_and_mint_params;
-
 };
 
 StartStakeAndMintKlass.prototype = {
-
   /**
    * Async Perform
    *
    * @return {promise<result>}
    */
-  perform: function(){
+  perform: function() {
     const oThis = this;
 
-    return oThis.asyncPerform()
-        .catch(function(error) {
-          if (responseHelper.isCustomResult(error)){
-            return error;
-          } else {
-            logger.error(`${__filename}::perform::catch`);
-            logger.error(error);
-            return responseHelper.error({
-              internal_error_identifier: 's_s_sm_s_1',
-              api_error_identifier: 'unhandled_catch_response',
-              debug_options: {}
-            });
-          }
-        })
+    return oThis.asyncPerform().catch(function(error) {
+      if (responseHelper.isCustomResult(error)) {
+        return error;
+      } else {
+        logger.error(`${__filename}::perform::catch`);
+        logger.error(error);
+        return responseHelper.error({
+          internal_error_identifier: 's_s_sm_s_1',
+          api_error_identifier: 'unhandled_catch_response',
+          debug_options: {}
+        });
+      }
+    });
   },
 
   /**
@@ -66,19 +61,20 @@ StartStakeAndMintKlass.prototype = {
    * @return {promise<result>}
    */
   asyncPerform: async function() {
-
-    const oThis = this;
+    const oThis = this,
+      configStrategy = oThis.ic().configStrategy;
 
     await oThis.validateAndSanitize();
 
     return new StakeAndMintRouterKlass({
       current_step: 'init',
+      utility_chain_id: configStrategy.OST_UTILITY_CHAIN_ID,
+      value_chain_id: configStrategy.OST_VALUE_CHAIN_ID,
       token_symbol: oThis.tokenSymbol,
       client_id: oThis.clientId,
       client_token_id: oThis.clientTokenId,
       stake_and_mint_params: oThis.stakeAndMintParams
     }).init();
-
   },
 
   /**
@@ -87,47 +83,55 @@ StartStakeAndMintKlass.prototype = {
    * @return {promise<result>}
    */
   validateAndSanitize: function() {
-
     const oThis = this;
 
-    if(!oThis.clientId || !oThis.clientTokenId || !oThis.tokenSymbol){
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_sm_s_2',
-        api_error_identifier: 'invalid_api_params',
-        debug_options: {}
-      }));
+    if (!oThis.clientId || !oThis.clientTokenId || !oThis.tokenSymbol) {
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 's_sm_s_2',
+          api_error_identifier: 'invalid_api_params',
+          debug_options: {}
+        })
+      );
     }
 
-    if (!oThis.stakeAndMintParams || !oThis.stakeAndMintParams.client_eth_address ||
-        !oThis.stakeAndMintParams.transaction_hash) {
-
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_sm_s_3',
-        api_error_identifier: 'invalid_api_params',
-        debug_options: {stakeAndMintParams: oThis.stakeAndMintParams}
-      }));
-
+    if (
+      !oThis.stakeAndMintParams ||
+      !oThis.stakeAndMintParams.client_eth_address ||
+      !oThis.stakeAndMintParams.transaction_hash
+    ) {
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 's_sm_s_3',
+          api_error_identifier: 'invalid_api_params',
+          debug_options: { stakeAndMintParams: oThis.stakeAndMintParams }
+        })
+      );
     }
 
-    if(!oThis.stakeAndMintParams.bt_to_mint){
+    if (!oThis.stakeAndMintParams.bt_to_mint) {
       oThis.stakeAndMintParams.bt_to_mint = 0;
     }
-    if(!oThis.stakeAndMintParams.st_prime_to_mint){
+    if (!oThis.stakeAndMintParams.st_prime_to_mint) {
       oThis.stakeAndMintParams.st_prime_to_mint = 0;
     }
-    
-    if ( parseInt(oThis.stakeAndMintParams.bt_to_mint) === 0 && parseInt(oThis.stakeAndMintParams.st_prime_to_mint) === 0) {
-      return Promise.reject(responseHelper.error({
-        internal_error_identifier: 's_sm_s_4',
-        api_error_identifier: 'invalid_api_params',
-        debug_options: {stakeAndMintParams: oThis.stakeAndMintParams}
-      }));
+
+    if (
+      parseInt(oThis.stakeAndMintParams.bt_to_mint) === 0 &&
+      parseInt(oThis.stakeAndMintParams.st_prime_to_mint) === 0
+    ) {
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 's_sm_s_4',
+          api_error_identifier: 'invalid_api_params',
+          debug_options: { stakeAndMintParams: oThis.stakeAndMintParams }
+        })
+      );
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
-
   }
-
 };
+InstanceComposer.registerShadowableClass(StartStakeAndMintKlass, 'getStartStakeAndMintKlass');
 
 module.exports = StartStakeAndMintKlass;

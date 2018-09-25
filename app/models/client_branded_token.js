@@ -1,18 +1,15 @@
-"use strict";
+'use strict';
 
-const rootPrefix = '../..'
-  , coreConstants = require(rootPrefix + '/config/core_constants')
-  , ModelBaseKlass = require(rootPrefix + '/app/models/base')
-;
+const rootPrefix = '../..',
+  coreConstants = require(rootPrefix + '/config/core_constants'),
+  ModelBaseKlass = require(rootPrefix + '/app/models/base');
 
-const dbName = "saas_client_economy_" + coreConstants.SUB_ENVIRONMENT + "_" + coreConstants.ENVIRONMENT
-;
+const dbName = 'saas_client_economy_' + coreConstants.SUB_ENVIRONMENT + '_' + coreConstants.ENVIRONMENT;
 
-const ClientBrandedTokenModel = function () {
-  const oThis = this
-  ;
+const ClientBrandedTokenModel = function() {
+  const oThis = this;
 
-  ModelBaseKlass.call(oThis, {dbName: dbName});
+  ModelBaseKlass.call(oThis, { dbName: dbName });
 };
 
 ClientBrandedTokenModel.prototype = Object.create(ModelBaseKlass.prototype);
@@ -25,32 +22,79 @@ const ClientBrandedTokenModelSpecificPrototype = {
 
   enums: {},
 
-  getById: function (id) {
-    const oThis = this
-    ;
+  /**
+   * Get all clientIds.
+   *
+   * @returns {*}
+   *
+   */
+  getAllClientIds: function() {
+    const oThis = this;
 
-    return oThis.select('*').where({id: id}).fire();
+    return oThis.select('client_id').fire();
   },
 
-  getBySymbol: function (symbol) {
-    const oThis = this
-    ;
+  /**
+   * Get all details using the id.
+   *
+   * @param id
+   * @returns {*}
+   *
+   */
+  getById: function(id) {
+    const oThis = this;
 
-    return oThis.select('*').where({symbol: symbol}).fire();
+    return oThis
+      .select('*')
+      .where({ id: id })
+      .fire();
   },
 
-  getByClientId: function (clientId) {
-    const oThis = this
-    ;
+  /**
+   * Get details using the symbol.
+   *
+   * @param symbol
+   * @returns {*}
+   *
+   */
+  getBySymbol: function(symbol) {
+    const oThis = this;
 
-    return oThis.select('*').where({client_id: clientId}).order_by('id DESC').fire();
+    return oThis
+      .select('*')
+      .where({ symbol: symbol })
+      .fire();
   },
 
-  getByClientIds: function (clientIds) {
-    const oThis = this
-    ;
+  /**
+   * Get details using the clientId.
+   *
+   * @param clientId
+   * @returns {*}
+   *
+   */
+  getByClientId: function(clientId) {
+    const oThis = this;
 
-    return oThis.select(['client_id', 'symbol'])
+    return oThis
+      .select('*')
+      .where({ client_id: clientId })
+      .order_by('id DESC')
+      .fire();
+  },
+
+  /**
+   * Get details for multiple clientIds.
+   *
+   * @param clientIds
+   * @returns {*}
+   *
+   */
+  getByClientIds: function(clientIds) {
+    const oThis = this;
+
+    return oThis
+      .select(['client_id', 'symbol'])
       .where(['client_id IN (?)', clientIds])
       .fire();
   }
