@@ -87,7 +87,7 @@ Copy that address for "OST_UTILITY_WORKERS_CONTRACT_ADDRESS" variable in the uti
 > source set_env_vars.sh
 NOTE: Manually create database in MySQL mentioned in $OP_MYSQL_DATABASE.  
 Run the following commands after creating the database. 
-> node node_modules/@openstfoundation/openst-payments/migrations/create_tables.js
+> node node_modules/@openstfoundation/openst-payments/migrations/create_tables.js $CONFIG_STRATEGY_PATH
 > node node_modules/@openstfoundation/openst-payments/migrations/alter_table_for_chain_id_column.js $CONFIG_STRATEGY_PATH
 ```
 
@@ -104,14 +104,14 @@ Run the following commands after creating the database.
   node executables/create_init_shards.js $CONFIG_STRATEGY_PATH
   ```
   
-  Pick up the hash printed in green in previous step export shard arrays appropriately.
+  Pick up the hash printed in green in previous step. Export shard arrays appropriately.
   
   ```bash
-    export OS_DYNAMODB_TOKEN_BALANCE_SHARDS_ARRAY='["token_balances_shard_001","token_balances_shard_002"]'
-    export OS_DYNAMODB_TRANSACTION_LOG_SHARDS_ARRAY='["transaction_log_shard_001", "transaction_log_shard_002"]'
+    export OS_DYNAMODB_TOKEN_BALANCE_SHARDS_ARRAY='["d_pk_token_balances_shard_001","d_pk_token_balances_shard_002"]'
+    export OS_DYNAMODB_TRANSACTION_LOG_SHARDS_ARRAY='["d_pk_transaction_logs_shard_001","d_pk_transaction_logs_shard_002"]'
   ```
   
-* Move the shared-local-instance.db file from $HOME/openst-setup/logs/ to $HOME/openst-setup/bin/utility-chain-{id}/
+* Move the shared-local-instance.db file from $HOME/openst-setup/logs/ to $HOME/openst-setup/log/utility-chain-{id}/
 ```bash
 mv ~/openst-setup/logs/shared-local-instance.db ~/openst-setup/logs/utility-chain-1000/
 ```
@@ -121,6 +121,13 @@ mv ~/openst-setup/logs/shared-local-instance.db ~/openst-setup/logs/utility-chai
 * Use the seeder script to fill config_strategies table.
 ```bash
 node executables/config_strategy_seed.js managed_address_salt_id group_id $CONFIG_STRATEGY_PATH
+```
+
+* Use the helper script to activate status of the seeded config strategy in node console. Replace the groupId.
+```js
+Klass = require('./helpers/config_strategy/by_group_id');
+b = new Klass(groupId);
+b.activate();
 ```
                                          
 # Start SAAS Services

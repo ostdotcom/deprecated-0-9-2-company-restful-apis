@@ -51,4 +51,5 @@ fs.writeFile(process.cwd() + '/uc_1000.json', JSON.stringify(originalConfigStrat
     return logger.log(err);
   }
   logger.log('The config strategy addresses were updated.');
+  process.exit(0);
 });

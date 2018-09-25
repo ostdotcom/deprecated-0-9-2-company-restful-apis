@@ -70,7 +70,15 @@ const Derived = function() {
           }
           hackedReturnedPromiEvent.eventEmitter.emit('transactionHash', hash);
 
-          if (hackedReturnedPromiEvent.eventEmitter._events['receipt']) {
+          if (!hackedReturnedPromiEvent.eventEmitter || !hackedReturnedPromiEvent.eventEmitter._events) {
+            logger.debug('hackedReturnedPromiEvent.eventEmitter empty', hackedReturnedPromiEvent.eventEmitter);
+          }
+
+          if (
+            hackedReturnedPromiEvent.eventEmitter &&
+            hackedReturnedPromiEvent.eventEmitter._events &&
+            hackedReturnedPromiEvent.eventEmitter._events['receipt']
+          ) {
             logger.debug('Fetching Receipt for hash: ', hash);
             fetchReceipt(hash)
               .then(function(receipt) {
