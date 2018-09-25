@@ -8,7 +8,11 @@ const rootPrefix = '../..',
   util = require(rootPrefix + '/lib/util');
 
 const dbName = 'saas_client_economy_' + coreConstants.SUB_ENVIRONMENT + '_' + coreConstants.ENVIRONMENT,
-  statuses = { '1': clientWorkerManagedAddressConst.activeStatus, '2': clientWorkerManagedAddressConst.inactiveStatus },
+  statuses = {
+    '1': clientWorkerManagedAddressConst.activeStatus,
+    '2': clientWorkerManagedAddressConst.inactiveStatus,
+    '3': clientWorkerManagedAddressConst.holdStatus
+  },
   invertedStatuses = util.invert(statuses),
   properties = {
     1: clientWorkerManagedAddressConst.hasStPrimeBalanceProperty
@@ -16,8 +20,6 @@ const dbName = 'saas_client_economy_' + coreConstants.SUB_ENVIRONMENT + '_' + co
   invertedProperties = util.invert(properties);
 
 const ClientWorkerManagedAddressIdModel = function() {
-  const oThis = this;
-
   bitWiseHelperKlass.call(this);
   ModelBaseKlass.call(this, { dbName: dbName });
 };
@@ -46,22 +48,89 @@ const ClientWorkerManagedAddressIdModelSpecificPrototype = {
     }
   },
 
+  /**
+   * Get details based on the clientId
+   *
+   * @param client_id
+   * @returns {Promise<Array>}
+   */
   getByClientId: function(client_id) {
     const oThis = this;
     return oThis
-      .select('id,client_id,managed_address_id,status,properties')
+      .select('id, process_id, client_id, managed_address_id, status, properties')
       .where(['client_id=?', client_id])
       .fire();
   },
 
+  /**
+   * Get workers whose status is on hold
+   * @param client_id
+   * @returns {Promise<Array>}
+   */
+  getHoldByClientId: function(client_id) {
+    const oThis = this,
+      holdStatus = +oThis.invertedStatuses[clientWorkerManagedAddressConst.holdStatus]; // Implicit string to int conversion
+    return oThis
+      .select('id, process_id, client_id, managed_address_id, status, properties')
+      .where(['client_id=? AND status=?', client_id, holdStatus])
+      .fire();
+  },
+
+  /*
+  * Get workers which are not associated with any process
+  * @param client_id
+  * @returns {Promise<Array>}
+  * */
+  getAvailableByClientIds: async function(client_ids) {
+    const oThis = this,
+      clientAvailableWorkersMap = {},
+      clientAvailableWorkers = await oThis
+        .select('id, process_id, client_id, managed_address_id, status, properties')
+        .where([
+          'client_id in (?) AND status=? AND process_id IS NULL',
+          client_ids,
+          invertedStatuses[clientWorkerManagedAddressConst.activeStatus]
+        ])
+        .fire();
+
+    for (let i = 0; i < clientAvailableWorkers.length; i++) {
+      let clientAvailableWorker = clientAvailableWorkers[i];
+      clientAvailableWorkersMap[clientAvailableWorker.client_id] =
+        clientAvailableWorkersMap[clientAvailableWorker.client_id] || [];
+
+      clientAvailableWorkersMap[clientAvailableWorker.client_id].push(clientAvailableWorker);
+    }
+    return Promise.resolve(clientAvailableWorkersMap);
+  },
+
+  /**
+   * Get details based on the processId
+   *
+   * @param process_id
+   * @returns {Promise<Array>}
+   */
+  getByProcessId: async function(process_id) {
+    const oThis = this;
+    return oThis
+      .select('id, process_id, client_id, managed_address_id, status, properties')
+      .where(['process_id=?', process_id])
+      .fire();
+  },
+
+  /**
+   * Get all the active workers for a particular client.
+   *
+   * @param client_id
+   * @returns {Promise<Array>}
+   */
   getActiveByClientId: async function(client_id) {
     const oThis = this,
       activeDbRecords = [],
       dbRecords = await oThis.getByClientId(client_id),
-      activeStatus = oThis.invertedStatuses[clientWorkerManagedAddressConst.activeStatus];
+      activeStatus = +oThis.invertedStatuses[clientWorkerManagedAddressConst.activeStatus]; // Implicit string to int conversion
 
-    for (var i = 0; i < dbRecords.length; i++) {
-      if (dbRecords[i].status == activeStatus) {
+    for (let i = 0; i < dbRecords.length; i++) {
+      if (dbRecords[i].status === activeStatus) {
         activeDbRecords.push(dbRecords[i]);
       }
     }
@@ -69,14 +138,46 @@ const ClientWorkerManagedAddressIdModelSpecificPrototype = {
     return activeDbRecords;
   },
 
+  /**
+   * Get all the active and hold workers for a particular client.
+   *
+   * @param client_id
+   * @returns {Promise<Array>}
+   */
+  getActiveAndHoldByClientId: async function(client_id) {
+    const oThis = this,
+      activeDbRecords = [],
+      dbRecords = await oThis
+        .select('*')
+        .where(['client_id=? AND process_id IS NOT NULL', client_id])
+        .fire();
+
+    let activeStatus = +oThis.invertedStatuses[clientWorkerManagedAddressConst.activeStatus], // Implicit string to int conversion
+      holdStatus = +oThis.invertedStatuses[clientWorkerManagedAddressConst.holdStatus]; // Implicit string to int conversion
+
+    for (let i = 0; i < dbRecords.length; i++) {
+      if (dbRecords[i].status === activeStatus || dbRecords[i].status === holdStatus) {
+        activeDbRecords.push(dbRecords[i]);
+      }
+    }
+
+    return activeDbRecords;
+  },
+
+  /**
+   * Get all the inactive workers for a particular client.
+   *
+   * @param client_id
+   * @returns {Promise<Array>}
+   */
   getInActiveByClientId: async function(client_id) {
     const oThis = this,
       inActiveDbRecords = [],
       dbRecords = await oThis.getByClientId(client_id),
-      inactiveStatus = oThis.invertedStatuses[clientWorkerManagedAddressConst.inactiveStatus];
+      inactiveStatus = +oThis.invertedStatuses[clientWorkerManagedAddressConst.inactiveStatus]; // Implicit string to int conversion;
 
-    for (var i = 0; i < dbRecords.length; i++) {
-      if (dbRecords[i].status == inactiveStatus) {
+    for (let i = 0; i < dbRecords.length; i++) {
+      if (dbRecords[i].status === inactiveStatus) {
         inActiveDbRecords.push(dbRecords[i]);
       }
     }
@@ -88,14 +189,14 @@ const ClientWorkerManagedAddressIdModelSpecificPrototype = {
     const oThis = this,
       recordsToReturn = [],
       dbRecords = await oThis.getByClientId(client_id),
-      activeStatus = oThis.invertedStatuses[clientWorkerManagedAddressConst.activeStatus];
+      activeStatus = +oThis.invertedStatuses[clientWorkerManagedAddressConst.activeStatus]; // Implicit string to int conversion
 
-    var dbRecord = null;
+    let dbRecord = null;
 
-    for (var i = 0; i < dbRecords.length; i++) {
+    for (let i = 0; i < dbRecords.length; i++) {
       dbRecord = dbRecords[i];
       if (
-        dbRecord.status == activeStatus &&
+        dbRecord.status === activeStatus &&
         oThis.isBitSet(clientWorkerManagedAddressConst.hasStPrimeBalanceProperty, dbRecord.properties)
       ) {
         recordsToReturn.push(dbRecord);
@@ -105,7 +206,62 @@ const ClientWorkerManagedAddressIdModelSpecificPrototype = {
     return recordsToReturn;
   },
 
-  // Mark Status active for records
+  /**
+   * Get workers with any particular status
+   * @param status
+   * @returns {Promise<*>}
+   *
+   */
+  getWorkersWithStatus: async function(status) {
+    const oThis = this,
+      invertedStatus = oThis.invertedStatuses[status];
+    return await oThis
+      .select('id')
+      .where(['status=?', invertedStatus])
+      .fire();
+  },
+
+  /**
+   * Update the processId value for a particular worker.
+   *
+   * @param params
+   *        {number} - params.id: id in table
+   *        {number} - params.process_id: new processId value
+   * @returns {*}
+   */
+  updateProcessId: function(params) {
+    const oThis = this;
+
+    if (!params.id || !params.process_id) {
+      throw 'id and processId are missing.';
+    }
+    return oThis
+      .update({ process_id: params.process_id })
+      .where({ id: params.id })
+      .fire();
+  },
+
+  /**
+   * Update processId by processId and ClientId
+   * @param process_id
+   * @param client_id
+   * @param new_process_id
+   * @returns {*}
+   */
+  updateProcessIdByProcessId: function(process_id, client_id, new_process_id) {
+    const oThis = this;
+    return oThis
+      .update(['process_id = ?', new_process_id])
+      .where(['process_id=(?) AND client_id=?', process_id, client_id])
+      .fire();
+  },
+
+  /**
+   * Mark Status active for records
+   * Active: Working
+   * @param ids
+   * @returns {*}
+   */
   markStatusActive: function(ids) {
     const oThis = this;
     return oThis
@@ -114,7 +270,11 @@ const ClientWorkerManagedAddressIdModelSpecificPrototype = {
       .fire();
   },
 
-  // Mark Status inactive for records
+  /**
+   * Mark Status inactive for records
+   * Inactive: Not working
+   *
+   */
   markStatusInActive: function(ids) {
     const oThis = this;
     return oThis
@@ -123,6 +283,31 @@ const ClientWorkerManagedAddressIdModelSpecificPrototype = {
       .fire();
   },
 
+  /**
+   * Mark Status hold for records
+   * Hold: It means we are adding another worker for same client
+   *
+   */
+  markStatusHold: function(ids) {
+    const oThis = this;
+    return oThis
+      .update(['status = ?', oThis.invertedStatuses[clientWorkerManagedAddressConst.holdStatus]])
+      .where(['id IN (?)', ids])
+      .fire();
+  },
+
+  /*
+  * Mark Status Available for records
+  * Available: Worker is not working currently, but we can use it
+  *
+  * */
+  markStatusInactiveByClientId: function(client_id, process_id) {
+    const oThis = this;
+    return oThis
+      .update(['status = ?', oThis.invertedStatuses[clientWorkerManagedAddressConst.inactiveStatus]])
+      .where(['client_id=(?) AND process_id=?', client_id, process_id])
+      .fire();
+  },
   /**
    * Set all BitWise columns as hash
    * key would be column name and value would be hash of all bitwise values
