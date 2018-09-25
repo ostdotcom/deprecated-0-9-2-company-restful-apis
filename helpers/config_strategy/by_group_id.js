@@ -545,6 +545,26 @@ ConfigStrategyByGroupId.prototype = {
     return kindsArray;
   },
 
+  getStrategyIds: async function() {
+    const oThis = this;
+    let groupId = oThis.groupId;
+
+    if (groupId === undefined) {
+      logger.error(`Group id is mandatory.`);
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_29'));
+    }
+
+    let whereClause = ['group_id = ? OR group_id IS NULL', groupId],
+      strategyIdArray = await oThis._strategyIdsArrayProvider(whereClause);
+
+    if (strategyIdArray.length > 0) {
+      return Promise.resolve(responseHelper.successWithData(strategyIdArray));
+    } else {
+      logger.error('Error in fetching strategyIds');
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_30'));
+    }
+  },
+
   /**
    * This function helps in preparing flat hash from the response given by cache
    * @param configStrategyResponse
