@@ -145,24 +145,24 @@ const ClientWorkerManagedAddressIdModelSpecificPrototype = {
    * @param client_id
    * @returns {Promise<Array>}
    */
-  getActiveAndHoldByClientId: async function(client_id) {
+  getWorkingByClientId: async function(client_id) {
     const oThis = this,
-      activeDbRecords = [],
+      workingDbRecords = [],
       dbRecords = await oThis
         .select('*')
         .where(['client_id=? AND process_id IS NOT NULL', client_id])
         .fire();
 
-    let activeStatus = +oThis.invertedStatuses[clientWorkerManagedAddressConst.activeStatus], // Implicit string to int conversion
-      holdStatus = +oThis.invertedStatuses[clientWorkerManagedAddressConst.holdStatus]; // Implicit string to int conversion
+    let holdStatus = +oThis.invertedStatuses[clientWorkerManagedAddressConst.holdStatus]; // Implicit string to int conversion
 
     for (let i = 0; i < dbRecords.length; i++) {
-      if (dbRecords[i].status === activeStatus || dbRecords[i].status === holdStatus) {
-        activeDbRecords.push(dbRecords[i]);
+      // Working processes. If not hold, all are considered to be working.
+      if (dbRecords[i].status !== holdStatus) {
+        workingDbRecords.push(dbRecords[i]);
       }
     }
 
-    return activeDbRecords;
+    return workingDbRecords;
   },
 
   /**

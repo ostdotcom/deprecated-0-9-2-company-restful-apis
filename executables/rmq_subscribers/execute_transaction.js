@@ -63,7 +63,7 @@ const promiseExecutor = function(onResolve, onReject, params) {
     let executeTransactionObj = new ExecuteTransferBt({
       transactionUuid: payload.transactionUuid,
       clientId: payload.clientId,
-      rateLimitCount: payload.rateLimitCount
+      workerUuid: payload.workerUuid
     });
 
     try {
@@ -153,8 +153,8 @@ function handle() {
   }
 
   // The OLD Way - Begin
-  var f = function() {
-    if (unAckCount != PromiseQueueManager.getPendingCount()) {
+  let f = function() {
+    if (unAckCount !== PromiseQueueManager.getPendingCount()) {
       logger.error('ERROR :: unAckCount and pending counts are not in sync.');
     }
     if (PromiseQueueManager.getPendingCount() <= 0 || unAckCount <= 0) {
@@ -169,7 +169,7 @@ function handle() {
   setTimeout(f, 1000);
 }
 
-// handling gracefull process exit on getting SIGINT, SIGTERM.
+// handling graceful process exit on getting SIGINT, SIGTERM.
 // Once signal found programme will stop consuming new messages. But need to clear running messages.
 process.on('SIGINT', handle);
 process.on('SIGTERM', handle);
