@@ -11,7 +11,8 @@ const dbName = 'saas_client_economy_' + coreConstants.SUB_ENVIRONMENT + '_' + co
   statuses = {
     '1': clientWorkerManagedAddressConst.activeStatus,
     '2': clientWorkerManagedAddressConst.inactiveStatus,
-    '3': clientWorkerManagedAddressConst.holdStatus
+    '3': clientWorkerManagedAddressConst.holdStatus,
+    '4': clientWorkerManagedAddressConst.blockingStatus
   },
   invertedStatuses = util.invert(statuses),
   properties = {

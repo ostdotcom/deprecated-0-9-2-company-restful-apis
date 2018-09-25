@@ -201,6 +201,15 @@ const ManagedAddressKlassPrototype = {
       .fire();
   },
 
+  getUuidById: function(ids) {
+    const oThis = this;
+
+    return oThis
+      .select(['id', 'uuid'])
+      .where(['id IN (?)', ids])
+      .fire();
+  },
+
   getRandomActiveUsers: async function(clientId, numberOfRandomUsers, totalUsers) {
     const oThis = this,
       activeStatusInt = invertedStatuses[managedAddressesConst.activeStatus],
