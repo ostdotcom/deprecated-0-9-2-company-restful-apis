@@ -568,10 +568,6 @@ const transactionLogModelSpecificPrototype = {
       formattedRowData['client_id'] = parseInt(rowData[oThis.shortNameFor('client_id')]['N']);
     }
 
-    if (rowData.hasOwnProperty(oThis.shortNameFor('client_id'))) {
-      formattedRowData['client_id'] = parseInt(rowData[oThis.shortNameFor('client_id')]['N']);
-    }
-
     if (rowData.hasOwnProperty(oThis.shortNameFor('client_token_id'))) {
       formattedRowData['client_token_id'] = parseInt(rowData[oThis.shortNameFor('client_token_id')]['N']);
     }
@@ -609,7 +605,7 @@ const transactionLogModelSpecificPrototype = {
     }
 
     if (rowData.hasOwnProperty(oThis.shortNameFor('commission_percent'))) {
-      formattedRowData['commission_percent'] = parseInt(rowData[oThis.shortNameFor('commission_percent')]['N']);
+      formattedRowData['commission_percent'] = parseFloat(rowData[oThis.shortNameFor('commission_percent')]['N']);
     }
 
     if (rowData.hasOwnProperty(oThis.shortNameFor('commission_amount_in_wei'))) {
