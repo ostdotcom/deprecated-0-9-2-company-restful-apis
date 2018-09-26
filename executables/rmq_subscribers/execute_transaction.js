@@ -143,9 +143,9 @@ let unAckCommandMessages = 0;
 const commandQueueExecutor = function(params) {
   return new Promise(async function(onResolve) {
     let commandQueueProcessor = new CommandQueueProcessorKlass(params);
-    let commandProcessorResponse = await commandQueueProcessor.perform();
+    let commandProcessorResponse = {}; //await commandQueueProcessor.perform();
 
-    if (commandProcessorResponse.queueAction == 'start') {
+    if (commandProcessorResponse.queueAction == 'start' || true) {
       subscribeTxQueue(processDetails.queue_name_suffix);
     } else if (commandProcessorResponse.queueAction == 'stop') {
       process.emit('CANCEL_CONSUME');
