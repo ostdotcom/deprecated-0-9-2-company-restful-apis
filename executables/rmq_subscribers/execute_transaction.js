@@ -179,9 +179,9 @@ let subscribeCommandQueue = async function(qNameSuffix) {
 };
 
 let init = async function() {
-  let initProcessResp = await initProcess.perform(),
-    processDetails = initProcessResp.processDetails,
-    queueSuffix = processDetails.queue_name_suffix;
+  let initProcessResp = await initProcess.perform();
+  processDetails = initProcessResp.processDetails;
+  let queueSuffix = processDetails.queue_name_suffix;
 
   if (initProcessResp.shouldStartTxQueConsume) {
     await subscribeTxQueue(queueSuffix);
