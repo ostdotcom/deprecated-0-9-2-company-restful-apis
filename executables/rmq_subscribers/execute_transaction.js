@@ -44,8 +44,8 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
   rmqQueueConstants = require(rootPrefix + '/lib/global_constant/rmq_queue'),
   initProcessKlass = require(rootPrefix + '/lib/execute_transaction_management/init_process'),
-  initProcess = new initProcessKlass(processId),
-  CommandQueueProcessorKlass = require(rootPrefix + '/lib/execute_transaction_management/command_message_processor');
+  CommandQueueProcessorKlass = require(rootPrefix + '/lib/execute_transaction_management/command_message_processor'),
+  initProcess = new initProcessKlass({ process_id: processId });
 
 require(rootPrefix + '/lib/transactions/transfer_bt');
 
@@ -107,16 +107,6 @@ const promiseTxExecutor = function(onResolve, onReject, params) {
       return onResolve();
     }
   });
-};
-
-const publishToSlowQueue = async function(parsedParams) {
-  openSTNotification.publishEvent
-    .perform({
-      topics: ['slow.transaction.execute'],
-      publisher: parsedParams.publisher,
-      message: parsedParams.message
-    })
-    .then(logger.debug, logger.error);
 };
 
 const prefetchCount = 100;
@@ -189,14 +179,14 @@ let subscribeCommandQueue = async function(qNameSuffix) {
 };
 
 let init = async function() {
-  let initProcessResp = await initProcess.perform(processId),
+  let initProcessResp = await initProcess.perform(),
     processDetails = initProcessResp.processDetails,
     queueSuffix = processDetails.queue_name_suffix;
 
   if (initProcessResp.shouldStartTxQueConsume) {
-    subscribeTxQueue(queueSuffix);
+    await subscribeTxQueue(queueSuffix);
   }
-  subscribeCommandQueue(queueSuffix);
+  await subscribeCommandQueue(queueSuffix);
 };
 
 // Using a single function to handle multiple signals
