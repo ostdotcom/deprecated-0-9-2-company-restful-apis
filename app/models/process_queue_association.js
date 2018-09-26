@@ -50,7 +50,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
     const oThis = this;
 
     let response = await oThis
-      .select(['process_id', 'rmq_config_id', 'topic_name', 'status'])
+      .select(['process_id', 'rmq_config_id', 'queue_name_suffix', 'status'])
       .where({ id: id })
       .fire();
 
@@ -70,7 +70,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
     const oThis = this;
 
     let response = await oThis
-      .select(['process_id', 'rmq_config_id', 'topic_name', 'status'])
+      .select(['process_id', 'rmq_config_id', 'queue_name_suffix', 'status'])
       .where(['id IN (?)', ids])
       .fire();
 
@@ -91,7 +91,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
     const oThis = this;
 
     let response = await oThis
-      .select(['process_id', 'rmq_config_id', 'topic_name', 'status'])
+      .select(['process_id', 'rmq_config_id', 'queue_name_suffix', 'status'])
       .where({ process_id: processId })
       .fire();
 
@@ -113,7 +113,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
       processDetailsMap = {};
 
     let response = await oThis
-      .select(['process_id', 'rmq_config_id', 'topic_name', 'status'])
+      .select(['process_id', 'rmq_config_id', 'queue_name_suffix', 'status'])
       .where(['process_id IN (?)', processIds])
       .fire();
 
@@ -135,7 +135,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
     const oThis = this;
 
     let response = await oThis
-      .select(['process_id', 'rmq_config_id', 'topic_name', 'status'])
+      .select(['process_id', 'rmq_config_id', 'queue_name_suffix', 'status'])
       .where({ rmq_config_id: rmqId })
       .fire();
 
@@ -155,7 +155,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
     const oThis = this;
 
     let response = await oThis
-      .select(['process_id', 'rmq_config_id', 'topic_name', 'status'])
+      .select(['process_id', 'rmq_config_id', 'queue_name_suffix', 'status'])
       .where(['rmq_config_id IN (?)', rmqIds])
       .fire();
 
@@ -176,8 +176,8 @@ const ProcessQueueAssociationModelSpecificPrototype = {
     const oThis = this;
 
     let response = await oThis
-      .select(['process_id', 'rmq_config_id', 'topic_name', 'status'])
-      .where({ topic_name: topicName })
+      .select(['process_id', 'rmq_config_id', 'queue_name_suffix', 'status'])
+      .where({ queue_name_suffix: topicName })
       .fire();
 
     response[0].status = oThis.statuses[response[0].status];
@@ -196,8 +196,8 @@ const ProcessQueueAssociationModelSpecificPrototype = {
     const oThis = this;
 
     let response = await oThis
-      .select(['process_id', 'rmq_config_id', 'topic_name', 'status'])
-      .where(['topic_name IN (?)', topicNames])
+      .select(['process_id', 'rmq_config_id', 'queue_name_suffix', 'status'])
+      .where(['queue_name_suffix IN (?)', topicNames])
       .fire();
 
     for (let i = 0; i < response.length; i++) {
@@ -228,7 +228,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
    * @param params
    *        {number} - params.process_id: processId to be added.
    *        {number} - params.rmq_config_id: rmqId to be added.
-   *        {string} - params.topic_name: topicName to be added.
+   *        {string} - params.queue_name_suffix: topicName to be added.
    *        {string} - params.status: status to be added.
    * @return {*}
    *
@@ -236,14 +236,14 @@ const ProcessQueueAssociationModelSpecificPrototype = {
   insertRecord: function(params) {
     const oThis = this;
 
-    if (!params.process_id || !params.rmq_config_id || !params.topic_name || !params.status) {
+    if (!params.process_id || !params.rmq_config_id || !params.queue_name_suffix || !params.status) {
       throw 'Mandatory parameters are missing.';
     }
 
     if (
       typeof params.process_id !== 'number' ||
       typeof params.rmq_config_id !== 'number' ||
-      typeof params.topic_name !== 'string' ||
+      typeof params.queue_name_suffix !== 'string' ||
       typeof params.status !== 'string'
     ) {
       throw TypeError('Insertion parameters are of wrong params types.');
@@ -287,7 +287,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
       .update({
         process_id: params.new_process_id,
         rmq_config_id: params.new_rmq_id,
-        topic_name: params.new_topic_name,
+        queue_name_suffix: params.new_topic_name,
         status: params.new_status
       })
       .where({
@@ -326,7 +326,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
     return oThis
       .update({
         rmq_config_id: params.new_rmq_id,
-        topic_name: params.new_topic_name,
+        queue_name_suffix: params.new_topic_name,
         status: params.new_status
       })
       .where({
@@ -384,7 +384,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
     }
 
     return oThis
-      .update({ topic_name: params.new_topic_name })
+      .update({ queue_name_suffix: params.new_topic_name })
       .where({
         process_id: params.process_id
       })
