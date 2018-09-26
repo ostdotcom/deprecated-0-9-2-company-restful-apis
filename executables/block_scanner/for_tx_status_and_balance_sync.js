@@ -196,23 +196,35 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
         logger.log('Current Block =', oThis.currentBlock);
 
+        oThis.currentBlock = 1260559;
+
         let web3Interact = web3InteractFactory.getInstance('utility');
 
         oThis.currentBlockInfo = await web3Interact.getBlock(oThis.currentBlock);
+
+        oThis.currentBlockInfo.transactions = oThis.currentBlockInfo.transactions.slice(0, 500); //TODO: remove this
+
         if (oThis.benchmarkFilePath)
           oThis.granularTimeTaken.push('eth.getBlock-' + (Date.now() - oThis.startTime) + 'ms');
 
+        oThis.blockStartTime = Date.now();
+
         if (!oThis.currentBlockInfo) return oThis.schedule();
 
+        let promises = [];
+
         // Categorize the transaction hashes into known (having entry in transaction meta) and unknown.
-        await oThis.categorizeTransactions();
+        promises.push(oThis.categorizeTransactions());
+
+        // For all the transactions in the block, get the receipt.
+        promises.push(oThis.getTransactionReceipts());
+
+        await Promise.all(promises);
 
         if (oThis.benchmarkFilePath)
-          oThis.granularTimeTaken.push('categorizeTransactions-' + (Date.now() - oThis.startTime) + 'ms');
-        // For all the transactions in the block, get the receipt.
-        await oThis.getTransactionReceipts();
-        if (oThis.benchmarkFilePath)
-          oThis.granularTimeTaken.push('getTransactionReceipts-' + (Date.now() - oThis.startTime) + 'ms');
+          oThis.granularTimeTaken.push(
+            'Categorize transactions and getTransactionReceipts-' + (Date.now() - oThis.startTime) + 'ms'
+          );
 
         await oThis.collectDecodedEvents();
         if (oThis.benchmarkFilePath)
@@ -251,6 +263,12 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         if (oThis.benchmarkFilePath)
           oThis.granularTimeTaken.push('updateTransactionLogs-' + (Date.now() - oThis.startTime) + 'ms');
 
+        console.log(
+          '====Processed block with',
+          oThis.currentBlockInfo.transactions.length,
+          'in ',
+          Date.now() - oThis.blockStartTime
+        );
         oThis.updateScannerDataFile();
         if (oThis.benchmarkFilePath)
           oThis.granularTimeTaken.push('updateScannerDataFile-' + (Date.now() - oThis.startTime) + 'ms');
@@ -308,7 +326,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   /**
    * Categorize Transactions using transaction_meta table.
    */
-  categorizeTransactions: async function(allTxHashes) {
+  categorizeTransactions: async function() {
     const oThis = this,
       batchSize = 100;
 
@@ -370,23 +388,44 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   },
 
   getTxReceiptsForBatch: async function(batchedTxHashes) {
-    const oThis = this,
-      web3InteractFactory = oThis.ic.getWeb3InteractHelper();
+    const oThis = this;
 
-    let promiseArray = [],
-      web3Interact = web3InteractFactory.getInstance('utility');
+    return new Promise(function(onResolve, onReject) {
+      const totalCount = batchedTxHashes.length,
+        web3InteractFactory = oThis.ic.getWeb3InteractHelper();
 
-    for (let i = 0; i < batchedTxHashes.length; i++) {
-      promiseArray.push(web3Interact.getReceipt(batchedTxHashes[i]));
-    }
+      let hasBeenRejected = false,
+        count = 0;
 
-    const txReceiptResults = await Promise.all(promiseArray);
+      const requestCallback = function(err, result) {
+        if (err) {
+          if (hasBeenRejected) return;
 
-    for (let i = 0; i < batchedTxHashes.length; i++) {
-      oThis.txHashToTxReceiptMap[batchedTxHashes[i]] = txReceiptResults[i];
-    }
+          hasBeenRejected = true;
+          onReject();
+        }
 
-    return Promise.resolve();
+        oThis.txHashToTxReceiptMap[result.transactionHash] = result;
+        count++;
+
+        if (count === totalCount) {
+          onResolve();
+        }
+      };
+
+      let web3Interact = web3InteractFactory.getInstance('utility'),
+        batch = new web3Interact.web3WsProvider.BatchRequest();
+
+      for (let i = 0; i < batchedTxHashes.length; i++) {
+        let transactionHash = batchedTxHashes[i];
+
+        let request = web3Interact.web3WsProvider.eth.getTransactionReceipt.request(transactionHash, requestCallback);
+
+        batch.add(request);
+      }
+
+      batch.execute();
+    });
   },
 
   /**
@@ -399,6 +438,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
       web3PoolSize = coreConstants.OST_WEB3_POOL_SIZE,
       loadPerConnection = parseInt(oThis.currentBlockInfo.transactions.length / web3PoolSize) + 1,
       promiseArray = [];
+
+    loadPerConnection = 30;
 
     if (loadPerConnection < 5) loadPerConnection = oThis.currentBlockInfo.transactions.length;
 
@@ -421,11 +462,11 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   },
 
   /**
-   * Generate to update data.
+   * Post airdrop pay
    */
   generateToUpdateDataForKnownTx: async function() {
     const oThis = this,
-      batchSize = 500;
+      batchSize = 25;
 
     let clients = Object.keys(oThis.recognizedTxUuidsGroupedByClientId);
 
@@ -531,10 +572,12 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
           oThis.txHashToDecodedEventsMap[txHash] = decodedEvents;
 
           for (let i = 0; i < decodedEvents.length; i++) {
-            if (decodedEvents[i].name === 'Transfer') {
-              for (let j = 0; j < decodedEvents[i].events.length; j++) {
-                if (['_from', '_to'].includes(decodedEvents[i].events[j].name)) {
-                  addressesToFetch.push(decodedEvents[i].events[j].value);
+            let decodedEvent = decodedEvents[i];
+            if (decodedEvent.name === 'Transfer') {
+              for (let j = 0; j < decodedEvent.events.length; j++) {
+                let finalEvent = decodedEvent.events[j];
+                if (['_from', '_to'].includes(finalEvent.name)) {
+                  addressesToFetch.push(finalEvent.value);
                 }
               }
             }
@@ -562,7 +605,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         const managedAddressResults = await new ManagedAddressModel().getByEthAddresses(addressesToFetchSet);
 
         for (let i = 0; i < managedAddressResults.length; i++) {
-          oThis.addressToDetailsMap[managedAddressResults[i].ethereum_address.toLowerCase()] = managedAddressResults[i];
+          let managedAddressRow = managedAddressResults[i];
+          oThis.addressToDetailsMap[managedAddressRow.ethereum_address.toLowerCase()] = managedAddressRow;
         }
       }
     }
