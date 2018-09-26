@@ -289,7 +289,7 @@ ListStpTransfersService.prototype = {
       );
     }
 
-    transactionResponse['utility_chain_id'] = configStrategy.OST_UTILITY_CHAIN_ID;
+    transactionResponse['data']['utility_chain_id'] = configStrategy.OST_UTILITY_CHAIN_ID;
 
     return Promise.resolve(responseHelper.successWithData(transactionResponse.data));
   }
