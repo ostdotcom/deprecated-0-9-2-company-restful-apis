@@ -95,9 +95,10 @@ const ProcessQueueAssociationModelSpecificPrototype = {
       .where({ process_id: processId })
       .fire();
 
-    response[0].status = oThis.statuses[response[0].status];
+    const processQueueData = response[0];
+    processQueueData.status = oThis.statuses[processQueueData.status];
 
-    return Promise.resolve(response);
+    return Promise.resolve(processQueueData);
   },
 
   /**
