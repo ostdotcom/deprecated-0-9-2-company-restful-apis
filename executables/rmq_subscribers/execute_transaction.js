@@ -124,7 +124,7 @@ let txQueueSubscribed = false;
 let subscribeTxQueue = async function(qNameSuffix) {
   if (!txQueueSubscribed) {
     await openSTNotification.subscribeEvent.rabbit(
-      [rmqQueueConstants.executeTxTopicPrefix + '.' + qNameSuffix],
+      [rmqQueueConstants.executeTxTopicPrefix + qNameSuffix],
       {
         queue: rmqQueueConstants.executeTxQueuePrefix + '_' + qNameSuffix,
         ackRequired: 1,

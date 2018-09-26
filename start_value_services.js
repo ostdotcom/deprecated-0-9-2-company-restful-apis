@@ -97,23 +97,23 @@ StartServicesKlass.prototype = {
       logger.info('* Value Chain:', servicesResponse.data.chain.value);
     }
 
-    logger.step('** Starting Processor to execute transactions');
-    cmd =
-      'node executables/rmq_subscribers/execute_transaction.js 1' +
-      ' >> ' +
-      homeAbsolutePath +
-      '/openst-setup/logs/execute_transaction.log';
-    servicesList.push(cmd);
-    oThis._asyncCommand(cmd);
-
-    logger.step('** Starting Slow Processor to execute transactions');
-    cmd =
-      'node executables/rmq_subscribers/execute_transaction.js 2 slow' +
-      ' >> ' +
-      homeAbsolutePath +
-      '/openst-setup/logs/slow_execute_transaction.log';
-    servicesList.push(cmd);
-    oThis._asyncCommand(cmd);
+    // logger.step('** Starting Processor to execute transactions');
+    // cmd =
+    //   'node executables/rmq_subscribers/execute_transaction.js 1' +
+    //   ' >> ' +
+    //   homeAbsolutePath +
+    //   '/openst-setup/logs/execute_transaction.log';
+    // servicesList.push(cmd);
+    // oThis._asyncCommand(cmd);
+    //
+    // logger.step('** Starting Slow Processor to execute transactions');
+    // cmd =
+    //   'node executables/rmq_subscribers/execute_transaction.js 2 slow' +
+    //   ' >> ' +
+    //   homeAbsolutePath +
+    //   '/openst-setup/logs/slow_execute_transaction.log';
+    // servicesList.push(cmd);
+    // oThis._asyncCommand(cmd);
 
     logger.step('** Starting worker to process events');
     cmd =
@@ -133,10 +133,10 @@ StartServicesKlass.prototype = {
     servicesList.push(cmd);
     oThis._asyncCommand(cmd);
 
-    logger.step('** Starting SAAS App');
-    cmd = 'node app.js' + ' >> ' + homeAbsolutePath + '/openst-setup/logs/node_app.log';
-    servicesList.push(cmd);
-    oThis._asyncCommand(cmd);
+    // logger.step('** Starting SAAS App');
+    // cmd = 'node app.js' + ' >> ' + homeAbsolutePath + '/openst-setup/logs/node_app.log';
+    // servicesList.push(cmd);
+    // oThis._asyncCommand(cmd);
 
     logger.win(
       '\n** Congratulations! All services are up and running. \n' +
