@@ -72,11 +72,10 @@ addMoreWorkersKlass.prototype = {
   /**
    * Perform
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   perform: async function() {
-    const oThis = this,
-      r = null;
+    const oThis = this;
 
     return oThis.asyncPerform().catch(function(error) {
       let errorObj = null;
