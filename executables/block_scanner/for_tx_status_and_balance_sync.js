@@ -80,7 +80,7 @@ const validateAndSanitize = function() {
 validateAndSanitize();
 
 // Check if another process with the same title is running.
-ProcessLocker.canStartProcess({ process_title: 'executables_block_scanner_execute_transaction' + processLockId });
+ProcessLocker.canStartProcess({ process_title: 'executables_block_scanner_execute_transaction_' + processLockId });
 
 const fs = require('fs'),
   abiDecoder = require('abi-decoder'),
@@ -552,6 +552,14 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     }
   },
 
+  createDecodePromise: function(logs, txHash) {
+    return new Promise(function(onResolve, onReject) {
+      let decodedEvents = abiDecoder.decodeLogs(logs);
+
+      if (decodedEvents) onResolve({ [txHash]: decodedEvents });
+    });
+  },
+
   /**
    * Collect decoded events of all transactions.
    */
@@ -561,14 +569,34 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     let addressesToFetch = [];
 
     for (let clientId in oThis.recognizedTxUuidsGroupedByClientId) {
-      let txUuids = oThis.recognizedTxUuidsGroupedByClientId[clientId];
-      for (let txUuidsInd = 0; txUuidsInd < txUuids.length; txUuidsInd++) {
-        let txUuid = txUuids[txUuidsInd],
-          txHash = oThis.knownTxUuidToTxHashMap[txUuid],
-          txReceipt = oThis.txHashToTxReceiptMap[txHash];
+      let txUuids = oThis.recognizedTxUuidsGroupedByClientId[clientId],
+        batchSize = 100,
+        batchNo = 1;
 
-        if (oThis.tokenTransferTxHashesMap[txHash]) {
-          let decodedEvents = abiDecoder.decodeLogs(txReceipt.logs);
+      while (true) {
+        const offset = (batchNo - 1) * batchSize,
+          batchedTxUuids = txUuids.slice(offset, batchSize + offset),
+          promiseArray = [];
+
+        batchNo = batchNo + 1;
+
+        if (batchedTxUuids.length === 0) break;
+
+        for (let txUuidsInd = 0; txUuidsInd < batchedTxUuids.length; txUuidsInd++) {
+          let txUuid = txUuids[txUuidsInd],
+            txHash = oThis.knownTxUuidToTxHashMap[txUuid],
+            txReceipt = oThis.txHashToTxReceiptMap[txHash];
+
+          if (oThis.tokenTransferTxHashesMap[txHash]) {
+            promiseArray.push(oThis.createDecodePromise(txReceipt.logs, txHash));
+          }
+        }
+
+        let responses = await Promise.all(promiseArray);
+
+        for (let decodedEventInd = 0; decodedEventInd < responses.length; decodedEventInd++) {
+          let txHash = Object.keys(responses[decodedEventInd])[0];
+          let decodedEvents = responses[decodedEventInd][txHash];
           oThis.txHashToDecodedEventsMap[txHash] = decodedEvents;
 
           for (let i = 0; i < decodedEvents.length; i++) {
