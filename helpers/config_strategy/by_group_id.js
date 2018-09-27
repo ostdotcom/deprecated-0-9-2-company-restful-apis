@@ -2,6 +2,12 @@
 
 /**
  * CRUD for config_strategies table
+ * This provides functionality to
+ * 1. Get Config Strategy Hash - getCompleteHash, getForKind, getByGroupId
+ * 2. Add Config Strategy for given kind - addForKind
+ * 3. Set status active/inactive - activateByStrategyId, activate, deactivate
+ * 4. Update strategy for given kind - updateForKind
+ * 5. Get all strategy kinds present - getAllKinds
  * @type {string}
  */
 const rootPrefix = '../..',
@@ -10,17 +16,18 @@ const rootPrefix = '../..',
   configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
   ConfigStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
   ChainGethProviderModel = require(rootPrefix + '/app/models/chain_geth_providers'),
+  ClientConfigStrategyModel = require(rootPrefix + '/app/models/client_config_strategies'),
   configStrategyCacheKlass = require(rootPrefix + '/lib/shared_cache_multi_management/config_strategy');
 
 /**
- * groupId is optional
- * @param groupId
+ * group_id is optional
+ * @param group_id
  * @constructor
  */
-const ConfigStrategyByGroupId = function(groupId) {
+const ConfigStrategyByGroupId = function(group_id) {
   const oThis = this;
 
-  oThis.groupId = groupId;
+  oThis.groupId = group_id;
 };
 
 ConfigStrategyByGroupId.prototype = {
@@ -45,17 +52,7 @@ ConfigStrategyByGroupId.prototype = {
       whereClause = ['group_id IS NULL'];
     }
 
-    //Fetch strategy ids
-    let strategyIdResponse = await new ConfigStrategyModel()
-      .select(['id'])
-      .where(whereClause)
-      .fire();
-
-    let strategyIdsArray = [];
-
-    for (let index in strategyIdResponse) {
-      strategyIdsArray.push(strategyIdResponse[index].id);
-    }
+    let strategyIdsArray = await oThis._strategyIdsArrayProvider(whereClause);
 
     // to not replicate the decryption logic, we are calling the cache for the same.
 
@@ -63,13 +60,7 @@ ConfigStrategyByGroupId.prototype = {
 
     if (fetchConfigStrategyRsp.isFailure()) {
       logger.error('Error in fetching config strategy flat hash');
-      return Promise.reject(
-        responseHelper.error({
-          internal_error_identifier: 'h_cs_bgi_18',
-          api_error_identifier: 'something_went_wrong',
-          debug_options: {}
-        })
-      );
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_01'));
     }
     let finalFlatHash = oThis._cacheResponseFlatHashProvider(fetchConfigStrategyRsp);
 
@@ -88,38 +79,17 @@ ConfigStrategyByGroupId.prototype = {
 
     if (groupId === undefined) {
       logger.error('Group Id is not defined. To get complete hash group id is compulsory.');
-      return Promise.reject(
-        responseHelper.error({
-          internal_error_identifier: 'h_cs_bgi_1',
-          api_error_identifier: 'something_went_wrong',
-          debug_options: {}
-        })
-      );
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_02'));
     }
 
-    //Fetch strategy ids
-    let strategyIdResponse = await new ConfigStrategyModel()
-      .select(['id'])
-      .where(['group_id = ? OR group_id IS NULL', groupId])
-      .fire();
-
-    let strategyIdsArray = [];
-
-    for (let index in strategyIdResponse) {
-      strategyIdsArray.push(strategyIdResponse[index].id);
-    }
+    let whereClause = ['group_id = ? OR group_id IS NULL', groupId],
+      strategyIdsArray = await oThis._strategyIdsArrayProvider(whereClause);
 
     let fetchConfigStrategyRsp = await oThis._getConfigStrategyByStrategyId(strategyIdsArray);
 
     if (fetchConfigStrategyRsp.isFailure()) {
       logger.error('Error in fetching config strategy flat hash');
-      return Promise.reject(
-        responseHelper.error({
-          internal_error_identifier: 'h_cs_bgi_19',
-          api_error_identifier: 'something_went_wrong',
-          debug_options: {}
-        })
-      );
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_03'));
     }
 
     let finalFlatHash = oThis._cacheResponseFlatHashProvider(fetchConfigStrategyRsp);
@@ -148,58 +118,41 @@ ConfigStrategyByGroupId.prototype = {
       groupId = oThis.groupId;
 
     let strategyIdInt = configStrategyConstants.invertedKinds[kind],
-      whereClause = ['group_id = ? AND kind = ?', groupId, strategyIdInt];
-
-    //where clause will return where group Ids are NULL
-    if (groupId === undefined) {
-      whereClause = ['group_id IS NULL AND kind = ?', strategyIdInt];
-    }
+      whereClause = null;
 
     if (strategyIdInt === undefined) {
       logger.error('Provided kind is not proper. Please check kind');
-      return Promise.reject(
-        responseHelper.error({
-          internal_error_identifier: 'h_cs_bgi_4',
-          api_error_identifier: 'something_went_wrong',
-          debug_options: {}
-        })
-      );
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_04'));
+    }
+
+    //Check if group id is needed for the given kind or not.
+    if (configStrategyConstants.kindsWithoutGroupId.includes(kind)) {
+      if (groupId) {
+        logger.error(`To get [${kind}] group id is not required.`);
+        return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_30'));
+      }
+      whereClause = ['group_id IS NULL AND kind = ?', strategyIdInt];
+    } else {
+      if (groupId === undefined) {
+        logger.error(`Group id is mandatory for this kind. [${kind}]`);
+        return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_29'));
+      }
+      whereClause = ['group_id = ? AND kind = ?', groupId, strategyIdInt];
     }
 
     //Following is to fetch specific strategy id for the kind passed.
-    let strategyIdResponse = await new ConfigStrategyModel()
-      .select(['id'])
-      .where(whereClause)
-      .fire();
+    let strategyIdsArray = await oThis._strategyIdsArrayProvider(whereClause);
 
-    if (strategyIdResponse.length === 0) {
+    if (strategyIdsArray.length === 0) {
       logger.error('Strategy Id for the provided kind not found OR kind for the given group id does not exist');
-      return Promise.reject(
-        responseHelper.error({
-          internal_error_identifier: 'h_cs_bci_2',
-          api_error_identifier: 'something_went_wrong',
-          debug_options: {}
-        })
-      );
-    }
-
-    let strategyIdsArray = [];
-
-    for (let index in strategyIdResponse) {
-      strategyIdsArray.push(strategyIdResponse[index].id);
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_05'));
     }
 
     let fetchConfigStrategyRsp = await oThis._getConfigStrategyByStrategyId(strategyIdsArray);
 
     if (fetchConfigStrategyRsp.isFailure()) {
       logger.error('Error in fetching config strategy flat hash');
-      return Promise.reject(
-        responseHelper.error({
-          internal_error_identifier: 'h_cs_bgi_20',
-          api_error_identifier: 'something_went_wrong',
-          debug_options: {}
-        })
-      );
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_06'));
     }
 
     let configStrategyIdToDetailMap = fetchConfigStrategyRsp.data,
@@ -221,8 +174,8 @@ ConfigStrategyByGroupId.prototype = {
    * WS provider and RPC provider is also inserted in the chain_geth_providers table.
    *
    * @param {string} kind (Eg:'dynamo')
-   * @param {object}params
-   * @param {number}managed_address_salt_id
+   * @param {object}params - Hash of config params related to this kind
+   * @param {number}managed_address_salt_id - managed_address_salt_id from managed_address_salt table
    * @returns {Promise<never>}
    */
   addForKind: async function(kind, params, managed_address_salt_id) {
@@ -232,13 +185,7 @@ ConfigStrategyByGroupId.prototype = {
 
     if (strategyIdInt === undefined) {
       logger.error('Provided kind is not proper. Please check kind');
-      return Promise.reject(
-        responseHelper.error({
-          internal_error_identifier: 'h_cs_bgi_5',
-          api_error_identifier: 'something_went_wrong',
-          debug_options: {}
-        })
-      );
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_07'));
     }
 
     let managedAddressSaltId = managed_address_salt_id;
@@ -246,13 +193,16 @@ ConfigStrategyByGroupId.prototype = {
       // If group id is present, reject
       if (groupId) {
         logger.error(`To insert [${kind}] group id is not required.`);
-        return Promise.reject(
-          responseHelper.error({
-            internal_error_identifier: 'h_cs_bgi_15',
-            api_error_identifier: 'something_went_wrong',
-            debug_options: {}
-          })
-        );
+        return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_08'));
+      }
+
+      //Check if same kind is present in the table already.
+      let whereClause = ['kind = ?', strategyIdInt],
+        queryResponse = await oThis._strategyIdsArrayProvider(whereClause);
+
+      if (queryResponse.length > 0) {
+        logger.error(`[${kind}] already exist in the table.`);
+        return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_09'));
       }
 
       let configStrategyModelObj = new ConfigStrategyModel(),
@@ -260,25 +210,23 @@ ConfigStrategyByGroupId.prototype = {
 
       if (insertResponse.isFailure()) {
         logger.error('Error in inserting data in config_strategies table ');
-        return Promise.reject(
-          responseHelper.error({
-            internal_error_identifier: 'h_cs_bgi_6',
-            api_error_identifier: 'something_went_wrong',
-            debug_options: {}
-          })
-        );
+        return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_10'));
       }
     } else {
       //Group id is mandatory for the kind passed as argument.
+      //Check if same group id and kind does not exist in the table
       if (groupId === undefined) {
         logger.error(`To insert [${kind}] group id is mandatory.`);
-        return Promise.reject(
-          responseHelper.error({
-            internal_error_identifier: 'h_cs_bgi_7',
-            api_error_identifier: 'something_went_wrong',
-            debug_options: {}
-          })
-        );
+        return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_11'));
+      }
+
+      //Check if same kind is present in the table already.
+      let whereClause = ['group_id = ? AND kind = ?', groupId, strategyIdInt],
+        queryResponse = await oThis._strategyIdsArrayProvider(whereClause);
+
+      if (queryResponse.length > 0) {
+        logger.error(`Group Id [${groupId}] with kind [${kind}] already exists in the table.`);
+        return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_12'));
       }
 
       let configStrategyModelObj = new ConfigStrategyModel(),
@@ -286,13 +234,7 @@ ConfigStrategyByGroupId.prototype = {
 
       if (insertResponse.isFailure()) {
         logger.error('Error while inserting data in config strategy table ');
-        return Promise.reject(
-          responseHelper.error({
-            internal_error_identifier: 'h_cs_bgi_8',
-            api_error_identifier: 'something_went_wrong',
-            debug_options: {}
-          })
-        );
+        return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_13'));
       }
     }
 
@@ -326,15 +268,170 @@ ConfigStrategyByGroupId.prototype = {
 
       await Promise.all(promises);
     }
+    return Promise.resolve(responseHelper.successWithData({}));
+  },
+
+  /**
+   * Sets the status of given strategy id as active.
+   *
+   * @param {number}strategy_id - strategy_id from config_strategies table
+   * @returns {Promise<*>}
+   */
+  activateByStrategyId: async function(strategy_id) {
+    const oThis = this,
+      activeStatus = configStrategyConstants.invertedStatuses[configStrategyConstants.activeStatus],
+      strategyId = strategy_id;
+
+    let queryResponse = await new ConfigStrategyModel()
+      .update({ status: activeStatus })
+      .where(['id = ?', strategyId])
+      .fire();
+
+    if (!queryResponse) {
+      logger.error('Error in setStatusActive');
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_14'));
+    }
+    if (queryResponse.affectedRows === 1) {
+      logger.info(`Status of strategy id: [${strategyId}] is now active.`);
+      return Promise.resolve(responseHelper.successWithData({}));
+    } else {
+      logger.error('Strategy Id not present in the table');
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_15'));
+    }
+  },
+
+  /**
+   * This function updates and sets status 'active' for given group_id.
+   *
+   * @returns {Promise<*>}
+   */
+  activate: async function() {
+    const oThis = this,
+      activeStatus = configStrategyConstants.invertedStatuses[configStrategyConstants.activeStatus],
+      groupId = oThis.groupId;
+
+    if (groupId === undefined) {
+      logger.error(`Group id is mandatory for this function.`);
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_16'));
+    }
+
+    //This query includes NULL value of group_ids. This is done to activate the strategies for which group_ids are not needed.
+    let strategyIdResponse = await new ConfigStrategyModel()
+      .update({ status: activeStatus })
+      .where(['group_id = ? OR group_id IS NULL', groupId])
+      .fire();
+
+    if (strategyIdResponse) {
+      logger.info(`Group id [${groupId}] successfully activated.`);
+      //return Promise.resolve(responseHelper.successWithData({}));
+    } else {
+      logger.error('Error while activating strategy');
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_17'));
+    }
+
+    let utilityGethFlatHash = await oThis.getForKind('utility_geth'),
+      configStrategyIdInt = parseInt(Object.keys(utilityGethFlatHash.data)), //to get corresponding strategyId as number from hash
+      utilityGethPurehash = utilityGethFlatHash.data[configStrategyIdInt]; //Get pure hash for utility geth
+
+    // Loop around geth_providers endpoint present in hash.
+    // For all the endpoints set the status active in chain_geth_providers.
+
+    let rpcProviderArray = utilityGethPurehash.OST_UTILITY_GETH_RPC_PROVIDERS,
+      wsProviderArray = utilityGethPurehash.OST_UTILITY_GETH_WS_PROVIDERS,
+      chainGethProviderObj = new ChainGethProviderModel(),
+      chainKindIdentifier = chainGethProviderObj.invertedEnums.value;
+
+    //Added chain_kind clause to activate value geth when activate() is called for the very first time.
+    let whereClause = [
+        'ws_provider IN (?) OR rpc_provider IN (?) OR chain_kind = ?',
+        wsProviderArray,
+        rpcProviderArray,
+        chainKindIdentifier
+      ],
+      updateQueryResponse = await new ChainGethProviderModel()
+        .update({ status: activeStatus })
+        .where(whereClause)
+        .fire();
+
+    logger.info(`Status activated in Chain Geth Providers successfully. `);
+    return Promise.resolve(responseHelper.successWithData({}));
+  },
+
+  /**
+   * This function deactivates strategies of given group id.
+   *
+   * 1. get all strategy ids for the given group_id.
+   * 2. Check if any row contains these strategy ids in client_config_strategies table.
+   * 3. Only if response array's length is 0. then deactivate those group ids.
+   *
+   * @returns {Promise<*>}
+   */
+  deactivate: async function() {
+    const oThis = this,
+      groupId = oThis.groupId;
+
+    if (groupId === undefined) {
+      logger.error(`Group id is mandatory for this function.`);
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_18'));
+    }
+
+    let whereClause = ['group_id = ?', groupId],
+      distinctStrategyIdArray = await oThis._strategyIdsArrayProvider(whereClause);
+
+    //Check in client_config_strategy if those strategy ids exist in the table then don't deactivate those group ids.
+
+    let clientIdQueryResponse = await new ClientConfigStrategyModel()
+      .select(['client_id'])
+      .where(['config_strategy_id IN (?)', distinctStrategyIdArray])
+      .fire();
+
+    if (clientIdQueryResponse.length > 0) {
+      logger.error(`The given group id [${groupId}] has been assigned to some existing clients. Cannot deactivate`);
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_19'));
+    }
+
+    //now set status as inactive
+    let inActiveStatus = configStrategyConstants.invertedStatuses[configStrategyConstants.inActiveStatus],
+      queryResponse = await new ConfigStrategyModel()
+        .update({ status: inActiveStatus })
+        .where(['group_id = ?', groupId])
+        .fire();
+
+    if (!queryResponse) {
+      logger.error('Error in Deactivating group id');
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_20'));
+    }
+    if (queryResponse.affectedRows > 0) {
+      logger.info(`Status of group id: [${groupId}] is now deactive.`);
+      //return Promise.resolve(responseHelper.successWithData({}));
+    } else {
+      logger.error('Strategy Id not present in the table');
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_21'));
+    }
+
+    let utilityGethFlatHash = await oThis.getForKind('utility_geth'),
+      configStrategyIdInt = parseInt(Object.keys(utilityGethFlatHash.data)), //to get corresponding strategyId as number from hash
+      utilityGethPurehash = utilityGethFlatHash.data[configStrategyIdInt]; //Get pure hash for utility geth
+
+    let rpcProviderArray = utilityGethPurehash.OST_UTILITY_GETH_RPC_PROVIDERS;
+
+    let whereClauseForGethProvider = ['rpc_provider IN (?)', rpcProviderArray],
+      updateQueryResponse = await new ChainGethProviderModel()
+        .update({ status: inActiveStatus })
+        .where(whereClauseForGethProvider)
+        .fire();
+
+    logger.info(`Status deactivated in Chain Geth Providers successfully. `);
+    return Promise.resolve(responseHelper.successWithData({}));
   },
 
   /**
    * This function updates the strategy id for the given kind.
    * If chain_geth_providers table is to be updated then
    * If the kind is to be updated is value_geth or utility_geth the old_data parameters
-   * @param(string) kind
+   * @param {string} kind
    * @param params
-   * @param {object}old_data (old_data = {'WS_Provider': '127.0.0.1:8545','RPC_Provider':'127.0.0.1:1845' }). This the old
+   * @param {object} OPTIONAL old_data (old_data = {'WS_Provider': '127.0.0.1:8545','RPC_Provider':'127.0.0.1:1845' }). This the old
    * data which is to be replaced.
    * @returns {Promise<never>}
    */
@@ -345,13 +442,7 @@ ConfigStrategyByGroupId.prototype = {
 
     if (strategyIdInt === undefined) {
       logger.error('Provided kind is not proper. Please check kind');
-      return Promise.reject(
-        responseHelper.error({
-          internal_error_identifier: 'h_cs_bgi_9',
-          api_error_identifier: 'something_went_wrong',
-          debug_options: {}
-        })
-      );
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_22'));
     }
 
     let whereClause = null;
@@ -359,13 +450,7 @@ ConfigStrategyByGroupId.prototype = {
       //Should not have group id
       if (groupId) {
         logger.error(`To insert [${kind}] group id is not required.`);
-        return Promise.reject(
-          responseHelper.error({
-            internal_error_identifier: 'h_cs_bgi_16',
-            api_error_identifier: 'something_went_wrong',
-            debug_options: {}
-          })
-        );
+        return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_23'));
       }
 
       whereClause = ['group_id IS NULL AND kind = ?', strategyIdInt];
@@ -373,13 +458,7 @@ ConfigStrategyByGroupId.prototype = {
       //should have group id
       if (groupId === undefined) {
         logger.error(`To insert [${kind}] group id is mandatory.`);
-        return Promise.reject(
-          responseHelper.error({
-            internal_error_identifier: 'h_cs_bgi_17',
-            api_error_identifier: 'something_went_wrong',
-            debug_options: {}
-          })
-        );
+        return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_24'));
       }
 
       whereClause = ['group_id = ? AND kind = ?', groupId, strategyIdInt];
@@ -388,46 +467,25 @@ ConfigStrategyByGroupId.prototype = {
     //Following is to fetch specific strategy id for the kind passed.
     //Specific strategy id is needed in order to use the function provided in model of config strategy which handles encryption
     //decryption logic.
-    let strategyIdResponse = await new ConfigStrategyModel()
-      .select(['id'])
-      .where(whereClause)
-      .fire();
+    let strategyIdArray = await oThis._strategyIdsArrayProvider(whereClause);
 
-    if (strategyIdResponse.length === 0) {
+    if (strategyIdArray.length === 0) {
       logger.error('Strategy Id for the provided kind not found OR kind for the given group id does not exist');
-      return Promise.reject(
-        responseHelper.error({
-          internal_error_identifier: 'h_cs_bgi_11',
-          api_error_identifier: 'something_went_wrong',
-          debug_options: {}
-        })
-      );
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_25'));
     }
 
-    if (strategyIdResponse.length > 1) {
+    if (strategyIdArray.length > 1) {
       logger.error('Multiple entries(rows) found for the same group id and kind combination');
-      return Promise.reject(
-        responseHelper.error({
-          internal_error_identifier: 'h_cs_bgi_12',
-          api_error_identifier: 'something_went_wrong',
-          debug_options: {}
-        })
-      );
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_26'));
     }
 
-    let strategyId = strategyIdResponse[0].id,
+    let strategyId = strategyIdArray[0],
       configStrategyModelObj = new ConfigStrategyModel(),
       updateResponse = await configStrategyModelObj.updateStrategyId(strategyId, params);
 
     if (updateResponse.isFailure()) {
       logger.error('Error while updating data in config strategy table ');
-      return Promise.reject(
-        responseHelper.error({
-          internal_error_identifier: 'h_cs_bgi_13',
-          api_error_identifier: 'something_went_wrong',
-          debug_options: {}
-        })
-      );
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_27'));
     }
 
     //clearing the cache
@@ -439,17 +497,12 @@ ConfigStrategyByGroupId.prototype = {
 
       if (!old_data) {
         logger.error('Geth providers table is not updated because old data was not passed');
-        return Promise.reject(
-          responseHelper.error({
-            internal_error_identifier: 'h_cs_bgi_14',
-            api_error_identifier: 'something_went_wrong',
-            debug_options: {}
-          })
-        );
+        return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_28'));
       }
 
       let new_ws_provider = null,
-        new_rpc_provider = null;
+        new_rpc_provider = null,
+        whereClause = null;
       if (kind === 'value_geth') {
         new_ws_provider = params.OST_VALUE_GETH_WS_PROVIDER;
         new_rpc_provider = params.OST_VALUE_GETH_RPC_PROVIDER;
@@ -460,24 +513,25 @@ ConfigStrategyByGroupId.prototype = {
 
       if (old_data.WS_Provider) {
         //Update WS Provider
-        let updateResponse = await new ChainGethProviderModel()
-          .update({ ws_provider: new_ws_provider })
-          .where({
-            ws_provider: old_data.WS_Provider
-          })
-          .fire();
+        whereClause = {
+          ws_provider: old_data.WS_Provider
+        };
       }
 
       if (old_data.RPC_Provider) {
         //Update RPC Provider
-        let updateResponse = await new ChainGethProviderModel()
-          .update({ rpc_provider: new_rpc_provider })
-          .where({
-            rpc_provider: old_data.RPC_Provider
-          })
-          .fire();
+        whereClause = {
+          rpc_provider: old_data.RPC_Provider
+        };
       }
+
+      let updateResponse = await new ChainGethProviderModel()
+        .update({ ws_provider: new_ws_provider, rpc_provider: new_rpc_provider })
+        .where(whereClause)
+        .fire();
     }
+
+    return Promise.resolve(responseHelper.successWithData({}));
   },
 
   /**
@@ -489,6 +543,26 @@ ConfigStrategyByGroupId.prototype = {
       kindsArray = Object.values(kindsHash);
 
     return kindsArray;
+  },
+
+  getStrategyIds: async function() {
+    const oThis = this;
+    let groupId = oThis.groupId;
+
+    if (groupId === undefined) {
+      logger.error(`Group id is mandatory.`);
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_29'));
+    }
+
+    let whereClause = ['group_id = ? OR group_id IS NULL', groupId],
+      strategyIdArray = await oThis._strategyIdsArrayProvider(whereClause);
+
+    if (strategyIdArray.length > 0) {
+      return Promise.resolve(responseHelper.successWithData(strategyIdArray));
+    } else {
+      logger.error('Error in fetching strategyIds');
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_30'));
+    }
   },
 
   /**
@@ -529,6 +603,45 @@ ConfigStrategyByGroupId.prototype = {
     }
 
     return Promise.resolve(responseHelper.successWithData(configStrategyFetchRsp.data));
+  },
+
+  /**
+   * It returns strategyIdsArray from query on Config Strategy Model.
+   * @param whereClause - whereClause for query on Config Strategy Model
+   * @returns {Promise<*>}
+   * @private
+   */
+  _strategyIdsArrayProvider: async function(whereClause) {
+    if (!whereClause || whereClause === undefined) {
+      logger.error('whereClause is not provided.');
+      return Promise.reject(whereClause);
+    }
+
+    let strategyIdResponse = await new ConfigStrategyModel()
+      .select(['id'])
+      .where(whereClause)
+      .fire();
+
+    let strategyIdsArray = [];
+
+    for (let index in strategyIdResponse) {
+      strategyIdsArray.push(strategyIdResponse[index].id);
+    }
+
+    return strategyIdsArray;
+  },
+
+  /**
+   *
+   * @param error_code
+   * @private
+   */
+  _errorResponseHandler: function(error_code) {
+    return responseHelper.error({
+      internal_error_identifier: error_code,
+      api_error_identifier: 'something_went_wrong',
+      debug_options: {}
+    });
   }
 };
 

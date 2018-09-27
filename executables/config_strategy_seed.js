@@ -3,11 +3,11 @@
 /*
 * This file is used to populate config_strategies table and chain_geth_providers table.
 *
-* Usage: node executables/config_strategy_seed.js managed_address_salt_id group_id [configFilePath]
+* Usage: node executables/config_strategy_seed.js managed_address_salt_id group_id configFilePath
 *
 * Command Line Parameters Description:
-* managed_address_salt_id:
-* group_id: Group ID is used for VPC cluster.
+* managed_address_salt_id: from managed_address_salts table
+* group_id: Group ID is used for client.
 * configFilePath: Config strategy file path is necessary for seeding strategy in table.
 *
 * Note: config file should contain all service kinds present in this sheet: https://docs.google.com/spreadsheets/d/1DL55AZjgvaRM3S9JDVFJrfEA66aZBBab_PtJimzMzVo/edit#gid=0
@@ -223,6 +223,8 @@ seedConfigStrategies.prototype = {
     utility_constants_params['OST_UTILITY_DEPLOYER_PASSPHRASE'] = env_list.OST_UTILITY_DEPLOYER_PASSPHRASE;
     utility_constants_params['OST_UTILITY_OPS_ADDR'] = env_list.OST_UTILITY_OPS_ADDR;
     utility_constants_params['OST_UTILITY_OPS_PASSPHRASE'] = env_list.OST_UTILITY_OPS_PASSPHRASE;
+    utility_constants_params['OST_UTILITY_ADMIN_ADDR'] = env_list.OST_UTILITY_ADMIN_ADDR;
+    utility_constants_params['OST_UTILITY_ADMIN_PASSPHRASE'] = env_list.OST_UTILITY_ADMIN_PASSPHRASE;
     utility_constants_params['OST_STPRIME_CONTRACT_ADDR'] = env_list.OST_STPRIME_CONTRACT_ADDR;
     utility_constants_params['OST_UTILITY_PRICE_ORACLES'] = env_list.OST_UTILITY_PRICE_ORACLES;
     utility_constants_params['OST_UTILITY_WORKERS_CONTRACT_ADDRESS'] = env_list.OST_UTILITY_WORKERS_CONTRACT_ADDRESS;
