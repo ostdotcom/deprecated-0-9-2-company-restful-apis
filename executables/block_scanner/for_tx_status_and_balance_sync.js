@@ -196,18 +196,11 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
         logger.log('Current Block =', oThis.currentBlock);
 
-        oThis.currentBlock = 1260559;
-
         let web3Interact = web3InteractFactory.getInstance('utility');
 
         oThis.currentBlockInfo = await web3Interact.getBlock(oThis.currentBlock);
-
-        oThis.currentBlockInfo.transactions = oThis.currentBlockInfo.transactions.slice(0, 500); //TODO: remove this
-
         if (oThis.benchmarkFilePath)
           oThis.granularTimeTaken.push('eth.getBlock-' + (Date.now() - oThis.startTime) + 'ms');
-
-        oThis.blockStartTime = Date.now();
 
         if (!oThis.currentBlockInfo) return oThis.schedule();
 
@@ -263,12 +256,6 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         if (oThis.benchmarkFilePath)
           oThis.granularTimeTaken.push('updateTransactionLogs-' + (Date.now() - oThis.startTime) + 'ms');
 
-        console.log(
-          '====Processed block with',
-          oThis.currentBlockInfo.transactions.length,
-          'in ',
-          Date.now() - oThis.blockStartTime
-        );
         oThis.updateScannerDataFile();
         if (oThis.benchmarkFilePath)
           oThis.granularTimeTaken.push('updateScannerDataFile-' + (Date.now() - oThis.startTime) + 'ms');
@@ -388,7 +375,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
   },
 
   getTxReceiptsForBatch: async function(batchedTxHashes) {
-    const oThis = this;
+    const oThis = this,
+      web3InteractFactory = oThis.ic.getWeb3InteractHelper();
 
     return new Promise(function(onResolve, onReject) {
       const totalCount = batchedTxHashes.length,
@@ -413,7 +401,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         }
       };
 
-      let web3Interact = web3InteractFactory.getInstance('utility'),
+      let web3Interact = web3InteractFactory.getInstance('utility', geth_no),
         batch = new web3Interact.web3WsProvider.BatchRequest();
 
       for (let i = 0; i < batchedTxHashes.length; i++) {
@@ -552,14 +540,6 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     }
   },
 
-  createDecodePromise: function(logs, txHash) {
-    return new Promise(function(onResolve, onReject) {
-      let decodedEvents = abiDecoder.decodeLogs(logs);
-
-      if (decodedEvents) onResolve({ [txHash]: decodedEvents });
-    });
-  },
-
   /**
    * Collect decoded events of all transactions.
    */
@@ -569,34 +549,14 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
     let addressesToFetch = [];
 
     for (let clientId in oThis.recognizedTxUuidsGroupedByClientId) {
-      let txUuids = oThis.recognizedTxUuidsGroupedByClientId[clientId],
-        batchSize = 100,
-        batchNo = 1;
+      let txUuids = oThis.recognizedTxUuidsGroupedByClientId[clientId];
+      for (let txUuidsInd = 0; txUuidsInd < txUuids.length; txUuidsInd++) {
+        let txUuid = txUuids[txUuidsInd],
+          txHash = oThis.knownTxUuidToTxHashMap[txUuid],
+          txReceipt = oThis.txHashToTxReceiptMap[txHash];
 
-      while (true) {
-        const offset = (batchNo - 1) * batchSize,
-          batchedTxUuids = txUuids.slice(offset, batchSize + offset),
-          promiseArray = [];
-
-        batchNo = batchNo + 1;
-
-        if (batchedTxUuids.length === 0) break;
-
-        for (let txUuidsInd = 0; txUuidsInd < batchedTxUuids.length; txUuidsInd++) {
-          let txUuid = txUuids[txUuidsInd],
-            txHash = oThis.knownTxUuidToTxHashMap[txUuid],
-            txReceipt = oThis.txHashToTxReceiptMap[txHash];
-
-          if (oThis.tokenTransferTxHashesMap[txHash]) {
-            promiseArray.push(oThis.createDecodePromise(txReceipt.logs, txHash));
-          }
-        }
-
-        let responses = await Promise.all(promiseArray);
-
-        for (let decodedEventInd = 0; decodedEventInd < responses.length; decodedEventInd++) {
-          let txHash = Object.keys(responses[decodedEventInd])[0];
-          let decodedEvents = responses[decodedEventInd][txHash];
+        if (oThis.tokenTransferTxHashesMap[txHash]) {
+          let decodedEvents = abiDecoder.decodeLogs(txReceipt.logs);
           oThis.txHashToDecodedEventsMap[txHash] = decodedEvents;
 
           for (let i = 0; i < decodedEvents.length; i++) {
