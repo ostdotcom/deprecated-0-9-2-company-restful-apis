@@ -685,9 +685,9 @@ ExecuteTransactionService.prototype = {
       message: {
         kind: RmqQueueConstants.executeTx,
         payload: {
-          transactionUuid: oThis.transactionUuid,
-          clientId: oThis.clientId,
-          workerUuid: workerUuid
+          transaction_uuid: oThis.transactionUuid,
+          client_id: oThis.clientId,
+          worker_uuid: workerUuid
         }
       }
     });

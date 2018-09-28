@@ -64,6 +64,21 @@ const ClientWorkerManagedAddressIdModelSpecificPrototype = {
   },
 
   /**
+   * Get details based on the clientId
+   *
+   * @param client_ids
+   * @returns {Promise<Array>}
+   */
+  getByClientIds: async function(client_ids) {
+    const oThis = this,
+      clientWorkersMap = {},
+      clientAvailableWorkers = await oThis
+        .select('id, process_id, client_id, managed_address_id, status, properties')
+        .where(['client_id=?', client_id])
+        .fire();
+  },
+
+  /**
    * Get workers whose status is on hold
    * @param client_id
    * @returns {Promise<Array>}

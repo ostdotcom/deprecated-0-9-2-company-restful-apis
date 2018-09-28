@@ -44,6 +44,7 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
   rmqQueueConstants = require(rootPrefix + '/lib/global_constant/rmq_queue'),
   initProcessKlass = require(rootPrefix + '/lib/execute_transaction_management/init_process'),
+  processQueueAssociationConst = require(rootPrefix + '/lib/global_constant/process_queue_association'),
   CommandQueueProcessorKlass = require(rootPrefix + '/lib/execute_transaction_management/command_message_processor'),
   initProcess = new initProcessKlass({ process_id: processId });
 
@@ -52,33 +53,46 @@ require(rootPrefix + '/lib/transactions/transfer_bt');
 const promiseTxExecutor = function(onResolve, onReject, params) {
   unAckCount++;
   // Process request
-  const parsedParams = JSON.parse(params);
+  const parsedParams = JSON.parse(params),
+    kind = parsedParams.message.kind,
+    payload = parsedParams.message.payload;
 
-  const payload = parsedParams.message.payload;
+  let errorMsgType = '',
+    msgExecutorObject = {};
 
-  let configStrategyHelper = new ConfigStrategyHelperKlass(payload.clientId);
+  let configStrategyHelper = new ConfigStrategyHelperKlass(payload.client_id);
   configStrategyHelper.get().then(function(configStrategyRsp) {
     if (configStrategyRsp.isFailure()) {
       return Promise.reject(configStrategyRsp);
     }
 
-    let ic = new InstanceComposer(configStrategyRsp.data),
-      ExecuteTransferBt = ic.getTransferBtClass();
+    if (kind === rmqQueueConstants.executeTx) {
+      errorMsgType = 'transaction';
 
-    let executeTransactionObj = new ExecuteTransferBt({
-      transactionUuid: payload.transactionUuid,
-      clientId: payload.clientId,
-      workerUuid: payload.workerUuid
-    });
+      let ic = new InstanceComposer(configStrategyRsp.data),
+        ExecuteTransferBt = ic.getTransferBtClass();
+
+      msgExecutorObject = new ExecuteTransferBt({
+        transactionUuid: payload.transaction_uuid,
+        clientId: payload.client_id,
+        workerUuid: payload.worker_uuid
+      });
+    } else {
+      errorMsgType = 'command message';
+      msgExecutorObject = new CommandQueueProcessorKlass(parsedParams);
+    }
 
     try {
-      executeTransactionObj
+      msgExecutorObject
         .perform()
         .then(function(response) {
+          logger.log('--------response', response);
           if (!response.isSuccess()) {
             logger.error(
               'e_rmqs_et_1',
-              'Something went wrong in transaction execution unAckCount ->',
+              'Something went wrong in ',
+              errorMsgType,
+              ' execution unAckCount ->',
               unAckCount,
               response,
               params
@@ -92,7 +106,9 @@ const promiseTxExecutor = function(onResolve, onReject, params) {
         .catch(function(err) {
           logger.error(
             'e_rmqs_et_2',
-            'Something went wrong in transaction execution. unAckCount ->',
+            'Something went wrong in ',
+            errorMsgType,
+            ' execution. unAckCount ->',
             unAckCount,
             err,
             params
@@ -103,7 +119,7 @@ const promiseTxExecutor = function(onResolve, onReject, params) {
         });
     } catch (err) {
       unAckCount--;
-      logger.error('Listener could not process transaction.. Catch. unAckCount -> ', unAckCount);
+      logger.error('Listener could not process ', errorMsgType, '.. Catch. unAckCount -> ', unAckCount);
       return onResolve();
     }
   });
@@ -115,7 +131,7 @@ const PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseTxExecuto
   timeoutInMilliSecs: 3 * 60 * 1000, //3 minutes
   maxZombieCount: Math.round(prefetchCount * 0.25),
   onMaxZombieCountReached: function() {
-    logger.warn('w_rmqs_et_1', 'maxZombieCount reached. Triggring SIGTERM.');
+    logger.warn('w_rmqs_et_1', 'maxZombieCount reached. Triggering SIGTERM.');
     // Trigger graceful shutdown of process.
     process.kill(process.pid, 'SIGTERM');
   }
@@ -180,9 +196,16 @@ let subscribeCommandQueue = async function(qNameSuffix) {
 
 let init = async function() {
   let initProcessResp = await initProcess.perform();
-  processDetails = initProcessResp.processDetails;
-  let queueSuffix = processDetails.queue_name_suffix;
 
+  processDetails = initProcessResp.processDetails;
+  let processStatus = processDetails.status,
+    queueSuffix = processDetails.queue_name_suffix;
+
+  if (processStatus === processQueueAssociationConst.killed) {
+    logger.warn(
+      'The process being is in killed status in the table. Recommended to check. Continuing to start the queue.'
+    );
+  }
   if (initProcessResp.shouldStartTxQueConsume) {
     await subscribeTxQueue(queueSuffix);
   }
