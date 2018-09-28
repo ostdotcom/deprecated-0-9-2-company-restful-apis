@@ -80,7 +80,7 @@ const ClientWorkerManagedAddressIdModelSpecificPrototype = {
   /*
   * Get workers which are not associated with any process
   * @param client_id
-  * @returns {Promise<Array>}
+  * @returns {Promise<Object>}
   * */
   getAvailableByClientIds: async function(client_ids) {
     const oThis = this,
@@ -140,29 +140,40 @@ const ClientWorkerManagedAddressIdModelSpecificPrototype = {
   },
 
   /**
-   * Get all the active and hold workers for a particular client.
+   * Get all the blocking workers for a particular client.
+   *
+   * @param client_id
+   * @returns {Promise<Array>}
+   */
+  getBlockingByClientId: async function(client_id) {
+    const oThis = this,
+      blockingDbRecords = [],
+      dbRecords = await oThis.getByClientId(client_id),
+      blockingStatus = +oThis.invertedStatuses[clientWorkerManagedAddressConst.blockingStatus]; // Implicit string to int conversion
+
+    for (let i = 0; i < dbRecords.length; i++) {
+      if (dbRecords[i].status === blockingStatus) {
+        blockingDbRecords.push(dbRecords[i]);
+      }
+    }
+
+    return blockingDbRecords;
+  },
+
+  /**
+   * Get all the working workers for a particular client. Any worker which has a process associated with it is
+   * considered as a working worker.
    *
    * @param client_id
    * @returns {Promise<Array>}
    */
   getWorkingByClientId: async function(client_id) {
-    const oThis = this,
-      workingDbRecords = [],
-      dbRecords = await oThis
-        .select('*')
-        .where(['client_id=? AND process_id IS NOT NULL', client_id])
-        .fire();
+    const oThis = this;
 
-    let holdStatus = +oThis.invertedStatuses[clientWorkerManagedAddressConst.holdStatus]; // Implicit string to int conversion
-
-    for (let i = 0; i < dbRecords.length; i++) {
-      // Working processes. If not hold, all are considered to be working.
-      if (dbRecords[i].status !== holdStatus) {
-        workingDbRecords.push(dbRecords[i]);
-      }
-    }
-
-    return workingDbRecords;
+    return await oThis
+      .select('*')
+      .where(['client_id=? AND process_id IS NOT NULL', client_id])
+      .fire();
   },
 
   /**

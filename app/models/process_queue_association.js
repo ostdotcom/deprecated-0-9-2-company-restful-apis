@@ -105,7 +105,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
    * Get details for multiple processIds.
    *
    * @param processIds
-   * @return {*}
+   * @return {Promise<Object>}
    *
    */
   getByProcessIds: async function(processIds) {
