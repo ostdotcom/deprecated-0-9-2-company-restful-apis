@@ -1,10 +1,10 @@
 'use strict';
 
 var Flush_Cache = async function() {
-  const rootPrefix = '/mnt/st-company/apps/saasApi/current/',
+  const rootPrefix = '..',
     ConfigStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
     ConfigStrategyByGroupId = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
-    shell = require('/mnt/st-company/apps/saasApi/current/node_modules/shelljs');
+    shell = require(rootPrefix + '/node_modules/shelljs');
 
   //Get the distinct chain nos or group ids from the config strategy table
 
