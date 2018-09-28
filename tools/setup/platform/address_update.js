@@ -44,6 +44,7 @@ originalConfigStrategy['OST_SIMPLE_TOKEN_CONTRACT_ADDR'] = correctConfigStrategy
 originalConfigStrategy['OST_SEALER_ADDR'] = correctConfigStrategy['OST_SEALER_ADDR'];
 originalConfigStrategy['OST_VALUE_OPS_ADDR'] = correctConfigStrategy['OST_VALUE_OPS_ADDR'];
 originalConfigStrategy['OST_VALUE_ADMIN_ADDR'] = correctConfigStrategy['OST_VALUE_ADMIN_ADDR'];
+originalConfigStrategy['OST_UTILITY_ADMIN_ADDR'] = correctConfigStrategy['OST_UTILITY_ADMIN_ADDR'];
 
 // Please pass absolute file path here.
 fs.writeFile(process.cwd() + '/uc_1000.json', JSON.stringify(originalConfigStrategy), 'utf8', function(err) {
