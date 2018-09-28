@@ -78,9 +78,9 @@ GetAirdropStatusKlass.prototype = {
         );
       }
       let current_status = 'pending';
-      if (record.status === new ClientAirdropModel().invertedStatuses[clientAirdropConst.completeStatus]) {
+      if (record.status == new ClientAirdropModel().invertedStatuses[clientAirdropConst.completeStatus]) {
         current_status = 'complete';
-      } else if (record.status === new ClientAirdropModel().invertedStatuses[clientAirdropConst.failedStatus]) {
+      } else if (record.status == new ClientAirdropModel().invertedStatuses[clientAirdropConst.failedStatus]) {
         current_status = 'failed';
       }
 

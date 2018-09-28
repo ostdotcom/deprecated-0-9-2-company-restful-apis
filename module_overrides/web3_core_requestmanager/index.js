@@ -152,7 +152,6 @@ OstBatchManager.prototype.add = function(request, cb) {
     request.callback = cb;
   }
 
-  console.log('request', request);
   switch (request.method) {
     case 'eth_sendTransaction':
       if (!moUtils.isUnlockable(request.params[0].from)) {

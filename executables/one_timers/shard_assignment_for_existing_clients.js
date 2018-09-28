@@ -3,7 +3,8 @@
 /**
  * This script will assign shard name for existing clients.
  *
- * node ./executables/one_timers/shard_assignment_for_existing_clients.js configStrategy_file_path
+ * node ./executables/one_timers/shard_assignment_for_existing_clients.js
+ *
  * @type {string}
  */
 const rootPrefix = '../..',
@@ -12,12 +13,9 @@ const rootPrefix = '../..',
   ClientConfigStrategiesModel = require(rootPrefix + '/app/models/client_config_strategies'),
   ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
   configStrategyHelper = require(rootPrefix + '/helpers/config_strategy'),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  commonValidator = require(rootPrefix + '/lib/validators/common');
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
 require(rootPrefix + '/lib/providers/storage');
-
-const args = process.argv;
 
 function MigrateDataFromDdbShardsToClientConfigStrategies(params) {}
 
@@ -102,7 +100,7 @@ MigrateDataFromDdbShardsToClientConfigStrategies.prototype = {
         continue;
       }
 
-      auxilary_data.TOKEN_BALANCE_SHARD_NAME = transactionLogShardNameRsp.data.data.Items[0].SN.S;
+      auxilary_data.TOKEN_BALANCE_SHARD_NAME = tokenBalanceShardNameRsp.data.data.Items[0].SN.S;
 
       logger.debug(`[${clientId}] auxilary_data: `, auxilary_data);
 
