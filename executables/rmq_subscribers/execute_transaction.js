@@ -157,16 +157,23 @@ let subscribeTxQueue = async function(qNameSuffix) {
 
 let unAckCommandMessages = 0;
 const commandQueueExecutor = function(params) {
+  // unAckCommandMessages++;
   return new Promise(async function(onResolve) {
     let commandQueueProcessor = new CommandQueueProcessorKlass(params);
     let commandProcessorResponse = await commandQueueProcessor.perform();
 
-    if (commandProcessorResponse.queueAction == 'start') {
-      subscribeTxQueue(processDetails.queue_name_suffix);
-    } else if (commandProcessorResponse.queueAction == 'stop') {
+    if (
+      commandProcessorResponse.data.shouldStartTxQueConsume &&
+      commandProcessorResponse.data.shouldStartTxQueConsume === 1
+    ) {
+      await subscribeTxQueue(processDetails.queue_name_suffix);
+    } else if (
+      commandProcessorResponse.data.shouldStopTxQueConsume &&
+      commandProcessorResponse.data.shouldStopTxQueConsume === 1
+    ) {
       process.emit('CANCEL_CONSUME');
-      setTimeout(function() {
-        subscribeCommandQueue(processDetails.queue_name_suffix);
+      setTimeout(async function() {
+        await subscribeCommandQueue(processDetails.queue_name_suffix);
       }, 500);
     }
     unAckCommandMessages--;
@@ -201,7 +208,7 @@ let init = async function() {
   let processStatus = processDetails.status,
     queueSuffix = processDetails.queue_name_suffix;
 
-  if (processStatus === processQueueAssociationConst.killed) {
+  if (processStatus === processQueueAssociationConst.processKilled) {
     logger.warn(
       'The process being is in killed status in the table. Recommended to check. Continuing to start the queue.'
     );
