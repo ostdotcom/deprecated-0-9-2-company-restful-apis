@@ -25,10 +25,6 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   configStrategyCacheKlass = require(rootPrefix + '/lib/shared_cache_multi_management/client_config_strategies'),
   ProcessLocker = new ProcessLockerKlass();
 
-require(rootPrefix + '/lib/providers/platform');
-require(rootPrefix + '/lib/providers/payments');
-require(rootPrefix + '/lib/providers/storage');
-require(rootPrefix + '/app/models/transaction_log');
 require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
 require(rootPrefix + '/lib/web3/interact/ws_interact');
 
@@ -45,7 +41,7 @@ let configStrategy = {};
 const usageDemo = function() {
   logger.log(
     'usage:',
-    'node ./executables/block_scanner/for_tx_status_and_balance_sync.js processLockId datafilePath group_id [benchmarkFilePath]'
+    'node ./executables/block_scanner/transaction_delegator.js processLockId datafilePath group_id [benchmarkFilePath]'
   );
   logger.log(
     '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
@@ -82,17 +78,10 @@ validateAndSanitize();
 // Check if another process with the same title is running.
 ProcessLocker.canStartProcess({ process_title: 'executables_transaction_delegator_' + processLockId });
 
-const fs = require('fs'),
-  abiDecoder = require('abi-decoder'),
-  BigNumber = require('bignumber.js'),
-  uuid = require('uuid');
+const fs = require('fs');
 
 const responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  coreConstants = require(rootPrefix + '/config/core_constants'),
-  TransactionMeta = require(rootPrefix + '/app/models/transaction_meta'),
-  transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log'),
-  commonValidator = require(rootPrefix + '/lib/validators/common'),
-  ManagedAddressModel = require(rootPrefix + '/app/models/managed_address');
+  coreConstants = require(rootPrefix + '/config/core_constants');
 
 const TransactionDelegator = function(params) {
   const oThis = this;
@@ -103,18 +92,6 @@ const TransactionDelegator = function(params) {
   oThis.scannerData = {};
   oThis.interruptSignalObtained = false;
   oThis.highestBlock = null;
-
-  oThis.TransferEventSignature = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
-  oThis.ProcessedMintEventSignature = '0x96989a6b1d8c3bb8d6cc22e14b188b5c14b1f33f34ff07ea2e4fd6d880dac2c7';
-  oThis.RevertedMintEventSignature = '0x86e6b95641fbf0f8939eb3da2e7e26aee0188048353d08a45c78218e84cf1d4f';
-
-  oThis.ZeroXAddress = '0x0000000000000000000000000000000000000000';
-
-  oThis.tokenTransferKind = new TransactionMeta().invertedKinds[transactionLogConst.tokenTransferTransactionType];
-  oThis.stpTransferKind = new TransactionMeta().invertedKinds[transactionLogConst.stpTransferTransactionType];
-
-  oThis.failedTxStatus = transactionLogConst.invertedStatuses[transactionLogConst.failedStatus];
-  oThis.completeTxStatus = transactionLogConst.invertedStatuses[transactionLogConst.completeStatus];
 };
 
 TransactionDelegator.prototype = {
