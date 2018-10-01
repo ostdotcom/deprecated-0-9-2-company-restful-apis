@@ -80,7 +80,7 @@ const validateAndSanitize = function() {
 validateAndSanitize();
 
 // Check if another process with the same title is running.
-ProcessLocker.canStartProcess({ process_title: 'executables_block_scanner_execute_transaction_' + processLockId });
+ProcessLocker.canStartProcess({ process_title: 'executables_transaction_delegator_' + processLockId });
 
 const fs = require('fs'),
   abiDecoder = require('abi-decoder'),
@@ -271,6 +271,8 @@ TransactionDelegator.prototype = {
         let remainingTxs = oThis.currentBlockInfo.transactions.slice(offset, total_transaction_count);
         txHashes = txHashes.concat(remainingTxs);
       }
+
+      if (txHashes.length == 0) break;
 
       let messageParams = {
         topics: ['block_scanner_execute_' + group_id],
