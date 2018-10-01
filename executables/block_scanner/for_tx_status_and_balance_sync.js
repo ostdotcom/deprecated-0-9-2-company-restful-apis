@@ -194,6 +194,8 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
 
         oThis.currentBlock = oThis.scannerData.lastProcessedBlock + 1;
 
+        oThis.currentBlock = 1260559;
+
         logger.log('Current Block =', oThis.currentBlock);
 
         let web3Interact = web3InteractFactory.getInstance('utility');
@@ -401,7 +403,7 @@ BlockScannerForTxStatusAndBalanceSync.prototype = {
         }
       };
 
-      let web3Interact = web3InteractFactory.getInstance('utility', geth_no),
+      let web3Interact = web3InteractFactory.getInstance('utility'),
         batch = new web3Interact.web3WsProvider.BatchRequest();
 
       for (let i = 0; i < batchedTxHashes.length; i++) {
