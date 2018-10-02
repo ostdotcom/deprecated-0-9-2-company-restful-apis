@@ -33,8 +33,6 @@ const promiseExecutor = async function(onResolve, onReject, params) {
   // Process request
   const parsedParams = JSON.parse(params);
 
-  console.log('\n\n\n======parsedParams=========', parsedParams);
-
   const payload = parsedParams.message.payload;
 
   let strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
@@ -50,6 +48,7 @@ const promiseExecutor = async function(onResolve, onReject, params) {
     });
 
   try {
+    // TODO - promise is not returned from BlockScannerKlass, hence response is undefined
     blockScannerObj
       .perform()
       .then(function(response) {
@@ -82,7 +81,6 @@ const promiseExecutor = async function(onResolve, onReject, params) {
   } catch (err) {
     unAckCount--;
     logger.error('Listener could not process blockscanner.. Catch. unAckCount -> ', unAckCount);
-    return onResolve();
   }
 };
 
@@ -105,7 +103,6 @@ openSTNotification.subscribeEvent.rabbit(
     prefetch: prefetchCount
   },
   function(params) {
-    console.log('=====params', params);
     // Promise is required to be returned to manually ack messages in RMQ
     return PromiseQueueManager.createPromise(params);
   }
