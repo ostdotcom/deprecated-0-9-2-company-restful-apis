@@ -55,7 +55,7 @@ ClearNonceCache.prototype = {
 
       let cacheConfigStrategy = {
         OST_CACHING_ENGINE: cacheManagementConst.memcached,
-        OST_MEMCACHE_SERVERS: configStrategy.OST_MEMCACHE_SERVERS,
+        OST_MEMCACHE_SERVERS: configStrategy.OST_NONCE_MEMCACHE_SERVERS,
         OST_DEFAULT_TTL: configStrategy.OST_DEFAULT_TTL,
         OST_CACHE_CONSISTENT_BEHAVIOR: '0'
       };

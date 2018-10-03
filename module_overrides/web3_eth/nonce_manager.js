@@ -83,7 +83,7 @@ const NonceCacheKlassPrototype = {
       // Create cache object for a client.
       let cacheConfigStrategy = {
         OST_CACHING_ENGINE: cacheManagementConst.memcached,
-        OST_MEMCACHE_SERVERS: oThis.configStrategy.OST_MEMCACHE_SERVERS,
+        OST_MEMCACHE_SERVERS: oThis.configStrategy.OST_NONCE_MEMCACHE_SERVERS,
         OST_DEFAULT_TTL: oThis.configStrategy.OST_DEFAULT_TTL,
         OST_CACHE_CONSISTENT_BEHAVIOR: '0'
       };

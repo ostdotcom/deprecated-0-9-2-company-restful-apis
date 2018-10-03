@@ -81,6 +81,7 @@ seedConfigStrategies.prototype = {
     await oThis.seed_redis_params();
     await oThis.seed_dynamo_params();
     await oThis.seed_memcached_params();
+    await oThis.seed_nonce_memcached_params();
     await oThis.seed_autoscaling_params();
     await oThis.seed_in_memory_params();
     await oThis.seed_constants_params();
@@ -145,6 +146,15 @@ seedConfigStrategies.prototype = {
     const configStrategy = new configStrategyModel();
 
     await configStrategy.create('memcached', process.argv[2], memcached_params, group_id).then();
+  },
+
+  seed_nonce_memcached_params: async function() {
+    let memcached_params = {};
+    memcached_params['OST_NONCE_MEMCACHE_SERVERS'] = env_list.OST_NONCE_MEMCACHE_SERVERS;
+
+    const configStrategy = new configStrategyModel();
+
+    await configStrategy.create('nonce_memcached', process.argv[2], memcached_params, group_id).then();
   },
 
   seed_in_memory_params: async function() {
