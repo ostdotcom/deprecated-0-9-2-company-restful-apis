@@ -3,8 +3,9 @@
 const rootPrefix = '../..';
 
 const args = process.argv,
-  //prefetchCount = args[2],
-  group_id = args[2];
+  processLockId = args[2],
+  group_id = args[3],
+  prefetchCountStr = args[4];
 
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
@@ -19,11 +20,10 @@ const openSTNotification = require('@openstfoundation/openst-notification'),
   OSTBase = require('@openstfoundation/openst-base');
 
 // Check if another process with the same title is running.
-ProcessLocker.canStartProcess({ process_title: 'executables_block_scanner_execute_transaction' + group_id });
+ProcessLocker.canStartProcess({ process_title: 'executables_block_scanner_execute_transaction' + processLockId });
 
-let unAckCount = 0;
-
-let prefetchCount = 4;
+let unAckCount = 0,
+  prefetchCount = parseInt(prefetchCountStr);
 
 const promiseExecutor = async function(onResolve, onReject, params) {
   const oThis = this;
@@ -44,23 +44,14 @@ const promiseExecutor = async function(onResolve, onReject, params) {
     blockScannerObj = new BlockScannerKlass({
       blockNumber: payload.blockNumber,
       provider: payload.provider,
-      transactionHashes: payload.transactionHashes
+      transactionHashes: payload.transactionHashes,
+      timeStamp: payload.timeStamp
     });
 
   try {
-    // TODO - promise is not returned from BlockScannerKlass, hence response is undefined
     blockScannerObj
       .perform()
-      .then(function(response) {
-        if (!response.isSuccess()) {
-          logger.error(
-            'e_bs_ftsabs_1',
-            'Something went wrong in blockscanner execution unAckCount ->',
-            unAckCount,
-            response,
-            params
-          );
-        }
+      .then(function() {
         unAckCount--;
         logger.debug('------ unAckCount -> ', unAckCount);
         // ack RMQ
@@ -99,7 +90,7 @@ openSTNotification.subscribeEvent.rabbit(
   ['block_scanner_execute_' + group_id],
   {
     queue: 'block_scanner_execute_' + group_id,
-    ackRequired: 0,
+    ackRequired: 1,
     prefetch: prefetchCount
   },
   function(params) {
