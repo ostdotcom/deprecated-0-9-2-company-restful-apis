@@ -62,4 +62,4 @@ associateProcessId.prototype = {
   }
 };
 
-module.exports = associateProcessId;
+new associateProcessId().associate().then();
