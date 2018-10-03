@@ -353,12 +353,7 @@ TransactionDelegator.prototype = {
    */
   updateBenchmarkFile: function() {
     const oThis = this;
-    const benchmarkData = [
-      oThis.currentBlock,
-      oThis.currentBlockInfo.transactions.length,
-      oThis.recognizedTxHashes.length,
-      oThis.unRecognizedTxHashes.length
-    ];
+    const benchmarkData = [oThis.currentBlock, oThis.currentBlockInfo.transactions.length];
 
     fs.appendFileSync(oThis.benchmarkFilePath, benchmarkData.concat(oThis.granularTimeTaken).join(',') + '\n', function(
       err
