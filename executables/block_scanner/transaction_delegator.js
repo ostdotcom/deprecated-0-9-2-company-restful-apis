@@ -18,6 +18,8 @@ const rootPrefix = '../..';
 
 const openSTNotification = require('@openstfoundation/openst-notification');
 
+const MAX_TXS_PER_WORKER = 20;
+
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
@@ -240,14 +242,13 @@ TransactionDelegator.prototype = {
       per_geth_tx_count = total_transaction_count / oThis.gethArray.length,
       offset = 0;
 
-    for (let ind = 0; ind < oThis.gethArray.length; ind++) {
-      let txHashes = oThis.currentBlockInfo.transactions.slice(offset, offset + per_geth_tx_count);
-      offset = offset + per_geth_tx_count;
+    per_geth_tx_count = per_geth_tx_count > MAX_TXS_PER_WORKER ? MAX_TXS_PER_WORKER : per_geth_tx_count;
 
-      if (ind == oThis.gethArray.length - 1) {
-        let remainingTxs = oThis.currentBlockInfo.transactions.slice(offset, total_transaction_count);
-        txHashes = txHashes.concat(remainingTxs);
-      }
+    for (let loopCount = 1; ; loopCount++) {
+      let txHashes = oThis.currentBlockInfo.transactions.slice(offset, offset + per_geth_tx_count),
+        geth_ind = oThis.gethArray % loopCount;
+
+      offset = offset + per_geth_tx_count;
 
       if (txHashes.length == 0) break;
 
@@ -258,8 +259,9 @@ TransactionDelegator.prototype = {
           kind: 'background_job',
           payload: {
             transactionHashes: txHashes,
-            provider: oThis.gethArray[ind],
-            blockNumber: oThis.currentBlock
+            provider: oThis.gethArray[geth_ind],
+            blockNumber: oThis.currentBlock,
+            timestamp: oThis.currentBlockInfo.timestamp
           }
         }
       };
