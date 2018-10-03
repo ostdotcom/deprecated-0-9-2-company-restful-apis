@@ -66,7 +66,7 @@ const Derived = function() {
         const onTxHash = async function(hash) {
           if (!txHashObtained) {
             txHashObtained = true;
-            await signRawTx.markAsSuccess();
+            await signRawTx.markAsSuccess(hash);
           }
           hackedReturnedPromiEvent.eventEmitter.emit('transactionHash', hash);
 
