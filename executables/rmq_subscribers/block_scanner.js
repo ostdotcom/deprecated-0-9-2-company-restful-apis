@@ -9,12 +9,17 @@ const args = process.argv,
   benchmarkFilePath = args[5];
 
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  coreConstants = require(rootPrefix + '/config/core_constants'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
   ProcessLocker = new ProcessLockerKlass();
 
+let ic = null,
+  web3InteractFactory = null;
+
 require(rootPrefix + '/lib/block_scanner/for_tx_status_and_balance_sync');
+require(rootPrefix + '/lib/web3/interact/ws_interact');
 
 // Load external packages
 const openSTNotification = require('@openstfoundation/openst-notification'),
@@ -31,6 +36,28 @@ const usageDemo = function() {
   );
   logger.log('* group_id is needed to fetch config strategy.');
   logger.log('* benchmarkFilePath is the path to the file which is storing the benchmarking info.');
+};
+
+const warmUpGethPool = function() {
+  return new Promise(async function(onResolve, onReject) {
+    let strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(),
+      configStrategy = configStrategyResp.data;
+
+    ic = new InstanceComposer(configStrategy);
+    web3InteractFactory = ic.getWeb3InteractHelper();
+
+    let web3PoolSize = coreConstants.OST_WEB3_POOL_SIZE;
+
+    for (let ind = 0; ind < configStrategy.OST_UTILITY_GETH_WS_PROVIDERS.length; ind++) {
+      let provider = configStrategy.OST_UTILITY_GETH_WS_PROVIDERS[ind];
+      for (let i = 0; i < web3PoolSize; i++) {
+        web3InteractFactory.getInstance('utility', provider); //TODO: Align it with read/write and master process
+      }
+    }
+
+    return onResolve();
+  });
 };
 
 // Validate and sanitize the command line arguments.
@@ -58,7 +85,7 @@ const validateAndSanitize = function() {
 validateAndSanitize();
 
 // Check if another process with the same title is running.
-ProcessLocker.canStartProcess({ process_title: 'executables_block_scanner_execute_transaction' + processLockId });
+ProcessLocker.canStartProcess({ process_title: 'executables_rmq_subscribers_block_scanner_' + processLockId });
 
 let unAckCount = 0,
   prefetchCount = parseInt(prefetchCountStr);
@@ -73,18 +100,14 @@ const promiseExecutor = async function(onResolve, onReject, params) {
 
   const payload = parsedParams.message.payload;
 
-  let strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
-    configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(),
-    configStrategy = configStrategyResp.data,
-    ic = new InstanceComposer(configStrategy);
-
   let BlockScannerKlass = ic.getBlockScannerKlass(),
     blockScannerObj = new BlockScannerKlass({
       blockNumber: payload.blockNumber,
-      provider: payload.provider,
+      geth_array: payload.geth_array,
       transactionHashes: payload.transactionHashes,
       timeStamp: payload.timestamp,
-      benchmarkFilePath: benchmarkFilePath
+      benchmarkFilePath: benchmarkFilePath,
+      web3InteractFactory: web3InteractFactory
     });
 
   try {
@@ -114,29 +137,33 @@ const promiseExecutor = async function(onResolve, onReject, params) {
   }
 };
 
-const PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseExecutor, {
-  name: 'blockscanner_promise_queue_manager',
-  timeoutInMilliSecs: 3 * 60 * 1000, //3 minutes
-  maxZombieCount: Math.round(prefetchCount * 0.25),
-  onMaxZombieCountReached: function() {
-    logger.warn('w_e_bs_ftsabs_1', 'maxZombieCount reached. Triggering SIGTERM.');
-    // Trigger gracefully shutdown of process.
-    process.kill(process.pid, 'SIGTERM');
-  }
-});
+let PromiseQueueManager = null;
 
-openSTNotification.subscribeEvent.rabbit(
-  ['block_scanner_execute_' + group_id],
-  {
-    queue: 'block_scanner_execute_' + group_id,
-    ackRequired: 1,
-    prefetch: 1
-  },
-  function(params) {
-    // Promise is required to be returned to manually ack messages in RMQ
-    return PromiseQueueManager.createPromise(params);
-  }
-);
+warmUpGethPool().then(function() {
+  PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseExecutor, {
+    name: 'blockscanner_promise_queue_manager',
+    timeoutInMilliSecs: 3 * 60 * 1000, //3 minutes
+    maxZombieCount: Math.round(prefetchCount * 0.25),
+    onMaxZombieCountReached: function() {
+      logger.warn('w_e_bs_ftsabs_1', 'maxZombieCount reached. Triggering SIGTERM.');
+      // Trigger gracefully shutdown of process.
+      process.kill(process.pid, 'SIGTERM');
+    }
+  });
+
+  openSTNotification.subscribeEvent.rabbit(
+    ['block_scanner_execute_' + group_id],
+    {
+      queue: 'block_scanner_execute_' + group_id,
+      ackRequired: 1,
+      prefetch: prefetchCount
+    },
+    function(params) {
+      // Promise is required to be returned to manually ack messages in RMQ
+      return PromiseQueueManager.createPromise(params);
+    }
+  );
+});
 
 // Using a single function to handle multiple signals
 function handle() {

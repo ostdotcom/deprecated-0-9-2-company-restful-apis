@@ -18,7 +18,7 @@ const rootPrefix = '../..';
 
 const openSTNotification = require('@openstfoundation/openst-notification');
 
-const MAX_TXS_PER_WORKER = 20;
+const MAX_TXS_PER_WORKER = 100;
 
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
@@ -164,6 +164,8 @@ TransactionDelegator.prototype = {
 
         oThis.currentBlock = oThis.scannerData.lastProcessedBlock + 1;
 
+        oThis.currentBlock = 3374626;
+
         logger.log('Current Block =', oThis.currentBlock);
 
         await oThis.distributeTransactions();
@@ -246,7 +248,7 @@ TransactionDelegator.prototype = {
 
     for (let loopCount = 1; ; loopCount++) {
       let txHashes = oThis.currentBlockInfo.transactions.slice(offset, offset + per_geth_tx_count),
-        geth_ind = oThis.gethArray % loopCount;
+        geth_ind = loopCount % oThis.gethArray.length;
 
       offset = offset + per_geth_tx_count;
 
@@ -259,7 +261,7 @@ TransactionDelegator.prototype = {
           kind: 'background_job',
           payload: {
             transactionHashes: txHashes,
-            provider: oThis.gethArray[geth_ind],
+            geth_array: oThis.gethArray,
             blockNumber: oThis.currentBlock,
             timestamp: oThis.currentBlockInfo.timestamp
           }
