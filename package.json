@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@openstfoundation/openst-base": "0.9.3-beta.6",
-    "@openstfoundation/openst-cache": "1.0.6-beta.5",
+    "@openstfoundation/openst-cache": "1.0.6-beta.6",
     "@openstfoundation/openst-notification": "1.0.4-beta.4",
     "@openstfoundation/openst-payments": "1.0.10-beta.13",
     "@openstfoundation/openst-platform": "0.9.4-beta.22",
