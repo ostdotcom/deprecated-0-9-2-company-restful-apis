@@ -157,9 +157,9 @@ let subscribeTxQueue = async function(qNameSuffix) {
 
 let unAckCommandMessages = 0;
 const commandQueueExecutor = function(params) {
-  // unAckCommandMessages++;
   return new Promise(async function(onResolve) {
-    let commandQueueProcessor = new CommandQueueProcessorKlass(params);
+    let parsedParams = JSON.parse(params);
+    let commandQueueProcessor = new CommandQueueProcessorKlass(parsedParams);
     let commandProcessorResponse = await commandQueueProcessor.perform();
 
     if (
@@ -185,7 +185,7 @@ let commandQueueSubscribed = false;
 let subscribeCommandQueue = async function(qNameSuffix) {
   if (!commandQueueSubscribed) {
     await openSTNotification.subscribeEvent.rabbit(
-      [rmqQueueConstants.commandMessageTopicPrefix + '.' + qNameSuffix],
+      [rmqQueueConstants.commandMessageTopicPrefix + qNameSuffix],
       {
         queue: rmqQueueConstants.commandMessageQueuePrefix + '_' + qNameSuffix,
         ackRequired: 1,
