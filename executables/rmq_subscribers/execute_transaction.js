@@ -3,11 +3,10 @@
 /**
  * This script will execute transactions by subscribing to RMQ events.
  *
- * Usage: node executables/rmq_subscribers/execute_transaction.js processId [slowProcessor]
+ * Usage: node executables/rmq_subscribers/execute_transaction.js processId
  *
  * Command Line Parameters Description:
  * processId: process id to start the process
- * [slowProcessor]: another queue for slower transactions
  *
  * Example: node executables/rmq_subscribers/execute_transaction.js 1
  *
@@ -22,15 +21,16 @@ require(rootPrefix + '/module_overrides/index');
 // Include Process Locker File
 const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
   ProcessLocker = new ProcessLockerKlass();
-const args = process.argv,
-  processId = args[2],
-  slowProcessor = args[3];
 
+const args = process.argv,
+  processId = args[2];
+
+// Declare variables.
 let unAckCount = 0,
   processDetails = null;
 
 ProcessLocker.canStartProcess({
-  process_title: 'executables_rmq_subscribers_execute_transaction' + processId + '-' + (slowProcessor || '')
+  process_title: 'executables_rmq_subscribers_execute_transaction' + processId
 });
 ProcessLocker.endAfterTime({ time_in_minutes: 30 });
 
@@ -38,7 +38,7 @@ ProcessLocker.endAfterTime({ time_in_minutes: 30 });
 const openSTNotification = require('@openstfoundation/openst-notification'),
   OSTBase = require('@openstfoundation/openst-base');
 
-//All Module Requires.
+// All Module Requires.
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
@@ -86,7 +86,6 @@ const promiseTxExecutor = function(onResolve, onReject, params) {
       msgExecutorObject
         .perform()
         .then(function(response) {
-          logger.log('--------response', response);
           if (!response.isSuccess()) {
             logger.error(
               'e_rmqs_et_1',
