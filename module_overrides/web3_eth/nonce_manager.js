@@ -7,13 +7,13 @@ const rootPrefix = '../..',
   cacheManagementConst = require(rootPrefix + '/lib/global_constant/cache_management'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  SharedRedisProvider = require(rootPrefix + '/lib/providers/shared_redis'),
+  SharedMemcachedProvider = require(rootPrefix + '/lib/providers/shared_memcached'),
   nonceHelperKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_helper'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
   errorConfig = basicHelper.fetchErrorConfig(apiVersions.general),
   waitTimeout = 50000, //50 seconds
-  waitTimeInterval = 5; //5 milliseconds
+  waitTimeInterval = 2000; //2 second
 
 /**
  * Utility function to get timestamp
@@ -45,18 +45,6 @@ const NonceManagerKlass = function(params) {
 
   oThis.nonceHelper = new nonceHelperKlass();
 
-  //Check for existing instance
-  let instanceKey = oThis.nonceHelper.getInstanceKey(fromAddress, chainKind, chainId),
-    existingInstance = oThis.nonceHelper.getInstance(instanceKey);
-  if (existingInstance) {
-    logger.log('NM :: NonceManagerKlass :: existingInstance FOUND!');
-    return existingInstance;
-  } else {
-    oThis.nonceHelper.setInstance(oThis, instanceKey);
-  }
-
-  logger.log('NM :: NonceManagerKlass :: creating new instance');
-
   oThis.address = fromAddress;
   oThis.chainKind = chainKind;
   oThis.clientId = clientId;
@@ -64,15 +52,20 @@ const NonceManagerKlass = function(params) {
   oThis.chainId = chainId;
   oThis.gethWsProviders = gethWsProviders;
   oThis.configStrategy = configStrategy;
-  oThis.promiseQueue = [];
-  oThis.processedQueue = [];
+
   oThis.consistentBehavior = '0';
+  oThis.lockingTtl = 5; // in seconds
+  oThis.startTime = Date.now();
 };
 
 const NonceCacheKlassPrototype = {
   address: null,
   chainKind: null,
-  promiseQueue: null,
+  clientId: null,
+  currentWsHost: null,
+  chainId: null,
+  gethWsProviders: null,
+  configStrategy: null,
 
   /**
    * Creates the cacheImplementer.
@@ -82,19 +75,15 @@ const NonceCacheKlassPrototype = {
   deepInit: async function() {
     const oThis = this;
 
-    // Create a shared redis object for non-client specific redis.
     if (oThis.clientId === '0') {
-      let cacheObject = SharedRedisProvider.getInstance(oThis.consistentBehavior);
+      // Create a shared memcached object for non-client specific memcached.
+      let cacheObject = SharedMemcachedProvider.getInstance(oThis.consistentBehavior);
       oThis.cacheImplementer = cacheObject.cacheInstance;
-    }
-    // Create cache object for a client.
-    else {
+    } else {
+      // Create cache object for a client.
       let cacheConfigStrategy = {
-        OST_CACHING_ENGINE: cacheManagementConst.redis,
-        OST_REDIS_HOST: oThis.configStrategy.OST_REDIS_HOST,
-        OST_REDIS_PORT: oThis.configStrategy.OST_REDIS_PORT,
-        OST_REDIS_PASS: oThis.configStrategy.OST_REDIS_PASS,
-        OST_REDIS_TLS_ENABLED: oThis.configStrategy.OST_REDIS_TLS_ENABLED,
+        OST_CACHING_ENGINE: cacheManagementConst.memcached,
+        OST_MEMCACHE_SERVERS: oThis.configStrategy.OST_MEMCACHE_SERVERS,
         OST_DEFAULT_TTL: oThis.configStrategy.OST_DEFAULT_TTL,
         OST_CACHE_CONSISTENT_BEHAVIOR: '0'
       };
@@ -104,27 +93,12 @@ const NonceCacheKlassPrototype = {
     }
 
     // Set cache key for nonce
-    oThis.cacheKey = `nonce_${oThis.chainKind}_${oThis.address}_${oThis.chainId}`;
-    logger.log('NM :: NonceManagerKlass :: oThis.cacheKey: ', oThis.cacheKey);
+    oThis.cacheKey = `nonce_${oThis.chainKind}_${oThis.chainId}_${oThis.address}`;
+    logger.debug('NM :: NonceManagerKlass :: oThis.cacheKey: ', oThis.cacheKey);
+
     // Set cache key for nonce lock
-    oThis.cacheLockKey = `nonce_${oThis.chainKind}_${oThis.address}_${oThis.chainId}_lock`;
-  },
-
-  /**
-   * Query if the lock is acquired for the given nonce key
-   *
-   * @return {boolean}
-   */
-  isLocked: async function() {
-    const oThis = this;
-
-    if (!oThis.cacheImplementer) {
-      await oThis.deepInit();
-    }
-
-    const lockStatusResponse = await oThis.cacheImplementer.get(oThis.cacheLockKey);
-
-    return lockStatusResponse.isSuccess() && lockStatusResponse.data.response > 0;
+    oThis.cacheLockKey = `nonce_${oThis.chainKind}_${oThis.chainId}_${oThis.address}_lock`;
+    logger.debug('NM :: NonceManagerKlass :: oThis.cacheLockKey: ', oThis.cacheLockKey);
   },
 
   /**
@@ -132,126 +106,77 @@ const NonceCacheKlassPrototype = {
    *
    * @return {promise<result>}
    */
-  getNonce: function() {
-    const oThis = this,
-      queueTimeStamp = _getTimeStamp(),
-      promiseContext = {
-        startTimestamp: queueTimeStamp,
-        nonce: -1,
-        promiseObj: null,
-        resolve: null,
-        reject: null,
-        promiseAction: 'QUEUED'
-      },
-      promiseObj = new Promise(function(resolve, reject) {
-        promiseContext.resolve = resolve;
-        promiseContext.reject = reject;
-      });
-
-    logger.log('NM :: getNonce called.');
-
-    promiseContext.promiseObj = promiseObj;
-
-    oThis.promiseQueue.push(promiseContext);
-    oThis.processNext();
-
-    return promiseObj;
-  },
-
-  isProcessing: false,
-
-  processNext: async function() {
+  getNonce: async function(customOnResolve, customOnReject) {
     const oThis = this;
+
+    let promiseObj;
+
+    if (!customOnResolve || !customOnReject) {
+      promiseObj = new Promise(async function(onResolve, onReject) {
+        customOnReject = onReject;
+        customOnResolve = onResolve;
+      });
+    } else {
+      promiseObj = new Promise(async function(customOnResolve, customOnReject) {});
+    }
 
     if (!oThis.cacheImplementer) {
       await oThis.deepInit();
     }
 
-    if (oThis.isProcessing) {
-      return;
+    let fetchIncrementedNonceRsp = await oThis._incrementNonce(),
+      nonce = fetchIncrementedNonceRsp.data.response;
+
+    if (fetchIncrementedNonceRsp.isSuccess() && nonce != null) {
+      logger.debug(
+        'NM :: getNonce :: nonceReceived: ',
+        `chainKind_${oThis.chainKind}_chainId_${oThis.chainId}_addr_${oThis.address}_nonce_${nonce}`
+      );
+      customOnResolve(responseHelper.successWithData({ nonce: parseInt(nonce) }));
+    } else {
+      oThis._acquireLockAndSyncNonceFromGeth(customOnResolve, customOnReject);
     }
 
-    if (oThis.promiseQueue.length === 0) {
-      return;
-    }
+    return promiseObj;
+  },
 
-    oThis.isProcessing = true;
+  /**
+   * 1. Acquire the lock
+   * 2. Fetch nonce from Geth
+   * 3. Set it in cache
+   * 4. release lock
+   *
+   * @return {promise<result>}
+   * @private
+   * @ignore
+   */
+  _acquireLockAndSyncNonceFromGeth: async function(onResolve, onReject) {
+    const oThis = this;
 
-    const promiseContext = oThis.promiseQueue[0];
-
-    const onResolve = function(result) {
-      const unshiftedContext = oThis.promiseQueue.shift();
-      oThis.processedQueue.push(unshiftedContext);
-
-      if (promiseContext == unshiftedContext) {
-        logger.log('NM :: onResolve :: Correct context removed.');
-      } else {
-        logger.error('NM :: onResolve :: Could not find promise context.');
-      }
-
-      setTimeout(function() {
-        oThis.isProcessing = false;
-        oThis.processNext();
-      }, 1);
-
-      promiseContext.nonce = result.success ? result.data.nonce : '---FAILED---';
-      promiseContext.promiseAction = 'RESOLVED';
-      let resolve = promiseContext.resolve;
-      try {
-        resolve(result);
-      } catch (e) {
-        logger.error('NM :: processNext :: onResolve :: promise resolve threw an exception. Error: ', e);
-        logger.trace('NM :: processNext :: onResolve :: promise resolve threw an exception.');
-      }
-    };
-
-    const onReject = function(reason) {
-      const unshiftedContext = oThis.promiseQueue.shift();
-      oThis.processedQueue.push(unshiftedContext);
-
-      if (promiseContext == unshiftedContext) {
-        logger.log('NM :: onReject :: Correct context removed');
-      } else {
-        logger.error('NM :: onReject :: IMPORTANT :: promiseQueue is out of sync.');
-      }
-
-      setTimeout(function() {
-        oThis.isProcessing = false;
-        oThis.processNext();
-      }, 1);
-
-      let reject = promiseContext.reject;
-      promiseContext.promiseAction = 'REJECTED';
-      reject(reason);
-    };
-
-    const acquireLockAndReturn = async function() {
+    const acquireLockAndReturnNonce = async function() {
       const acquireLockResponse = await oThis._acquireLock();
 
       if (acquireLockResponse.isSuccess()) {
-        const nonceResponse = await oThis.cacheImplementer.get(oThis.cacheKey);
-        if (nonceResponse.isSuccess() && nonceResponse.data.response != null) {
-          logger.log('NM :: acquireLockAndReturn :: nonceResponse: ', nonceResponse);
-          return responseHelper.successWithData({ nonce: parseInt(nonceResponse.data.response) });
-        } else {
-          let syncNonceResp = await oThis._syncNonce();
-          logger.log('NM :: acquireLockAndReturn :: syncNonceResp: ', syncNonceResp.getDebugData());
-          if (syncNonceResp.isFailure()) {
-            await oThis._releaseLock();
-          }
-          return syncNonceResp;
+        let syncNonceResp = await oThis._getNonceFromGethAndSetCache();
+        if (syncNonceResp.isSuccess()) {
+          logger.debug(
+            'NM :: getNonce :: syncNonceReturned: ',
+            `chainKind_${oThis.chainKind}_chain_${oThis.chainId}_addr_${oThis.address}_nonce_${
+              syncNonceResp.data.nonce
+            }`
+          );
         }
+        await oThis._releaseLock();
+        return syncNonceResp;
       } else {
         return acquireLockResponse;
       }
     };
 
-    const startTime = promiseContext.startTimestamp;
-
     const wait = function() {
       try {
         //Check for timeout.
-        if (_getTimeStamp() - startTime > waitTimeout) {
+        if (_getTimeStamp() - oThis.startTime > waitTimeout) {
           //Format the error
           logger.error('NM :: wait :: promise has timed out');
           let errorResult = responseHelper.error({
@@ -264,7 +189,7 @@ const NonceCacheKlassPrototype = {
         }
 
         //Try to acquire lock directly.
-        acquireLockAndReturn()
+        acquireLockAndReturnNonce()
           .catch(function(reason) {
             logger.error('NM :: acquireLockAndReturn rejected the Promise. reason :: ', reason);
             return responseHelper.error({
@@ -273,21 +198,27 @@ const NonceCacheKlassPrototype = {
               error_config: errorConfig
             });
           })
-          .then(function(acquireLockResponse) {
-            const acquireLockResponseData = acquireLockResponse.toHash();
-            if (acquireLockResponse.isSuccess()) {
+          .then(function(response) {
+            const acquireLockResponseData = response.toHash();
+            if (response.isSuccess()) {
               //We got the lock.
-              return onResolve(acquireLockResponse);
+              return onResolve(response);
             } else if (
               acquireLockResponseData.err &&
-              acquireLockResponseData.err.code &&
-              String(acquireLockResponseData.err.code).indexOf('l_nm_aqLockCatch_1') >= 0
+              acquireLockResponseData.err.internal_id &&
+              String(acquireLockResponseData.err.internal_id).indexOf('l_nm_aqLockCatch_1') >= 0
             ) {
               //Safety-Net. acquireLockAndReturn reject the Promise.
-              return onResolve(acquireLockResponse);
+              return onResolve(response);
             } else {
               //Lets try again to aquire lock.
-              setTimeout(wait, waitTimeInterval);
+              logger.debug(
+                'NM :: getNonce :: lockIsAcquiredBySomeBody : ',
+                `chainKind_${oThis.chainKind}_chain_${oThis.chainId}_addr_${oThis.address}`
+              );
+              setTimeout(function() {
+                oThis.getNonce(onResolve, onReject);
+              }, waitTimeInterval);
             }
           });
       } catch (err) {
@@ -318,52 +249,18 @@ const NonceCacheKlassPrototype = {
     }
   },
 
-  /**
-   * completion call back when successfull, this will release the lock
-   *
-   * @return {promise<result>}
-   */
-  completionSuccessCnt: 0,
-
-  completionWithSuccess: async function() {
-    const oThis = this;
-
-    oThis.completionSuccessCnt++;
-    logger.log('NM :: completionWithSuccess');
-    await oThis._increment();
-    return await oThis._releaseLock();
-  },
-
-  /**
-   * completion call back when failure.
-   *
-   * @param {boolean} shouldSyncNonce - flag if nonce need to be synced with nodes
-   *
-   * @return {promise<result>}
-   */
-  completionFailureCnt: 0,
-
   completionWithFailure: async function(shouldSyncNonce) {
     const oThis = this;
 
-    oThis.completionFailureCnt++;
-    logger.log('NM :: completionWithFailure');
+    // oThis.completionFailureCnt++;
+
+    logger.error('NM :: completionWithFailure called with shouldSyncNonce: ', shouldSyncNonce);
+
     if (shouldSyncNonce) {
-      await oThis._syncNonce();
+      await oThis._acquireLockAndSyncNonceFromGeth();
     }
 
-    return await oThis._releaseLock();
-  },
-
-  /**
-   * Abort the process.
-   *
-   * @return {promise<result>}
-   */
-  abort: async function() {
-    const oThis = this;
-
-    return await oThis._releaseLock();
+    return responseHelper.successWithData({});
   },
 
   /**
@@ -376,40 +273,13 @@ const NonceCacheKlassPrototype = {
   _acquireLock: async function() {
     const oThis = this;
 
-    if (!oThis.cacheImplementer) {
-      await oThis.deepInit();
-    }
+    const lockResponse = await oThis.cacheImplementer.acquireLock(oThis.cacheLockKey, oThis.lockingTtl);
 
-    // check if already locked
-    const isLocked = await oThis.isLocked();
-    if (isLocked) {
-      return responseHelper.error({
-        internal_error_identifier: 'l_nm_acquireLock_fail_1',
-        api_error_identifier: 'internal_server_error',
-        debug_options: { msg: 'Lock is already given to some other process. Waiting for lock release.' },
-        error_config: errorConfig
-      });
-    }
-
-    const lockResponse = await oThis.cacheImplementer.increment(oThis.cacheLockKey);
     if (lockResponse.isFailure()) {
       return responseHelper.error({
         internal_error_identifier: 'l_nm_acquireLock_fail_2',
-        api_error_identifier: 'internal_server_error',
-        debug_options: { msg: 'Error in acquiring lock using cache increment.' },
-        error_config: errorConfig
-      });
-    }
-
-    // lock was not given to current request
-    if (lockResponse.data.response != 1) {
-      // Revert the increased lock if value is not 1.
-      // Means someone else has acquired the lock already.
-      await oThis.cacheImplementer.decrement(oThis.cacheLockKey);
-      return responseHelper.error({
-        internal_error_identifier: 'l_nm_acquireLock_fail_3',
-        api_error_identifier: 'internal_server_error',
-        debug_options: { msg: 'Lock is already given to some other process. Waiting for lock release.' },
+        api_error_identifier: 'acquire_lock_failed',
+        debug_options: { msg: 'Error in acquiring lock.' },
         error_config: errorConfig
       });
     }
@@ -426,12 +296,7 @@ const NonceCacheKlassPrototype = {
    */
   _releaseLock: async function() {
     const oThis = this;
-
-    if (!oThis.cacheImplementer) {
-      await oThis.deepInit();
-    }
-
-    return oThis.cacheImplementer.decrement(oThis.cacheLockKey);
+    return oThis.cacheImplementer.releaseLock(oThis.cacheLockKey);
   },
 
   /**
@@ -441,13 +306,8 @@ const NonceCacheKlassPrototype = {
    * @private
    * @ignore
    */
-  _increment: async function() {
+  _incrementNonce: async function() {
     const oThis = this;
-
-    if (!oThis.cacheImplementer) {
-      await oThis.deepInit();
-    }
-
     return oThis.cacheImplementer.increment(oThis.cacheKey);
   },
 
@@ -458,91 +318,61 @@ const NonceCacheKlassPrototype = {
    * @private
    * @ignore
    */
-  _decrement: async function() {
+  _decrementNonce: async function() {
     const oThis = this;
-
-    if (!oThis.cacheImplementer) {
-      await oThis.deepInit();
-    }
-
     return oThis.cacheImplementer.decrement(oThis.cacheKey);
   },
 
   /**
-   * Sync nonce from all the geth nodes
+   * 1. Fetch nonce from all the geth nodes
+   * 2. set nonce in cache
    *
    * @return {promise<result>}
    * @private
    * @ignore
    */
-  _syncNonce: async function() {
+  _getNonceFromGethAndSetCache: async function() {
     const oThis = this,
-      allNoncePromise = [],
-      allPendingTransactionPromise = [];
-
-    if (!oThis.cacheImplementer) {
-      await oThis.deepInit();
-    }
+      getMinedTxCountPromises = [],
+      getPendingTxnsPromises = [];
 
     for (let i = oThis.gethWsProviders.length - 1; i >= 0; i--) {
       const gethURL = oThis.gethWsProviders[i];
 
       const web3Provider = oThis.nonceHelper.getWeb3Instance(gethURL, oThis.chainKind);
-      allNoncePromise.push(oThis.nonceHelper.getNonceFromGethNode(oThis.address, web3Provider));
-      allPendingTransactionPromise.push(oThis.nonceHelper.getPendingTransactionsFromGethNode(web3Provider));
+      getMinedTxCountPromises.push(oThis.nonceHelper.getMinedTxCountFromGeth(oThis.address, web3Provider));
+      getPendingTxnsPromises.push(oThis.nonceHelper.getUnminedTransactionsFromGethNode(web3Provider));
     }
 
-    let x = await Promise.all([Promise.all(allNoncePromise), Promise.all(allPendingTransactionPromise)]);
-    const allNoncePromiseResult = x[0];
-    const allPendingTransactionPromiseResult = x[1];
+    let cumulativePromiseResponses = await Promise.all([
+      Promise.all(getMinedTxCountPromises),
+      Promise.all(getPendingTxnsPromises)
+    ]);
+    const getMinedTxCountResults = cumulativePromiseResponses[0];
+    const pendingTxnsResults = cumulativePromiseResponses[1];
 
     let maxNonceCount = new BigNumber(0),
       isNonceCountAvailable = false,
-      allPendingNonce = [];
-
-    // Get the nonce count from the transaction object
-    const getNonceFromUnminedTransaction = function(unminedTransactions) {
-      const allNonce = [];
-      if (unminedTransactions) {
-        for (let nonceKey in unminedTransactions) {
-          const transactionObj = unminedTransactions[nonceKey];
-          if (transactionObj.nonce) {
-            allNonce.push(new BigNumber(transactionObj.nonce));
-          }
-        }
-      }
-      return allNonce;
-    };
-
-    // get the nounce count from pending transations
-    const getPendingNonce = function(pendingTransactions) {
-      let allNonce = [];
-      for (let key in pendingTransactions) {
-        if (key.toLowerCase() === oThis.address) {
-          allNonce = allNonce.concat(getNonceFromUnminedTransaction(pendingTransactions[key]));
-        }
-      }
-      return allNonce;
-    };
+      unminedTxNonces = [];
 
     // check nonce count from pending transactions
-    for (let i = allPendingTransactionPromiseResult.length - 1; i >= 0; i--) {
-      const currentPendingTransactionResponse = allPendingTransactionPromiseResult[i];
+    for (let i = pendingTxnsResults.length - 1; i >= 0; i--) {
+      const currentPendingTransactionResponse = pendingTxnsResults[i];
       if (currentPendingTransactionResponse.isFailure()) {
         continue;
       }
 
-      const pendingTransaction = currentPendingTransactionResponse.data.pending_transaction;
+      const unminedTransactions = currentPendingTransactionResponse.data.unmined_transactions;
 
-      if (pendingTransaction) {
-        allPendingNonce = allPendingNonce.concat(getPendingNonce(pendingTransaction.pending));
-        allPendingNonce = allPendingNonce.concat(getPendingNonce(pendingTransaction.queued));
+      if (unminedTransactions) {
+        unminedTxNonces = unminedTxNonces.concat(oThis.getNoncesOfUnminedTxs(unminedTransactions.pending));
+        unminedTxNonces = unminedTxNonces.concat(oThis.getNoncesOfUnminedTxs(unminedTransactions.queued));
       }
     }
 
     // check nonce count from mined transactions
-    for (let i = allNoncePromiseResult.length - 1; i >= 0; i--) {
-      const currentNonceResponse = allNoncePromiseResult[i];
+    for (let i = getMinedTxCountResults.length - 1; i >= 0; i--) {
+      const currentNonceResponse = getMinedTxCountResults[i];
       if (currentNonceResponse.isFailure()) {
         continue;
       }
@@ -552,18 +382,21 @@ const NonceCacheKlassPrototype = {
       maxNonceCount = BigNumber.max(currentNonce, maxNonceCount);
     }
 
-    if (isNonceCountAvailable || allPendingNonce.length > 0) {
-      if (allPendingNonce.length > 0) {
-        for (let i = allPendingNonce.length - 1; i >= 0; i--) {
-          const pendingNonceCount = new BigNumber(allPendingNonce[i]);
-          maxNonceCount = BigNumber.max(pendingNonceCount.plus(1), maxNonceCount);
+    if (isNonceCountAvailable || unminedTxNonces.length > 0) {
+      if (unminedTxNonces.length > 0) {
+        for (let i = unminedTxNonces.length - 1; i >= 0; i--) {
+          const unminedNonceCount = new BigNumber(unminedTxNonces[i]);
+          maxNonceCount = BigNumber.max(unminedNonceCount.plus(1), maxNonceCount);
         }
       }
+
       const setNonceResponse = await oThis.cacheImplementer.set(oThis.cacheKey, maxNonceCount.toNumber());
       logger.log('NM :: maxNonceCount: ', maxNonceCount.toNumber());
+
       if (setNonceResponse.isSuccess()) {
         return Promise.resolve(responseHelper.successWithData({ nonce: maxNonceCount.toNumber() }));
       }
+
       return Promise.resolve(
         responseHelper.error({
           internal_error_identifier: 'l_nm_syncNonce_fail_1',
@@ -582,6 +415,46 @@ const NonceCacheKlassPrototype = {
         })
       );
     }
+  },
+
+  /**
+   * get the nounce count from all pending transations
+   *
+   * @param pendingTransactions {object} : data of unminedTransactions
+   * @return {promise<result>}
+   * @private
+   * @ignore
+   */
+  getNoncesOfUnminedTxs: function(pendingTransactions) {
+    const oThis = this;
+    let allNonce = [];
+    for (let key in pendingTransactions) {
+      if (key.toLowerCase() === oThis.address) {
+        allNonce = allNonce.concat(oThis.getNonceFromUnminedTransaction(pendingTransactions[key]));
+      }
+    }
+    return allNonce;
+  },
+
+  /**
+   * Get the nonce count from the transaction objects from a given address
+   *
+   * @param unminedTransactions {object} : data of unminedTransactions from an address
+   * @return {promise<result>}
+   * @private
+   * @ignore
+   */
+  getNonceFromUnminedTransaction: function(unminedTransactions) {
+    const allNonce = [];
+    if (unminedTransactions) {
+      for (let nonceKey in unminedTransactions) {
+        const transactionObj = unminedTransactions[nonceKey];
+        if (transactionObj.nonce) {
+          allNonce.push(new BigNumber(transactionObj.nonce));
+        }
+      }
+    }
+    return allNonce;
   }
 };
 

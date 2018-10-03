@@ -9,7 +9,7 @@ const rootPrefix = '../..',
   cacheManagementConst = require(rootPrefix + '/lib/global_constant/cache_management'),
   configStrategyHelper = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  SharedRedisProvider = require(rootPrefix + '/lib/providers/shared_redis'),
+  SharedMemcachedProvider = require(rootPrefix + '/lib/providers/shared_memcached'),
   fetchPrivateKeyKlass = require(rootPrefix + '/lib/shared_cache_management/address_private_key');
 
 /**
@@ -42,7 +42,7 @@ ClearNonceCache.prototype = {
       clientId = fetchPrivateKeyRsp.data['client_id'];
 
     if (clientId === '0') {
-      cacheObject = SharedRedisProvider.getInstance(oThis.consistentBehavior);
+      cacheObject = SharedMemcachedProvider.getInstance(oThis.consistentBehavior);
     } else {
       let configStrategyHelperObj = new configStrategyHelper(clientId);
 
@@ -54,11 +54,8 @@ ClearNonceCache.prototype = {
       let configStrategy = configStrategyResponse.data;
 
       let cacheConfigStrategy = {
-        OST_CACHING_ENGINE: cacheManagementConst.redis,
-        OST_REDIS_HOST: configStrategy.OST_REDIS_HOST,
-        OST_REDIS_PORT: configStrategy.OST_REDIS_PORT,
-        OST_REDIS_PASS: configStrategy.OST_REDIS_PASS,
-        OST_REDIS_TLS_ENABLED: configStrategy.OST_REDIS_TLS_ENABLED,
+        OST_CACHING_ENGINE: cacheManagementConst.memcached,
+        OST_MEMCACHE_SERVERS: configStrategy.OST_MEMCACHE_SERVERS,
         OST_DEFAULT_TTL: configStrategy.OST_DEFAULT_TTL,
         OST_CACHE_CONSISTENT_BEHAVIOR: '0'
       };

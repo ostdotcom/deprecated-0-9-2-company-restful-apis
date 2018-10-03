@@ -80,12 +80,16 @@ SignRawTx.prototype = {
   /**
    * Mark as success
    *
+   * @param txHash
+   *
    * @returns {promise}
    */
-  markAsSuccess: async function() {
+  markAsSuccess: async function(txHash) {
     const oThis = this;
 
-    return oThis.nonceManager.completionWithSuccess();
+    logger.debug(`SRT chain_${oThis.chainId}_addr_${oThis.fromAddress}_nonce_${oThis.rawTx.nonce}_tx_hash_${txHash}`);
+
+    return Promise.resolve(responseHelper.successWithData({}));
   },
 
   /**

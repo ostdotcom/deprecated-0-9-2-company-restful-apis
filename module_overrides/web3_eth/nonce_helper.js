@@ -117,7 +117,7 @@ const NonceHelperKlassPrototype = {
         const gethURL = allGethNodes[i];
 
         const web3Provider = oThis.getWeb3Instance(gethURL, chainKind);
-        allNoncePromise.push(oThis.getNonceFromGethNode(address, web3Provider));
+        allNoncePromise.push(oThis.getMinedTxCountFromGeth(address, web3Provider));
       }
 
       const allNoncePromiseResult = Promise.all(allNoncePromise);
@@ -175,7 +175,7 @@ const NonceHelperKlassPrototype = {
       for (let i = allGethNodes.length - 1; i >= 0; i--) {
         const gethURL = allGethNodes[i];
         const web3Provider = oThis.getWeb3Instance(gethURL, chainKind);
-        allTxPoolPromise.push(oThis.getPendingTransactionsFromGethNode(web3Provider));
+        allTxPoolPromise.push(oThis.getUnminedTransactionsFromGethNode(web3Provider));
       }
 
       const allTxPoolPromiseResult = await Promise.all(allTxPoolPromise);
@@ -190,8 +190,8 @@ const NonceHelperKlassPrototype = {
           continue;
         }
 
-        const pendingTransaction = currentTxPoolResponse.data.pending_transaction.pending;
-        const queuedTransaction = currentTxPoolResponse.data.pending_transaction.queued;
+        const pendingTransaction = currentTxPoolResponse.data.unmined_transactions.pending;
+        const queuedTransaction = currentTxPoolResponse.data.unmined_transactions.queued;
 
         for (let address in pendingTransaction) {
           queuedData[address] = queuedData[address] || {};
@@ -321,7 +321,7 @@ const NonceHelperKlassPrototype = {
         const gethURL = allGethNodes[i];
 
         const web3Provider = oThis.getWeb3Instance(gethURL, chainKind);
-        allNoncePromise.push(oThis.getNonceFromGethNode(address, web3Provider));
+        allNoncePromise.push(oThis.getMinedTxCountFromGeth(address, web3Provider));
       }
 
       const allNoncePromiseResult = await Promise.all(allNoncePromise);
@@ -370,7 +370,7 @@ const NonceHelperKlassPrototype = {
    *
    * @return {promise<result>}
    */
-  getNonceFromGethNode: async function(address, web3Provider) {
+  getMinedTxCountFromGeth: async function(address, web3Provider) {
     const oThis = this;
 
     return new Promise(function(onResolve, onReject) {
@@ -379,7 +379,7 @@ const NonceHelperKlassPrototype = {
           if (error) {
             return onResolve(
               responseHelper.error({
-                internal_error_identifier: 'mo_w_nh_getNonceFromGethNode_1',
+                internal_error_identifier: 'mo_w_nh_getMinedTxCountFromGeth_1',
                 api_error_identifier: 'something_went_wrong',
                 debug_options: { error: error },
                 error_config: errorConfig
@@ -391,10 +391,10 @@ const NonceHelperKlassPrototype = {
         });
       } catch (err) {
         //Format the error
-        logger.error('module_overrides/web3_eth/nonce_helper.js:getNonceFromGethNode inside catch ', err);
+        logger.error('module_overrides/web3_eth/nonce_helper.js:getMinedTxCountFromGeth inside catch ', err);
         return onResolve(
           responseHelper.error({
-            internal_error_identifier: 'mo_w_nh_getNonceFromGethNode_2',
+            internal_error_identifier: 'mo_w_nh_getMinedTxCountFromGeth_2',
             api_error_identifier: 'something_went_wrong',
             error_config: errorConfig
           })
@@ -410,30 +410,30 @@ const NonceHelperKlassPrototype = {
    *
    * @return {promise<result>}
    */
-  getPendingTransactionsFromGethNode: async function(web3Provider) {
+  getUnminedTransactionsFromGethNode: async function(web3Provider) {
     const oThis = this;
 
     return new Promise(async function(onResolve, onReject) {
       try {
-        const pendingTransaction = await web3Provider.pendingTransactions();
+        const unminedTransactions = await web3Provider.pendingTransactions();
 
-        logger.debug('pendingTransaction: ', pendingTransaction);
-        if (pendingTransaction) {
-          return onResolve(responseHelper.successWithData({ pending_transaction: pendingTransaction }));
+        logger.debug('unminedTransactions: ', unminedTransactions);
+        if (unminedTransactions) {
+          return onResolve(responseHelper.successWithData({ unmined_transactions: unminedTransactions }));
         }
         return onResolve(
           responseHelper.error({
-            internal_error_identifier: 'mo_w_nh_getPendingTransactionsFromGethNode_1',
+            internal_error_identifier: 'mo_w_nh_getUnminedTransactionsFromGethNode_1',
             api_error_identifier: 'something_went_wrong',
             error_config: errorConfig
           })
         );
       } catch (err) {
         //Format the error
-        logger.error('module_overrides/web3_eth/nonce_helper.js:getPendingTransactionsFromGethNode inside catch ', err);
+        logger.error('module_overrides/web3_eth/nonce_helper.js:getUnminedTransactionsFromGethNode inside catch ', err);
         return onResolve(
           responseHelper.error({
-            internal_error_identifier: 'mo_w_nh_getPendingTransactionsFromGethNode_2',
+            internal_error_identifier: 'mo_w_nh_getUnminedTransactionsFromGethNode_2',
             api_error_identifier: 'something_went_wrong',
             error_config: errorConfig
           })

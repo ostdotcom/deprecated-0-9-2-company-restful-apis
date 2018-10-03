@@ -120,7 +120,6 @@ nonceManagerKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_manag
  nonceManager = new nonceManagerKlass({address: fromAddress, chain_kind: chainKind});
  nonceManager.getNonce().then(function(response) {
   console.log("response: ", response);
-  nonceManager.abort().then(console.log)
  });
 
 
