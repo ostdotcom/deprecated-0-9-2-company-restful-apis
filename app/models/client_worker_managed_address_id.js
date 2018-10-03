@@ -270,16 +270,16 @@ const ClientWorkerManagedAddressIdModelSpecificPrototype = {
 
   /**
    * Update processId by processId and ClientId
-   * @param process_id
-   * @param client_id
-   * @param new_process_id
+   * @param params.process_id
+   * @param params.client_id
+   * @param params.new_process_id
    * @returns {*}
    */
-  updateProcessIdByProcessId: function(process_id, client_id, new_process_id) {
+  updateProcessIdByProcessId: function(params) {
     const oThis = this;
     return oThis
-      .update(['process_id = ?', new_process_id])
-      .where(['process_id=(?) AND client_id=?', process_id, client_id])
+      .update(['process_id = ?', params.new_process_id])
+      .where(['process_id=(?) AND client_id=?', params.process_id, params.client_id])
       .fire();
   },
 
