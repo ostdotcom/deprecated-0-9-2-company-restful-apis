@@ -24,7 +24,6 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
-  configStrategyCacheKlass = require(rootPrefix + '/lib/shared_cache_multi_management/client_config_strategies'),
   ProcessLocker = new ProcessLockerKlass();
 
 require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
@@ -255,8 +254,10 @@ TransactionDelegator.prototype = {
 
       if (txHashes.length == 0) break;
 
+      let chain_id = oThis.ic.configStrategy.OST_UTILITY_CHAIN_ID;
+
       let messageParams = {
-        topics: ['block_scanner_execute_' + group_id],
+        topics: ['block_scanner_execute_' + chain_id],
         publisher: 'OST',
         message: {
           kind: 'background_job',

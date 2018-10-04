@@ -151,10 +151,12 @@ warmUpGethPool().then(function() {
     }
   });
 
+  let chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
+
   openSTNotification.subscribeEvent.rabbit(
-    ['block_scanner_execute_' + group_id],
+    ['block_scanner_execute_' + chain_id],
     {
-      queue: 'block_scanner_execute_' + group_id,
+      queue: 'block_scanner_execute_' + chain_id,
       ackRequired: 1,
       prefetch: prefetchCount
     },
