@@ -15,7 +15,7 @@
 
 const rootPrefix = '../..';
 
-//Always Include Module overrides First
+// Always include module overrides first
 require(rootPrefix + '/module_overrides/index');
 
 // Include Process Locker File
@@ -27,7 +27,9 @@ const args = process.argv,
 
 // Declare variables.
 let unAckCount = 0,
-  processDetails = null;
+  processDetails = null,
+  txQueueSubscribed = false,
+  commandQueueSubscribed = false;
 
 ProcessLocker.canStartProcess({
   process_title: 'executables_rmq_subscribers_execute_transaction' + processId
@@ -61,6 +63,8 @@ const commandResponseActions = async function(commandProcessorResponse) {
     commandProcessorResponse.data.shouldStopTxQueConsume === 1
   ) {
     process.emit('CANCEL_CONSUME');
+    txQueueSubscribed = false;
+    commandQueueSubscribed = false;
     setTimeout(async function() {
       await subscribeCommandQueue(processDetails.queue_name_suffix);
     }, 500);
@@ -156,7 +160,7 @@ const PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseTxExecuto
     process.kill(process.pid, 'SIGTERM');
   }
 });
-let txQueueSubscribed = false;
+
 let subscribeTxQueue = async function(qNameSuffix) {
   if (!txQueueSubscribed) {
     await openSTNotification.subscribeEvent.rabbit(
@@ -189,7 +193,6 @@ const commandQueueExecutor = function(params) {
   });
 };
 
-let commandQueueSubscribed = false;
 let subscribeCommandQueue = async function(qNameSuffix) {
   if (!commandQueueSubscribed) {
     await openSTNotification.subscribeEvent.rabbit(
