@@ -33,8 +33,16 @@ const getWeb3Instance = function(gethURL, chainKind) {
   newInstance.extend({
     methods: [
       {
-        name: 'pendingTransactions',
+        name: 'unminedTransactionsWithMoreData',
         call: 'txpool_content'
+      },
+      {
+        name: 'unminedTransactionsWithLessData',
+        call: 'txpool_inspect'
+      },
+      {
+        name: 'unminedTransactionsCount',
+        call: 'txpool_status'
       }
     ]
   });
@@ -406,16 +414,15 @@ const NonceHelperKlassPrototype = {
   /**
    * Get pending transactions
    *
-   * @param {object} web3Provider - web3 object
-   *
+   * @param {object} wsWeb3Provider - web3 object
+   * @param {string} rpcGethURL - rpc url (optional)
    * @return {promise<result>}
    */
-  getUnminedTransactionsFromGethNode: async function(web3Provider) {
+  getUnminedTransactionsFromGethNode: async function(wsWeb3Provider, rpcGethURL) {
     const oThis = this;
-
     return new Promise(async function(onResolve, onReject) {
       try {
-        const unminedTransactions = await web3Provider.pendingTransactions();
+        const unminedTransactions = await wsWeb3Provider.unminedTransactionsWithLessData();
 
         logger.debug('unminedTransactions: ', unminedTransactions);
         if (unminedTransactions) {
@@ -430,10 +437,26 @@ const NonceHelperKlassPrototype = {
         );
       } catch (err) {
         //Format the error
+        if (rpcGethURL) {
+          const rpcWeb3Provider = oThis.getWeb3Instance(rpcGethURL, wsWeb3Provider.chainKind),
+            unminedTransactions = await rpcWeb3Provider.unminedTransactionsWithLessData();
+
+          if (unminedTransactions) {
+            return onResolve(responseHelper.successWithData({ unmined_transactions: unminedTransactions }));
+          } else {
+            return onResolve(
+              responseHelper.error({
+                internal_error_identifier: 'mo_w_nh_getPendingTransactionsFromGethNode_2',
+                api_error_identifier: 'something_went_wrong',
+                error_config: errorConfig
+              })
+            );
+          }
+        }
         logger.error('module_overrides/web3_eth/nonce_helper.js:getUnminedTransactionsFromGethNode inside catch ', err);
         return onResolve(
           responseHelper.error({
-            internal_error_identifier: 'mo_w_nh_getUnminedTransactionsFromGethNode_2',
+            internal_error_identifier: 'mo_w_nh_getUnminedTransactionsFromGethNode_3',
             api_error_identifier: 'something_went_wrong',
             error_config: errorConfig
           })
