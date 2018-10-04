@@ -236,7 +236,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
   insertRecord: function(params) {
     const oThis = this;
 
-    if (!params.process_id || !params.rmq_config_id || !params.queue_name_suffix || !params.status) {
+    if (!params.process_id || !params.hasOwnProperty('rmq_config_id') || !params.queue_name_suffix || !params.status) {
       throw 'Mandatory parameters are missing.';
     }
 

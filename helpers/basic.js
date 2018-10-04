@@ -404,10 +404,10 @@ BasicHelperKlass.prototype = {
     }
   },
 
-  pauseForSeconds: async function(timeInSeconds) {
+  pauseForMilliSeconds: async function(timeInMilliSeconds) {
     setTimeout(function() {
       return Promise.resolve();
-    }, timeInSeconds * 1000);
+    }, timeInMilliSeconds);
   }
 };
 
