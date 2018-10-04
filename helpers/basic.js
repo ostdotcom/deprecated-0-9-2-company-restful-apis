@@ -405,9 +405,11 @@ BasicHelperKlass.prototype = {
   },
 
   pauseForMilliSeconds: async function(timeInMilliSeconds) {
-    setTimeout(function() {
-      return Promise.resolve();
-    }, timeInMilliSeconds);
+    return new Promise(function(onResolve) {
+      setTimeout(function() {
+        onResolve();
+      }, timeInMilliSeconds);
+    });
   }
 };
 
