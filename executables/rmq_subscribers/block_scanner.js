@@ -121,7 +121,7 @@ const promiseExecutor = async function(onResolve, onReject, params) {
       })
       .catch(function(err) {
         logger.error(
-          'e_bs_ftsabs_2',
+          'e_rmqs_bs_1',
           'Something went wrong in blockscanner execution. unAckCount ->',
           unAckCount,
           err,
@@ -145,7 +145,7 @@ warmUpGethPool().then(function() {
     timeoutInMilliSecs: 3 * 60 * 1000, //3 minutes
     maxZombieCount: Math.round(prefetchCount * 0.25),
     onMaxZombieCountReached: function() {
-      logger.warn('w_e_bs_ftsabs_1', 'maxZombieCount reached. Triggering SIGTERM.');
+      logger.warn('e_rmqs_bs_2', 'maxZombieCount reached. Triggering SIGTERM.');
       // Trigger gracefully shutdown of process.
       process.kill(process.pid, 'SIGTERM');
     }

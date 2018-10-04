@@ -134,8 +134,9 @@ TransactionDelegator.prototype = {
     oThis.geth_count = configStrategy.OST_UTILITY_GETH_WS_PROVIDERS.length;
 
     for (let ind = 0; ind < oThis.geth_count; ind++) {
+      let provider = configStrategy.OST_UTILITY_GETH_WS_PROVIDERS[ind];
       for (let i = 0; i < web3PoolSize; i++) {
-        web3InteractFactory.getInstance('utility', ind);
+        web3InteractFactory.getInstance('utility', provider);
       }
     }
   },
@@ -213,13 +214,14 @@ TransactionDelegator.prototype = {
     oThis.gethArray = [];
 
     for (let ind = 0; ind < oThis.geth_count; ind++) {
-      await oThis.refreshHighestBlock(ind);
+      let provider = configStrategy.OST_UTILITY_GETH_WS_PROVIDERS[ind];
+      await oThis.refreshHighestBlock(provider);
 
       if (oThis.benchmarkFilePath)
         oThis.granularTimeTaken.push('refreshHighestBlock-' + (Date.now() - oThis.startTime) + 'ms');
 
       if (oThis.highestBlock - oThis.INTENTIONAL_BLOCK_DELAY > oThis.scannerData.lastProcessedBlock)
-        oThis.gethArray.push(configStrategy.OST_UTILITY_GETH_WS_PROVIDERS[ind]);
+        oThis.gethArray.push(provider);
     }
     // return if nothing more to do, as of now.
     if (oThis.gethArray.length == 0) return oThis.schedule();
@@ -234,7 +236,7 @@ TransactionDelegator.prototype = {
     const oThis = this;
 
     const web3InteractFactory = oThis.ic.getWeb3InteractHelper();
-    let web3Interact = web3InteractFactory.getInstance('utility', 0);
+    let web3Interact = web3InteractFactory.getInstance('utility', oThis.gethArray[0]);
 
     oThis.currentBlockInfo = await web3Interact.getBlock(oThis.currentBlock);
 
@@ -247,8 +249,7 @@ TransactionDelegator.prototype = {
     per_geth_tx_count = per_geth_tx_count > MAX_TXS_PER_WORKER ? MAX_TXS_PER_WORKER : per_geth_tx_count;
 
     for (let loopCount = 1; ; loopCount++) {
-      let txHashes = oThis.currentBlockInfo.transactions.slice(offset, offset + per_geth_tx_count),
-        geth_ind = loopCount % oThis.gethArray.length;
+      let txHashes = oThis.currentBlockInfo.transactions.slice(offset, offset + per_geth_tx_count);
 
       offset = offset + per_geth_tx_count;
 
@@ -367,12 +368,12 @@ TransactionDelegator.prototype = {
   /**
    * Get highest block
    */
-  refreshHighestBlock: async function(ind) {
+  refreshHighestBlock: async function(provider) {
     const oThis = this;
 
     const web3InteractFactory = oThis.ic.getWeb3InteractHelper();
 
-    let web3Interact = web3InteractFactory.getInstance('utility', ind);
+    let web3Interact = web3InteractFactory.getInstance('utility', provider);
 
     oThis.highestBlock = await web3Interact.getBlockNumber();
 
