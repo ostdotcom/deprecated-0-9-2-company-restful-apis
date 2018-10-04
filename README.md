@@ -54,12 +54,22 @@ export OST_UTILITY_GAS_PRICE='0x0'
 > node tools/setup/platform/deploy.js $CONFIG_STRATEGY_PATH
 ```
 
+* Create execute transaction process entry in process_queue_association table.
+```bash
+> node
+rootPrefix = '.';
+ProcessQueueAssociationModel = require(rootPrefix + '/app/models/process_queue_association');
+params = {chain_id: 1000,process_id: 1,rmq_config_id: 0,queue_name_suffix: 'q1',status: 'available'};
+new ProcessQueueAssociationModel().insertRecord(params).then(console.log);
+```
+
 * Update the addresses in uc_1000.json config strategy from ~/openst-setup/bin/utility-chain-1000/openst_platform_config.json.
     * This file uses config strategy for utility chain-id 1000 by default. If you are updating the addresses for some other chain-id, please make the necessary changes in the script.
+    * Make sure to pass the absolute path of the config file in all places in the above script.
     ```bash
-    node tools/setup/platform/address_update.js
+        node tools/setup/platform/address_update.js
     ```
-    * Make sure to pass the absolute path of the config file in all places in the above script. 
+    
 
 * Start Utility Chain.
 ```bash
@@ -99,10 +109,10 @@ Run the following commands after creating the database.
 
 * Execute commands related to DynamoDB migrations.
   * Create a fixed number of shards for all entities (number is in this file).
-  ```bash
+```bash
   source set_env_vars.sh
   node executables/create_init_shards.js $CONFIG_STRATEGY_PATH
-  ```
+```
   
   Pick up the hash printed in green in previous step. Export shard arrays appropriately.
   
