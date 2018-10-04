@@ -7,15 +7,16 @@ Use the code below in node console to create a new process entry in process_queu
 rootPrefix = '.';
 ProcessQueueAssociationModel = require(rootPrefix + '/app/models/process_queue_association');
 params = {
+    chain_id: 'number',
 	process_id: 'number',
 	rmq_config_id: 'number',
-	queue_name_suffix: 'string', // Examples: 'q1
+	queue_name_suffix: 'string', // Examples: 'q1', 'q2'
 	status: 'string' // Possible options: 'available', 'dedicated', 'full', 'killed'
 };
 new ProcessQueueAssociationModel().insertRecord(params).then(function() {
-        logger.win('Process entry created in the table with status ', params.status, '.');
+        console.log('Process entry created in the table.');
       }).catch(function() {
-        logger.error('Process entry could not be created in the table.');
+        console.log('Process entry could not be created in the table.');
       });
 ```
 
