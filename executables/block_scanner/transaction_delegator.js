@@ -18,7 +18,7 @@ const rootPrefix = '../..';
 
 const openSTNotification = require('@openstfoundation/openst-notification');
 
-const MAX_TXS_PER_WORKER = 100;
+const MAX_TXS_PER_WORKER = 300;
 
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
