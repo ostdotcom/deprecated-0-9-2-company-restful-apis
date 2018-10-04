@@ -404,6 +404,13 @@ BasicHelperKlass.prototype = {
     }
   },
 
+  /**
+   *
+   * Pauses flow of execution for a few milliseconds.
+   *
+   * @param timeInMilliSeconds
+   * @returns {Promise<any>}
+   */
   pauseForMilliSeconds: async function(timeInMilliSeconds) {
     return new Promise(function(onResolve) {
       setTimeout(function() {

@@ -26,11 +26,16 @@ const args = process.argv,
   processId = args[2];
 
 // Declare variables.
+const txQueuePrefetchCount = 100,
+  cmdQueuePrefetchCount = 1;
+
 let unAckCount = 0,
   processDetails = null,
+  unAckCommandMessages = 0,
   txQueueSubscribed = false,
   commandQueueSubscribed = false;
 
+// Start process locker.
 ProcessLocker.canStartProcess({
   process_title: 'executables_rmq_subscribers_execute_transaction' + processId
 });
@@ -43,8 +48,8 @@ const openSTNotification = require('@openstfoundation/openst-notification'),
 // All Module Requires.
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
-  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
   rmqQueueConstants = require(rootPrefix + '/lib/global_constant/rmq_queue'),
+  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
   initProcessKlass = require(rootPrefix + '/lib/execute_transaction_management/init_process'),
   processQueueAssociationConst = require(rootPrefix + '/lib/global_constant/process_queue_association'),
   CommandQueueProcessorKlass = require(rootPrefix + '/lib/execute_transaction_management/command_message_processor'),
@@ -52,6 +57,13 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
 
 require(rootPrefix + '/lib/transactions/transfer_bt');
 
+/**
+ *
+ * Actions to be taken on the response of command message processor.
+ *
+ * @param {Object} commandProcessorResponse
+ * @returns {Promise<void>}
+ */
 const commandResponseActions = async function(commandProcessorResponse) {
   if (
     commandProcessorResponse.data.shouldStartTxQueConsume &&
@@ -71,6 +83,14 @@ const commandResponseActions = async function(commandProcessorResponse) {
   }
 };
 
+/**
+ *
+ * Promise executor for transaction executing queue.
+ *
+ * @param onResolve
+ * @param onReject
+ * @param params
+ */
 const promiseTxExecutor = function(onResolve, onReject, params) {
   unAckCount++;
   // Process request
@@ -149,11 +169,13 @@ const promiseTxExecutor = function(onResolve, onReject, params) {
   });
 };
 
-const prefetchCount = 100;
+/**
+ * Promise Queue manager
+ */
 const PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseTxExecutor, {
   name: 'execute_tx_promise_queue_manager',
   timeoutInMilliSecs: 3 * 60 * 1000, //3 minutes
-  maxZombieCount: Math.round(prefetchCount * 0.25),
+  maxZombieCount: Math.round(txQueuePrefetchCount * 0.25),
   onMaxZombieCountReached: function() {
     logger.warn('w_rmqs_et_1', 'maxZombieCount reached. Triggering SIGTERM.');
     // Trigger graceful shutdown of process.
@@ -161,14 +183,21 @@ const PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseTxExecuto
   }
 });
 
-let subscribeTxQueue = async function(qNameSuffix) {
+/**
+ *
+ * Subscribe to execute_transaction queue.
+ *
+ * @param {String} qNameSuffix
+ * @returns {Promise<void>}
+ */
+const subscribeTxQueue = async function(qNameSuffix) {
   if (!txQueueSubscribed) {
     await openSTNotification.subscribeEvent.rabbit(
       [rmqQueueConstants.executeTxTopicPrefix + qNameSuffix],
       {
         queue: rmqQueueConstants.executeTxQueuePrefix + '_' + qNameSuffix,
         ackRequired: 1,
-        prefetch: prefetchCount
+        prefetch: txQueuePrefetchCount
       },
       function(params) {
         // Promise is required to be returned to manually ack messages in RMQ
@@ -179,8 +208,13 @@ let subscribeTxQueue = async function(qNameSuffix) {
   }
 };
 
-let unAckCommandMessages = 0;
-
+/**
+ *
+ * Executes command messages by calling command queue processor class.
+ *
+ * @param {Object} params
+ * @returns {Promise<any>}
+ */
 const commandQueueExecutor = function(params) {
   return new Promise(async function(onResolve) {
     let parsedParams = JSON.parse(params);
@@ -193,14 +227,21 @@ const commandQueueExecutor = function(params) {
   });
 };
 
-let subscribeCommandQueue = async function(qNameSuffix) {
+/**
+ *
+ * Subscribe to command_message queue.
+ *
+ * @param {String} qNameSuffix
+ * @returns {Promise<void>}
+ */
+const subscribeCommandQueue = async function(qNameSuffix) {
   if (!commandQueueSubscribed) {
     await openSTNotification.subscribeEvent.rabbit(
       [rmqQueueConstants.commandMessageTopicPrefix + qNameSuffix],
       {
         queue: rmqQueueConstants.commandMessageQueuePrefix + '_' + qNameSuffix,
         ackRequired: 1,
-        prefetch: 1
+        prefetch: cmdQueuePrefetchCount
       },
       function(params) {
         unAckCommandMessages++;
@@ -212,6 +253,12 @@ let subscribeCommandQueue = async function(qNameSuffix) {
   }
 };
 
+/**
+ *
+ * Init process called during start-up of script.
+ *
+ * @returns {Promise<void>}
+ */
 let init = async function() {
   let initProcessResp = await initProcess.perform();
 
@@ -230,7 +277,9 @@ let init = async function() {
   await subscribeCommandQueue(queueSuffix);
 };
 
-// Using a single function to handle multiple signals
+/**
+ * Signal handler
+ */
 function handle() {
   logger.info('Received Signal');
 
@@ -256,9 +305,10 @@ function handle() {
   setTimeout(f, 1000);
 }
 
-// handling graceful process exit on getting SIGINT, SIGTERM.
-// Once signal found programme will stop consuming new messages. But need to clear running messages.
+// Handling graceful process exit on getting SIGINT, SIGTERM.
+// Once signal found, program will stop consuming new messages. But need to clear running messages.
 process.on('SIGINT', handle);
 process.on('SIGTERM', handle);
 
+// Call script initializer.
 init();
