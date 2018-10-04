@@ -50,6 +50,23 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
 
 require(rootPrefix + '/lib/transactions/transfer_bt');
 
+const commandResponseActions = async function(commandProcessorResponse) {
+  if (
+    commandProcessorResponse.data.shouldStartTxQueConsume &&
+    commandProcessorResponse.data.shouldStartTxQueConsume === 1
+  ) {
+    await subscribeTxQueue(processDetails.queue_name_suffix);
+  } else if (
+    commandProcessorResponse.data.shouldStopTxQueConsume &&
+    commandProcessorResponse.data.shouldStopTxQueConsume === 1
+  ) {
+    process.emit('CANCEL_CONSUME');
+    setTimeout(async function() {
+      await subscribeCommandQueue(processDetails.queue_name_suffix);
+    }, 500);
+  }
+};
+
 const promiseTxExecutor = function(onResolve, onReject, params) {
   unAckCount++;
   // Process request
@@ -96,6 +113,10 @@ const promiseTxExecutor = function(onResolve, onReject, params) {
               response,
               params
             );
+          } else {
+            if (kind !== rmqQueueConstants.executeTx) {
+              commandResponseActions(response);
+            }
           }
           unAckCount--;
           logger.debug('------ unAckCount -> ', unAckCount);
@@ -155,26 +176,14 @@ let subscribeTxQueue = async function(qNameSuffix) {
 };
 
 let unAckCommandMessages = 0;
+
 const commandQueueExecutor = function(params) {
   return new Promise(async function(onResolve) {
     let parsedParams = JSON.parse(params);
     let commandQueueProcessor = new CommandQueueProcessorKlass(parsedParams);
     let commandProcessorResponse = await commandQueueProcessor.perform();
 
-    if (
-      commandProcessorResponse.data.shouldStartTxQueConsume &&
-      commandProcessorResponse.data.shouldStartTxQueConsume === 1
-    ) {
-      await subscribeTxQueue(processDetails.queue_name_suffix);
-    } else if (
-      commandProcessorResponse.data.shouldStopTxQueConsume &&
-      commandProcessorResponse.data.shouldStopTxQueConsume === 1
-    ) {
-      process.emit('CANCEL_CONSUME');
-      setTimeout(async function() {
-        await subscribeCommandQueue(processDetails.queue_name_suffix);
-      }, 500);
-    }
+    await commandResponseActions(commandProcessorResponse);
     unAckCommandMessages--;
     return onResolve();
   });
