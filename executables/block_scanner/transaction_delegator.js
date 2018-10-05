@@ -164,6 +164,9 @@ TransactionDelegator.prototype = {
         if (oThis.benchmarkFilePath)
           oThis.granularTimeTaken.push('getGethsWithCurrentBlock-' + (Date.now() - oThis.startTime) + 'ms');
 
+        // return if nothing more to do, as of now.
+        if (oThis.gethArray.length == 0) return oThis.schedule();
+
         oThis.currentBlock = oThis.scannerData.lastProcessedBlock + 1;
 
         logger.log('Current Block =', oThis.currentBlock);
@@ -222,8 +225,6 @@ TransactionDelegator.prototype = {
       if (oThis.highestBlock - oThis.INTENTIONAL_BLOCK_DELAY > oThis.scannerData.lastProcessedBlock)
         oThis.gethArray.push(provider);
     }
-    // return if nothing more to do, as of now.
-    if (oThis.gethArray.length == 0) return oThis.schedule();
   },
 
   /**
