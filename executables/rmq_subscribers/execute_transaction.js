@@ -69,7 +69,7 @@ const commandResponseActions = async function(commandProcessorResponse) {
     commandProcessorResponse.data.shouldStartTxQueConsume &&
     commandProcessorResponse.data.shouldStartTxQueConsume === 1
   ) {
-    await subscribeTxQueue(processDetails.queue_name_suffix);
+    await subscribeTxQueue(processDetails.queue_name_suffix, processDetails.chain_id);
   } else if (
     commandProcessorResponse.data.shouldStopTxQueConsume &&
     commandProcessorResponse.data.shouldStopTxQueConsume === 1
@@ -78,7 +78,7 @@ const commandResponseActions = async function(commandProcessorResponse) {
     txQueueSubscribed = false;
     commandQueueSubscribed = false;
     setTimeout(async function() {
-      await subscribeCommandQueue(processDetails.queue_name_suffix);
+      await subscribeCommandQueue(processDetails.queue_name_suffix, processDetails.chain_id);
     }, 500);
   }
 };
@@ -184,18 +184,17 @@ const PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseTxExecuto
 });
 
 /**
- *
  * Subscribe to execute_transaction queue.
- *
- * @param {String} qNameSuffix
+ * @param qNameSuffix
+ * @param chainId
  * @returns {Promise<void>}
  */
-const subscribeTxQueue = async function(qNameSuffix) {
+const subscribeTxQueue = async function(qNameSuffix, chainId) {
   if (!txQueueSubscribed) {
     await openSTNotification.subscribeEvent.rabbit(
       [rmqQueueConstants.executeTxTopicPrefix + qNameSuffix],
       {
-        queue: rmqQueueConstants.executeTxQueuePrefix + '_' + qNameSuffix,
+        queue: rmqQueueConstants.executeTxQueuePrefix + '_' + chainId + '_' + qNameSuffix,
         ackRequired: 1,
         prefetch: txQueuePrefetchCount
       },
@@ -228,18 +227,17 @@ const commandQueueExecutor = function(params) {
 };
 
 /**
- *
  * Subscribe to command_message queue.
- *
- * @param {String} qNameSuffix
+ * @param qNameSuffix
+ * @param chainId
  * @returns {Promise<void>}
  */
-const subscribeCommandQueue = async function(qNameSuffix) {
+const subscribeCommandQueue = async function(qNameSuffix, chainId) {
   if (!commandQueueSubscribed) {
     await openSTNotification.subscribeEvent.rabbit(
       [rmqQueueConstants.commandMessageTopicPrefix + qNameSuffix],
       {
-        queue: rmqQueueConstants.commandMessageQueuePrefix + '_' + qNameSuffix,
+        queue: rmqQueueConstants.commandMessageQueuePrefix + '_' + chainId + '_' + qNameSuffix,
         ackRequired: 1,
         prefetch: cmdQueuePrefetchCount
       },
@@ -264,7 +262,8 @@ let init = async function() {
 
   processDetails = initProcessResp.processDetails;
   let processStatus = processDetails.status,
-    queueSuffix = processDetails.queue_name_suffix;
+    queueSuffix = processDetails.queue_name_suffix,
+    chainId = processDetails.chain_id;
 
   if (processStatus === processQueueAssociationConst.processKilled) {
     logger.warn(
@@ -272,9 +271,9 @@ let init = async function() {
     );
   }
   if (initProcessResp.shouldStartTxQueConsume) {
-    await subscribeTxQueue(queueSuffix);
+    await subscribeTxQueue(queueSuffix, chainId);
   }
-  await subscribeCommandQueue(queueSuffix);
+  await subscribeCommandQueue(queueSuffix, chainId);
 };
 
 /**

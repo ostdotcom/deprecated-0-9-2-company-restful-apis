@@ -675,7 +675,11 @@ ExecuteTransactionService.prototype = {
     let workingProcessIds = processQueueAssociationRsp.data.workingProcessDetails;
 
     let index = oThis.fromUserId % workingProcessIds.length,
-      topicName = RmqQueueConstants.executeTxTopicPrefix + workingProcessIds[index].queue_name_suffix,
+      topicName =
+        RmqQueueConstants.executeTxTopicPrefix +
+        workingProcessIds[index].chain_id +
+        '.' +
+        workingProcessIds[index].queue_name_suffix,
       workerUuid = workingProcessIds[index].workerUuid;
     // Pass the workerUuid for transfer_bt class.
 

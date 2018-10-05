@@ -113,7 +113,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
       processDetailsMap = {};
 
     let response = await oThis
-      .select(['process_id', 'rmq_config_id', 'queue_name_suffix', 'status'])
+      .select(['process_id', 'rmq_config_id', 'queue_name_suffix', 'chain_id', 'status'])
       .where(['process_id IN (?)', processIds])
       .fire();
 
