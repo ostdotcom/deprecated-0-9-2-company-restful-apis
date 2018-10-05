@@ -85,7 +85,9 @@ const validateAndSanitize = function() {
 validateAndSanitize();
 
 // Check if another process with the same title is running.
-ProcessLocker.canStartProcess({ process_title: 'executables_rmq_subscribers_block_scanner_' + processLockId });
+ProcessLocker.canStartProcess({
+  process_title: 'executables_rmq_subscribers_block_scanner_' + group_id + '_' + processLockId
+});
 
 let unAckCount = 0,
   prefetchCount = parseInt(prefetchCountStr);
