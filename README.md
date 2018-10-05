@@ -59,7 +59,7 @@ export OST_UTILITY_GAS_PRICE='0x0'
 > node
 rootPrefix = '.';
 ProcessQueueAssociationModel = require(rootPrefix + '/app/models/process_queue_association');
-params = {chain_id: 1000,process_id: 1,rmq_config_id: 0,queue_name_suffix: 'q1',status: 'available'};
+params = {chain_id: 1000, process_id: 1, rmq_config_id: 0, queue_name_suffix: 'q1', status: 'available'};
 new ProcessQueueAssociationModel().insertRecord(params).then(console.log);
 ```
 
@@ -109,12 +109,12 @@ Run the following commands after creating the database.
 
 * Execute commands related to DynamoDB migrations.
   * Create a fixed number of shards for all entities (number is in this file).
-```bash
-  source set_env_vars.sh
-  node executables/create_init_shards.js $CONFIG_STRATEGY_PATH
-```
+  ```bash
+    source set_env_vars.sh
+    node executables/create_init_shards.js $CONFIG_STRATEGY_PATH
+  ```
   
-  Pick up the hash printed in green in previous step. Export shard arrays appropriately.
+  * Pick up the hash printed in green in previous step. Export shard arrays appropriately.
   
   ```bash
     export OS_DYNAMODB_TOKEN_BALANCE_SHARDS_ARRAY='["d_pk_token_balances_shard_001","d_pk_token_balances_shard_002"]'
@@ -256,7 +256,7 @@ node executables/rmq_subscribers/log_all_events.js >> log/log_all_events.log
 # Helper Scripts
 
 * Filling up missing nonce.
-```
+```bash
 c = require('./executables/fire_brigade/fill_up_missing_nonce');
 o = new c({from_address: '0x6bEeE57355885BAd8018814A0B0E93F368148c37', to_address: '0x180bA8f73897C0CB26d76265fC7868cfd936E617', chain_kind: 'value', missing_nonce: 25})
 o.perform();

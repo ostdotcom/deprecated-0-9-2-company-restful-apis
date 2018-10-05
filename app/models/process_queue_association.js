@@ -226,6 +226,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
    * Add a record in the table.
    *
    * @param params
+   *        {number} - params.chain_id: chainId to be added.
    *        {number} - params.process_id: processId to be added.
    *        {number} - params.rmq_config_id: rmqId to be added.
    *        {string} - params.queue_name_suffix: topicName to be added.
@@ -236,11 +237,18 @@ const ProcessQueueAssociationModelSpecificPrototype = {
   insertRecord: function(params) {
     const oThis = this;
 
-    if (!params.process_id || !params.hasOwnProperty('rmq_config_id') || !params.queue_name_suffix || !params.status) {
+    if (
+      !params.hasOwnProperty('chain_id') ||
+      !params.hasOwnProperty('process_id') ||
+      !params.hasOwnProperty('rmq_config_id') ||
+      !params.hasOwnProperty('queue_name_suffix') ||
+      !params.hasOwnProperty('status')
+    ) {
       throw 'Mandatory parameters are missing.';
     }
 
     if (
+      typeof params.chain_id !== 'number' ||
       typeof params.process_id !== 'number' ||
       typeof params.rmq_config_id !== 'number' ||
       typeof params.queue_name_suffix !== 'string' ||

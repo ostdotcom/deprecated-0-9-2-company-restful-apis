@@ -192,7 +192,7 @@ const PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseTxExecuto
 const subscribeTxQueue = async function(qNameSuffix, chainId) {
   if (!txQueueSubscribed) {
     await openSTNotification.subscribeEvent.rabbit(
-      [rmqQueueConstants.executeTxTopicPrefix + qNameSuffix],
+      [rmqQueueConstants.executeTxTopicPrefix + chainId + '.' + qNameSuffix],
       {
         queue: rmqQueueConstants.executeTxQueuePrefix + '_' + chainId + '_' + qNameSuffix,
         ackRequired: 1,
@@ -235,7 +235,7 @@ const commandQueueExecutor = function(params) {
 const subscribeCommandQueue = async function(qNameSuffix, chainId) {
   if (!commandQueueSubscribed) {
     await openSTNotification.subscribeEvent.rabbit(
-      [rmqQueueConstants.commandMessageTopicPrefix + qNameSuffix],
+      [rmqQueueConstants.commandMessageTopicPrefix + chainId + '.' + qNameSuffix],
       {
         queue: rmqQueueConstants.commandMessageQueuePrefix + '_' + chainId + '_' + qNameSuffix,
         ackRequired: 1,
