@@ -257,8 +257,13 @@ NOTE: Create the file if not present.
 
 * Start block scanner. Change utility chain id accordingly.
 ```bash
-> touch $HOME/openst-setup/logs/block_scanner_benchmark-1000.csv
-> node executables/block_scanner/for_tx_status_and_balance_sync.js 1 ~/openst-setup/data/utility-chain-1000/block_scanner_execute_transaction.data group_id ~/openst-setup/logs/block_scanner_benchmark-1000.csv >> ~/openst-setup/logs/utility-chain-1000/block_scanner_execute_transaction.log
+# Start master process for Block scanner.
+node executables/block_scanner/transaction_delegator.js 1 ~/openst-setup/data/utility-chain-1000/block_scanner_execute_transaction.data group_id
+```
+
+```bash
+# Start one worker process for block scanner. [Please don't use prefetch other than 1].
+node executables/rmq_subscribers/block_scanner.js 1 group_id 1 ~/openst-setup/logs/block_scanner_benchmark-1000.csv
 ```
 
 * Don't forget to start the cronjobs. 
