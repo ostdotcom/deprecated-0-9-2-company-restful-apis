@@ -77,7 +77,9 @@ const validateAndSanitize = function() {
 validateAndSanitize();
 
 // Check if another process with the same title is running.
-ProcessLocker.canStartProcess({ process_title: 'executables_transaction_delegator_' + processLockId });
+ProcessLocker.canStartProcess({
+  process_title: 'executables_transaction_delegator_' + grroup_id + '_' + processLockId
+});
 
 const fs = require('fs');
 
