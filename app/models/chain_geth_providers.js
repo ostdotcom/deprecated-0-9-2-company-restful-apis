@@ -183,6 +183,8 @@ const ChainGethProvidersModelSpecificPrototype = {
       chainKinds = [],
       WsProviders = [],
       RpcProviders = [],
+      wsEndPoints = [],
+      rpcEndPoints = [],
       requiredChainId,
       requiredChainKind,
       response = {},
@@ -208,6 +210,8 @@ const ChainGethProvidersModelSpecificPrototype = {
       for (let i = 0; i < chainsInfo.length; i++) {
         if (chainsInfo[i].chain_id === requiredChainId && chainsInfo[i].chain_kind === requiredChainKind) {
           siblingEndPoints.push(chainsInfo[i].ws_provider);
+          wsEndPoints.push(chainsInfo[i].ws_provider);
+          rpcEndPoints.push(chainsInfo[i].rpc_provider);
         }
       }
     } else if (RpcProviders.includes(gethEndpoint)) {
@@ -218,6 +222,8 @@ const ChainGethProvidersModelSpecificPrototype = {
       for (let i = 0; i < chainsInfo.length; i++) {
         if (chainsInfo[i].chain_id === requiredChainId && chainsInfo[i].chain_kind === requiredChainKind) {
           siblingEndPoints.push(chainsInfo[i].rpc_provider);
+          wsEndPoints.push(chainsInfo[i].ws_provider);
+          rpcEndPoints.push(chainsInfo[i].rpc_provider);
         }
       }
     } else {
@@ -226,6 +232,8 @@ const ChainGethProvidersModelSpecificPrototype = {
     response['chainId'] = requiredChainId;
     response['chainKind'] = oThis.enums[requiredChainKind];
     response['siblingEndpoints'] = siblingEndPoints;
+    response['gethWsProviders'] = wsEndPoints;
+    response['gethRpcProviders'] = rpcEndPoints;
     return response;
   },
 

@@ -40,6 +40,7 @@ const NonceManagerKlass = function(params) {
     currentWsHost = params['host'],
     chainId = params['chain_id'],
     gethWsProviders = params['geth_providers'],
+    gethRpcProviders = params['geth_rpc_providers'],
     configStrategy = params['config_strategy'];
   // gethWsProviders being fetched are the ones that need to be used directly.
 
@@ -51,6 +52,7 @@ const NonceManagerKlass = function(params) {
   oThis.currentWsHost = currentWsHost;
   oThis.chainId = chainId;
   oThis.gethWsProviders = gethWsProviders;
+  oThis.gethRpcProviders = gethRpcProviders;
   oThis.configStrategy = configStrategy;
 
   oThis.consistentBehavior = '0';
@@ -337,11 +339,12 @@ const NonceCacheKlassPrototype = {
       getPendingTxnsPromises = [];
 
     for (let i = oThis.gethWsProviders.length - 1; i >= 0; i--) {
-      const gethURL = oThis.gethWsProviders[i];
+      const wsGethURL = oThis.gethWsProviders[i],
+        rpcGethURL = oThis.gethRpcProviders[i];
 
-      const web3Provider = oThis.nonceHelper.getWeb3Instance(gethURL, oThis.chainKind);
+      const web3Provider = oThis.nonceHelper.getWeb3Instance(wsGethURL, oThis.chainKind);
       getMinedTxCountPromises.push(oThis.nonceHelper.getMinedTxCountFromGeth(oThis.address, web3Provider));
-      getPendingTxnsPromises.push(oThis.nonceHelper.getUnminedTransactionsFromGethNode(web3Provider));
+      getPendingTxnsPromises.push(oThis.nonceHelper.getUnminedTransactionsFromGethNode(web3Provider, rpcGethURL));
     }
 
     let cumulativePromiseResponses = await Promise.all([
@@ -448,10 +451,7 @@ const NonceCacheKlassPrototype = {
     const allNonce = [];
     if (unminedTransactions) {
       for (let nonceKey in unminedTransactions) {
-        const transactionObj = unminedTransactions[nonceKey];
-        if (transactionObj.nonce) {
-          allNonce.push(new BigNumber(transactionObj.nonce));
-        }
+        allNonce.push(new BigNumber(nonceKey)); //As nonce key itself is a nonce
       }
     }
     return allNonce;

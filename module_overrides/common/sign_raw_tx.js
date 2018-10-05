@@ -180,6 +180,7 @@ SignRawTx.prototype = {
       oThis.chainId = cacheResponse['chainId'];
       oThis.chainKind = cacheResponse['chainKind'];
       oThis.gethWsProviders = cacheResponse['siblingEndpoints'];
+      oThis.gethRpcProviders = cacheResponse['gethRpcProviders'];
 
       // Passing empty object as nonce manager class needs this as a param.
       oThis.configStrategy = {};
@@ -196,16 +197,20 @@ SignRawTx.prototype = {
       oThis.configStrategy = configStrategyResponse.data;
 
       let valueProviders = oThis.configStrategy.OST_VALUE_GETH_WS_PROVIDERS,
-        utilityProviders = oThis.configStrategy.OST_UTILITY_GETH_WS_PROVIDERS;
+        valueRpcProviders = oThis.configStrategy.OST_VALUE_GETH_RPC_PROVIDERS,
+        utilityProviders = oThis.configStrategy.OST_UTILITY_GETH_WS_PROVIDERS,
+        utilityRpcProviders = oThis.configStrategy.OST_UTILITY_GETH_RPC_PROVIDERS;
 
       // We identify chain kind and geth providers in this manner to save one cache hit.
       if (valueProviders.includes(oThis.host)) {
         oThis.chainKind = 'value';
         oThis.gethWsProviders = valueProviders;
+        oThis.gethRpcProviders = valueRpcProviders;
         oThis.chainId = oThis.configStrategy.OST_VALUE_CHAIN_ID;
       } else if (utilityProviders.includes(oThis.host)) {
         oThis.chainKind = 'utility';
         oThis.gethWsProviders = utilityProviders;
+        oThis.gethRpcProviders = utilityRpcProviders;
         oThis.chainId = oThis.configStrategy.OST_UTILITY_CHAIN_ID;
       }
     }
@@ -263,6 +268,7 @@ SignRawTx.prototype = {
       host: oThis.host,
       chain_id: oThis.chainId,
       geth_providers: oThis.gethWsProviders,
+      geth_rpc_providers: oThis.gethRpcProviders,
       config_strategy: oThis.configStrategy
     });
     // We are passing gethWsProviders here as we don't want to make another cache hit in nonce manager class.
