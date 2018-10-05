@@ -134,8 +134,9 @@ node executables/config_strategy_seed.js managed_address_salt_id group_id $CONFI
 ```
 
 * Use the helper script to activate status of the seeded config strategy in node console. Replace the groupId.
-```js
-Klass = require('./helpers/config_strategy/by_group_id');
+```bash
+> node
+> Klass = require('./helpers/config_strategy/by_group_id');
 b = new Klass(groupId);
 b.activate();
 ```
@@ -233,7 +234,7 @@ Use the file path in the following command:
 ```
 
 * Start Cronjobs.
-```base
+```bash
 # Every hour
 node executables/update_price_oracle_price_points.js group_id >> log/update_price_oracle_price_points.log
 # Every five minutes
