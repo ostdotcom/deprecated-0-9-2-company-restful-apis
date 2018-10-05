@@ -78,7 +78,7 @@ validateAndSanitize();
 
 // Check if another process with the same title is running.
 ProcessLocker.canStartProcess({
-  process_title: 'executables_transaction_delegator_' + grroup_id + '_' + processLockId
+  process_title: 'executables_transaction_delegator_' + group_id + '_' + processLockId
 });
 
 const fs = require('fs');
