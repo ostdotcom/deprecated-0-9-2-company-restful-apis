@@ -166,8 +166,6 @@ TransactionDelegator.prototype = {
 
         oThis.currentBlock = oThis.scannerData.lastProcessedBlock + 1;
 
-        oThis.currentBlock = 3374626;
-
         logger.log('Current Block =', oThis.currentBlock);
 
         await oThis.distributeTransactions();
