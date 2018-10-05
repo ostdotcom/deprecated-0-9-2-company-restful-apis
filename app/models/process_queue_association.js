@@ -91,7 +91,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
     const oThis = this;
 
     let response = await oThis
-      .select(['process_id', 'rmq_config_id', 'queue_name_suffix', 'status'])
+      .select(['process_id', 'rmq_config_id', 'chain_id', 'queue_name_suffix', 'status'])
       .where({ process_id: processId })
       .fire();
 
