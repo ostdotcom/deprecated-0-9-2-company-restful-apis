@@ -51,7 +51,7 @@ ConfigStrategyKlass.prototype = {
       for (let strategyKind in configStrategy) {
         let partialConfig = configStrategy[strategyKind];
 
-        if (strategyKind == configStrategyConstants.invertedKinds['utility_geth']) {
+        if (strategyKind == 'utility_geth') {
           let tempConfig = partialConfig[gethEndPointType];
           delete partialConfig['read_write'];
           delete partialConfig['read_only'];

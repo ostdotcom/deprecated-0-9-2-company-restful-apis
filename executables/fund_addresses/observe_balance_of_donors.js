@@ -53,8 +53,9 @@ const balanceObserververKlass = function() {
 balanceObserververKlass.prototype = {
   perform: async function() {
     const oThis = this,
+      utilityGethType = 'read_only',
       strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
-      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash();
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(utilityGethType);
 
     configStrategy = configStrategyResp.data;
 
