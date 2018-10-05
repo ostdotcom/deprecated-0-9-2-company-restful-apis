@@ -1,7 +1,6 @@
 'use strict';
 
 const rootPrefix = '..',
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   clientConfigStrategyCacheKlass = require(rootPrefix + '/lib/shared_cache_multi_management/client_config_strategies'),
   configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),

@@ -93,7 +93,7 @@ FundClientAddressKlass.prototype = {
   /**
    * Set addresses
    *
-   * @returns {promise<result>}
+   * @returns {Promise<result>}
    * @private
    */
   _setAddresses: async function() {
@@ -140,7 +140,7 @@ FundClientAddressKlass.prototype = {
   /**
    * Transfer ST Prime if needed
    *
-   * @returns {promise<result>}
+   * @returns {Promise<result>}
    * @private
    */
   _transferStPrimeIfNeeded: async function() {
@@ -198,7 +198,7 @@ FundClientAddressKlass.prototype = {
   /**
    * Check ST Prime Balance of Reserve Address and notify if less
    *
-   * @returns {promise<result>}
+   * @returns {Promise<result>}
    * @private
    */
   _checkBalanceOfReserveAddress: async function() {
@@ -233,7 +233,7 @@ FundClientAddressKlass.prototype = {
    *
    * @param {string} ethereumAddress - Address to check balance for
    *
-   * @returns {promise<boolean>}
+   * @returns {Promise<boolean>}
    * @private
    */
   _isTransferRequired: async function(ethereumAddress) {
@@ -269,7 +269,7 @@ FundClientAddressKlass.prototype = {
    * @param {string} recipientAddress - Address to transfer ST Prime to
    * @param {string} transferAmountInWei - Amount to be transferred to the given address in Wei
    *
-   * @returns {promise<result>}
+   * @returns {Promise<result>}
    * @private
    */
   _transferBalance: async function(reserveAddress, reservePassphrase, recipientAddress, transferAmountInWei) {
