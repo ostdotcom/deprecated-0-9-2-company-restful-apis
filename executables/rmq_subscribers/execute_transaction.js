@@ -33,8 +33,7 @@ let unAckCount = 0,
   processDetails = null,
   unAckCommandMessages = 0,
   txQueueSubscribed = false,
-  commandQueueSubscribed = false,
-  intentToConsumerTagMap = { cmdQueue: null, exTxQueue: null };
+  commandQueueSubscribed = false;
 
 // Start process locker.
 ProcessLocker.canStartProcess({
@@ -75,8 +74,12 @@ const commandResponseActions = async function(commandProcessorResponse) {
     commandProcessorResponse.data.shouldStopTxQueConsume &&
     commandProcessorResponse.data.shouldStopTxQueConsume === 1
   ) {
-    process.emit('CANCEL_CONSUME', intentToConsumerTagMap.exTxQueue);
+    process.emit('CANCEL_CONSUME');
     txQueueSubscribed = false;
+    commandQueueSubscribed = false;
+    setTimeout(async function() {
+      await subscribeCommandQueue(processDetails.queue_name_suffix, processDetails.chain_id);
+    }, 500);
   }
 };
 
@@ -188,25 +191,18 @@ const PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseTxExecuto
  */
 const subscribeTxQueue = async function(qNameSuffix, chainId) {
   if (!txQueueSubscribed) {
-    if (intentToConsumerTagMap.exTxQueue) {
-      process.emit('RESUME_CONSUME', intentToConsumerTagMap.exTxQueue);
-    } else {
-      await openSTNotification.subscribeEvent.rabbit(
-        [rmqQueueConstants.executeTxTopicPrefix + chainId + '.' + qNameSuffix],
-        {
-          queue: rmqQueueConstants.executeTxQueuePrefix + '_' + chainId + '_' + qNameSuffix,
-          ackRequired: 1,
-          prefetch: txQueuePrefetchCount
-        },
-        function(params) {
-          // Promise is required to be returned to manually ack messages in RMQ
-          return PromiseQueueManager.createPromise(params);
-        },
-        function(consumerTag) {
-          intentToConsumerTagMap.exTxQueue = consumerTag;
-        }
-      );
-    }
+    await openSTNotification.subscribeEvent.rabbit(
+      [rmqQueueConstants.executeTxTopicPrefix + chainId + '.' + qNameSuffix],
+      {
+        queue: rmqQueueConstants.executeTxQueuePrefix + '_' + chainId + '_' + qNameSuffix,
+        ackRequired: 1,
+        prefetch: txQueuePrefetchCount
+      },
+      function(params) {
+        // Promise is required to be returned to manually ack messages in RMQ
+        return PromiseQueueManager.createPromise(params);
+      }
+    );
     txQueueSubscribed = true;
   }
 };
@@ -249,9 +245,6 @@ const subscribeCommandQueue = async function(qNameSuffix, chainId) {
         unAckCommandMessages++;
         // Promise is required to be returned to manually ack messages in RMQ
         return commandQueueExecutor(params);
-      },
-      function(consumerTag) {
-        intentToConsumerTagMap.cmdQueue = consumerTag;
       }
     );
     commandQueueSubscribed = true;
