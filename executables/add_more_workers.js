@@ -72,11 +72,10 @@ addMoreWorkersKlass.prototype = {
   /**
    * Perform
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   perform: async function() {
-    const oThis = this,
-      r = null;
+    const oThis = this;
 
     return oThis.asyncPerform().catch(function(error) {
       let errorObj = null;
@@ -333,5 +332,8 @@ addMoreWorkersKlass.prototype = {
   }
 };
 
-const obj = new addMoreWorkersKlass({newWorkersCnt: 400, clientIds: [1230] });
-obj.perform().then(function(r) {console.log('DONE! Result:', r); process.exit(0);});
+const obj = new addMoreWorkersKlass({ newWorkersCnt: 400, clientIds: [1230] });
+obj.perform().then(function(r) {
+  console.log('DONE! Result:', r);
+  process.exit(0);
+});

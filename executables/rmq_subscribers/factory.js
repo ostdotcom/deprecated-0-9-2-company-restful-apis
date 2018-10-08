@@ -42,7 +42,7 @@ const ProcessLocker = new ProcessLockerKlass(),
   queueSuffix = args[3],
   topicsToSubscribe = args[4];
 
-var topicsToSubscribeArray = null;
+let topicsToSubscribeArray = null;
 
 // validate and sanitize the command line arguments
 const validateAndSanitize = function() {
@@ -73,7 +73,7 @@ const validateAndSanitize = function() {
     process.exit(1);
   }
 
-  if (topicsToSubscribeArray.length == 0) {
+  if (topicsToSubscribeArray.length === 0) {
     logger.error('Topics to subscribe should have at least one topic.');
     usageDemo();
     process.exit(1);
@@ -135,7 +135,7 @@ const promiseExecutor = function(onResolve, onReject, params) {
     topics = parsedParams.topics;
 
   // Only one topic is supported here. Neglecting the unsupported cases.
-  if (topics.length != 1) return Promise.resolve();
+  if (topics.length !== 1) return Promise.resolve();
 
   let topic = topics[0];
 
@@ -165,9 +165,6 @@ const promiseExecutor = function(onResolve, onReject, params) {
       if (!PerformerKlass) {
         return onReject(`no performer Klass Found for ${icDrivenTopicPerformers[topic]}`);
       }
-
-      logger.log('topic', topic);
-      logger.log('parsedParams.message.payload', parsedParams.message.payload);
 
       return new PerformerKlass(parsedParams.message.payload)
         .perform()
