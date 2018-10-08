@@ -71,6 +71,7 @@ ConfigStrategyByGroupId.prototype = {
    * This function gives a complete flat hash of all the strategies including the ones whose group id is NULL.
    *
    * [IMPORTANT][ASSUMPTION]: Multiple value_geth, constants, in_memory, value_constants kinds will not be present in the table.
+   * @param gethEndPointType - read_only or read_write(DEFAULT value)
    * @returns {Promise<*>}
    */
   getCompleteHash: async function(gethEndPointType) {
@@ -582,6 +583,7 @@ ConfigStrategyByGroupId.prototype = {
   /**
    * This function helps in preparing flat hash from the response given by cache
    * @param configStrategyResponse
+   * @param gethEndPointType - read_only or read_write(DEFAULT value)
    * @private
    */
   _cacheResponseFlatHashProvider: function(configStrategyResponse, gethEndPointType) {
@@ -670,7 +672,7 @@ ConfigStrategyByGroupId.prototype = {
   },
 
   /**
-   * Validate utility geth hash
+   * Validate utility geth hash - check if providers array has all keys and it is of correct data type.
    */
   _validateUtilityGethParams: function(kind, params) {
     const oThis = this,
@@ -688,7 +690,10 @@ ConfigStrategyByGroupId.prototype = {
 
       for (let i = 0; i < keys.length; i++) {
         if (['read_only', 'read_write'].includes(keys[i])) {
-          if (!(params[keys[i]] instanceof Array)) {
+          if (
+            !(params[keys[i]].OST_UTILITY_GETH_RPC_PROVIDERS instanceof Array) ||
+            !(params[keys[i]].OST_UTILITY_GETH_WS_PROVIDERS instanceof Array)
+          ) {
             logger.error('Expecting', keys[i], "key's value to be an array");
             return oThis._errorResponseHandler('h_cs_bgi_32');
           }
