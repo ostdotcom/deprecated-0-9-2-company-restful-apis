@@ -556,7 +556,7 @@ const ConfigStrategyModelSpecificPrototype = {
    * @param gethProvider
    * @returns {Promise<*>}
    */
-  getSiblingProviders: async function(gethProvider) {
+  getSiblingProvidersForNonce: async function(gethProvider) {
     const oThis = this,
       activeStatus = configStrategyConstants.invertedStatuses[configStrategyConstants.activeStatus];
 
