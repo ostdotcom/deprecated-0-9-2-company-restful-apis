@@ -553,6 +553,127 @@ const ConfigStrategyModelSpecificPrototype = {
 
   /**
    *
+   * @param gethProvider
+   * @returns {Promise<*>}
+   */
+  getSiblingProvidersForNonce: async function(gethProvider) {
+    const oThis = this,
+      activeStatus = configStrategyConstants.invertedStatuses[configStrategyConstants.activeStatus];
+
+    let response = {},
+      unencrypted_params_hash = {},
+      kindInt = null,
+      gethKinds = [
+        configStrategyConstants.invertedKinds[configStrategyConstants.value_geth],
+        configStrategyConstants.invertedKinds[configStrategyConstants.utility_geth]
+      ];
+
+    if (!gethProvider) {
+      logger.error('Mandatory parameter is missing');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'a_mo_cs_c_18',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {},
+          error_config: errorConfig
+        })
+      );
+    }
+
+    let chainsInfo = await oThis
+      .select(['kind', 'unencrypted_params'])
+      .where(['status = ? AND kind in (?)', activeStatus, gethKinds])
+      .fire();
+
+    if (chainsInfo.length === 0) {
+      logger.error('Given geth provider is not present. Check the database');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'a_mo_cs_c_19',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {},
+          error_config: errorConfig
+        })
+      );
+    }
+
+    for (let index in chainsInfo) {
+      if (chainsInfo[index].unencrypted_params.includes(gethProvider)) {
+        unencrypted_params_hash = JSON.parse(chainsInfo[index].unencrypted_params);
+        kindInt = chainsInfo[index].kind;
+      }
+    }
+
+    if (!unencrypted_params_hash) {
+      logger.error(`Given geth provider in not present in the database`);
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'a_mo_cs_c_20',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {}
+        })
+      );
+    }
+
+    if (configStrategyConstants.kinds[kindInt] === configStrategyConstants.utility_geth) {
+      response = oThis._extractUtilityGethParams(unencrypted_params_hash, gethProvider);
+    } else if (configStrategyConstants.kinds[kindInt] === configStrategyConstants.value_geth) {
+      response = oThis._extractValueGethParams(unencrypted_params_hash, gethProvider);
+    }
+
+    return response;
+  },
+
+  /**
+   * This function gives all the end points present in read_write key of utility geth. Provided the given geth provider
+   * is present in either OST_UTILITY_GETH_WS_PROVIDERS or OST_UTILITY_GETH_RPC_PROVIDERS key of read_write object.
+   * @param unencrypted_hash
+   * @private
+   */
+  _extractUtilityGethParams: function(unencrypted_hash, gethProvider) {
+    let response = {};
+
+    response.chainId = unencrypted_hash.OST_UTILITY_CHAIN_ID;
+    response.chainKind = 'utility';
+
+    let readWriteKeyName = 'read_write'; //Remove hard coding
+
+    if (unencrypted_hash[readWriteKeyName].OST_UTILITY_GETH_WS_PROVIDERS.includes(gethProvider)) {
+      response.siblingEndpoints = unencrypted_hash[readWriteKeyName].OST_UTILITY_GETH_WS_PROVIDERS;
+    } else if (unencrypted_hash[readWriteKeyName].OST_UTILITY_GETH_RPC_PROVIDERS.includes(gethProvider)) {
+      response.siblingEndpoints = unencrypted_hash[readWriteKeyName].OST_UTILITY_GETH_RPC_PROVIDERS;
+    } else {
+      logger.error('The given geth provider is not present in the read_write object.');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'a_mo_cs_c_21',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {}
+        })
+      );
+    }
+    response.gethWsProviders = unencrypted_hash[readWriteKeyName].OST_UTILITY_GETH_WS_PROVIDERS;
+    response.gethRpcProviders = unencrypted_hash[readWriteKeyName].OST_UTILITY_GETH_RPC_PROVIDERS;
+    return response;
+  },
+
+  _extractValueGethParams: function(unencrypted_hash, gethProvider) {
+    let response = {};
+    response.chainId = unencrypted_hash.OST_VALUE_CHAIN_ID;
+    response.chainKind = 'value';
+    if (unencrypted_hash.OST_VALUE_GETH_WS_PROVIDERS.includes(gethProvider)) {
+      response.siblingEndpoints = unencrypted_hash.OST_VALUE_GETH_WS_PROVIDERS;
+    } else if (unencrypted_hash.OST_VALUE_GETH_RPC_PROVIDERS.includes(gethProvider)) {
+      response.siblingEndpoints = unencrypted_hash.OST_VALUE_GETH_RPC_PROVIDERS;
+    }
+    response.gethWsProviders = unencrypted_hash.OST_VALUE_GETH_WS_PROVIDERS;
+    response.gethRpcProviders = unencrypted_hash.OST_VALUE_GETH_RPC_PROVIDERS;
+
+    return response;
+  },
+
+  /**
+   *
    * @param (string) strategy_kind ('dynamo' or 'dax' etc)
    * @param (object) params_hash (complete hash of that strategy)
    *
@@ -706,19 +827,93 @@ const ConfigStrategyModelSpecificPrototype = {
 
       if (strategyKind === configStrategyConstants.value_geth) {
         keysWhoseValueShouldBeAnArray = ['OST_VALUE_GETH_RPC_PROVIDERS', 'OST_VALUE_GETH_WS_PROVIDERS'];
+        for (let index in keysWhoseValueShouldBeAnArray) {
+          let keyWhoseValueToCheck = keysWhoseValueShouldBeAnArray[index],
+            value = paramsToValidate[keyWhoseValueToCheck];
+
+          if (!(value instanceof Array)) {
+            logger.error(`[${keyWhoseValueToCheck}] should be an array`);
+            return Promise.reject(
+              responseHelper.error({
+                internal_error_identifier: 'm_tb_dshh_y_3',
+                api_error_identifier: 'something_went_wrong',
+                debug_options: {}
+              })
+            );
+          }
+        }
       } else {
-        keysWhoseValueShouldBeAnArray = ['OST_UTILITY_GETH_RPC_PROVIDERS', 'OST_UTILITY_GETH_WS_PROVIDERS'];
-      }
+        const keyWhoseValueShouldBeAnObject = ['read_only', 'read_write'];
 
-      for (let index in keysWhoseValueShouldBeAnArray) {
-        let keyWhoseValueToCheck = keysWhoseValueShouldBeAnArray[index],
-          value = paramsToValidate[keyWhoseValueToCheck];
+        for (let index in keyWhoseValueShouldBeAnObject) {
+          let keyWhoseValueToCheck = keyWhoseValueShouldBeAnObject[index],
+            value = paramsToValidate[keyWhoseValueToCheck];
 
-        if (!(value instanceof Array)) {
-          logger.error(`[${keyWhoseValueToCheck}] should be an array`);
+          if (value === undefined || typeof value !== 'object') {
+            logger.error(`[${keyWhoseValueShouldBeAnObject}] value should be an object.`);
+            return Promise.reject(
+              responseHelper.error({
+                internal_error_identifier: 'm_tb_dshh_y_2',
+                api_error_identifier: 'something_went_wrong',
+                debug_options: {}
+              })
+            );
+          }
+
+          let keysWhoseValueShouldBeAnArray = ['OST_UTILITY_GETH_RPC_PROVIDERS', 'OST_UTILITY_GETH_WS_PROVIDERS'];
+          for (let index in keysWhoseValueShouldBeAnArray) {
+            let keyName = keysWhoseValueShouldBeAnArray[index],
+              innerValueToCheck = value[keyName];
+
+            if (!(innerValueToCheck instanceof Array)) {
+              logger.error(`[${keyWhoseValueToCheck}] should be an array`);
+              return Promise.reject(
+                responseHelper.error({
+                  internal_error_identifier: 'm_tb_dshh_y_4',
+                  api_error_identifier: 'something_went_wrong',
+                  debug_options: {}
+                })
+              );
+            }
+          }
+        }
+
+        let validation = await _oThis._validateUtilityProviderForUniqueness(paramsToValidate);
+
+        if (validation.isFailure()) {
+          logger.error('Specific validation failed');
           return Promise.reject(
             responseHelper.error({
-              internal_error_identifier: 'm_tb_dshh_y_3',
+              internal_error_identifier: 'm_tb_dshh_y_6',
+              api_error_identifier: 'something_went_wrong',
+              debug_options: {},
+              error_config: errorConfig
+            })
+          );
+        }
+      }
+    }
+
+    return Promise.resolve(responseHelper.successWithData({}));
+  },
+
+  _validateUtilityProviderForUniqueness: async function(paramsToValidate) {
+    let keyWhoseValueShouldBeAnObject = ['read_only', 'read_write'],
+      keysWhoseValueShouldBeAnArray = ['OST_UTILITY_GETH_RPC_PROVIDERS', 'OST_UTILITY_GETH_WS_PROVIDERS'];
+
+    for (let index in keyWhoseValueShouldBeAnObject) {
+      let keyWhoseValueToCheck = keyWhoseValueShouldBeAnObject[index],
+        value = paramsToValidate[keyWhoseValueToCheck];
+
+      for (let i in keysWhoseValueShouldBeAnArray) {
+        let keyName = keysWhoseValueShouldBeAnArray[i],
+          providerArray = value[keyName];
+
+        if (providerArray.length !== new Set(providerArray).size) {
+          logger.error(`[${keysWhoseValueShouldBeAnArray[i]}] contains non-unique endpoints.`);
+          return Promise.reject(
+            responseHelper.error({
+              internal_error_identifier: 'm_tb_dshh_y_5',
               api_error_identifier: 'something_went_wrong',
               debug_options: {}
             })

@@ -40,8 +40,9 @@ const usageDemo = function() {
 
 const warmUpGethPool = function() {
   return new Promise(async function(onResolve, onReject) {
-    let strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
-      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(),
+    let utilityGethType = 'read_only',
+      strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(utilityGethType),
       configStrategy = configStrategyResp.data;
 
     ic = new InstanceComposer(configStrategy);
