@@ -877,6 +877,48 @@ const ConfigStrategyModelSpecificPrototype = {
             }
           }
         }
+
+        let validation = await _oThis._validateUtilityProviderForUniqueness(paramsToValidate);
+
+        if (validation.isFailure()) {
+          logger.error('Specific validation failed');
+          return Promise.reject(
+            responseHelper.error({
+              internal_error_identifier: 'm_tb_dshh_y_6',
+              api_error_identifier: 'something_went_wrong',
+              debug_options: {},
+              error_config: errorConfig
+            })
+          );
+        }
+      }
+    }
+
+    return Promise.resolve(responseHelper.successWithData({}));
+  },
+
+  _validateUtilityProviderForUniqueness: async function(paramsToValidate) {
+    let keyWhoseValueShouldBeAnObject = ['read_only', 'read_write'],
+      keysWhoseValueShouldBeAnArray = ['OST_UTILITY_GETH_RPC_PROVIDERS', 'OST_UTILITY_GETH_WS_PROVIDERS'];
+
+    for (let index in keyWhoseValueShouldBeAnObject) {
+      let keyWhoseValueToCheck = keyWhoseValueShouldBeAnObject[index],
+        value = paramsToValidate[keyWhoseValueToCheck];
+
+      for (let i in keysWhoseValueShouldBeAnArray) {
+        let keyName = keysWhoseValueShouldBeAnArray[i],
+          providerArray = value[keyName];
+
+        if (providerArray.length !== new Set(providerArray).size) {
+          logger.error(`[${keysWhoseValueShouldBeAnArray[i]}] contains non-unique endpoints.`);
+          return Promise.reject(
+            responseHelper.error({
+              internal_error_identifier: 'm_tb_dshh_y_5',
+              api_error_identifier: 'something_went_wrong',
+              debug_options: {}
+            })
+          );
+        }
       }
     }
 
