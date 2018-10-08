@@ -635,27 +635,19 @@ const ConfigStrategyModelSpecificPrototype = {
 
     response.chainId = unencrypted_hash.OST_UTILITY_CHAIN_ID;
     response.chainKind = 'utility';
-    if (unencrypted_hash.OST_UTILITY_GETH_WS_PROVIDERS.includes(gethProvider)) {
-      response.siblingEndpoints = unencrypted_hash.OST_UTILITY_GETH_WS_PROVIDERS;
-    } else if (unencrypted_hash.OST_UTILITY_GETH_RPC_PROVIDERS.includes(gethProvider)) {
-      response.siblingEndpoints = unencrypted_hash.OST_UTILITY_GETH_RPC_PROVIDERS;
-    }
-    response.gethWsProviders = unencrypted_hash.OST_UTILITY_GETH_WS_PROVIDERS;
-    response.gethRpcProviders = unencrypted_hash.OST_UTILITY_GETH_RPC_PROVIDERS;
-    //Uncomment following code when there is a change in format of hash
-    /*let keyToCheckWhereTheValue = ['read_only','read_write'];//Remove hard coding
-    for(let index in keyToCheckWhereTheValue){
+
+    let keyToCheckWhereTheValue = ['read_only', 'read_write']; //Remove hard coding
+    for (let index in keyToCheckWhereTheValue) {
       let keyName = keyToCheckWhereTheValue[index];
-      if(unencrypted_hash[keyName].OST_UTILITY_GETH_WS_PROVIDERS.includes(gethProvider)){
-        response.siblingEndpoints = unencrypted_hash[keyName].OST_UTILITY_GETH_WS_PROVIDERS;
-        response.gethWsProviders = unencrypted_hash[keyName].OST_UTILITY_GETH_WS_PROVIDERS;
-        response.gethRpcProviders = unencrypted_hash[keyName].OST_UTILITY_GETH_RPC_PROVIDERS;
-      }else if(unencrypted_hash[keyName].OST_UTILITY_GETH_RPC_PROVIDERS.includes(gethProvider)){
-        response.siblingEndpoints = unencrypted_hash[keyName].OST_UTILITY_GETH_RPC_PROVIDERS;
-        response.gethWsProviders = unencrypted_hash[keyName].OST_UTILITY_GETH_WS_PROVIDERS;
-        response.gethRpcProviders = unencrypted_hash[keyName].OST_UTILITY_GETH_RPC_PROVIDERS;
+      //This is to check if the given geth provider is WS provider or RPC Provider. Accordingly sibling provider is set.
+      if (unencrypted_hash[keyName].OST_UTILITY_GETH_WS_PROVIDERS.includes(gethProvider)) {
+        response.siblingEndpoints = unencrypted_hash['read_write'].OST_UTILITY_GETH_WS_PROVIDERS;
+      } else if (unencrypted_hash[keyName].OST_UTILITY_GETH_RPC_PROVIDERS.includes(gethProvider)) {
+        response.siblingEndpoints = unencrypted_hash['read_write'].OST_UTILITY_GETH_RPC_PROVIDERS;
       }
-    }*/
+    }
+    response.gethWsProviders = unencrypted_hash['read_write'].OST_UTILITY_GETH_WS_PROVIDERS;
+    response.gethRpcProviders = unencrypted_hash['read_write'].OST_UTILITY_GETH_RPC_PROVIDERS;
     return response;
   },
 
