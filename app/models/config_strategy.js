@@ -706,23 +706,55 @@ const ConfigStrategyModelSpecificPrototype = {
 
       if (strategyKind === configStrategyConstants.value_geth) {
         keysWhoseValueShouldBeAnArray = ['OST_VALUE_GETH_RPC_PROVIDERS', 'OST_VALUE_GETH_WS_PROVIDERS'];
+        for (let index in keysWhoseValueShouldBeAnArray) {
+          let keyWhoseValueToCheck = keysWhoseValueShouldBeAnArray[index],
+            value = paramsToValidate[keyWhoseValueToCheck];
+
+          if (!(value instanceof Array)) {
+            logger.error(`[${keyWhoseValueToCheck}] should be an array`);
+            return Promise.reject(
+              responseHelper.error({
+                internal_error_identifier: 'm_tb_dshh_y_3',
+                api_error_identifier: 'something_went_wrong',
+                debug_options: {}
+              })
+            );
+          }
+        }
       } else {
-        keysWhoseValueShouldBeAnArray = ['OST_UTILITY_GETH_RPC_PROVIDERS', 'OST_UTILITY_GETH_WS_PROVIDERS'];
-      }
+        const keyWhoseValueShouldBeAnObject = ['read_only', 'read_write'];
 
-      for (let index in keysWhoseValueShouldBeAnArray) {
-        let keyWhoseValueToCheck = keysWhoseValueShouldBeAnArray[index],
-          value = paramsToValidate[keyWhoseValueToCheck];
+        for (let index in keyWhoseValueShouldBeAnObject) {
+          let keyWhoseValueToCheck = keyWhoseValueShouldBeAnObject[index],
+            value = paramsToValidate[keyWhoseValueToCheck];
 
-        if (!(value instanceof Array)) {
-          logger.error(`[${keyWhoseValueToCheck}] should be an array`);
-          return Promise.reject(
-            responseHelper.error({
-              internal_error_identifier: 'm_tb_dshh_y_3',
-              api_error_identifier: 'something_went_wrong',
-              debug_options: {}
-            })
-          );
+          if (value === undefined || typeof value !== 'object') {
+            logger.error(`[${keyWhoseValueShouldBeAnObject}] value should be an object.`);
+            return Promise.reject(
+              responseHelper.error({
+                internal_error_identifier: 'm_tb_dshh_y_2',
+                api_error_identifier: 'something_went_wrong',
+                debug_options: {}
+              })
+            );
+          }
+
+          let keysWhoseValueShouldBeAnArray = ['OST_UTILITY_GETH_RPC_PROVIDERS', 'OST_UTILITY_GETH_WS_PROVIDERS'];
+          for (let index in keysWhoseValueShouldBeAnArray) {
+            let keyName = keysWhoseValueShouldBeAnArray[index],
+              innerValueToCheck = value[keyName];
+
+            if (!(innerValueToCheck instanceof Array)) {
+              logger.error(`[${keyWhoseValueToCheck}] should be an array`);
+              return Promise.reject(
+                responseHelper.error({
+                  internal_error_identifier: 'm_tb_dshh_y_4',
+                  api_error_identifier: 'something_went_wrong',
+                  debug_options: {}
+                })
+              );
+            }
+          }
         }
       }
     }
