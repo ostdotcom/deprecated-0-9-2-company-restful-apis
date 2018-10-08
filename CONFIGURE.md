@@ -60,3 +60,25 @@ params = {
 obj = new Klass(params);  // Create class object
 obj.perform().then(console.log);  // Start the de-association process.
 ```
+
+
+### Fetch user balance
+```js
+require('./module_overrides/index');
+InstanceComposer = require('./instance_composer');
+ConfigStartegyHelper = require('./helpers/config_strategy');
+
+configStrategyHelper = new ConfigStartegyHelper();
+
+cs = {};
+configStrategyHelper.getConfigStrategy(1040).then(function(response){cs = response.data});
+
+ic = new InstanceComposer(cs)
+
+require('./lib/providers/storage')
+
+storageProvider = ic.getStorageProvider()
+openSTStorage = storageProvider.getInstance()
+new openSTStorage.cache.TokenBalance({erc20_contract_address: '0xe789F467B338C8Ac1f3480D6b454eE80C336AdD0',ethereum_addresses: ['0x2064402f4EEF7c5EDED6C0fD1F84400c7B0Ee9c9']}).fetch().then(console.log)
+
+```
