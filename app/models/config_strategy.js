@@ -557,8 +557,7 @@ const ConfigStrategyModelSpecificPrototype = {
    * @returns {Promise<*>}
    */
   getSiblingProvidersForNonce: async function(gethProvider) {
-    const oThis = this,
-      activeStatus = configStrategyConstants.invertedStatuses[configStrategyConstants.activeStatus];
+    const oThis = this;
 
     let response = {},
       unencrypted_params_hash = {},
@@ -582,7 +581,7 @@ const ConfigStrategyModelSpecificPrototype = {
 
     let chainsInfo = await oThis
       .select(['kind', 'unencrypted_params'])
-      .where(['status = ? AND kind in (?)', activeStatus, gethKinds])
+      .where(['kind in (?)', gethKinds])
       .fire();
 
     if (chainsInfo.length === 0) {
