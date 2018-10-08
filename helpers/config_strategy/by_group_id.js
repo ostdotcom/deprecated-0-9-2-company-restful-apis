@@ -15,7 +15,6 @@ const rootPrefix = '../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
   ConfigStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
-  ChainGethProviderModel = require(rootPrefix + '/app/models/chain_geth_providers'),
   ClientConfigStrategyModel = require(rootPrefix + '/app/models/client_config_strategies'),
   configStrategyCacheKlass = require(rootPrefix + '/lib/shared_cache_multi_management/config_strategy');
 
@@ -238,36 +237,6 @@ ConfigStrategyByGroupId.prototype = {
       }
     }
 
-    if (kind === 'value_geth' || kind === 'utility_geth') {
-      //get both the geth end point and update
-
-      let promises = [],
-        rpcProviderArray = params.OST_VALUE_GETH_RPC_PROVIDERS,
-        wsProviderArray = params.OST_VALUE_GETH_WS_PROVIDERS,
-        chainId = params.OST_VALUE_CHAIN_ID,
-        chainKind = 'value';
-
-      if (kind === 'utility_geth') {
-        rpcProviderArray = params.OST_UTILITY_GETH_RPC_PROVIDERS;
-        wsProviderArray = params.OST_UTILITY_GETH_WS_PROVIDERS;
-        chainId = params.OST_UTILITY_CHAIN_ID;
-        chainKind = 'utility';
-      }
-
-      //Assuming number of rpc providers and ws providers will be same
-      for (let i = 0; i < rpcProviderArray.length; i++) {
-        promises.push(
-          await new ChainGethProviderModel().insertRecord({
-            chain_id: parseInt(chainId),
-            chain_kind: chainKind,
-            ws_provider: wsProviderArray[i],
-            rpc_provider: rpcProviderArray[i]
-          })
-        );
-      }
-
-      await Promise.all(promises);
-    }
     return Promise.resolve(responseHelper.successWithData({}));
   },
 
@@ -329,31 +298,6 @@ ConfigStrategyByGroupId.prototype = {
       return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_17'));
     }
 
-    let utilityGethFlatHash = await oThis.getForKind('utility_geth'),
-      configStrategyIdInt = parseInt(Object.keys(utilityGethFlatHash.data)), //to get corresponding strategyId as number from hash
-      utilityGethPurehash = utilityGethFlatHash.data[configStrategyIdInt]; //Get pure hash for utility geth
-
-    // Loop around geth_providers endpoint present in hash.
-    // For all the endpoints set the status active in chain_geth_providers.
-
-    let rpcProviderArray = utilityGethPurehash.OST_UTILITY_GETH_RPC_PROVIDERS,
-      wsProviderArray = utilityGethPurehash.OST_UTILITY_GETH_WS_PROVIDERS,
-      chainGethProviderObj = new ChainGethProviderModel(),
-      chainKindIdentifier = chainGethProviderObj.invertedEnums.value;
-
-    //Added chain_kind clause to activate value geth when activate() is called for the very first time.
-    let whereClause = [
-        'ws_provider IN (?) OR rpc_provider IN (?) OR chain_kind = ?',
-        wsProviderArray,
-        rpcProviderArray,
-        chainKindIdentifier
-      ],
-      updateQueryResponse = await new ChainGethProviderModel()
-        .update({ status: activeStatus })
-        .where(whereClause)
-        .fire();
-
-    logger.info(`Status activated in Chain Geth Providers successfully. `);
     return Promise.resolve(responseHelper.successWithData({}));
   },
 
@@ -409,19 +353,6 @@ ConfigStrategyByGroupId.prototype = {
       return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_21'));
     }
 
-    let utilityGethFlatHash = await oThis.getForKind('utility_geth'),
-      configStrategyIdInt = parseInt(Object.keys(utilityGethFlatHash.data)), //to get corresponding strategyId as number from hash
-      utilityGethPurehash = utilityGethFlatHash.data[configStrategyIdInt]; //Get pure hash for utility geth
-
-    let rpcProviderArray = utilityGethPurehash.OST_UTILITY_GETH_RPC_PROVIDERS;
-
-    let whereClauseForGethProvider = ['rpc_provider IN (?)', rpcProviderArray],
-      updateQueryResponse = await new ChainGethProviderModel()
-        .update({ status: inActiveStatus })
-        .where(whereClauseForGethProvider)
-        .fire();
-
-    logger.info(`Status deactivated in Chain Geth Providers successfully. `);
     return Promise.resolve(responseHelper.successWithData({}));
   },
 
@@ -491,45 +422,6 @@ ConfigStrategyByGroupId.prototype = {
     //clearing the cache
     let configStrategyCacheObj = new configStrategyCacheKlass({ strategyIds: [strategyId] }),
       configStrategyFetchRsp = await configStrategyCacheObj.clear();
-
-    if (kind === 'value_geth' || kind === 'utility_geth') {
-      //get both the geth end point and update
-
-      if (!old_data) {
-        logger.error('Geth providers table is not updated because old data was not passed');
-        return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_28'));
-      }
-
-      let new_ws_provider = null,
-        new_rpc_provider = null,
-        whereClause = null;
-      if (kind === 'value_geth') {
-        new_ws_provider = params.OST_VALUE_GETH_WS_PROVIDER;
-        new_rpc_provider = params.OST_VALUE_GETH_RPC_PROVIDER;
-      } else {
-        new_ws_provider = params.OST_UTILITY_GETH_WS_PROVIDER;
-        new_rpc_provider = params.OST_UTILITY_GETH_RPC_PROVIDER;
-      }
-
-      if (old_data.WS_Provider) {
-        //Update WS Provider
-        whereClause = {
-          ws_provider: old_data.WS_Provider
-        };
-      }
-
-      if (old_data.RPC_Provider) {
-        //Update RPC Provider
-        whereClause = {
-          rpc_provider: old_data.RPC_Provider
-        };
-      }
-
-      let updateResponse = await new ChainGethProviderModel()
-        .update({ ws_provider: new_ws_provider, rpc_provider: new_rpc_provider })
-        .where(whereClause)
-        .fire();
-    }
 
     return Promise.resolve(responseHelper.successWithData({}));
   },

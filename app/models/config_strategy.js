@@ -553,6 +553,129 @@ const ConfigStrategyModelSpecificPrototype = {
 
   /**
    *
+   * @param gethProvider
+   * @returns {Promise<*>}
+   */
+  getSiblingProviders: async function(gethProvider) {
+    const oThis = this,
+      activeStatus = configStrategyConstants.invertedStatuses[configStrategyConstants.activeStatus];
+
+    let response = {},
+      unencrypted_params_hash = {},
+      kindInt = null,
+      gethKinds = [
+        configStrategyConstants.invertedKinds[configStrategyConstants.value_geth],
+        configStrategyConstants.invertedKinds[configStrategyConstants.utility_geth]
+      ];
+
+    if (!gethProvider) {
+      logger.error('Mandatory parameter is missing');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'a_mo_cs_c_18',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {},
+          error_config: errorConfig
+        })
+      );
+    }
+
+    let chainsInfo = await oThis
+      .select(['kind', 'unencrypted_params'])
+      .where(['status = ? AND kind in (?)', activeStatus, gethKinds])
+      .fire();
+
+    if (chainsInfo.length === 0) {
+      logger.error('Given geth provider is not present. Check the database');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'a_mo_cs_c_19',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {},
+          error_config: errorConfig
+        })
+      );
+    }
+
+    for (let index in chainsInfo) {
+      if (chainsInfo[index].unencrypted_params.includes(gethProvider)) {
+        unencrypted_params_hash = JSON.parse(chainsInfo[index].unencrypted_params);
+        kindInt = chainsInfo[index].kind;
+      }
+    }
+
+    if (!unencrypted_params_hash) {
+      logger.error(`Given geth provider in not present in the database`);
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 'a_mo_cs_c_20',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {}
+        })
+      );
+    }
+
+    if (configStrategyConstants.kinds[kindInt] === configStrategyConstants.utility_geth) {
+      response = oThis._extractUtilityGethParams(unencrypted_params_hash, gethProvider);
+    } else if (configStrategyConstants.kinds[kindInt] === configStrategyConstants.value_geth) {
+      response = oThis._extractValueGethParams(unencrypted_params_hash, gethProvider);
+    }
+
+    return response;
+  },
+
+  /**
+   * This function extracts geth parameters from utility_geth multi level hash. Any change in hash's format should
+   * reflect in the following function
+   * @param unencrypted_hash
+   * @private
+   */
+  _extractUtilityGethParams: function(unencrypted_hash, gethProvider) {
+    let response = {};
+
+    response.chainId = unencrypted_hash.OST_UTILITY_CHAIN_ID;
+    response.chainKind = 'utility';
+    if (unencrypted_hash.OST_UTILITY_GETH_WS_PROVIDERS.includes(gethProvider)) {
+      response.siblingEndpoints = unencrypted_hash.OST_UTILITY_GETH_WS_PROVIDERS;
+    } else if (unencrypted_hash.OST_UTILITY_GETH_RPC_PROVIDERS.includes(gethProvider)) {
+      response.siblingEndpoints = unencrypted_hash.OST_UTILITY_GETH_RPC_PROVIDERS;
+    }
+    response.gethWsProviders = unencrypted_hash.OST_UTILITY_GETH_WS_PROVIDERS;
+    response.gethRpcProviders = unencrypted_hash.OST_UTILITY_GETH_RPC_PROVIDERS;
+    //Uncomment following code when there is a change in format of hash
+    /*let keyToCheckWhereTheValue = ['read_only','read_write'];//Remove hard coding
+    for(let index in keyToCheckWhereTheValue){
+      let keyName = keyToCheckWhereTheValue[index];
+      if(unencrypted_hash[keyName].OST_UTILITY_GETH_WS_PROVIDERS.includes(gethProvider)){
+        response.siblingEndpoints = unencrypted_hash[keyName].OST_UTILITY_GETH_WS_PROVIDERS;
+        response.gethWsProviders = unencrypted_hash[keyName].OST_UTILITY_GETH_WS_PROVIDERS;
+        response.gethRpcProviders = unencrypted_hash[keyName].OST_UTILITY_GETH_RPC_PROVIDERS;
+      }else if(unencrypted_hash[keyName].OST_UTILITY_GETH_RPC_PROVIDERS.includes(gethProvider)){
+        response.siblingEndpoints = unencrypted_hash[keyName].OST_UTILITY_GETH_RPC_PROVIDERS;
+        response.gethWsProviders = unencrypted_hash[keyName].OST_UTILITY_GETH_WS_PROVIDERS;
+        response.gethRpcProviders = unencrypted_hash[keyName].OST_UTILITY_GETH_RPC_PROVIDERS;
+      }
+    }*/
+    return response;
+  },
+
+  _extractValueGethParams: function(unencrypted_hash, gethProvider) {
+    let response = {};
+    response.chainId = unencrypted_hash.OST_VALUE_CHAIN_ID;
+    response.chainKind = 'value';
+    if (unencrypted_hash.OST_VALUE_GETH_WS_PROVIDERS.includes(gethProvider)) {
+      response.siblingEndpoints = unencrypted_hash.OST_VALUE_GETH_WS_PROVIDERS;
+    } else if (unencrypted_hash.OST_VALUE_GETH_RPC_PROVIDERS.includes(gethProvider)) {
+      response.siblingEndpoints = unencrypted_hash.OST_VALUE_GETH_RPC_PROVIDERS;
+    }
+    response.gethWsProviders = unencrypted_hash.OST_VALUE_GETH_WS_PROVIDERS;
+    response.gethRpcProviders = unencrypted_hash.OST_VALUE_GETH_RPC_PROVIDERS;
+
+    return response;
+  },
+
+  /**
+   *
    * @param (string) strategy_kind ('dynamo' or 'dax' etc)
    * @param (object) params_hash (complete hash of that strategy)
    *
