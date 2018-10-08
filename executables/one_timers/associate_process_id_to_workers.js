@@ -65,8 +65,12 @@ associateProcessId.prototype = {
 
       for (let index = 0; index < associatedClients.length; index++) {
         let clientId = associatedClients[index],
-          clientWorkers = clientWorkersMap[clientId],
-          minOfTwoArrays = Math.min(clientWorkers.length, processArray.length);
+          clientWorkers = clientWorkersMap[clientId];
+
+        if (clientWorkers == undefined) {
+          continue;
+        }
+        let minOfTwoArrays = Math.min(clientWorkers.length, processArray.length);
 
         for (let index = 0; index < minOfTwoArrays; index++) {
           let updateParams = {
