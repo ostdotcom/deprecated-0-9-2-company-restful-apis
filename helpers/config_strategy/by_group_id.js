@@ -72,7 +72,7 @@ ConfigStrategyByGroupId.prototype = {
    * [IMPORTANT][ASSUMPTION]: Multiple value_geth, constants, in_memory, value_constants kinds will not be present in the table.
    * @returns {Promise<*>}
    */
-  getCompleteHash: async function() {
+  getCompleteHash: async function(gethEndPointType) {
     const oThis = this,
       groupId = oThis.groupId;
 
@@ -91,7 +91,7 @@ ConfigStrategyByGroupId.prototype = {
       return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_03'));
     }
 
-    let finalFlatHash = oThis._cacheResponseFlatHashProvider(fetchConfigStrategyRsp);
+    let finalFlatHash = oThis._cacheResponseFlatHashProvider(fetchConfigStrategyRsp, gethEndPointType);
 
     return Promise.resolve(responseHelper.successWithData(finalFlatHash));
   },
@@ -462,17 +462,28 @@ ConfigStrategyByGroupId.prototype = {
    * @param configStrategyResponse
    * @private
    */
-  _cacheResponseFlatHashProvider: function(configStrategyResponse) {
+  _cacheResponseFlatHashProvider: function(configStrategyResponse, gethEndPointType) {
     const oThis = this;
 
     let configStrategyIdToDetailMap = configStrategyResponse.data,
       finalConfigStrategyFlatHash = {};
 
+    gethEndPointType = gethEndPointType ? gethEndPointType : 'read_write';
+
     for (let configStrategyId in configStrategyIdToDetailMap) {
       let configStrategy = configStrategyIdToDetailMap[configStrategyId];
 
       for (let strategyKind in configStrategy) {
-        Object.assign(finalConfigStrategyFlatHash, configStrategy[strategyKind]);
+        let partialConfig = configStrategy[strategyKind];
+
+        if (strategyKind == 'utility_geth') {
+          let tempConfig = partialConfig[gethEndPointType];
+          delete partialConfig['read_write'];
+          delete partialConfig['read_only'];
+          Object.assign(partialConfig, tempConfig);
+        }
+
+        Object.assign(finalConfigStrategyFlatHash, partialConfig);
       }
     }
 
