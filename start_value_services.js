@@ -96,7 +96,7 @@ StartServicesKlass.prototype = {
     } else {
       logger.info('* Value Chain:', servicesResponse.data.chain.value);
     }
-    /*
+
     logger.step('** Starting Processor to execute transactions');
     cmd =
       'node executables/rmq_subscribers/execute_transaction.js 1' +
@@ -106,15 +106,15 @@ StartServicesKlass.prototype = {
     servicesList.push(cmd);
     oThis._asyncCommand(cmd);
 
-    logger.step('** Starting Slow Processor to execute transactions');
+    /*logger.step('** Starting Slow Processor to execute transactions');
     cmd =
       'node executables/rmq_subscribers/execute_transaction.js 2 slow' +
       ' >> ' +
       homeAbsolutePath +
       '/openst-setup/logs/slow_execute_transaction.log';
     servicesList.push(cmd);
-    oThis._asyncCommand(cmd);
-*/
+    oThis._asyncCommand(cmd);*/
+
     logger.step('** Starting worker to process events');
     cmd =
       'node executables/rmq_subscribers/factory.js 1 \'temp\' \'["on_boarding.#","airdrop_allocate_tokens","stake_and_mint.#","event.stake_and_mint_processor.#","event.block_scanner.#","airdrop.approve.contract", "transaction.stp_transfer"]\'' +
