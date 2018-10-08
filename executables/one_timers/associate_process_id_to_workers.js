@@ -2,6 +2,7 @@
 
 const rootPrefix = '../..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
   ProcessQueueAssociationModel = require(rootPrefix + '/app/models/process_queue_association'),
   processQueueAssocConst = require(rootPrefix + '/lib/global_constant/process_queue_association'),
   ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/client_worker_managed_address_id'),
@@ -19,20 +20,33 @@ associateProcessId.prototype = {
   associate: async function() {
     // Get all the process_ids that are available for allocation and store them in array.
     const processDetails = await new ProcessQueueAssociationModel().getProcessesByStatus(
-        processQueueAssocConst.availableForAllocations
-      ),
-      processArray = [];
+      processQueueAssocConst.availableForAllocations
+    );
 
+    let chainIdProcessesMap = {};
     for (let i = 0; i < processDetails.length; i++) {
-      processArray.push(processDetails[i].process_id);
+      let processDetail = processDetails[i];
+      chainIdProcessesMap[processDetail.chain_id] = chainIdProcessesMap[processDetail.chain_id] || [];
+      chainIdProcessesMap[processDetail.chain_id].push(processDetail.process_id);
     }
+
+    let availableClients = await new ClientBrandedTokenModel().select('chain_id, client_id').fire(),
+      allClients = [],
+      chainIdClientsMap = {};
+    for (let index = 0; index < availableClients.length; index++) {
+      let availableClient = availableClients[index];
+      chainIdClientsMap[availableClient.chain_id] = chainIdClientsMap[availableClient.chain_id] || [];
+      chainIdClientsMap[availableClient.chain_id].push(availableClient.client_id);
+      allClients.push(availableClient.client_id);
+    }
+
     // Get all the workers with active status.
-    let activeStatus = await new ClientWorkerManagedAddressIdModel().invertedStatuses[
+    let activeStatus = new ClientWorkerManagedAddressIdModel().invertedStatuses[
         ClientWorkerManagedAddressIdConstant.activeStatus
       ],
       clientDetails = await new ClientWorkerManagedAddressIdModel()
         .select('id, client_id, managed_address_id')
-        .where(['status=?', activeStatus])
+        .where(['status=? AND client_id IN (?)', activeStatus, allClients])
         .fire();
 
     let clientWorkersMap = {};
@@ -45,16 +59,22 @@ associateProcessId.prototype = {
 
     // Assign the process_ids, here every process_id will have only one worker of the same client.
     // Update the entry for the same.
-    for (let client in clientWorkersMap) {
-      let clientWorkers = clientWorkersMap[client],
-        minOfTwoArrays = Math.min(clientWorkers.length, processArray.length);
+    for (let chainId in chainIdClientsMap) {
+      let associatedClients = chainIdClientsMap[chainId],
+        processArray = chainIdProcessesMap[chainId];
 
-      for (let index = 0; index < minOfTwoArrays; index++) {
-        let updateParams = {
-          id: clientWorkers[index].id,
-          process_id: processArray[index]
-        };
-        await new ClientWorkerManagedAddressIdModel().updateProcessId(updateParams);
+      for (let index = 0; index < associatedClients.length; index++) {
+        let clientId = associatedClients[index],
+          clientWorkers = clientWorkersMap[clientId],
+          minOfTwoArrays = Math.min(clientWorkers.length, processArray.length);
+
+        for (let index = 0; index < minOfTwoArrays; index++) {
+          let updateParams = {
+            id: clientWorkers[index].id,
+            process_id: processArray[index]
+          };
+          await new ClientWorkerManagedAddressIdModel().updateProcessId(updateParams);
+        }
       }
     }
     logger.win('Associated processes to all client workers successfully.');

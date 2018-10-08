@@ -217,7 +217,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
     const oThis = this,
       invertedStatus = oThis.invertedStatuses[status];
     return await oThis
-      .select('process_id')
+      .select('process_id, chain_id')
       .where(['status=?', invertedStatus])
       .fire();
   },
