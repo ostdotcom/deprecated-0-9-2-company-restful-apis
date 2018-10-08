@@ -229,6 +229,13 @@ ConfigStrategyByGroupId.prototype = {
         return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_12'));
       }
 
+      let validateResponse = oThis._validateUtilityGethParams(kind, params);
+
+      if (validateResponse.isFailure()) {
+        logger.error('Error in inserting data in config_strategies table');
+        return validateResponse;
+      }
+
       let configStrategyModelObj = new ConfigStrategyModel(),
         insertResponse = await configStrategyModelObj.create(kind, managedAddressSaltId, params, groupId);
 
@@ -479,6 +486,13 @@ ConfigStrategyByGroupId.prototype = {
       return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_26'));
     }
 
+    let validateResponse = oThis._validateUtilityGethParams(kind, params);
+
+    if (validateResponse.isFailure()) {
+      logger.error('Error in inserting data in config_strategies table');
+      return validateResponse;
+    }
+
     let strategyId = strategyIdArray[0],
       configStrategyModelObj = new ConfigStrategyModel(),
       updateResponse = await configStrategyModelObj.updateStrategyId(strategyId, params);
@@ -653,6 +667,36 @@ ConfigStrategyByGroupId.prototype = {
       api_error_identifier: 'something_went_wrong',
       debug_options: {}
     });
+  },
+
+  /**
+   * Validate utility geth hash
+   */
+  _validateUtilityGethParams: function(kind, params) {
+    const oThis = this,
+      validKeys = ['read_only', 'read_write', 'OST_UTILITY_CHAIN_ID'];
+
+    if (kind == 'utility_geth') {
+      let keys = Object.keys(params);
+
+      for (let i = 0; i < validKeys.length; i++) {
+        if (!keys.includes(validKeys[i])) {
+          logger.error('Missing', validKeys[i], ' key in the input params');
+          return oThis._errorResponseHandler('h_cs_bgi_31');
+        }
+      }
+
+      for (let i = 0; i < keys.length; i++) {
+        if (['read_only', 'read_write'].includes(keys[i])) {
+          if (!(params[keys[i]] instanceof Array)) {
+            logger.error('Expecting', keys[i], "key's value to be an array");
+            return oThis._errorResponseHandler('h_cs_bgi_32');
+          }
+        }
+      }
+    }
+
+    return responseHelper.successWithData({});
   }
 };
 
