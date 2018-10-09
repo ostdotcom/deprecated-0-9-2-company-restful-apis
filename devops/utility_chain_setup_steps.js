@@ -6,14 +6,14 @@ rootPrefix = '.';
 managed_address_salt_id = '153';
 
 // set group id
-group_id = '2';
+groupId = '2';
 
 modelKlass = require(rootPrefix + '/app/models/config_strategy.js');
 byGroupIdHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_group_id.js');
 
 // Insert Dynamo Config
 
-performer = async function() {
+performer = async function(groupId) {
   config_strategy_params = {
     OS_DYNAMODB_SECRET_ACCESS_KEY: 'x',
     OS_DYNAMODB_ACCESS_KEY_ID: 'x',
@@ -27,9 +27,9 @@ performer = async function() {
     OS_DYNAMODB_TRANSACTION_LOG_SHARDS_ARRAY: ['d_pk_transaction_logs_shard_001', 'd_pk_transaction_logs_shard_002'],
     OS_DAX_ENABLED: '0'
   };
-  modelObj = new modelKlass();
+  helperObj = new byGroupIdHelperKlass(groupId);
   console.log('inserting data');
-  insertRsp = await modelObj.create('dynamo', managed_address_salt_id, config_strategy_params, group_id);
+  insertRsp = await helperObj.addForKind('dynamo', config_strategy_params, managed_address_salt_id);
   if (insertRsp.isFailure()) {
     console.error('insert failed with: ', insertRsp.toHash());
   } else {
@@ -40,11 +40,11 @@ performer = async function() {
   console.log('insertedData: ', JSON.stringify(fetchRsp));
 };
 
-performer();
+performer(groupId);
 
 // Insert DAX Config
 
-performer = async function() {
+performer = async function(groupId) {
   config_strategy_params = {
     OS_DAX_SECRET_ACCESS_KEY: 'x',
     OS_DAX_API_VERSION: '2017-04-19',
@@ -53,9 +53,9 @@ performer = async function() {
     OS_DAX_ENDPOINT: 'http://localhost:8001',
     OS_DAX_SSL_ENABLED: '0'
   };
-  modelObj = new modelKlass();
+  helperObj = new byGroupIdHelperKlass(groupId);
   console.log('inserting data');
-  insertRsp = await modelObj.create('dax', managed_address_salt_id, config_strategy_params, group_id);
+  insertRsp = await helperObj.addForKind('dax', config_strategy_params, managed_address_salt_id);
   if (insertRsp.isFailure()) {
     console.error('insert failed with: ', insertRsp.toHash());
   } else {
@@ -66,17 +66,17 @@ performer = async function() {
   console.log('insertedData: ', JSON.stringify(fetchRsp));
 };
 
-performer();
+performer(groupId);
 
 // Insert memcached Config
 
-performer = async function() {
+performer = async function(groupId) {
   config_strategy_params = {
     OST_MEMCACHE_SERVERS: '127.0.0.1:11212'
   };
-  modelObj = new modelKlass();
+  helperObj = new byGroupIdHelperKlass(groupId);
   console.log('inserting data');
-  insertRsp = await modelObj.create('memcached', managed_address_salt_id, config_strategy_params, group_id);
+  insertRsp = await helperObj.addForKind('memcached', config_strategy_params, managed_address_salt_id);
   if (insertRsp.isFailure()) {
     console.error('insert failed with: ', insertRsp.toHash());
   } else {
@@ -87,11 +87,11 @@ performer = async function() {
   console.log('insertedData: ', JSON.stringify(fetchRsp));
 };
 
-performer();
+performer(groupId);
 
 // Insert utility geth Config
 
-performer = async function() {
+performer = async function(groupId) {
   config_strategy_params = {
     read_only: {
       OST_UTILITY_GETH_RPC_PROVIDER: 'http://127.0.0.1:8664',
@@ -105,12 +105,12 @@ performer = async function() {
       OST_UTILITY_GETH_WS_PROVIDER: 'ws://127.0.0.1:8665',
       OST_UTILITY_GETH_WS_PROVIDERS: ['ws://127.0.0.1:8665']
     },
-    OST_UTILITY_CHAIN_ID: 1002,
+    OST_UTILITY_CHAIN_ID: 1003,
     chain_type: 'parity'
   };
-  modelObj = new modelKlass();
+  helperObj = new byGroupIdHelperKlass(groupId);
   console.log('inserting data');
-  insertRsp = await modelObj.create('utility_geth', managed_address_salt_id, config_strategy_params, group_id);
+  insertRsp = await helperObj.addForKind('utility_geth', config_strategy_params, managed_address_salt_id);
   if (insertRsp.isFailure()) {
     console.error('insert failed with: ', insertRsp.toHash());
   } else {
@@ -121,11 +121,11 @@ performer = async function() {
   console.log('insertedData: ', JSON.stringify(fetchRsp));
 };
 
-performer();
+performer(groupId);
 
 // Insert utility geth constants Config
 
-performer = async function() {
+performer = async function(groupId) {
   config_strategy_params = {
     OST_UTILITY_CHAIN_OWNER_PASSPHRASE: 'testtest',
     OST_UTILITY_INITIAL_ST_PRIME_HOLDER_PASSPHRASE: 'testtest',
@@ -152,9 +152,9 @@ performer = async function() {
     OST_UTILITY_WORKERS_CONTRACT_ADDRESS: '',
     OST_VALUE_CORE_CONTRACT_ADDR: ''
   };
-  modelObj = new modelKlass();
+  helperObj = new byGroupIdHelperKlass(groupId);
   console.log('inserting data');
-  insertRsp = await modelObj.create('utility_constants', managed_address_salt_id, config_strategy_params, group_id);
+  insertRsp = await helperObj.addForKind('utility_constants', config_strategy_params, managed_address_salt_id);
   if (insertRsp.isFailure()) {
     console.error('insert failed with: ', insertRsp.toHash());
   } else {
@@ -165,11 +165,11 @@ performer = async function() {
   console.log('insertedData: ', JSON.stringify(fetchRsp));
 };
 
-performer();
+performer(groupId);
 
 // Insert autoscaling constants Config
 
-performer = async function() {
+performer = async function(groupId) {
   config_strategy_params = {
     OS_AUTOSCALING_SECRET_ACCESS_KEY: 'x',
     OS_AUTOSCALING_API_VERSION: '2016-02-06',
@@ -178,11 +178,11 @@ performer = async function() {
     OS_AUTOSCALING_ENDPOINT: 'http://localhost:8001',
     OS_AUTOSCALING_SSL_ENABLED: '0',
     OS_AUTOSCALING_LOGGING_ENABLED: '0',
-    AUTO_SCALE_DYNAMO: '1'
+    AUTO_SCALE_DYNAMO: '0'
   };
-  modelObj = new modelKlass();
+  helperObj = new byGroupIdHelperKlass(groupId);
   console.log('inserting data');
-  insertRsp = await modelObj.create('autoscaling', managed_address_salt_id, config_strategy_params, group_id);
+  insertRsp = await helperObj.addForKind('autoscaling', config_strategy_params, managed_address_salt_id);
   if (insertRsp.isFailure()) {
     console.error('insert failed with: ', insertRsp.toHash());
   } else {
@@ -193,20 +193,20 @@ performer = async function() {
   console.log('insertedData: ', JSON.stringify(fetchRsp));
 };
 
-performer();
+performer(groupId);
 
 // Insert ES constants Config
 
-performer = async function() {
+performer = async function(groupId) {
   config_strategy_params = {
-    AWS_ES_SECRET_KEY: '',
+    AWS_ES_SECRET_KEY: '<na>',
     CR_ES_HOST: 'http://localhost:9201',
-    AWS_ES_ACCESS_KEY: '',
+    AWS_ES_ACCESS_KEY: '<na>',
     AWS_ES_REGION: 'us-east-1'
   };
-  modelObj = new modelKlass();
+  helperObj = new byGroupIdHelperKlass(groupId);
   console.log('inserting data');
-  insertRsp = await modelObj.create('es', managed_address_salt_id, config_strategy_params, group_id);
+  insertRsp = await helperObj.addForKind('es', config_strategy_params, managed_address_salt_id);
   if (insertRsp.isFailure()) {
     console.error('insert failed with: ', insertRsp.toHash());
   } else {
@@ -217,17 +217,17 @@ performer = async function() {
   console.log('insertedData: ', JSON.stringify(fetchRsp));
 };
 
-performer();
+performer(groupId);
 
 // Insert NONCE MEMCACHED constants Config
 
-performer = async function() {
+performer = async function(groupId) {
   config_strategy_params = {
     OST_NONCE_MEMCACHE_SERVERS: '127.0.0.1:11212'
   };
-  modelObj = new modelKlass();
+  helperObj = new byGroupIdHelperKlass(groupId);
   console.log('inserting data');
-  insertRsp = await modelObj.create('nonce_memcached', managed_address_salt_id, config_strategy_params, group_id);
+  insertRsp = await helperObj.addForKind('nonce_memcached', config_strategy_params, managed_address_salt_id);
   if (insertRsp.isFailure()) {
     console.error('insert failed with: ', insertRsp.toHash());
   } else {
@@ -238,7 +238,7 @@ performer = async function() {
   console.log('insertedData: ', JSON.stringify(fetchRsp));
 };
 
-performer();
+performer(groupId);
 
 /* 1.
  ***** DynamoDB migrations *****
@@ -271,11 +271,13 @@ performer = async function(groupId) {
   rsp = await performer.perform();
   if (rsp.isFailure()) {
     console.error('failed: ', rsp.toHash());
+    return Promise.resolve(rsp);
   } else {
     utilityRegistrarContractAddr = rsp.data['address'];
     configStrategyRsp = await obj.getForKind('utility_constants');
     if (configStrategyRsp.isFailure()) {
       console.error('configStrategyRsp: ', configStrategyRsp.toHash());
+      return Promise.resolve(configStrategyRsp);
     } else {
       existingData = configStrategyRsp.data[Object.keys(configStrategyRsp.data)[0]];
       toBeUpdatedData = JSON.parse(JSON.stringify(existingData));
@@ -289,11 +291,20 @@ performer = async function(groupId) {
       if (updateRsp.isFailure()) {
         console.error('updateRsp: ', updateRsp.toHash());
       }
+      return Promise.resolve(updateRsp);
     }
   }
 };
 
-performer(2);
+performer(2)
+  .then(function(rsp) {
+    console.log(rsp);
+    process.exit(0);
+  })
+  .catch(function(rsp) {
+    console.error(rsp);
+    process.exit(0);
+  });
 
 //Update OST_UTILITY_REGISTRAR_CONTRACT_ADDR in config strategy file
 
@@ -321,12 +332,14 @@ performer = async function(groupId) {
   rsp = await performer.perform();
   if (rsp.isFailure()) {
     console.error('failed: ', rsp.toHash());
+    return Promise.resolve(rsp);
   } else {
     console.log('deployment rsp: ', rsp.data);
     openSTUtilityContractAddr = rsp.data['address'];
     configStrategyRsp = await obj.getForKind('utility_constants');
     if (configStrategyRsp.isFailure()) {
       console.error('configStrategyRsp: ', configStrategyRsp.toHash());
+      return Promise.resolve(configStrategyRsp);
     } else {
       existingData = configStrategyRsp.data[Object.keys(configStrategyRsp.data)[0]];
       toBeUpdatedData = JSON.parse(JSON.stringify(existingData));
@@ -340,11 +353,20 @@ performer = async function(groupId) {
       if (updateRsp.isFailure()) {
         console.error('updateRsp: ', updateRsp.toHash());
       }
+      return Promise.resolve(updateRsp);
     }
   }
 };
 
-performer(2);
+performer(2)
+  .then(function(rsp) {
+    console.log(rsp);
+    process.exit(0);
+  })
+  .catch(function(rsp) {
+    console.error(rsp);
+    process.exit(0);
+  });
 
 //Update OST_OPENSTUTILITY_CONTRACT_ADDR in config strategy file
 
@@ -371,12 +393,14 @@ performer = async function(groupId) {
   rsp = await performer.perform();
   if (rsp.isFailure()) {
     console.error('failed: ', rsp.toHash());
+    return Promise.resolve(rsp);
   } else {
     console.log('deployment rsp: ', rsp.data);
     valueCoreContractAddr = rsp.data['address'];
     configStrategyRsp = await obj.getForKind('utility_constants');
     if (configStrategyRsp.isFailure()) {
       console.error('configStrategyRsp: ', configStrategyRsp.toHash());
+      return Promise.resolve(configStrategyRsp);
     } else {
       existingData = configStrategyRsp.data[Object.keys(configStrategyRsp.data)[0]];
       toBeUpdatedData = JSON.parse(JSON.stringify(existingData));
@@ -390,11 +414,20 @@ performer = async function(groupId) {
       if (updateRsp.isFailure()) {
         console.error('updateRsp: ', updateRsp.toHash());
       }
+      return Promise.resolve(updateRsp);
     }
   }
 };
 
-performer(groupId);
+performer(2)
+  .then(function(rsp) {
+    console.log(rsp);
+    process.exit(0);
+  })
+  .catch(function(rsp) {
+    console.error(rsp);
+    process.exit(0);
+  });
 
 //Update value core contract address OST_VALUE_CORE_CONTRACT_ADDR
 
@@ -420,6 +453,7 @@ performer = async function(groupId) {
   rsp = await performer.perform();
   if (rsp.isFailure()) {
     console.error('failed: ', rsp.toHash());
+    return Promise.resolve(rsp);
   } else {
     console.log('deployment rsp: ', rsp.data);
     stPrimeContractAddr = rsp.data['address'];
@@ -427,6 +461,7 @@ performer = async function(groupId) {
     configStrategyRsp = await obj.getForKind('utility_constants');
     if (configStrategyRsp.isFailure()) {
       console.error('configStrategyRsp: ', configStrategyRsp.toHash());
+      return Promise.resolve(configStrategyRsp);
     } else {
       existingData = configStrategyRsp.data[Object.keys(configStrategyRsp.data)[0]];
       toBeUpdatedData = JSON.parse(JSON.stringify(existingData));
@@ -441,11 +476,20 @@ performer = async function(groupId) {
       if (updateRsp.isFailure()) {
         console.error('updateRsp: ', updateRsp.toHash());
       }
+      return Promise.resolve(updateRsp);
     }
   }
 };
 
-performer(groupId);
+performer(2)
+  .then(function(rsp) {
+    console.log(rsp);
+    process.exit(0);
+  })
+  .catch(function(rsp) {
+    console.error(rsp);
+    process.exit(0);
+  });
 
 // update OST_OPENSTUTILITY_ST_PRIME_UUID & OST_STPRIME_CONTRACT_ADDR
 
@@ -466,21 +510,29 @@ performer = async function(groupId) {
   openSTPlaform = platformProvider.getInstance();
   performer = openSTPlaform.services.setup.registerSTPrime;
   rsp = await performer.perform();
-  console.log('rsp: ', rsp.toHash());
+  return Promise.resolve(rsp);
 };
 
-performer(groupId);
+performer(2)
+  .then(function(rsp) {
+    console.log(rsp);
+    process.exit(0);
+  })
+  .catch(function(rsp) {
+    console.error(rsp);
+    process.exit(0);
+  });
 
 // Foundation side
 // touch /mnt/st-foundation/apps/saasApi/shared/stake_and_mint.json
-// echo '{"lastProcessedBlock":1, "lastProcessedTransactionIndex":0}' > /mnt/st-foundation/apps/saasApi/shared/stake_and_mint.json
+// echo '{"lastProcessedBlock":1, "lastProcessedTransactionIndex":14916}' > /mnt/st-foundation/apps/saasApi/shared/stake_and_mint.json
 
 // touch /mnt/st-foundation/apps/saasApi/shared/register_branded_token.json
-// echo '{"lastProcessedBlock":1,"lastProcessedTransactionIndex":0}' > /mnt/st-foundation/apps/saasApi/shared/register_branded_token.json
+// echo '{"lastProcessedBlock":1,"lastProcessedTransactionIndex":265}' > /mnt/st-foundation/apps/saasApi/shared/register_branded_token.json
 
 // Company side
 // touch /mnt/st-company/apps/saasApi/shared/stake_and_mint_processor.json
-// echo '{"lastProcessedBlock":1,"lastProcessedTransactionIndex":0}' > /mnt/st-company/apps/saasApi/shared/stake_and_mint_processor.json
+// echo '{"lastProcessedBlock":1,"lastProcessedTransactionIndex":265}' > /mnt/st-company/apps/saasApi/shared/stake_and_mint_processor.json
 
 // Start intercoms on both company and foundation after making utility  gas price 0
 
@@ -504,9 +556,18 @@ performer = async function(groupId) {
   performer = openSTPlaform.services.setup.stPrimeMinter;
   rsp = await performer.perform();
   console.log('rsp: ', rsp.toHash());
+  return Promise.resolve(rsp);
 };
 
-performer(groupId);
+performer(2)
+  .then(function(rsp) {
+    console.log(rsp);
+    process.exit(0);
+  })
+  .catch(function(rsp) {
+    console.error(rsp);
+    process.exit(0);
+  });
 
 // CHeck Balance of UTILITY_CHAIN_OWNER should have 10000 ST prime after the transaction is successfull
 
@@ -530,9 +591,18 @@ performer = async function(groupId) {
   performer = openSTPlaform.services.setup.fundUsersWithSTPrime;
   rsp = await performer.perform();
   console.log('rsp: ', rsp.toHash());
+  return Promise.resolve(rsp);
 };
 
-performer(groupId);
+performer(2)
+  .then(function(rsp) {
+    console.log(rsp);
+    process.exit(0);
+  })
+  .catch(function(rsp) {
+    console.error(rsp);
+    process.exit(0);
+  });
 
 // Remove Zero UC Gas
 
@@ -548,5 +618,15 @@ performer = async function(groupId) {
   obj = new byGroupIdHelperKlass(groupId);
   rsp = await obj.activate();
   console.log('rsp: ', rsp.toHash());
+  return Promise.resolve(rsp);
 };
-performer(groupId);
+
+performer(2)
+  .then(function(rsp) {
+    console.log(rsp);
+    process.exit(0);
+  })
+  .catch(function(rsp) {
+    console.error(rsp);
+    process.exit(0);
+  });
