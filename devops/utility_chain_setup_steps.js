@@ -1,8 +1,15 @@
 rootPrefix = '.';
+
+// create new salt id
+// node executables/one_timers/insert_managed_address_salt_id.js
+// set in var managed_address_salt_id
+managed_address_salt_id = '153';
+
+// set group id
+group_id = '2';
+
 modelKlass = require(rootPrefix + '/app/models/config_strategy.js');
 byGroupIdHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_group_id.js');
-managed_address_salt_id = '153';
-group_id = '2';
 
 // Insert Dynamo Config
 
@@ -239,6 +246,9 @@ performer();
     node executables/ddb_related_data_migrations/create_init_ddb_tables.js 2
 */
 
+// Set ENV var of UC Gas Price to 0
+// export OST_UTILITY_GAS_PRICE=0x0
+
 /* 4.
  ***** Deploy Utility Contracts  *****
 */
@@ -388,9 +398,8 @@ performer(groupId);
 
 //Update value core contract address OST_VALUE_CORE_CONTRACT_ADDR
 
-// stPrimeDeployer address
-// set ADDRESSES_TO_UNLOCK_VIA_KEYSTORE_FILE_MAP to address from  genesis file which has 800 million st_prime
-//OST_UTILITY_INITIAL_ST_PRIME_HOLDER_ADDR and OST_UTILITY_INITIAL_ST_PRIME_HOLDER_PASSPHRASE
+// stPrimeDeployer address in env
+// OST_UTILITY_INITIAL_ST_PRIME_HOLDER_ADDR
 
 rootPrefix = '.';
 //Always Include Module overrides First
