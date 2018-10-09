@@ -178,7 +178,7 @@ performer = async function() {
     OS_AUTOSCALING_ENDPOINT: 'http://localhost:8001',
     OS_AUTOSCALING_SSL_ENABLED: '0',
     OS_AUTOSCALING_LOGGING_ENABLED: '0',
-    AUTO_SCALE_DYNAMO: '0'
+    AUTO_SCALE_DYNAMO: '1'
   };
   modelObj = new modelKlass();
   console.log('inserting data');
@@ -243,7 +243,7 @@ performer();
 /* 1.
  ***** DynamoDB migrations *****
     cd /mnt/st-company/apps/saasApi/current
-    node executables/ddb_related_data_migrations/create_init_shards.js 2
+    node executables/create_init_shards.js 2
 */
 
 // Set ENV var of UC Gas Price to 0
@@ -541,3 +541,12 @@ performer(groupId);
 
 // Setup Workers Contract
 // node tools/setup/payments/set_worker.js [groupId]
+
+// Activate Group
+performer = async function(groupId) {
+  byGroupIdHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_group_id.js');
+  obj = new byGroupIdHelperKlass(groupId);
+  rsp = await obj.activate();
+  console.log('rsp: ', rsp.toHash());
+};
+performer(groupId);
