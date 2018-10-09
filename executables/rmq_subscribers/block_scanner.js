@@ -110,7 +110,8 @@ const promiseExecutor = async function(onResolve, onReject, params) {
       transactionHashes: payload.transactionHashes,
       timeStamp: payload.timestamp,
       benchmarkFilePath: benchmarkFilePath,
-      web3InteractFactory: web3InteractFactory
+      web3InteractFactory: web3InteractFactory,
+      delegatorTimestamp: payload.delegatorTimestamp
     });
 
   try {

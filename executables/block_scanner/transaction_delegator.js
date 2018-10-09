@@ -267,7 +267,8 @@ TransactionDelegator.prototype = {
             transactionHashes: txHashes,
             geth_array: oThis.gethArray,
             blockNumber: oThis.currentBlock,
-            timestamp: oThis.currentBlockInfo.timestamp
+            timestamp: oThis.currentBlockInfo.timestamp,
+            delegatorTimestamp: oThis.startTime
           }
         }
       };
