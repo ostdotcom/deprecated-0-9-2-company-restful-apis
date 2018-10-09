@@ -93,10 +93,6 @@ define('SHARED_MEMCACHE_KEY_PREFIX', 'ca_sa_shared_');
 
 define('CONFIG_STRATEGY_SALT', 'config_strategy_salt');
 
-define('DYNAMODB_TABLE_NAME_PREFIX', process.env.OS_DYNAMODB_TABLE_NAME_PREFIX
-  ? process.env.OS_DYNAMODB_TABLE_NAME_PREFIX
-  : '');
-
 define('OST_WEB3_POOL_SIZE', process.env.OST_WEB3_POOL_SIZE);
 
 // Map of all addresses which would be needed to unlocked via Key Store File.
