@@ -192,9 +192,9 @@ performer();
 
 performer = async function() {
   config_strategy_params = {
-    AWS_ES_SECRET_KEY: 'qS0sJZCPQ5t2WnpJymxyGQjX62Wf13kjs80MYhML',
+    AWS_ES_SECRET_KEY: '',
     CR_ES_HOST: 'http://localhost:9201',
-    AWS_ES_ACCESS_KEY: 'AKIAJUDRALNURKAVS5IQ',
+    AWS_ES_ACCESS_KEY: '',
     AWS_ES_REGION: 'us-east-1'
   };
   modelObj = new modelKlass();
