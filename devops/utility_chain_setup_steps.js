@@ -178,7 +178,7 @@ performer = async function() {
     OS_AUTOSCALING_ENDPOINT: 'http://localhost:8001',
     OS_AUTOSCALING_SSL_ENABLED: '0',
     OS_AUTOSCALING_LOGGING_ENABLED: '0',
-    AUTO_SCALE_DYNAMO: '0'
+    AUTO_SCALE_DYNAMO: '1'
   };
   modelObj = new modelKlass();
   console.log('inserting data');
@@ -243,7 +243,7 @@ performer();
 /* 1.
  ***** DynamoDB migrations *****
     cd /mnt/st-company/apps/saasApi/current
-    node executables/ddb_related_data_migrations/create_init_ddb_tables.js 2
+    node executables/create_init_shards.js 2
 */
 
 // Set ENV var of UC Gas Price to 0
@@ -466,11 +466,7 @@ performer = async function(groupId) {
   openSTPlaform = platformProvider.getInstance();
   performer = openSTPlaform.services.setup.registerSTPrime;
   rsp = await performer.perform();
-  if (rsp.isFailure()) {
-    console.error('failed: ', rsp.toHash());
-  } else {
-    console.log('deployment rsp: ', rsp.data);
-  }
+  console.log('rsp: ', rsp.toHash());
 };
 
 performer(groupId);
@@ -494,40 +490,63 @@ rootPrefix = '.';
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
 
-configStrategyHash = require('/mnt/st-company/apps/saasApi/shared/config_strategy_195.json');
-InstanceComposer = require(rootPrefix + '/instance_composer');
-instanceComposer = new InstanceComposer(configStrategyHash);
-require(rootPrefix + '/lib/providers/platform');
-platformProvider = instanceComposer.getPlatformProvider();
-openSTPlaform = platformProvider.getInstance();
+performer = async function(groupId) {
+  byGroupIdHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_group_id.js');
+  obj = new byGroupIdHelperKlass(groupId);
+  configStrategyRsp = await obj.getCompleteHash();
+  InstanceComposer = require(rootPrefix + '/instance_composer');
+  configStrategyHash = configStrategyRsp.data;
+  console.log('configStrategyHash', configStrategyHash);
+  instanceComposer = new InstanceComposer(configStrategyHash);
+  require(rootPrefix + '/lib/providers/platform');
+  platformProvider = instanceComposer.getPlatformProvider();
+  openSTPlaform = platformProvider.getInstance();
+  performer = openSTPlaform.services.setup.stPrimeMinter;
+  rsp = await performer.perform();
+  console.log('rsp: ', rsp.toHash());
+};
 
-performer = openSTPlaform.services.setup.stPrimeMinter;
-performer
-  .perform()
-  .then(console.log)
-  .catch(console.log);
+performer(groupId);
 
 // CHeck Balance of UTILITY_CHAIN_OWNER should have 10000 ST prime after the transaction is successfull
+
+// fund users with St Prime
 
 rootPrefix = '.';
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
 
-configStrategyHash = require('/mnt/st-company/apps/saasApi/shared/config_strategy_195.json');
-InstanceComposer = require(rootPrefix + '/instance_composer');
-instanceComposer = new InstanceComposer(configStrategyHash);
-require(rootPrefix + '/lib/providers/platform');
-platformProvider = instanceComposer.getPlatformProvider();
-openSTPlaform = platformProvider.getInstance();
+performer = async function(groupId) {
+  byGroupIdHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_group_id.js');
+  obj = new byGroupIdHelperKlass(groupId);
+  configStrategyRsp = await obj.getCompleteHash();
+  InstanceComposer = require(rootPrefix + '/instance_composer');
+  configStrategyHash = configStrategyRsp.data;
+  console.log('configStrategyHash', configStrategyHash);
+  instanceComposer = new InstanceComposer(configStrategyHash);
+  require(rootPrefix + '/lib/providers/platform');
+  platformProvider = instanceComposer.getPlatformProvider();
+  openSTPlaform = platformProvider.getInstance();
+  performer = openSTPlaform.services.setup.fundUsersWithSTPrime;
+  rsp = await performer.perform();
+  console.log('rsp: ', rsp.toHash());
+};
 
-performer = openSTPlaform.services.setup.fundUsersWithSTPrime;
-performer
-  .perform()
-  .then(console.log)
-  .catch(console.log);
+performer(groupId);
+
+// Remove Zero UC Gas
 
 // Setup Price Oracle
-// node tools/setup/price-oracle/deploy.js
+// node tools/setup/price-oracle/deploy.js [groupId]
 
 // Setup Workers Contract
-// node tools/setup/payments/set_worker.js
+// node tools/setup/payments/set_worker.js [groupId]
+
+// Activate Group
+performer = async function(groupId) {
+  byGroupIdHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_group_id.js');
+  obj = new byGroupIdHelperKlass(groupId);
+  rsp = await obj.activate();
+  console.log('rsp: ', rsp.toHash());
+};
+performer(groupId);
