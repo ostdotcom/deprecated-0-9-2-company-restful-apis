@@ -243,7 +243,7 @@ performer();
 /* 1.
  ***** DynamoDB migrations *****
     cd /mnt/st-company/apps/saasApi/current
-    node executables/ddb_related_data_migrations/create_init_ddb_tables.js 2
+    node executables/ddb_related_data_migrations/create_init_shards.js 2
 */
 
 // Set ENV var of UC Gas Price to 0
