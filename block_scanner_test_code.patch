@@ -1,0 +1,114 @@
+diff --git a/executables/block_scanner/transaction_delegator.js b/executables/block_scanner/transaction_delegator.js
+index 7cfc7a4..453dddd 100644
+--- a/executables/block_scanner/transaction_delegator.js
++++ b/executables/block_scanner/transaction_delegator.js
+@@ -18,7 +18,7 @@ const rootPrefix = '../..';
+ 
+ const openSTNotification = require('@openstfoundation/openst-notification');
+ 
+-const MAX_TXS_PER_WORKER = 50;
++let MAX_TXS_PER_WORKER = 50;
+ 
+ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+   InstanceComposer = require(rootPrefix + '/instance_composer'),
+@@ -29,6 +29,10 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+ require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
+ require(rootPrefix + '/lib/web3/interact/ws_interact');
+ 
++let blockCount = 0;
++let blocks = [3374624, 3374625, 3374626, 3374627, 3374628, 3374629];
++let txSizeArray = [10, 20, 30, 40, 50, 100, 150, 200, 250, 250, 300, 300];
++
+ // Command line arguments.
+ const args = process.argv,
+   processLockId = args[2],
+@@ -78,7 +82,7 @@ validateAndSanitize();
+ 
+ // Check if another process with the same title is running.
+ ProcessLocker.canStartProcess({
+-  process_title: 'executables_transaction_delegator_' + group_id + '_' + processLockId
++  process_title: 'executables_transaction_delegator_test_' + group_id + '_' + processLockId
+ });
+ 
+ const fs = require('fs');
+@@ -172,6 +176,15 @@ TransactionDelegator.prototype = {
+ 
+         logger.log('Current Block =', oThis.currentBlock);
+ 
++        let block_ind = blockCount % blocks.length;
++        oThis.currentBlock = blocks[block_ind];
++        let ind = blockCount % txSizeArray.length; 
++
++        //if (blockCount % 3 == 0) MMAX_TXS_PER_WORKER = txSizeArray[ind];
++        MAX_TXS_PER_WORKER = txSizeArray[ind];
++        console.log("====Block with txSize", MAX_TXS_PER_WORKER, "started at", Date.now());
++        blockCount++;
++
+         await oThis.distributeTransactions();
+ 
+         if (oThis.benchmarkFilePath)
+@@ -259,7 +272,7 @@ TransactionDelegator.prototype = {
+       let chain_id = oThis.ic.configStrategy.OST_UTILITY_CHAIN_ID;
+ 
+       let messageParams = {
+-        topics: ['block_scanner_execute_' + chain_id],
++        topics: ['block_scanner_execute_test_' + chain_id],
+         publisher: 'OST',
+         message: {
+           kind: 'background_job',
+@@ -267,7 +280,8 @@ TransactionDelegator.prototype = {
+             transactionHashes: txHashes,
+             geth_array: oThis.gethArray,
+             blockNumber: oThis.currentBlock,
+-            timestamp: oThis.currentBlockInfo.timestamp
++            timestamp: oThis.currentBlockInfo.timestamp,
++            delegatorTimestamp: oThis.startTime
+           }
+         }
+       };
+diff --git a/executables/rmq_subscribers/block_scanner.js b/executables/rmq_subscribers/block_scanner.js
+index c225e32..8db6d61 100644
+--- a/executables/rmq_subscribers/block_scanner.js
++++ b/executables/rmq_subscribers/block_scanner.js
+@@ -87,7 +87,7 @@ validateAndSanitize();
+ 
+ // Check if another process with the same title is running.
+ ProcessLocker.canStartProcess({
+-  process_title: 'executables_rmq_subscribers_block_scanner_' + group_id + '_' + processLockId
++  process_title: 'executables_rmq_subscribers_block_scanner_test_' + group_id + '_' + processLockId
+ });
+ 
+ let unAckCount = 0,
+@@ -157,9 +157,9 @@ warmUpGethPool().then(function() {
+   let chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
+ 
+   openSTNotification.subscribeEvent.rabbit(
+-    ['block_scanner_execute_' + chain_id],
++    ['block_scanner_execute_test_' + chain_id],
+     {
+-      queue: 'block_scanner_execute_' + chain_id,
++      queue: 'block_scanner_execute_test_' + chain_id,
+       ackRequired: 1,
+       prefetch: prefetchCount
+     },
+diff --git a/lib/block_scanner/for_tx_status_and_balance_sync.js b/lib/block_scanner/for_tx_status_and_balance_sync.js
+index 758ff3a..6c02ce4 100644
+--- a/lib/block_scanner/for_tx_status_and_balance_sync.js
++++ b/lib/block_scanner/for_tx_status_and_balance_sync.js
+@@ -84,6 +84,7 @@ BlockScannerKlass.prototype = {
+     oThis.registerInterruptSignalHandlers();
+ 
+     await oThis.processTransactions();
++
+   },
+ 
+   /**
+@@ -162,6 +163,8 @@ BlockScannerKlass.prototype = {
+         if (oThis.benchmarkFilePath)
+           oThis.granularTimeTaken.push('updateScannerDataFile-' + (Date.now() - oThis.startTime) + 'ms');
+ 
++        console.win("====Message with", oThis.transactionHashes.length, "txs processed. Current time", Date.now());
++
+         if (oThis.recognizedTxHashes.length !== 0) {
+           if (oThis.benchmarkFilePath) {
+             oThis.updateBenchmarkFile();
