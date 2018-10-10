@@ -15,7 +15,9 @@
 
 const rootPrefix = '../..';
 
-const openSTNotification = require('@openstfoundation/openst-notification');
+const openSTNotification = require('@openstfoundation/openst-notification'),
+  program = require('commander'),
+  fs = require('fs');
 
 const MAX_TXS_PER_WORKER = 60;
 
@@ -23,58 +25,27 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+  coreConstants = require(rootPrefix + '/config/core_constants'),
   ProcessLocker = new ProcessLockerKlass();
 
 require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
 require(rootPrefix + '/lib/web3/interact/ws_interact');
 
-// Command line arguments.
-const args = process.argv,
-  group_id = args[2],
-  datafilePath = args[3],
-  benchmarkFilePath = args[4];
-
 let configStrategy = {};
-
-// Usage demo.
-const usageDemo = function() {
-  logger.log(
-    'usage:',
-    'node ./executables/block_scanner/transaction_delegator.js group_id datafilePath [benchmarkFilePath]'
-  );
-  logger.log('* group_id is needed to fetch config strategy.');
-  logger.log('* datafilePath is the path to the file which is storing the last block scanned info.');
-  logger.log('* benchmarkFilePath is the path to the file which is storing the benchmarking info. (Optional)');
-};
 
 // Validate and sanitize the command line arguments.
 const validateAndSanitize = function() {
-  if (!group_id) {
-    logger.error('group_id is not passed');
-    usageDemo();
-    process.exit(1);
-  }
-
-  if (!datafilePath) {
-    logger.error('Data file path is NOT passed in the arguments.');
-    usageDemo();
+  if (!program.groupId || !program.dataFilePath) {
+    program.help();
     process.exit(1);
   }
 };
-
-// Validate and sanitize the input params.
-validateAndSanitize();
-
-// Check if another process with the same title is running.
-ProcessLocker.canStartProcess({
-  process_title: 'executables_transaction_delegator_' + group_id
-});
 
 const TransactionDelegator = function(params) {
   const oThis = this;
 
-  oThis.filePath = params.file_path;
-  oThis.benchmarkFilePath = params.benchmark_file_path;
+  oThis.filePath = params.dataFilePath;
+  oThis.benchmarkFilePath = params.benchmarkFilePath;
   oThis.currentBlock = 0;
   oThis.scannerData = {};
   oThis.interruptSignalObtained = false;
@@ -107,7 +78,7 @@ TransactionDelegator.prototype = {
   warmUpWeb3Pool: async function() {
     const oThis = this,
       utilityGethType = 'read_only',
-      strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
+      strategyByGroupHelperObj = new StrategyByGroupHelper(program.groupId),
       configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(utilityGethType);
 
     configStrategy = configStrategyResp.data;
@@ -382,10 +353,33 @@ TransactionDelegator.prototype = {
   }
 };
 
-const blockScannerMasterObj = new TransactionDelegator({
-  file_path: datafilePath,
-  benchmark_file_path: benchmarkFilePath
+program
+  .option('--group-id <groupId>', 'Group Id')
+  .option('--data-file-path <dataFilePath>', 'Path to the file which contains the last processed block')
+  .option('--benchmark-file-path [benchmarkFilePath]', 'Path to the file to store benchmark data. (Optional)');
+
+program.on('--help', function() {
+  console.log('  Example:');
+  console.log('');
+  console.log(
+    '    node executables/block_scanner/transaction_delegator.js 197 /home/block_scanner.json [/home/benchmark.csv]'
+  );
+  console.log('');
+  console.log('');
 });
+
+program.parse(process.argv);
+
+// Check if another process with the same title is running.
+ProcessLocker.canStartProcess({
+  process_title: 'executables_transaction_delegator_' + program.groupId
+});
+
+// Validate and sanitize the input params.
+validateAndSanitize();
+
+const blockScannerMasterObj = new TransactionDelegator(program);
+
 blockScannerMasterObj.registerInterruptSignalHandlers();
 blockScannerMasterObj.init().then(function(r) {
   logger.win('Blockscanner Master Process Started');
