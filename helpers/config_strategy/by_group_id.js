@@ -140,6 +140,49 @@ ConfigStrategyByGroupId.prototype = {
       whereClause = ['group_id = ? AND kind = ?', groupId, strategyIdInt];
     }
 
+    return oThis._getByKindAndGroup(whereClause);
+  },
+
+  /**
+   * This function gives a hash with active status for the kind provided.
+   * It returns hash whose key is the strategy id and value is the flat hash of the strategy.
+   * Eg:
+   * {
+   *    1: {
+   *          OS_DYNAMODB_ACCESS_KEY_ID : 'xyz',
+   *          OS_DYNAMODB_SECRET_ACCESS_KEY: 'x',
+   *          .
+   *          .
+   *          .
+   *       }
+   * }
+   * @param kind
+   * @returns {Promise<*>}
+   */
+  getActiveByKind: async function(kind) {
+    const oThis = this;
+
+    let strategyIdInt = configStrategyConstants.invertedKinds[kind],
+      activeStatus = configStrategyConstants.invertedStatuses[configStrategyConstants.activeStatus],
+      whereClause = null;
+
+    if (strategyIdInt === undefined) {
+      logger.error('Provided kind is not proper. Please check kind');
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_04'));
+    }
+
+    if (oThis.groupId) {
+      whereClause = ['group_id = ? AND kind = ? AND status = ?', oThis.groupId, strategyIdInt, activeStatus];
+    } else {
+      whereClause = ['kind = ? AND status = ?', strategyIdInt, activeStatus];
+    }
+
+    return oThis._getByKindAndGroup(whereClause);
+  },
+
+  _getByKindAndGroup: async function(whereClause) {
+    const oThis = this;
+
     //Following is to fetch specific strategy id for the kind passed.
     let strategyIdsArray = await oThis._strategyIdsArrayProvider(whereClause);
 
