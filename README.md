@@ -277,7 +277,7 @@ node executables/block_scanner/transaction_delegator.js group_id ~/openst-setup/
 
 ```bash
 # Start one worker process for block scanner.
-node executables/rmq_subscribers/block_scanner.js 1 group_id 1 ~/openst-setup/logs/block_scanner_benchmark-1000.csv
+node executables/rmq_subscribers/block_scanner.js processLockId group_id prefetchCount ~/openst-setup/logs/block_scanner_benchmark-1000.csv
 ```
 
 * Don't forget to start the cronjobs. 
