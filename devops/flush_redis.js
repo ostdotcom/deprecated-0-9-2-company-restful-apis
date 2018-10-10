@@ -20,11 +20,8 @@ var Flush_Cache = async function() {
     var ConfigStrategyarray = ConfigStrategyResp.data;
     let configStrategyValues = Object.values(ConfigStrategyarray);
     if (
-      shell.exec(
-        "node ./lib/cache_management/flush/client_specific_cache_by_config.js '" +
-          JSON.stringify(configStrategyValues[0]) +
-          "' redis"
-      ).code !== 0
+      shell.exec('node lib/cache_management/flush/cache_by_group_id.js ' + distinctGroupIdsArray[counter] + ' redis')
+        .code !== 0
     ) {
       console.log('redis flush failed');
       process.exit(1);

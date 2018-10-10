@@ -23,7 +23,7 @@ ConfigStrategyByClientId.prototype = {
    * Get final hash of config strategy
    * @returns {Promise<*>}
    */
-  get: async function() {
+  get: async function(gethEndPointType) {
     const oThis = this;
 
     let clientId = oThis.clientId;
@@ -59,11 +59,22 @@ ConfigStrategyByClientId.prototype = {
 
     let configStrategyIdToDetailMap = configStrategyFetchRsp.data;
 
+    gethEndPointType = gethEndPointType ? gethEndPointType : 'read_write';
+
     for (let configStrategyId in configStrategyIdToDetailMap) {
       let configStrategy = configStrategyIdToDetailMap[configStrategyId];
 
       for (let strategyKind in configStrategy) {
-        Object.assign(finalConfigStrategyFlatHash, configStrategy[strategyKind]);
+        let partialConfig = configStrategy[strategyKind];
+
+        if (strategyKind == 'utility_geth') {
+          let tempConfig = partialConfig[gethEndPointType];
+          delete partialConfig['read_write'];
+          delete partialConfig['read_only'];
+          Object.assign(partialConfig, tempConfig);
+        }
+
+        Object.assign(finalConfigStrategyFlatHash, partialConfig);
       }
     }
 
