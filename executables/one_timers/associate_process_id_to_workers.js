@@ -66,6 +66,7 @@ associateProcessId.prototype = {
       for (let index = 0; index < associatedClients.length; index++) {
         let clientId = associatedClients[index],
           clientWorkers = clientWorkersMap[clientId];
+
         if (clientWorkers === undefined) {
           continue;
         }
