@@ -362,7 +362,7 @@ program.on('--help', function() {
   console.log('  Example:');
   console.log('');
   console.log(
-    '    node executables/block_scanner/transaction_delegator.js 197 /home/block_scanner.json [/home/benchmark.csv]'
+    '    node executables/block_scanner/transaction_delegator.js --group-id 197 --data-file-path /home/block_scanner.json --benchmark-file-path [/home/benchmark.csv]'
   );
   console.log('');
   console.log('');
