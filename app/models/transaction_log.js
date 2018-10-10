@@ -63,7 +63,8 @@ const TransactionLogModel = function(params) {
   oThis.tableSchema = oThis.getTableSchema(oThis.shardName);
 
   oThis.shardHelper = new openSTStorage.model.ShardHelper({
-    table_schema: oThis.tableSchema
+    table_schema: oThis.tableSchema,
+    shard_name: oThis.shardName
   });
 };
 
@@ -76,7 +77,7 @@ const transactionLogModelSpecificPrototype = {
   createShard: function() {
     const oThis = this;
 
-    return oThis.shardHelper.createShard(oThis.shardName);
+    return oThis.shardHelper.createShard();
   },
 
   /**
