@@ -3,12 +3,11 @@
 /**
  * This code acts as a master process to block scanner, which delegates the transactions from a block to block scanner worker processes
  *
- * Usage: node executables/block_scanner/transaction_delegator.js processLockId datafilePath group_id [benchmarkFilePath]
+ * Usage: node executables/block_scanner/transaction_delegator.js group_id datafilePath [benchmarkFilePath]
  *
  * Command Line Parameters Description:
- * processLockId: processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.
- * datafilePath: path to the file which is storing the last block scanned info.
  * group_id: group_id to fetch config strategy
+ * datafilePath: path to the file which is storing the last block scanned info.
  * [benchmarkFilePath]: path to the file which is storing the benchmarking info.
  *
  * @module executables/block_scanner/transaction_delegator
@@ -31,10 +30,9 @@ require(rootPrefix + '/lib/web3/interact/ws_interact');
 
 // Command line arguments.
 const args = process.argv,
-  processLockId = args[2],
+  group_id = args[2],
   datafilePath = args[3],
-  group_id = args[4],
-  benchmarkFilePath = args[5];
+  benchmarkFilePath = args[4];
 
 let configStrategy = {};
 
@@ -42,32 +40,23 @@ let configStrategy = {};
 const usageDemo = function() {
   logger.log(
     'usage:',
-    'node ./executables/block_scanner/transaction_delegator.js processLockId datafilePath group_id [benchmarkFilePath]'
+    'node ./executables/block_scanner/transaction_delegator.js group_id datafilePath [benchmarkFilePath]'
   );
-  logger.log(
-    '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
-  );
-  logger.log('* datafilePath is the path to the file which is storing the last block scanned info.');
   logger.log('* group_id is needed to fetch config strategy.');
-  logger.log('* benchmarkFilePath is the path to the file which is storing the benchmarking info.');
+  logger.log('* datafilePath is the path to the file which is storing the last block scanned info.');
+  logger.log('* benchmarkFilePath is the path to the file which is storing the benchmarking info. (Optional)');
 };
 
 // Validate and sanitize the command line arguments.
 const validateAndSanitize = function() {
-  if (!processLockId) {
-    logger.error('Process Lock id NOT passed in the arguments.');
+  if (!group_id) {
+    logger.error('group_id is not passed');
     usageDemo();
     process.exit(1);
   }
 
   if (!datafilePath) {
     logger.error('Data file path is NOT passed in the arguments.');
-    usageDemo();
-    process.exit(1);
-  }
-
-  if (!group_id) {
-    logger.error('group_id is not passed');
     usageDemo();
     process.exit(1);
   }
@@ -78,13 +67,8 @@ validateAndSanitize();
 
 // Check if another process with the same title is running.
 ProcessLocker.canStartProcess({
-  process_title: 'executables_transaction_delegator_' + group_id + '_' + processLockId
+  process_title: 'executables_transaction_delegator_' + group_id
 });
-
-const fs = require('fs');
-
-const responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  coreConstants = require(rootPrefix + '/config/core_constants');
 
 const TransactionDelegator = function(params) {
   const oThis = this;
@@ -94,7 +78,7 @@ const TransactionDelegator = function(params) {
   oThis.currentBlock = 0;
   oThis.scannerData = {};
   oThis.interruptSignalObtained = false;
-  oThis.highestBlock = null;
+  oThis.highestBlock = 0;
 };
 
 TransactionDelegator.prototype = {
@@ -109,7 +93,7 @@ TransactionDelegator.prototype = {
   init: async function() {
     const oThis = this;
 
-    // Read this from a file.
+    // Read the lastProcessedBlock from the dataFile
     oThis.scannerData = JSON.parse(fs.readFileSync(oThis.filePath).toString());
 
     await oThis.warmUpWeb3Pool();
@@ -133,9 +117,7 @@ TransactionDelegator.prototype = {
 
     let web3PoolSize = coreConstants.OST_WEB3_POOL_SIZE;
 
-    oThis.geth_count = configStrategy.OST_UTILITY_GETH_WS_PROVIDERS.length;
-
-    for (let ind = 0; ind < oThis.geth_count; ind++) {
+    for (let ind = 0; ind < configStrategy.OST_UTILITY_GETH_WS_PROVIDERS.length; ind++) {
       let provider = configStrategy.OST_UTILITY_GETH_WS_PROVIDERS[ind];
       for (let i = 0; i < web3PoolSize; i++) {
         web3InteractFactory.getInstance('utility', provider);
@@ -144,18 +126,11 @@ TransactionDelegator.prototype = {
   },
 
   /**
-   * Init params.
+   * Check for new blocks
    */
-  initParams: function() {
-    const oThis = this;
-
-    oThis.startTime = Date.now();
-
-    oThis.granularTimeTaken = [];
-  },
-
   checkForNewBlocks: async function() {
     const oThis = this;
+
     const processNewBlocksAsync = async function() {
       try {
         oThis.initParams();
@@ -166,7 +141,7 @@ TransactionDelegator.prototype = {
           oThis.granularTimeTaken.push('getGethsWithCurrentBlock-' + (Date.now() - oThis.startTime) + 'ms');
 
         // return if nothing more to do, as of now.
-        if (oThis.gethArray.length == 0) return oThis.schedule();
+        if (oThis.gethArray.length === 0) return oThis.schedule();
 
         oThis.currentBlock = oThis.scannerData.lastProcessedBlock + 1;
 
@@ -179,13 +154,12 @@ TransactionDelegator.prototype = {
 
         oThis.updateScannerDataFile();
 
-        if (oThis.benchmarkFilePath)
-          oThis.granularTimeTaken.push('updateScannerDataFile-' + (Date.now() - oThis.startTime) + 'ms');
-
         if (oThis.benchmarkFilePath) {
+          oThis.granularTimeTaken.push('updateScannerDataFile-' + (Date.now() - oThis.startTime) + 'ms');
           oThis.updateBenchmarkFile();
           oThis.granularTimeTaken.push('updateBenchmarkFile-' + (Date.now() - oThis.startTime) + 'ms');
         }
+
         oThis.schedule();
       } catch (err) {
         logger.error('Exception:', err);
@@ -200,31 +174,42 @@ TransactionDelegator.prototype = {
     };
 
     await processNewBlocksAsync().catch(function(error) {
-      logger.error('executables/block_scanner/base.js::processNewBlocksAsync::catch');
+      logger.error('executables/block_scanner/transaction_delegator.js::processNewBlocksAsync::catch');
       logger.error(error);
 
+      // TODO - error handling to be introduced to avoid double settlement.
       oThis.schedule();
     });
   },
 
   /**
-   * Get geth array with the block
-   *
+   * Init params.
+   */
+  initParams: function() {
+    const oThis = this;
+
+    oThis.startTime = Date.now();
+    oThis.granularTimeTaken = [];
+    oThis.gethArray = [];
+  },
+
+  /**
+   * Get Geth servers array with the current block
    */
   getGethsWithCurrentBlock: async function() {
     const oThis = this;
 
-    oThis.gethArray = [];
-
-    for (let ind = 0; ind < oThis.geth_count; ind++) {
+    for (let ind = 0; ind < configStrategy.OST_UTILITY_GETH_WS_PROVIDERS.length; ind++) {
       let provider = configStrategy.OST_UTILITY_GETH_WS_PROVIDERS[ind];
-      await oThis.refreshHighestBlock(provider);
+      let highestBlockOfProvider = await oThis.refreshHighestBlock(provider);
 
-      if (oThis.benchmarkFilePath)
+      if (oThis.benchmarkFilePath) {
         oThis.granularTimeTaken.push('refreshHighestBlock-' + (Date.now() - oThis.startTime) + 'ms');
+      }
 
-      if (oThis.highestBlock - oThis.INTENTIONAL_BLOCK_DELAY > oThis.scannerData.lastProcessedBlock)
+      if (highestBlockOfProvider - oThis.INTENTIONAL_BLOCK_DELAY > oThis.scannerData.lastProcessedBlock) {
         oThis.gethArray.push(provider);
+      }
     }
   },
 
@@ -232,7 +217,6 @@ TransactionDelegator.prototype = {
    * Distribute transactions to different queues
    *
    */
-
   distributeTransactions: async function() {
     const oThis = this;
 
@@ -243,18 +227,24 @@ TransactionDelegator.prototype = {
 
     if (oThis.benchmarkFilePath) oThis.granularTimeTaken.push('eth.getBlock-' + (Date.now() - oThis.startTime) + 'ms');
 
-    let total_transaction_count = oThis.currentBlockInfo.transactions.length,
-      per_geth_tx_count = total_transaction_count / oThis.gethArray.length,
+    let totalTransactionCount = oThis.currentBlockInfo.transactions.length,
+      perBatchCount = totalTransactionCount / oThis.gethArray.length,
       offset = 0;
 
-    per_geth_tx_count = per_geth_tx_count > MAX_TXS_PER_WORKER ? MAX_TXS_PER_WORKER : per_geth_tx_count;
+    let noOfBatches = parseInt(totalTransactionCount / perBatchCount);
+    noOfBatches += totalTransactionCount % perBatchCount ? 1 : 0;
 
-    for (let loopCount = 1; ; loopCount++) {
-      let txHashes = oThis.currentBlockInfo.transactions.slice(offset, offset + per_geth_tx_count);
+    // capping the per batch count
+    perBatchCount = perBatchCount > MAX_TXS_PER_WORKER ? MAX_TXS_PER_WORKER : perBatchCount;
 
-      offset = offset + per_geth_tx_count;
+    let loopCount = 0;
 
-      if (txHashes.length == 0) break;
+    while (loopCount < noOfBatches) {
+      let txHashes = oThis.currentBlockInfo.transactions.slice(offset, offset + perBatchCount);
+
+      offset = offset + perBatchCount;
+
+      if (txHashes.length === 0) break;
 
       let chain_id = oThis.ic.configStrategy.OST_UTILITY_CHAIN_ID;
 
@@ -265,7 +255,7 @@ TransactionDelegator.prototype = {
           kind: 'background_job',
           payload: {
             transactionHashes: txHashes,
-            geth_array: oThis.gethArray,
+            gethArray: oThis.gethArray,
             blockNumber: oThis.currentBlock,
             timestamp: oThis.currentBlockInfo.timestamp,
             delegatorTimestamp: oThis.startTime
@@ -276,7 +266,7 @@ TransactionDelegator.prototype = {
       let setToRMQ = await openSTNotification.publishEvent.perform(messageParams);
 
       //if could not set to RMQ run in async.
-      if (setToRMQ.isFailure() || setToRMQ.data.publishedToRmq == 0) {
+      if (setToRMQ.isFailure() || setToRMQ.data.publishedToRmq === 0) {
         return Promise.reject(
           responseHelper.error({
             internal_error_identifier: 'e_bs_td_1',
@@ -285,6 +275,7 @@ TransactionDelegator.prototype = {
           })
         );
       }
+      loopCount++;
     }
   },
 
@@ -379,11 +370,15 @@ TransactionDelegator.prototype = {
 
     let web3Interact = web3InteractFactory.getInstance('utility', provider);
 
-    oThis.highestBlock = await web3Interact.getBlockNumber();
+    let highestBlockOfProvider = await web3Interact.getBlockNumber();
 
-    logger.win('* Obtained highest block:', oThis.highestBlock);
+    if (highestBlockOfProvider > oThis.highestBlock) {
+      oThis.highestBlock = highestBlockOfProvider;
+    }
 
-    return Promise.resolve();
+    logger.win('* Obtained highest block on', provider, 'as', oThis.highestBlock);
+
+    return Promise.resolve(highestBlockOfProvider);
   }
 };
 
