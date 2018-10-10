@@ -51,7 +51,7 @@ const ListActions = function(params) {
 
   if (params.id) {
     oThis.where.id = basicHelper.commaSeperatedStrToArray(params.id);
-    oThis.id = oThis.where.id;
+    oThis.id = params.id;
   }
 
   if (params.name) {
