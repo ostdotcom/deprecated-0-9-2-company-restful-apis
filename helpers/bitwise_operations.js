@@ -35,11 +35,11 @@ BitWiseOperationsKlass.prototype = {
 
     // Validate only if model has bitwise columns
     if (Object.keys(oThis.bitColumns).length > 0) {
-      var allBits = [];
+      let allBits = [];
 
-      for (var i = 0, keys = Object.keys(oThis.bitColumns), ii = keys.length; i < ii; i++) {
-        var columnBits = Object.keys(oThis.bitColumns[keys[i]]);
-        for (var j = 0; j < columnBits.length; j++) {
+      for (let i = 0, keys = Object.keys(oThis.bitColumns), ii = keys.length; i < ii; i++) {
+        let columnBits = Object.keys(oThis.bitColumns[keys[i]]);
+        for (let j = 0; j < columnBits.length; j++) {
           if (allBits.includes(columnBits[j])) {
             throw 'Bit Keys name should be unique across all columns of model.';
           } else {
@@ -62,7 +62,7 @@ BitWiseOperationsKlass.prototype = {
   setBit: function(bitName, previousValue) {
     const oThis = this;
 
-    var resp = oThis.findValueOfBit(bitName);
+    let resp = oThis.findValueOfBit(bitName);
     if (resp) {
       logger.debug(resp);
       return resp['bitValue'] | previousValue;
@@ -82,9 +82,9 @@ BitWiseOperationsKlass.prototype = {
   unsetBit: function(bitName, previousValue) {
     const oThis = this;
 
-    var resp = oThis.findValueOfBit(bitName);
+    let resp = oThis.findValueOfBit(bitName);
     if (resp) {
-      var val = resp['bitValue'] ^ previousValue;
+      let val = resp['bitValue'] ^ previousValue;
       // If XOR operator returns value less than previous value means bit was set previously else not.
       if (val < previousValue) {
         return val;
@@ -105,9 +105,9 @@ BitWiseOperationsKlass.prototype = {
   isBitSet: function(bitName, currentValue) {
     const oThis = this;
 
-    var resp = oThis.findValueOfBit(bitName);
+    let resp = oThis.findValueOfBit(bitName);
     if (resp) {
-      var val = resp['bitValue'] & currentValue;
+      let val = resp['bitValue'] & currentValue;
       // If Bitwise and operator returns 0 means bit is not set.
       return val == resp['bitValue'];
     }
@@ -126,11 +126,11 @@ BitWiseOperationsKlass.prototype = {
   getAllBits: function(columnName, currentValue) {
     const oThis = this;
 
-    var allBits = oThis.bitColumns[columnName];
+    let allBits = oThis.bitColumns[columnName];
     if (allBits && Object.keys(allBits).length > 0) {
-      var bitNames = Object.keys(allBits);
-      var arr = [];
-      for (var i = 0; i < bitNames.length; i++) {
+      let bitNames = Object.keys(allBits);
+      let arr = [];
+      for (let i = 0; i < bitNames.length; i++) {
         if (oThis.isBitSet(bitNames[i], currentValue)) {
           arr.push(bitNames[i]);
         }
@@ -149,11 +149,11 @@ BitWiseOperationsKlass.prototype = {
   findValueOfBit: function(bitName) {
     const oThis = this;
 
-    for (var i = 0, keys = Object.keys(oThis.bitColumns), ii = keys.length; i < ii; i++) {
-      var columnName = keys[i];
-      var columnBits = Object.keys(oThis.bitColumns[columnName]);
+    for (let i = 0, keys = Object.keys(oThis.bitColumns), ii = keys.length; i < ii; i++) {
+      let columnName = keys[i];
+      let columnBits = Object.keys(oThis.bitColumns[columnName]);
       if (columnBits.includes(bitName)) {
-        var bitValue = oThis.bitColumns[columnName][bitName];
+        let bitValue = oThis.bitColumns[columnName][bitName];
         return { column: columnName, bitValue: bitValue };
       }
     }
