@@ -265,13 +265,14 @@ NOTE: Create the file if not present.
   {"lastProcessedBlock":0}
   
 > source set_env_vars.sh
-> node start_value_services.js group_id
-> node start_utility_services.js group_id
+> node start_value_services.js 1000
+> node start_utility_services.js 1000
 ```
 
 * Start block scanner. Change utility chain id accordingly.
 ```bash
 # Start master process for Block scanner.
+source set_env_vars.sh
 node executables/block_scanner/transaction_delegator.js 1 ~/openst-setup/data/utility-chain-1000/block_scanner_execute_transaction.data group_id
 ```
 
