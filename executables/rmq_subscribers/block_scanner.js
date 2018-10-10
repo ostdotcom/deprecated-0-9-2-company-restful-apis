@@ -22,14 +22,15 @@ const program = require('commander');
 program
   .option('--processlock-id <processlockId>', 'Process Lock id')
   .option('--group-id <groupId>', 'Group id')
-  .option('--prefetch-count <prefetchCount>', 'Prefetch Count');
+  .option('--prefetch-count <prefetchCount>', 'Prefetch Count')
+  .option('--benchmark-file-path [benchmarkFilePath]', 'Path to benchmark file path');
 
 program.on('--help', () => {
   console.log('');
   console.log('  Example:');
   console.log('');
   console.log(
-    '    node ./executables/rmq_subscribers/block_scanner.js --processlock-id  --group-id  --prefetch-count '
+    '    node ./executables/rmq_subscribers/block_scanner.js --processlock-id 1 --group-id 197 --prefetch-count 2 --benchmark-file-path [benchmarkFilePath]'
   );
   console.log('');
   console.log('');
@@ -113,7 +114,7 @@ const promiseExecutor = async function(onResolve, onReject, params) {
       geth_array: payload.gethArray,
       transaction_hashes: payload.transactionHashes,
       time_stamp: payload.timestamp,
-      benchmark_file_path: benchmarkFilePath,
+      benchmark_file_path: program.benchmarkFilePath,
       web3_factory_obj: web3InteractFactory,
       delegator_timestamp: payload.delegatorTimestamp
     });
