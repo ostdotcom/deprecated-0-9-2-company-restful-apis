@@ -9,11 +9,11 @@
     rootPrefix = '.';
     ProcessQueueAssociationModel = require(rootPrefix + '/app/models/process_queue_association');
     params = {
-        chain_id: number,
-        process_id: number,
-        rmq_config_id: number,
-        queue_name_suffix: 'string', // Examples: 'q1', 'q2'
-        status: 'string' // Possible options: 'available', 'dedicated', 'full', 'killed'
+        chain_id: 1289,
+        process_id: 10,
+        rmq_config_id: 0,
+        queue_name_suffix: 'q10', // Examples: 'q1', 'q2'
+        status: 'available' // Possible options: 'available', 'dedicated', 'full', 'killed'
     };
     new ProcessQueueAssociationModel().insertRecord(params).then(function() {
             console.log('Process entry created in the table.');
@@ -61,7 +61,12 @@ obj = new Klass(params);  // Create class object
 obj.perform().then(console.log);  // Start the de-association process.
 ```
 
-
+### Clear client_worker_managed_address_id and process_queue_association cache
+```js
+clientId = 1288;
+rmqHelper = require('./helpers/rmq_queue');
+new rmqHelper().clearProcessRelatedCache(clientId);
+```
 ### Fetch user balance
 ```js
 require('./module_overrides/index');
@@ -73,12 +78,12 @@ configStrategyHelper = new ConfigStartegyHelper();
 cs = {};
 configStrategyHelper.getConfigStrategy(1040).then(function(response){cs = response.data});
 
-ic = new InstanceComposer(cs)
+ic = new InstanceComposer(cs);
 
-require('./lib/providers/storage')
+require('./lib/providers/storage');
 
-storageProvider = ic.getStorageProvider()
-openSTStorage = storageProvider.getInstance()
-new openSTStorage.cache.TokenBalance({erc20_contract_address: '0xe789F467B338C8Ac1f3480D6b454eE80C336AdD0',ethereum_addresses: ['0x2064402f4EEF7c5EDED6C0fD1F84400c7B0Ee9c9']}).fetch().then(console.log)
+storageProvider = ic.getStorageProvider();
+openSTStorage = storageProvider.getInstance();
+new openSTStorage.cache.TokenBalance({erc20_contract_address: '0xe789F467B338C8Ac1f3480D6b454eE80C336AdD0',ethereum_addresses: ['0x2064402f4EEF7c5EDED6C0fD1F84400c7B0Ee9c9']}).fetch().then(console.log);
 
 ```
