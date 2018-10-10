@@ -15,13 +15,11 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 const openSTNotification = require('@openstfoundation/openst-notification');
 
 const publishToSlowQueue = async function(parsedParams) {
-  openSTNotification.publishEvent
-    .perform({
-      topics: ['slow.transaction.execute'],
-      publisher: parsedParams.publisher,
-      message: parsedParams.message
-    })
-    .then(logger.debug, logger.error);
+  openSTNotification.publishEvent.perform({
+    topics: ['slow.transaction.execute'],
+    publisher: parsedParams.publisher,
+    message: parsedParams.message
+  });
 };
 
 openSTNotification.subscribeEvent.rabbit(
