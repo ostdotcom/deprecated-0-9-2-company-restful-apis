@@ -218,7 +218,7 @@ if (cluster.isMaster) {
   // Fork workers equal to number of CPUs
   const numWorkers = process.env.OST_CACHING_ENGINE == 'none' ? 1 : process.env.WORKERS || require('os').cpus().length;
 
-  for (var i = 0; i < numWorkers; i++) {
+  for (var i = 0; i < numWorkers * 2; i++) {
     // Spawn a new worker process.
     cluster.fork();
   }
