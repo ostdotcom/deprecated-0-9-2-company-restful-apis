@@ -26,7 +26,7 @@ const args = process.argv,
   processId = args[2];
 
 // Declare variables.
-const txQueuePrefetchCount = 100,
+const txQueuePrefetchCount = 25,
   cmdQueuePrefetchCount = 1;
 
 let unAckCount = 0,
