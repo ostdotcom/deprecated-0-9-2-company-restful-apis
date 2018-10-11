@@ -217,8 +217,8 @@ ConfigStrategyByGroupId.prototype = {
    * WS provider and RPC provider is also inserted in the chain_geth_providers table.
    *
    * @param {string} kind (Eg:'dynamo')
-   * @param {object}params - Hash of config params related to this kind
-   * @param {number}managed_address_salt_id - managed_address_salt_id from managed_address_salt table
+   * @param {object} params - Hash of config params related to this kind
+   * @param {number} managed_address_salt_id - managed_address_salt_id from managed_address_salt table
    * @returns {Promise<never>}
    */
   addForKind: async function(kind, params, managed_address_salt_id) {

@@ -293,9 +293,13 @@ let init = async function() {
   // Get rmq configStrategy for the groupId.
   const strategyByGroupHelperObj = new StrategyByGroupHelper(groupId),
     configStrategyResp = await strategyByGroupHelperObj.getForKind(configStrategyConstants.rmq);
+  let configStrategy;
+  for (let key in configStrategyResp.data) {
+    configStrategy = configStrategyResp.data[key];
+  }
 
   // Create instance of openst-notification.
-  let ic = new InstanceComposer(configStrategyResp),
+  let ic = new InstanceComposer(configStrategy),
     notificationProvider = ic.getNotificationProvider();
 
   openStNotification = notificationProvider.getInstance();
