@@ -1,19 +1,60 @@
 'use strict';
 
+/**
+ * This code acts as a worker process for block scanner, which takes the transactions from delegator
+ * and processes it using block scanner class. [ lib/block_scanner/for_tx_status_and_balance_sync.js ]
+ *
+ * Usage: node executables/rmq_subscribers/block_scanner.js processlockId group_id prefetchCountStr [benchmarkFilePath]
+ *
+ * Command Line Parameters Description:
+ * processlockId: used for ensuring that no other process with the same processlockId can run on a given machine.
+ * group_id: group_id to fetch config strategy
+ * prefetchCountStr: prefetch count for RMQ subscribers.
+ * [benchmarkFilePath]: path to the file which is storing the benchmarking info.
+ *
+ * @module executables/rmq_subscribers/block_scanner
+ */
+
 const rootPrefix = '../..';
 
-const args = process.argv,
-  processLockId = args[2],
-  group_id = args[3],
-  prefetchCountStr = args[4],
-  benchmarkFilePath = args[5];
+const program = require('commander');
+
+program
+  .option('--processlock-id <processlockId>', 'Process Lock id')
+  .option('--group-id <groupId>', 'Group id')
+  .option('--prefetch-count <prefetchCount>', 'Prefetch Count')
+  .option('--benchmark-file-path [benchmarkFilePath]', 'Path to benchmark file path');
+
+program.on('--help', () => {
+  console.log('');
+  console.log('  Example:');
+  console.log('');
+  console.log(
+    '    node ./executables/rmq_subscribers/block_scanner.js --processlock-id 1 --group-id 197 --prefetch-count 2 --benchmark-file-path [benchmarkFilePath]'
+  );
+  console.log('');
+  console.log('');
+});
+
+program.parse(process.argv);
+
+// Validate and sanitize the commander parameters.
+const validateAndSanitize = function() {
+  if (!program.processlockId || !program.groupId || !program.prefetchCount) {
+    program.help();
+    process.exit(1);
+  }
+};
+
+// Validate and sanitize the input params.
+validateAndSanitize();
 
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
-  ProcessLocker = new ProcessLockerKlass();
+  ProcessLocker = new ProcessLockerKlass(program);
 
 let ic = null,
   web3InteractFactory = null;
@@ -25,23 +66,10 @@ require(rootPrefix + '/lib/web3/interact/ws_interact');
 const openSTNotification = require('@openstfoundation/openst-notification'),
   OSTBase = require('@openstfoundation/openst-base');
 
-// Usage demo.
-const usageDemo = function() {
-  logger.log(
-    'usage:',
-    'node ./executables/rmq_subscribers/block_scanner.js processLockId group_id prefetchCountStr [benchmarkFilePath]'
-  );
-  logger.log(
-    '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
-  );
-  logger.log('* group_id is needed to fetch config strategy.');
-  logger.log('* benchmarkFilePath is the path to the file which is storing the benchmarking info.');
-};
-
 const warmUpGethPool = function() {
   return new Promise(async function(onResolve, onReject) {
     let utilityGethType = 'read_only',
-      strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
+      strategyByGroupHelperObj = new StrategyByGroupHelper(program.groupId),
       configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(utilityGethType),
       configStrategy = configStrategyResp.data;
 
@@ -53,7 +81,7 @@ const warmUpGethPool = function() {
     for (let ind = 0; ind < configStrategy.OST_UTILITY_GETH_WS_PROVIDERS.length; ind++) {
       let provider = configStrategy.OST_UTILITY_GETH_WS_PROVIDERS[ind];
       for (let i = 0; i < web3PoolSize; i++) {
-        web3InteractFactory.getInstance('utility', provider); //TODO: Align it with read/write and master process
+        web3InteractFactory.getInstance('utility', provider);
       }
     }
 
@@ -61,37 +89,13 @@ const warmUpGethPool = function() {
   });
 };
 
-// Validate and sanitize the command line arguments.
-const validateAndSanitize = function() {
-  if (!processLockId) {
-    logger.error('Process Lock id NOT passed in the arguments.');
-    usageDemo();
-    process.exit(1);
-  }
-
-  if (!group_id) {
-    logger.error('group_id is not passed');
-    usageDemo();
-    process.exit(1);
-  }
-
-  if (!prefetchCountStr) {
-    logger.error('prefetchCountStr is not passed');
-    usageDemo();
-    process.exit(1);
-  }
-};
-
-// Validate and sanitize the input params.
-validateAndSanitize();
-
 // Check if another process with the same title is running.
 ProcessLocker.canStartProcess({
-  process_title: 'executables_rmq_subscribers_block_scanner_' + group_id + '_' + processLockId
+  process_title: 'executables_rmq_subscribers_block_scanner_' + program.groupId + '_' + program.processlockId
 });
 
 let unAckCount = 0,
-  prefetchCount = parseInt(prefetchCountStr);
+  prefetchCountInt = parseInt(program.prefetchCount);
 
 const promiseExecutor = async function(onResolve, onReject, params) {
   const oThis = this;
@@ -99,18 +103,20 @@ const promiseExecutor = async function(onResolve, onReject, params) {
   unAckCount++;
 
   // Process request
+  // TODO: put try catch around JSON parse
   const parsedParams = JSON.parse(params);
 
   const payload = parsedParams.message.payload;
 
   let BlockScannerKlass = ic.getBlockScannerKlass(),
     blockScannerObj = new BlockScannerKlass({
-      blockNumber: payload.blockNumber,
-      geth_array: payload.geth_array,
-      transactionHashes: payload.transactionHashes,
-      timeStamp: payload.timestamp,
-      benchmarkFilePath: benchmarkFilePath,
-      web3InteractFactory: web3InteractFactory
+      block_number: payload.blockNumber,
+      geth_array: payload.gethArray,
+      transaction_hashes: payload.transactionHashes,
+      time_stamp: payload.timestamp,
+      benchmark_file_path: program.benchmarkFilePath,
+      web3_factory_obj: web3InteractFactory,
+      delegator_timestamp: payload.delegatorTimestamp
     });
 
   try {
@@ -146,7 +152,7 @@ warmUpGethPool().then(function() {
   PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseExecutor, {
     name: 'blockscanner_promise_queue_manager',
     timeoutInMilliSecs: 3 * 60 * 1000, //3 minutes
-    maxZombieCount: Math.round(prefetchCount * 0.25),
+    maxZombieCount: Math.round(prefetchCountInt * 0.25),
     onMaxZombieCountReached: function() {
       logger.warn('e_rmqs_bs_2', 'maxZombieCount reached. Triggering SIGTERM.');
       // Trigger gracefully shutdown of process.
@@ -161,7 +167,7 @@ warmUpGethPool().then(function() {
     {
       queue: 'block_scanner_execute_' + chain_id,
       ackRequired: 1,
-      prefetch: prefetchCount
+      prefetch: prefetchCountInt
     },
     function(params) {
       // Promise is required to be returned to manually ack messages in RMQ
