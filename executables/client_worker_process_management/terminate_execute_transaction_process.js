@@ -14,7 +14,8 @@ const run = async function() {
     .where({ process_id: processId })
     .fire();
   let clientIds = [],
-    clientAllWorkersMap = {};
+    clientAllWorkersMap = {},
+    canNotDeassociateClient = [];
 
   for (var i = 0; i < processWorkers.length; i++) {
     clientIds.push(processWorkers[i].client_id);
@@ -36,11 +37,25 @@ const run = async function() {
 
   for (var i = 0; i < processWorkers.length; i++) {
     let clientId = processWorkers[i].client_id;
-    logger.info('starting deassociation of client' + clientId);
-    let obj = new deassociateWorkerKlass({ clientId: clientId, processIds: [processId] });
-    await obj.perform();
-    await basicHelper.pauseForMilliSeconds(1000);
+    if (clientAllWorkersMap[clientId].length > 0) {
+      logger.info('starting deassociation of client' + clientId);
+      let obj = new deassociateWorkerKlass({ clientId: clientId, processIds: [processId] });
+      await obj.perform();
+      await basicHelper.pauseForMilliSeconds(1000);
+    } else {
+      canNotDeassociateClient.push(clientId);
+    }
   }
+
+  if (canNotDeassociateClient.length > 0) {
+    logger.info(
+      'Some of clients can not deassociate due to not associated to any other process. List of clients is: ',
+      canNotDeassociateClient
+    );
+  } else {
+    logger.info('Please terminate Process only after the respective queue is empty and no client associated it');
+  }
+  exit(0);
 };
 
 run();
