@@ -287,7 +287,6 @@ seedConfigStrategies.prototype = {
     rmq_params['OST_RMQ_HOST'] = env_list.OST_RMQ_HOST;
     rmq_params['OST_RMQ_PORT'] = env_list.OST_RMQ_PORT;
     rmq_params['OST_RMQ_HEARTBEATS'] = env_list.OST_RMQ_HEARTBEATS;
-    rmq_params['OST_RMQ_SUPPORT'] = env_list.OST_RMQ_SUPPORT;
 
     const configStrategy = new configStrategyModel();
 
