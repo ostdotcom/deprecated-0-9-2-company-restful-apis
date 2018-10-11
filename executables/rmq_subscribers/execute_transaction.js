@@ -32,6 +32,7 @@ const txQueuePrefetchCount = 100,
 let unAckCount = 0,
   processDetails = null,
   unAckCommandMessages = 0,
+  openStNotification = null,
   txQueueSubscribed = false,
   commandQueueSubscribed = false,
   intentToConsumerTagMap = { cmdQueue: null, exTxQueue: null };
@@ -42,20 +43,23 @@ ProcessLocker.canStartProcess({
 });
 ProcessLocker.endAfterTime({ time_in_minutes: 30 });
 
-// Load external packages
-const openSTNotification = require('@openstfoundation/openst-notification'),
-  OSTBase = require('@openstfoundation/openst-base');
+// Load external packages.
+const OSTBase = require('@openstfoundation/openst-base');
 
 // All Module Requires.
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
+  StrategyByGroupHelper = require('/helpers/config_strategy/by_group_id'),
+  ConfigStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
   rmqQueueConstants = require(rootPrefix + '/lib/global_constant/rmq_queue'),
+  configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
   initProcessKlass = require(rootPrefix + '/lib/execute_transaction_management/init_process'),
   processQueueAssociationConst = require(rootPrefix + '/lib/global_constant/process_queue_association'),
   CommandQueueProcessorKlass = require(rootPrefix + '/lib/execute_transaction_management/command_message_processor'),
   initProcess = new initProcessKlass({ process_id: processId });
 
+require(rootPrefix + '/lib/providers/notification');
 require(rootPrefix + '/lib/transactions/transfer_bt');
 
 /**
@@ -191,7 +195,7 @@ const subscribeTxQueue = async function(qNameSuffix, chainId) {
     if (intentToConsumerTagMap.exTxQueue) {
       process.emit('RESUME_CONSUME', intentToConsumerTagMap.exTxQueue);
     } else {
-      await openSTNotification.subscribeEvent.rabbit(
+      await openStNotification.subscribeEvent.rabbit(
         [rmqQueueConstants.executeTxTopicPrefix + chainId + '.' + qNameSuffix],
         {
           queue: rmqQueueConstants.executeTxQueuePrefix + '_' + chainId + '_' + qNameSuffix,
@@ -238,7 +242,7 @@ const commandQueueExecutor = function(params) {
  */
 const subscribeCommandQueue = async function(qNameSuffix, chainId) {
   if (!commandQueueSubscribed) {
-    await openSTNotification.subscribeEvent.rabbit(
+    await openStNotification.subscribeEvent.rabbit(
       [rmqQueueConstants.commandMessageTopicPrefix + chainId + '.' + qNameSuffix],
       {
         queue: rmqQueueConstants.commandMessageQueuePrefix + '_' + chainId + '_' + qNameSuffix,
@@ -265,17 +269,39 @@ const subscribeCommandQueue = async function(qNameSuffix, chainId) {
  * @returns {Promise<void>}
  */
 let init = async function() {
-  let initProcessResp = await initProcess.perform();
+  let groupId = null,
+    initProcessResp = await initProcess.perform();
 
   processDetails = initProcessResp.processDetails;
-  let processStatus = processDetails.status,
-    queueSuffix = processDetails.queue_name_suffix,
-    chainId = processDetails.chain_id;
+  let chainId = processDetails.chain_id,
+    processStatus = processDetails.status,
+    queueSuffix = processDetails.queue_name_suffix;
+
+  // Fetch all utility geth config strategies.
+  let allUtilityConfig = await new ConfigStrategyModel()
+    .select('group_id, unencrypted_params')
+    .where({ kind: configStrategyConstants.invertedKinds.utility_geth })
+    .fire();
+
+  // Fetch groupId associated with the chainId.
+  for (let index = 0; index < allUtilityConfig.length; index++) {
+    let unencrypted_params = JSON.parse(allUtilityConfig[index].unencrypted_params);
+    if (unencrypted_params.OST_UTILITY_CHAIN_ID === chainId) {
+      groupId = allUtilityConfig[index].group_id;
+    }
+  }
+  // Get rmq configStrategy for the groupId.
+  const strategyByGroupHelperObj = new StrategyByGroupHelper(groupId),
+    configStrategyResp = await strategyByGroupHelperObj.getForKind(configStrategyConstants.rmq);
+
+  // Create instance of openst-notification.
+  let ic = new InstanceComposer(configStrategyResp),
+    notificationProvider = ic.getNotificationProvider();
+
+  openStNotification = notificationProvider.getInstance();
 
   if (processStatus === processQueueAssociationConst.processKilled) {
-    logger.warn(
-      'The process being is in killed status in the table. Recommended to check. Continuing to start the queue.'
-    );
+    logger.warn('The process is in killed status in the table. Recommended to check. Continuing to start the queue.');
   }
   if (initProcessResp.shouldStartTxQueConsume) {
     await subscribeTxQueue(queueSuffix, chainId);

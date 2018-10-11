@@ -1,8 +1,5 @@
 'use strict';
 
-// Load external packages
-const openSTNotification = require('@openstfoundation/openst-notification');
-
 const rootPrefix = '..',
   OpenSTCache = require('@openstfoundation/openst-cache'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
@@ -108,33 +105,6 @@ RmqQueueHelperKlass.prototype = {
       .catch(function(err) {
         logger.error('clientActiveWorkerUuid cache could not be cleared for clientId: ' + clientId + '. Error: ', err);
       });
-  },
-
-  /**
-   *
-   * Method to assert the queue
-   *
-   * @param params
-   *        params.queue_name
-   *        params.ack
-   *        params.prefetchCount
-   *        params.topicName
-   *        params.onlyAssert
-   *        params.callback
-   *
-   */
-  subscribeQueue: async function(params) {
-    const options = {
-      queue: params.queue_name,
-      ackRequired: params.ack,
-      prefetch: params.prefetchCount,
-      onlyAssert: params.onlyAssert
-    };
-    if (!params.callback) {
-      params.callback = null;
-    }
-
-    await openSTNotification.subscribeEvent.rabbit([params.topicName], options, params.callback);
   }
 };
 

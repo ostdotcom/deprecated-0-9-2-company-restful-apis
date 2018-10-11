@@ -1,13 +1,13 @@
 'use strict';
 
-const openSTNotification = require('@openstfoundation/openst-notification');
-
 const rootPrefix = '../../..',
-  responseHelper = require(rootPrefix + '/lib/formatter/response'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_rabbitmq'),
   ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout');
 
 require(rootPrefix + '/lib/providers/platform');
 require(rootPrefix + '/lib/cache_management/client_branded_token');
@@ -50,9 +50,8 @@ EditBrandedTokenKlass.prototype = {
 
   asyncPerform: async function() {
     const oThis = this;
-    let r = null;
 
-    r = await oThis.validateAndSanitize();
+    let r = await oThis.validateAndSanitize();
     if (r.isFailure()) return Promise.resolve(r);
 
     r = await oThis.setSimpleStakeContractAddress();
@@ -63,7 +62,7 @@ EditBrandedTokenKlass.prototype = {
 
     r = await oThis.editToken();
 
-    oThis.clearCache(); // regardless it failed or not flush cache as it might have changed something
+    oThis.clearCache(); // Regardless it failed or not, flush cache as it might have changed something.
 
     if (r.isFailure()) return Promise.resolve(r);
 
@@ -153,7 +152,7 @@ EditBrandedTokenKlass.prototype = {
   /**
    * Get and set client simpleStakeContractAddr.
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    *
    */
   setSimpleStakeContractAddress: function() {
@@ -185,7 +184,7 @@ EditBrandedTokenKlass.prototype = {
     return object.perform().then(handleOpenStPlatformSuccess);
   },
 
-  publishUpdateEvent: function() {
+  publishUpdateEvent: async function() {
     const oThis = this,
       publish_data = {},
       configStrategy = oThis.ic().configStrategy;
@@ -201,7 +200,12 @@ EditBrandedTokenKlass.prototype = {
     if (Object.keys(publish_data).length === 0 || !oThis.brandedTokenRecordObject.token_erc20_address) {
       return Promise.resolve(responseHelper.successWithData({}));
     }
-    openSTNotification.publishEvent.perform({
+
+    const openStNotification = SharedRabbitMqProvider.getInstance({
+      connectionWaitSeconds: ConnectionTimeoutConst.appServer
+    });
+
+    openStNotification.publishEvent.perform({
       topics: ['entity.branded_token'],
       publisher: 'OST',
       message: {

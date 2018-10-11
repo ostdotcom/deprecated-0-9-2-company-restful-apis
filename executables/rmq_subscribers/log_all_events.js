@@ -22,21 +22,21 @@ const rootPrefix = '../..',
 ProcessLocker.canStartProcess({ process_title: 'executables_rmq_subscribers_log_all_events' });
 ProcessLocker.endAfterTime({ time_in_minutes: 60 });
 
-// Load external packages
-const openSTNotification = require('@openstfoundation/openst-notification');
-
-//All Module Requires.
+// All Module Requires.
 const EventLogModel = require(rootPrefix + '/app/models/event_logs'),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_rabbitmq');
 
-// global variable defined for events aggregation
+// Global variable defined for events aggregation
 global.eventsAggregator = [];
 
-var tasksPending = 0;
+// Declare variables.
+let tasksPending = 0,
+  waitingForEvents = false;
 
-var waitingForEvents = false;
+const openStNotification = SharedRabbitMqProvider.getInstance();
 
-openSTNotification.subscribeEvent.rabbit(['#'], { queue: 'log_all_events_from_restful_apis' }, function(eventContent) {
+openStNotification.subscribeEvent.rabbit(['#'], { queue: 'log_all_events_from_restful_apis' }, function(eventContent) {
   eventContent = JSON.parse(eventContent);
   logger.debug('Consumed event -> ', eventContent);
 
@@ -57,16 +57,16 @@ openSTNotification.subscribeEvent.rabbit(['#'], { queue: 'log_all_events_from_re
  * Bulk insert In events_log table
  *
  */
-var bulkInsertInLog = function() {
+let bulkInsertInLog = function() {
   return new Promise(async function(onResolve, onReject) {
     logger.debug('Bulk Insert In Event log table');
     const events = global.eventsAggregator,
       fields = ['kind', 'event_data'];
     global.eventsAggregator = [];
 
-    var sql_rows_array = [];
+    let sql_rows_array = [];
 
-    for (var i in events) {
+    for (let i in events) {
       const event = events[i],
         kind = event.message.kind;
       sql_rows_array.push([kind, JSON.stringify(event)]);
@@ -88,9 +88,9 @@ var bulkInsertInLog = function() {
 };
 
 // Using a single function to handle multiple signals
-var handle = function() {
+const handle = function() {
   logger.info('Received Signal');
-  var f = async function() {
+  const f = async function() {
     if (tasksPending <= 0) {
       await bulkInsertInLog();
       logger.info('Exiting the process now');
@@ -102,7 +102,7 @@ var handle = function() {
   setTimeout(f, 1000);
 };
 
-// handling gracefull process exit on getting SIGINT, SIGTERM.
+// Handling graceful process exit on getting SIGINT, SIGTERM.
 // Once signal found programme will stop consuming new messages. But need to clear running messages.
 process.on('SIGINT', handle);
 process.on('SIGTERM', handle);
