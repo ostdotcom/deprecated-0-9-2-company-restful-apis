@@ -49,7 +49,7 @@ const OSTBase = require('@openstfoundation/openst-base');
 // All Module Requires.
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
-  StrategyByGroupHelper = require('/helpers/config_strategy/by_group_id'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   ConfigStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
   rmqQueueConstants = require(rootPrefix + '/lib/global_constant/rmq_queue'),
   configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
