@@ -3,7 +3,7 @@ rootPrefix = '.';
 // create new salt id
 // node executables/one_timers/insert_managed_address_salt_id.js
 // set in var managed_address_salt_id
-managed_address_salt_id = '153';
+managed_address_salt_id = '60296';
 
 // set group id
 groupId = '2';
@@ -50,7 +50,7 @@ performer = async function(groupId) {
     OS_DAX_API_VERSION: '2017-04-19',
     OS_DAX_ACCESS_KEY_ID: 'x',
     OS_DAX_REGION: 'localhost',
-    OS_DAX_ENDPOINT: 'http://localhost:8001',
+    OS_DAX_ENDPOINT: 'http://localhost:188',
     OS_DAX_SSL_ENABLED: '0'
   };
   helperObj = new byGroupIdHelperKlass(groupId);
@@ -66,7 +66,7 @@ performer = async function(groupId) {
   console.log('insertedData: ', JSON.stringify(fetchRsp));
 };
 
-performer(groupId);
+performer(188);
 
 // Insert memcached Config
 
@@ -178,7 +178,8 @@ performer = async function(groupId) {
     OS_AUTOSCALING_ENDPOINT: 'http://localhost:8001',
     OS_AUTOSCALING_SSL_ENABLED: '0',
     OS_AUTOSCALING_LOGGING_ENABLED: '0',
-    AUTO_SCALE_DYNAMO: '0'
+    AUTO_SCALE_DYNAMO: '0',
+    OS_DYNAMODB_TABLE_NAME_PREFIX: 'd_pk_'
   };
   helperObj = new byGroupIdHelperKlass(groupId);
   console.log('inserting data');
@@ -590,7 +591,7 @@ performer = async function(groupId) {
   openSTPlaform = platformProvider.getInstance();
   performer = openSTPlaform.services.setup.fundUsersWithSTPrime;
   rsp = await performer.perform();
-  console.log('rsp: ', rsp.toHash());
+  console.log('rsp: ', rsp);
   return Promise.resolve(rsp);
 };
 

@@ -183,12 +183,15 @@ ConfigStrategyByGroupId.prototype = {
       groupId = oThis.groupId,
       strategyIdInt = configStrategyConstants.invertedKinds[kind];
 
+    let insertResponse;
+
     if (strategyIdInt === undefined) {
       logger.error('Provided kind is not proper. Please check kind');
       return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_07'));
     }
 
     let managedAddressSaltId = managed_address_salt_id;
+
     if (configStrategyConstants.kindsWithoutGroupId.includes(kind)) {
       // If group id is present, reject
       if (groupId) {
@@ -205,8 +208,9 @@ ConfigStrategyByGroupId.prototype = {
         return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_09'));
       }
 
-      let configStrategyModelObj = new ConfigStrategyModel(),
-        insertResponse = await configStrategyModelObj.create(kind, managedAddressSaltId, params);
+      let configStrategyModelObj = new ConfigStrategyModel();
+
+      insertResponse = await configStrategyModelObj.create(kind, managedAddressSaltId, params);
 
       if (insertResponse.isFailure()) {
         logger.error('Error in inserting data in config_strategies table ');
@@ -236,8 +240,9 @@ ConfigStrategyByGroupId.prototype = {
         return validateResponse;
       }
 
-      let configStrategyModelObj = new ConfigStrategyModel(),
-        insertResponse = await configStrategyModelObj.create(kind, managedAddressSaltId, params, groupId);
+      let configStrategyModelObj = new ConfigStrategyModel();
+
+      insertResponse = await configStrategyModelObj.create(kind, managedAddressSaltId, params, groupId);
 
       if (insertResponse.isFailure()) {
         logger.error('Error while inserting data in config strategy table ');
@@ -245,7 +250,7 @@ ConfigStrategyByGroupId.prototype = {
       }
     }
 
-    return Promise.resolve(responseHelper.successWithData({}));
+    return Promise.resolve(insertResponse);
   },
 
   /**

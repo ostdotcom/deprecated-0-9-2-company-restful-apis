@@ -634,6 +634,7 @@ const ConfigStrategyModelSpecificPrototype = {
 
     response.chainId = unencrypted_hash.OST_UTILITY_CHAIN_ID;
     response.chainKind = 'utility';
+    response.chainType = unencrypted_hash.OST_UTILITY_CHAIN_TYPE;
 
     let readWriteKeyName = 'read_write'; //Remove hard coding
 
@@ -660,6 +661,7 @@ const ConfigStrategyModelSpecificPrototype = {
     let response = {};
     response.chainId = unencrypted_hash.OST_VALUE_CHAIN_ID;
     response.chainKind = 'value';
+    response.chainType = configStrategyConstants.gethChainType;
     if (unencrypted_hash.OST_VALUE_GETH_WS_PROVIDERS.includes(gethProvider)) {
       response.siblingEndpoints = unencrypted_hash.OST_VALUE_GETH_WS_PROVIDERS;
     } else if (unencrypted_hash.OST_VALUE_GETH_RPC_PROVIDERS.includes(gethProvider)) {

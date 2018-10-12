@@ -14,6 +14,7 @@ let nonceManagerKlass,
   valueChainGasPriceCacheKlass,
   ChainGethProvidersCache,
   configStrategyHelper,
+  configStrategyConsts,
   fetchPrivateKeyKlass;
 
 // NOTE :: Please define all your requires inside the function
@@ -27,6 +28,7 @@ const initRequires = function() {
   ChainGethProvidersCache = require(rootPrefix + '/lib/shared_cache_management/chain_geth_providers');
   configStrategyHelper = require(rootPrefix + '/helpers/config_strategy/by_client_id');
   fetchPrivateKeyKlass = require(rootPrefix + '/lib/shared_cache_management/address_private_key');
+  configStrategyConsts = require(rootPrefix + '/lib/global_constant/config_strategy');
 };
 
 const SignRawTx = function(host, rawTx) {
@@ -45,6 +47,7 @@ const SignRawTx = function(host, rawTx) {
   oThis.chainGasPrice = null;
   oThis.bnChainGasPrice = null;
   oThis.chainKind = null;
+  oThis.chainType = null;
   oThis.clientId = null;
   oThis.chainId = null;
   oThis.gethWsProviders = null;
@@ -179,6 +182,7 @@ SignRawTx.prototype = {
       // Set the variables for further use.
       oThis.chainId = cacheResponse['chainId'];
       oThis.chainKind = cacheResponse['chainKind'];
+      oThis.chainType = cacheResponse['chainType'];
       oThis.gethWsProviders = cacheResponse['siblingEndpoints'];
       oThis.gethRpcProviders = cacheResponse['gethRpcProviders'];
 
@@ -209,11 +213,13 @@ SignRawTx.prototype = {
         oThis.gethWsProviders = valueProviders;
         oThis.gethRpcProviders = valueRpcProviders;
         oThis.chainId = oThis.configStrategy.OST_VALUE_CHAIN_ID;
+        oThis.chainType = configStrategyConsts.gethChainType;
       } else if (utilityProviders.includes(oThis.host)) {
         oThis.chainKind = 'utility';
         oThis.gethWsProviders = utilityProviders;
         oThis.gethRpcProviders = utilityRpcProviders;
         oThis.chainId = oThis.configStrategy.OST_UTILITY_CHAIN_ID;
+        oThis.chainType = oThis.configStrategy.OST_UTILITY_CHAIN_TYPE;
       }
     }
 
@@ -266,6 +272,7 @@ SignRawTx.prototype = {
     oThis.nonceManager = new nonceManagerKlass({
       address: oThis.fromAddress,
       chain_kind: oThis.chainKind,
+      chain_type: oThis.chainType,
       client_id: oThis.clientId,
       host: oThis.host,
       chain_id: oThis.chainId,
