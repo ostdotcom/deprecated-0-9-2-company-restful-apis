@@ -36,6 +36,7 @@ const NonceManagerKlass = function(params) {
   const oThis = this,
     fromAddress = params['address'].toLowerCase(),
     chainKind = params['chain_kind'],
+    chainType = params['chain_type'],
     clientId = params['client_id'],
     currentWsHost = params['host'],
     chainId = params['chain_id'],
@@ -48,6 +49,7 @@ const NonceManagerKlass = function(params) {
 
   oThis.address = fromAddress;
   oThis.chainKind = chainKind;
+  oThis.chainType = chainType;
   oThis.clientId = clientId;
   oThis.currentWsHost = currentWsHost;
   oThis.chainId = chainId;
@@ -63,6 +65,7 @@ const NonceManagerKlass = function(params) {
 const NonceCacheKlassPrototype = {
   address: null,
   chainKind: null,
+  chainType: null,
   clientId: null,
   currentWsHost: null,
   chainId: null,
@@ -342,7 +345,7 @@ const NonceCacheKlassPrototype = {
       const wsGethURL = oThis.gethWsProviders[i],
         rpcGethURL = oThis.gethRpcProviders[i];
 
-      const web3Provider = oThis.nonceHelper.getWeb3Instance(wsGethURL, oThis.chainKind);
+      const web3Provider = oThis.nonceHelper.getWeb3Instance(wsGethURL, oThis.chainType);
       getMinedTxCountPromises.push(oThis.nonceHelper.getMinedTxCountFromGeth(oThis.address, web3Provider));
       getPendingTxnsPromises.push(oThis.nonceHelper.getUnminedTransactionsFromGethNode(web3Provider, rpcGethURL));
     }
