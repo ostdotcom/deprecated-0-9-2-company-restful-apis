@@ -25,7 +25,7 @@ ProcessLocker.endAfterTime({ time_in_minutes: 60 });
 // All Module Requires.
 const EventLogModel = require(rootPrefix + '/app/models/event_logs'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_rabbitmq');
+  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification');
 
 // Global variable defined for events aggregation
 global.eventsAggregator = [];

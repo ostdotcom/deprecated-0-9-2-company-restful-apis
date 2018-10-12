@@ -5,7 +5,7 @@ const rootPrefix = '../../..',
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_rabbitmq'),
+  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
   ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout');
 

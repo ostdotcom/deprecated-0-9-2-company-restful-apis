@@ -23,7 +23,7 @@ const OSTBase = require('@openstfoundation/openst-base');
 
 const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_rabbitmq'),
+  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   notificationTopics = require(rootPrefix + '/lib/global_constant/notification_topics'),
   IntercomStatusKlass = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js');
 

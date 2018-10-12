@@ -18,7 +18,7 @@ ProcessLocker.endAfterTime({ time_in_minutes: 60 });
 // All Module Requires.
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   applicationMailerKlass = require(rootPrefix + '/lib/application_mailer'),
-  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_rabbitmq'),
+  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   applicationMailer = new applicationMailerKlass(),
   openStNotification = SharedRabbitMqProvider.getInstance();
 

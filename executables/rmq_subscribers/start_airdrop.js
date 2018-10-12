@@ -19,10 +19,10 @@ const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
 ProcessLocker.canStartProcess({ process_title: 'executables_rmq_subscribers_start_airdrop' });
 //ProcessLocker.endAfterTime({time_in_minutes: 60});
 
-//All Module Requires.
+// All Module Requires.
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
-  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_rabbitmq'),
+  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id');
 
 const openStNotification = SharedRabbitMqProvider.getInstance();
