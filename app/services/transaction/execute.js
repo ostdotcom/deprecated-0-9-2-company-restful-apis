@@ -687,20 +687,25 @@ ExecuteTransactionService.prototype = {
     const notificationProvider = ic.getNotificationProvider(),
       openStNotification = await notificationProvider.getInstance({
         connectionWaitSeconds: ConnectionTimeoutConst.appServer
-      });
+      }),
+      payload = {
+        transaction_uuid: oThis.transactionUuid,
+        client_id: oThis.clientId,
+        worker_uuid: workerUuid
+      };
 
-    const setToRMQ = await openStNotification.publishEvent.perform({
-      topics: [topicName], // topicName for distributor queue
-      publisher: 'OST',
-      message: {
-        kind: RmqQueueConstants.executeTx,
-        payload: {
-          transaction_uuid: oThis.transactionUuid,
-          client_id: oThis.clientId,
-          worker_uuid: workerUuid
+    const setToRMQ = await openStNotification.publishEvent
+      .perform({
+        topics: [topicName], // topicName for distributor queue
+        publisher: 'OST',
+        message: {
+          kind: RmqQueueConstants.executeTx,
+          payload: payload
         }
-      }
-    });
+      })
+      .catch(function(err) {
+        logger.error('Message for execute transaction was not published. Payload: ', payload, ' Error: ', err);
+      });
 
     //if could not set to RMQ run in async.
     if (setToRMQ.isFailure() || setToRMQ.data.publishedToRmq == 0) {

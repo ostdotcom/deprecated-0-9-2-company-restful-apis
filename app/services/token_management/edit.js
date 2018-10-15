@@ -202,25 +202,30 @@ EditBrandedTokenKlass.prototype = {
     }
 
     const openStNotification = SharedRabbitMqProvider.getInstance({
-      connectionWaitSeconds: ConnectionTimeoutConst.appServer
-    });
+        connectionWaitSeconds: ConnectionTimeoutConst.appServer
+      }),
+      payload = {
+        entity: 'branded_token',
+        identifier: {
+          erc20_contract_address: oThis.brandedTokenRecordObject.token_erc20_address,
+          chain_id: configStrategy.OST_UTILITY_CHAIN_ID
+        },
+        operation: 'update',
+        data: publish_data
+      };
 
-    openStNotification.publishEvent.perform({
-      topics: ['entity.branded_token'],
-      publisher: 'OST',
-      message: {
-        kind: 'shared_entity',
-        payload: {
-          entity: 'branded_token',
-          identifier: {
-            erc20_contract_address: oThis.brandedTokenRecordObject.token_erc20_address,
-            chain_id: configStrategy.OST_UTILITY_CHAIN_ID
-          },
-          operation: 'update',
-          data: publish_data
+    openStNotification.publishEvent
+      .perform({
+        topics: ['entity.branded_token'],
+        publisher: 'OST',
+        message: {
+          kind: 'shared_entity',
+          payload: payload
         }
-      }
-    });
+      })
+      .catch(function(err) {
+        logger.error('Message for token details was not published to openst-view. Payload: ', payload, ' Error: ', err);
+      });
     return Promise.resolve(responseHelper.successWithData({}));
   },
 

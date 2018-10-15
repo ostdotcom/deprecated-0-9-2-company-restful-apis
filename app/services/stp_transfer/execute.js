@@ -331,21 +331,26 @@ ExecuteSTPTransferService.prototype = {
     const notificationProvider = oThis.ic().getNotificationProvider(),
       openStNotification = notificationProvider.getInstance({
         connectionWaitSeconds: ConnectionTimeoutConst.appServer
+      }),
+      payload = {
+        transaction_uuid: oThis.transactionUuid,
+        client_id: oThis.clientId
+      };
+
+    const setToRMQ = await openStNotification.publishEvent
+      .perform({
+        topics: [topicName],
+        publisher: 'OST',
+        message: {
+          kind: 'background_job',
+          payload: payload
+        }
+      })
+      .catch(function(err) {
+        logger.error('Message for ST Prime transfer was not published. Payload: ', payload, ' Error: ', err);
       });
 
-    const setToRMQ = await openStNotification.publishEvent.perform({
-      topics: [topicName],
-      publisher: 'OST',
-      message: {
-        kind: 'background_job',
-        payload: {
-          transaction_uuid: oThis.transactionUuid,
-          client_id: oThis.clientId
-        }
-      }
-    });
-
-    //if could not set to RMQ run in async.
+    // If could not set to RMQ run in async.
     if (setToRMQ.isFailure() || setToRMQ.data.publishedToRmq == 0) {
       return Promise.reject(
         responseHelper.error({
