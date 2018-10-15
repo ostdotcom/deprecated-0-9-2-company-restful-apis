@@ -20,6 +20,7 @@ const rootPrefix = '../../..',
   commonValidator = require(rootPrefix + '/lib/validators/common'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
   conversionRateConstants = require(rootPrefix + '/lib/global_constant/conversion_rates'),
+  TransactionMetaModel = require(rootPrefix + '/app/models/transaction_meta'),
   errorConfig = basicHelper.fetchErrorConfig(apiVersions.general);
 
 require(rootPrefix + '/lib/cache_management/client_transaction_type/by_name');
@@ -112,6 +113,8 @@ ExecuteTransactionService.prototype = {
     await oThis._validateFromUserBalance();
 
     await oThis._createTransactionLog();
+
+    await oThis._insertInTransactionMeta();
 
     // Transaction would be set in background & response would be returned with uuid.
     await oThis.enqueueTxForExecution();
@@ -646,9 +649,25 @@ ExecuteTransactionService.prototype = {
       shard_name: configStrategy.TRANSACTION_LOG_SHARD_NAME
     }).updateItem(oThis.transactionLogData);
 
-    console.log('------- Time taken', (Date.now() - start_time) / 1000);
+    logger.log('------- Time taken', (Date.now() - start_time) / 1000);
 
     return responseHelper.successWithData({});
+  },
+
+  _insertInTransactionMeta: async function() {
+    const oThis = this,
+      configStrategy = oThis.ic().configStrategy;
+
+    logger.debug('Inserting transaction in transaction meta table');
+
+    await new TransactionMetaModel().insertRecord({
+      chain_id: configStrategy.OST_UTILITY_CHAIN_ID,
+      transaction_uuid: oThis.transactionUuid,
+      client_id: oThis.clientId,
+      status: 2, //TODO: This should be changed to enum value after changes are done in model
+      kind: new TransactionMetaModel().invertedKinds[transactionLogConst.tokenTransferTransactionType],
+      retry_count: 1
+    });
   },
 
   /**
