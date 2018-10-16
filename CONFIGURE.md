@@ -29,36 +29,20 @@
 
 ### Associate a client to transaction executing process(es).
 
-The code below expects a clientId (number) and an array of processIds (Array{numbers}) which are supposed to be 
+The command below expects a clientId (number) and an array of processIds (Array{numbers}) which are supposed to be 
 associated to the client. The code fetches the available workers for the clientId passed and associates those workers
-to the processIds passed.
-```js
-Klass = require('./lib/execute_transaction_management/associate_worker');  // Require the class.
-clientId = 1001; // The clientId which needs to be associated to the new processes.
-processIds = [4, 5, 6]; // The processIds which needs to be associated to the client.
-params = {
-  clientId: clientId, 
-  processIds: processIds
-};
-obj = new Klass(params);  // Create class object
-obj.perform().then(console.log);  // Start the association process.
+to the processIds passed. For more help, type '--help' after below command.
+```bash
+    node ./executables/client_worker_process_management/associate_worker_commander.js --clientId 1008 --processIds "[1,2]"
 ```
 
 ### De-associate a client from transaction executing process(es).
 
-The code below expects a clientId (number) and an array of processIds (Array{numbers}) which are supposed to be 
+The command below expects a clientId (number) and an array of processIds (Array{numbers}) which are supposed to be 
 de-associated from the client. The code fetches the associated workers for the clientId passed and de-associates those workers
-from the processIds passed.
-```js
-Klass = require('./lib/execute_transaction_management/deassociate_worker');  // Require the class.
-clientId = 1001; // The clientId which needs to be de-associated from the processes.
-processIds = [4, 5, 6]; // The processIds which needs to be de-associated from the client.
-params = {
-  clientId: clientId, 
-  processIds: processIds
-};
-obj = new Klass(params);  // Create class object
-obj.perform().then(console.log);  // Start the de-association process.
+from the processIds passed. For more help, type '--help' after below command.
+```bash
+    node ./executables/client_worker_process_management/deassociate_worker_commander.js --clientId 1008 --processIds "[1,2]"
 ```
 
 ### Clear client_worker_managed_address_id and process_queue_association cache
