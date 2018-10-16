@@ -22,6 +22,7 @@ const rootPrefix = '../../..',
   RmqQueueConstants = require(rootPrefix + '/lib/global_constant/rmq_queue'),
   ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   TransactionMetaModel = require(rootPrefix + '/app/models/transaction_meta'),
+  transactionMetaConstants = require(rootPrefix + '/lib/global_constant/transaction_meta.js'),
   errorConfig = basicHelper.fetchErrorConfig(apiVersions.general),
   configStrategyHelper = new ConfigStrategyHelperKlass();
 
@@ -667,11 +668,11 @@ ExecuteTransactionService.prototype = {
 
     await new TransactionMetaModel().insertRecord({
       chain_id: configStrategy.OST_UTILITY_CHAIN_ID,
+      transaction_hash: null,
       transaction_uuid: oThis.transactionUuid,
       client_id: oThis.clientId,
-      status: 2, //TODO: This should be changed to enum value after changes are done in model
-      kind: new TransactionMetaModel().invertedKinds[transactionLogConst.tokenTransferTransactionType],
-      retry_count: 1
+      status: transactionMetaConstants.invertedStatuses[transactionMetaConstants.queued],
+      kind: new TransactionMetaModel().invertedKinds[transactionLogConst.tokenTransferTransactionType]
     });
   },
 

@@ -55,6 +55,8 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
   initProcessKlass = require(rootPrefix + '/lib/execute_transaction_management/init_process'),
   processQueueAssociationConst = require(rootPrefix + '/lib/global_constant/process_queue_association'),
+  TransactionMetaModel = require(rootPrefix + '/app/models/transaction_meta'),
+  transactionMetaConstants = require(rootPrefix + '/lib/global_constant/transaction_meta.js'),
   CommandQueueProcessorKlass = require(rootPrefix + '/lib/execute_transaction_management/command_message_processor'),
   initProcess = new initProcessKlass({ process_id: processId });
 
@@ -98,75 +100,115 @@ const promiseTxExecutor = function(onResolve, onReject, params) {
     kind = parsedParams.message.kind,
     payload = parsedParams.message.payload;
 
-  let errorMsgType = '',
-    msgExecutorObject = {};
+  //Update in transaction meta
+  logger.debug('Updating transaction in transaction meta table');
 
-  let configStrategyHelper = new ConfigStrategyHelperKlass(payload.client_id);
-  configStrategyHelper.get().then(function(configStrategyRsp) {
-    if (configStrategyRsp.isFailure()) {
-      return Promise.reject(configStrategyRsp);
-    }
+  _updateInTransactionMeta(payload)
+    .then(function(response) {
+      if (response === 'Failed') {
+        unAckCount--;
+        return onResolve();
+      }
+      let errorMsgType = '',
+        msgExecutorObject = {};
 
-    if (kind === rmqQueueConstants.executeTx) {
-      errorMsgType = 'transaction';
+      let configStrategyHelper = new ConfigStrategyHelperKlass(payload.client_id);
+      configStrategyHelper.get().then(function(configStrategyRsp) {
+        if (configStrategyRsp.isFailure()) {
+          return Promise.reject(configStrategyRsp);
+        }
 
-      let ic = new InstanceComposer(configStrategyRsp.data),
-        ExecuteTransferBt = ic.getTransferBtClass();
+        if (kind === rmqQueueConstants.executeTx) {
+          errorMsgType = 'transaction';
 
-      msgExecutorObject = new ExecuteTransferBt({
-        transactionUuid: payload.transaction_uuid,
-        clientId: payload.client_id,
-        workerUuid: payload.worker_uuid
+          let ic = new InstanceComposer(configStrategyRsp.data),
+            ExecuteTransferBt = ic.getTransferBtClass();
+
+          msgExecutorObject = new ExecuteTransferBt({
+            transactionUuid: payload.transaction_uuid,
+            clientId: payload.client_id,
+            workerUuid: payload.worker_uuid
+          });
+        } else {
+          errorMsgType = 'command message';
+          msgExecutorObject = new CommandQueueProcessorKlass(parsedParams);
+        }
+
+        try {
+          msgExecutorObject
+            .perform()
+            .then(function(response) {
+              if (!response.isSuccess()) {
+                logger.error(
+                  'e_rmqs_et_1',
+                  'Something went wrong in ',
+                  errorMsgType,
+                  ' execution unAckCount ->',
+                  unAckCount,
+                  response,
+                  params
+                );
+              } else {
+                if (kind !== rmqQueueConstants.executeTx) {
+                  commandResponseActions(response);
+                }
+              }
+              unAckCount--;
+              logger.debug('------ unAckCount -> ', unAckCount);
+              // ack RMQ
+              return onResolve();
+            })
+            .catch(function(err) {
+              logger.error(
+                'e_rmqs_et_2',
+                'Something went wrong in ',
+                errorMsgType,
+                ' execution. unAckCount ->',
+                unAckCount,
+                err,
+                params
+              );
+              unAckCount--;
+              // ack RMQ
+              return onResolve();
+            });
+        } catch (err) {
+          unAckCount--;
+          logger.error('Listener could not process ', errorMsgType, '.. Catch. unAckCount -> ', unAckCount);
+          return onResolve();
+        }
       });
-    } else {
-      errorMsgType = 'command message';
-      msgExecutorObject = new CommandQueueProcessorKlass(parsedParams);
+    })
+    .catch(function(err) {
+      //Requeue the same message
+      logger.error(err);
+      return onReject();
+    });
+};
+
+const _updateInTransactionMeta = async function(payload) {
+  try {
+    let updatedRowsResponse = await new TransactionMetaModel()
+      .update({ status: transactionMetaConstants.invertedStatuses[transactionMetaConstants.processing] })
+      .where([
+        'transaction_uuid = ? AND status = ?',
+        payload.transaction_uuid,
+        transactionMetaConstants.invertedStatuses[transactionMetaConstants.queued]
+      ]) //Change hard coding
+      .fire();
+
+    if (updatedRowsResponse == undefined) {
+      return Promise.reject('Error in updating tx meta');
     }
 
-    try {
-      msgExecutorObject
-        .perform()
-        .then(function(response) {
-          if (!response.isSuccess()) {
-            logger.error(
-              'e_rmqs_et_1',
-              'Something went wrong in ',
-              errorMsgType,
-              ' execution unAckCount ->',
-              unAckCount,
-              response,
-              params
-            );
-          } else {
-            if (kind !== rmqQueueConstants.executeTx) {
-              commandResponseActions(response);
-            }
-          }
-          unAckCount--;
-          logger.debug('------ unAckCount -> ', unAckCount);
-          // ack RMQ
-          return onResolve();
-        })
-        .catch(function(err) {
-          logger.error(
-            'e_rmqs_et_2',
-            'Something went wrong in ',
-            errorMsgType,
-            ' execution. unAckCount ->',
-            unAckCount,
-            err,
-            params
-          );
-          unAckCount--;
-          // ack RMQ
-          return onResolve();
-        });
-    } catch (err) {
-      unAckCount--;
-      logger.error('Listener could not process ', errorMsgType, '.. Catch. unAckCount -> ', unAckCount);
-      return onResolve();
+    if (updatedRowsResponse.changedRows != 1) {
+      return Promise.resolve('Failed');
+    } else {
+      return Promise.resolve('Success');
     }
-  });
+  } catch (error) {
+    return Promise.reject(error);
+  }
 };
 
 /**
