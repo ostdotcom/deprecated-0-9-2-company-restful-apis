@@ -17,19 +17,6 @@ const kinds = {
 
 const invertedKinds = util.invert(kinds);
 
-const statuses = {
-  '1': transactionMetaConst.queued,
-  '2': transactionMetaConst.processing,
-  '3': transactionMetaConst.failed,
-  '4': transactionMetaConst.submitted,
-  '5': transactionMetaConst.geth_down,
-  '6': transactionMetaConst.insufficient_gas,
-  '7': transactionMetaConst.nonce_too_low,
-  '8': transactionMetaConst.replacement_tx_under_priced
-};
-
-const invertedStatuses = util.invert(statuses);
-
 const TransactionMetaModel = function() {
   ModelBaseKlass.call(this, { dbName: dbName });
 };
@@ -43,9 +30,9 @@ const TransactionMetaModelSpecificPrototype = {
 
   invertedKinds: invertedKinds,
 
-  statuses: statuses,
+  statuses: transactionMetaConst.statuses,
 
-  invertedStatuses: invertedStatuses,
+  invertedStatuses: transactionMetaConst.invertedStatuses,
 
   /**
    * Get by transaction hash
@@ -253,6 +240,36 @@ const TransactionMetaModelSpecificPrototype = {
 
     return oThis
       .update(['status = ?', oThis.invertedStatuses[transactionMetaConst.replacement_tx_under_priced]])
+      .where(['transaction_uuid IN (?)', transaction_uuids])
+      .fire();
+  },
+
+  /**
+   * Mark multiple statuses as mined.
+   *
+   * @param transaction_uuids
+   * @returns {*}
+   */
+  markStatusAsMined(transaction_uuids) {
+    const oThis = this;
+
+    return oThis
+      .update(['status = ?', oThis.invertedStatuses[transactionMetaConst.mined]])
+      .where(['transaction_uuid IN (?)', transaction_uuids])
+      .fire();
+  },
+
+  /**
+   * Mark multiple statuses as unknown.
+   *
+   * @param transaction_uuids
+   * @returns {*}
+   */
+  markStatusAsUnknown(transaction_uuids) {
+    const oThis = this;
+
+    return oThis
+      .update(['status = ?', oThis.invertedStatuses[transactionMetaConst.unknown]])
       .where(['transaction_uuid IN (?)', transaction_uuids])
       .fire();
   }
