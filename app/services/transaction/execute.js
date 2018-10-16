@@ -6,8 +6,7 @@
  * @module app/services/transaction/execute
  */
 
-const openSTNotification = require('@openstfoundation/openst-notification'),
-  uuid = require('uuid');
+const uuidV4 = require('uuid/v4');
 
 const rootPrefix = '../../..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
@@ -19,18 +18,22 @@ const rootPrefix = '../../..',
   managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
   commonValidator = require(rootPrefix + '/lib/validators/common'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
-  conversionRateConstants = require(rootPrefix + '/lib/global_constant/conversion_rates'),
-  errorConfig = basicHelper.fetchErrorConfig(apiVersions.general);
+  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy'),
+  RmqQueueConstants = require(rootPrefix + '/lib/global_constant/rmq_queue'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
+  errorConfig = basicHelper.fetchErrorConfig(apiVersions.general),
+  configStrategyHelper = new ConfigStrategyHelperKlass();
 
-require(rootPrefix + '/lib/cache_management/client_transaction_type/by_name');
-require(rootPrefix + '/lib/cache_management/client_transaction_type/by_id');
+require(rootPrefix + '/lib/economy_user_balance');
+require(rootPrefix + '/app/models/transaction_log');
+require(rootPrefix + '/lib/providers/price_oracle');
+require(rootPrefix + '/lib/providers/notification');
+require(rootPrefix + '/lib/cache_management/client_branded_token');
 require(rootPrefix + '/lib/cache_multi_management/managedAddresses');
 require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
-require(rootPrefix + '/lib/cache_management/client_branded_token');
-require(rootPrefix + '/app/models/transaction_log');
-require(rootPrefix + '/lib/economy_user_balance');
-require(rootPrefix + '/lib/providers/price_oracle');
-require(rootPrefix + '/lib/cache_management/client_transactions_rate_limit');
+require(rootPrefix + '/lib/cache_management/process_queue_association');
+require(rootPrefix + '/lib/cache_management/client_transaction_type/by_id');
+require(rootPrefix + '/lib/cache_management/client_transaction_type/by_name');
 
 /**
  * @constructor
@@ -56,7 +59,7 @@ const ExecuteTransactionService = function(params) {
   oThis.commissionPercent = params.commission_percent;
 
   oThis.transactionLogData = null;
-  oThis.transactionUuid = uuid.v4();
+  oThis.transactionUuid = uuidV4();
   oThis.tokenSymbol = null;
   oThis.transactionTypeRecord = null;
   oThis.clientBrandedToken = null;
@@ -69,7 +72,7 @@ ExecuteTransactionService.prototype = {
   /**
    * Perform
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   perform: function() {
     const oThis = this;
@@ -92,7 +95,7 @@ ExecuteTransactionService.prototype = {
   /**
    * Async perform
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   asyncPerform: async function() {
     const oThis = this;
@@ -124,7 +127,7 @@ ExecuteTransactionService.prototype = {
    *
    * Sets oThis.tokenSymbol
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   _fetchFromBtCache: async function() {
     const oThis = this,
@@ -153,7 +156,7 @@ ExecuteTransactionService.prototype = {
    *
    * Sets oThis.clientBrandedToken
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   _fetchFromBtSecureCache: async function() {
     const oThis = this,
@@ -197,7 +200,7 @@ ExecuteTransactionService.prototype = {
    *
    * Sets oThis.transactionTypeRecord
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   _fetchFromClientTransactionTypeCache: async function() {
     const oThis = this;
@@ -266,12 +269,12 @@ ExecuteTransactionService.prototype = {
    *
    * Sets oThis.transactionTypeRecord
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   _validateOptionallyMandatoryParams: async function() {
     const oThis = this;
 
-    if (oThis.transactionTypeRecord.currency_type == clientTransactionTypeConst.btCurrencyType) {
+    if (oThis.transactionTypeRecord.currency_type === clientTransactionTypeConst.btCurrencyType) {
       if (!commonValidator.isVarNull(oThis.amount) && !commonValidator.validateBtAmount(oThis.amount)) {
         return Promise.reject(
           responseHelper.paramValidationError({
@@ -284,7 +287,7 @@ ExecuteTransactionService.prototype = {
       }
     }
 
-    if (oThis.transactionTypeRecord.currency_type == clientTransactionTypeConst.usdCurrencyType) {
+    if (oThis.transactionTypeRecord.currency_type === clientTransactionTypeConst.usdCurrencyType) {
       if (!commonValidator.isVarNull(oThis.amount) && !commonValidator.validateUsdAmount(oThis.amount)) {
         return Promise.reject(
           responseHelper.paramValidationError({
@@ -401,7 +404,7 @@ ExecuteTransactionService.prototype = {
   /**
    * Validate Users
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   _validateUsers: async function() {
     const oThis = this,
@@ -453,7 +456,7 @@ ExecuteTransactionService.prototype = {
     }
 
     // check if the sender same as recipient
-    if (oThis.fromUuid == oThis.toUuid) {
+    if (oThis.fromUuid === oThis.toUuid) {
       return Promise.reject(
         responseHelper.paramValidationError({
           internal_error_identifier: 's_t_e_10',
@@ -482,16 +485,18 @@ ExecuteTransactionService.prototype = {
     if (
       !oThis.fromUserObj ||
       oThis.fromUserObj.client_id != oThis.clientId ||
-      oThis.fromUserObj.status != managedAddressesConst.activeStatus
+      oThis.fromUserObj.status !== managedAddressesConst.activeStatus
     ) {
       return Promise.reject(oThis._invalid_from_user_id_error('s_t_e_12'));
     }
+    // Fetch userId from the obj.
+    oThis.fromUserId = oThis.fromUserObj.id;
 
     oThis.toUserObj = managedAddressCacheFetchResponse.data[oThis.toUuid];
     if (
       !oThis.toUserObj ||
       oThis.toUserObj.client_id != oThis.clientId ||
-      oThis.toUserObj.status != managedAddressesConst.activeStatus
+      oThis.toUserObj.status !== managedAddressesConst.activeStatus
     ) {
       return Promise.reject(oThis._invalid_to_user_id_error('s_t_e_13'));
     }
@@ -556,7 +561,7 @@ ExecuteTransactionService.prototype = {
 
     logger.debug('---oThis.transactionTypeRecord--', oThis.transactionTypeRecord);
 
-    if (oThis.transactionTypeRecord.currency_type == clientTransactionTypeConst.usdCurrencyType) {
+    if (oThis.transactionTypeRecord.currency_type === clientTransactionTypeConst.usdCurrencyType) {
       let ostPriceCacheKlass = oThis.ic().getOstPricePointsCache(),
         ostPrices = await new ostPriceCacheKlass().fetch();
 
@@ -613,7 +618,7 @@ ExecuteTransactionService.prototype = {
    *
    * Sets oThis.transactionLogId
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   _createTransactionLog: async function() {
     const oThis = this,
@@ -654,35 +659,53 @@ ExecuteTransactionService.prototype = {
   /**
    * Enqueue transaction for execution
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   enqueueTxForExecution: async function() {
     const oThis = this;
 
-    let topicName = 'transaction.execute';
-    let ClientTrxRateCacheKlass = oThis.ic().getClientTransactionsRateLimitCacheClass();
+    const configStrategyRsp = await configStrategyHelper.getConfigStrategy(oThis.clientId),
+      configStrategy = configStrategyRsp.data,
+      ic = new InstanceComposer(configStrategy);
 
-    const rateLimitCrossed = await new ClientTrxRateCacheKlass({
-      client_id: oThis.clientId
-    }).transactionRateLimitCrossed();
-    if (rateLimitCrossed.isSuccess() && rateLimitCrossed.data.limitCrossed) {
-      topicName = 'slow.transaction.execute';
-    }
+    const ProcessQueueAssociationCacheKlass = ic.getProcessQueueAssociationCache(),
+      processQueueAssociationRsp = await new ProcessQueueAssociationCacheKlass({
+        client_id: oThis.clientId
+      }).fetch();
 
-    let rateLimitCount = rateLimitCrossed.data.rateLimitCount;
+    let workingProcessIds = processQueueAssociationRsp.data.workingProcessDetails;
 
-    const setToRMQ = await openSTNotification.publishEvent.perform({
-      topics: [topicName],
-      publisher: 'OST',
-      message: {
-        kind: 'execute_transaction',
-        payload: {
-          transactionUuid: oThis.transactionUuid,
-          clientId: oThis.clientId,
-          rateLimitCount: rateLimitCount
+    let index = oThis.fromUserId % workingProcessIds.length,
+      topicName =
+        RmqQueueConstants.executeTxTopicPrefix +
+        workingProcessIds[index].chain_id +
+        '.' +
+        workingProcessIds[index].queue_name_suffix,
+      workerUuid = workingProcessIds[index].workerUuid;
+    // Pass the workerUuid for transfer_bt class.
+
+    const notificationProvider = ic.getNotificationProvider(),
+      openStNotification = await notificationProvider.getInstance({
+        connectionWaitSeconds: ConnectionTimeoutConst.appServer
+      }),
+      payload = {
+        transaction_uuid: oThis.transactionUuid,
+        client_id: oThis.clientId,
+        worker_uuid: workerUuid
+      };
+
+    const setToRMQ = await openStNotification.publishEvent
+      .perform({
+        topics: [topicName], // topicName for distributor queue
+        publisher: 'OST',
+        message: {
+          kind: RmqQueueConstants.executeTx,
+          payload: payload
         }
-      }
-    });
+      })
+      .catch(function(err) {
+        logger.error('Message for execute transaction was not published. Payload: ', payload, ' Error: ', err);
+      });
 
     //if could not set to RMQ run in async.
     if (setToRMQ.isFailure() || setToRMQ.data.publishedToRmq == 0) {
@@ -727,4 +750,5 @@ ExecuteTransactionService.prototype = {
   }
 };
 InstanceComposer.registerShadowableClass(ExecuteTransactionService, 'getExecuteTransactionService');
+
 module.exports = ExecuteTransactionService;

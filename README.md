@@ -50,12 +50,22 @@ export OST_UTILITY_GAS_PRICE='0x0'
 > node tools/setup/platform/deploy.js $CONFIG_STRATEGY_PATH
 ```
 
+* Create execute transaction process entry in process_queue_association table.
+```bash
+> node
+rootPrefix = '.';
+ProcessQueueAssociationModel = require(rootPrefix + '/app/models/process_queue_association');
+params = {chain_id: 1000, process_id: 1, rmq_config_id: 0, queue_name_suffix: 'q1', status: 'available'};
+new ProcessQueueAssociationModel().insertRecord(params).then(console.log);
+```
+
 * Update the addresses in uc_1000.json config strategy from ~/openst-setup/bin/utility-chain-1000/openst_platform_config.json.
     * This file uses config strategy for utility chain-id 1000 by default. If you are updating the addresses for some other chain-id, please make the necessary changes in the script.
+    * Make sure to pass the absolute path of the config file in all places in the above script.
     ```bash
-    node tools/setup/platform/address_update.js
+        node tools/setup/platform/address_update.js
     ```
-    * Make sure to pass the absolute path of the config file in all places in the above script. 
+    
 
 * Start Utility Chain.
 ```bash
@@ -83,7 +93,7 @@ Copy that address for "OST_UTILITY_WORKERS_CONTRACT_ADDRESS" variable in the uti
 > source set_env_vars.sh
 NOTE: Manually create database in MySQL mentioned in $OP_MYSQL_DATABASE.  
 Run the following commands after creating the database. 
-> node node_modules/@openstfoundation/openst-payments/migrations/create_tables.js
+> node node_modules/@openstfoundation/openst-payments/migrations/create_tables.js $CONFIG_STRATEGY_PATH
 > node node_modules/@openstfoundation/openst-payments/migrations/alter_table_for_chain_id_column.js $CONFIG_STRATEGY_PATH
 ```
 
@@ -96,18 +106,18 @@ Run the following commands after creating the database.
 * Execute commands related to DynamoDB migrations.
   * Create a fixed number of shards for all entities (number is in this file).
   ```bash
-  source set_env_vars.sh
-  node executables/create_init_shards.js $CONFIG_STRATEGY_PATH
+    source set_env_vars.sh
+    node executables/create_init_shards.js $CONFIG_STRATEGY_PATH
   ```
   
-  Pick up the hash printed in green in previous step export shard arrays appropriately.
+  * Pick up the hash printed in green in previous step. Export shard arrays appropriately.
   
   ```bash
-    export OS_DYNAMODB_TOKEN_BALANCE_SHARDS_ARRAY='["token_balances_shard_001","token_balances_shard_002"]'
-    export OS_DYNAMODB_TRANSACTION_LOG_SHARDS_ARRAY='["transaction_log_shard_001", "transaction_log_shard_002"]'
+    export OS_DYNAMODB_TOKEN_BALANCE_SHARDS_ARRAY='["d_pk_token_balances_shard_001","d_pk_token_balances_shard_002"]'
+    export OS_DYNAMODB_TRANSACTION_LOG_SHARDS_ARRAY='["d_pk_transaction_logs_shard_001","d_pk_transaction_logs_shard_002"]'
   ```
   
-* Move the shared-local-instance.db file from $HOME/openst-setup/logs/ to $HOME/openst-setup/bin/utility-chain-{id}/
+* Move the shared-local-instance.db file from $HOME/openst-setup/logs/ to $HOME/openst-setup/log/utility-chain-{id}/
 ```bash
 mv ~/openst-setup/logs/shared-local-instance.db ~/openst-setup/logs/utility-chain-1000/
 ```
@@ -117,6 +127,14 @@ mv ~/openst-setup/logs/shared-local-instance.db ~/openst-setup/logs/utility-chai
 * Use the seeder script to fill config_strategies table.
 ```bash
 node executables/config_strategy_seed.js managed_address_salt_id group_id $CONFIG_STRATEGY_PATH
+```
+
+* Use the helper script to activate status of the seeded config strategy in node console. Replace the groupId.
+```bash
+> node
+> Klass = require('./helpers/config_strategy/by_group_id');
+b = new Klass(groupId);
+b.activate();
 ```
                                          
 # Start SAAS Services
@@ -212,7 +230,7 @@ Use the file path in the following command:
 ```
 
 * Start Cronjobs.
-```base
+```bash
 # Every hour
 node executables/update_price_oracle_price_points.js group_id >> log/update_price_oracle_price_points.log
 # Every five minutes
@@ -234,7 +252,7 @@ node executables/rmq_subscribers/log_all_events.js >> log/log_all_events.log
 # Helper Scripts
 
 * Filling up missing nonce.
-```
+```bash
 c = require('./executables/fire_brigade/fill_up_missing_nonce');
 o = new c({from_address: '0x6bEeE57355885BAd8018814A0B0E93F368148c37', to_address: '0x180bA8f73897C0CB26d76265fC7868cfd936E617', chain_kind: 'value', missing_nonce: 25})
 o.perform();
@@ -247,8 +265,8 @@ NOTE: Create the file if not present.
   {"lastProcessedBlock":0}
   
 > source set_env_vars.sh
-> node start_value_services.js group_id
-> node start_utility_services.js group_id
+> node start_value_services.js 'group_id'
+> node start_utility_services.js 'group_id'
 ```
 
 * Start block scanner. Change utility chain id accordingly.

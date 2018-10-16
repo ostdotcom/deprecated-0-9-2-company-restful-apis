@@ -1,7 +1,6 @@
 'use strict';
 
 const rootPrefix = '..',
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   clientConfigStrategyCacheKlass = require(rootPrefix + '/lib/shared_cache_multi_management/client_config_strategies'),
   configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
@@ -18,7 +17,7 @@ ConfigStrategyKlass.prototype = {
   /**
    * Get final hash of config strategy
    * @param {number} clientId: client ID whose config strategy hash is needed.
-   *
+   * @param {String} gethEndPointType: type of geth endpoint.
    *
    * @return {Promise<Object>} Hash of config strategy
    */

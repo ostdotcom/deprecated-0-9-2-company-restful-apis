@@ -19,11 +19,11 @@ const rootPrefix = '../..';
 require(rootPrefix + '/module_overrides/index');
 
 // Load external packages
-const openSTNotification = require('@openstfoundation/openst-notification'),
-  OSTBase = require('@openstfoundation/openst-base');
+const OSTBase = require('@openstfoundation/openst-base');
 
 const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   notificationTopics = require(rootPrefix + '/lib/global_constant/notification_topics'),
   IntercomStatusKlass = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js');
 
@@ -42,9 +42,9 @@ const ProcessLocker = new ProcessLockerKlass(),
   queueSuffix = args[3],
   topicsToSubscribe = args[4];
 
-var topicsToSubscribeArray = null;
+let topicsToSubscribeArray = null;
 
-// validate and sanitize the command line arguments
+// Validate and sanitize the command line arguments.
 const validateAndSanitize = function() {
   if (!processLockId) {
     logger.error('Process Lock id NOT passed in the arguments.');
@@ -73,7 +73,7 @@ const validateAndSanitize = function() {
     process.exit(1);
   }
 
-  if (topicsToSubscribeArray.length == 0) {
+  if (topicsToSubscribeArray.length === 0) {
     logger.error('Topics to subscribe should have at least one topic.');
     usageDemo();
     process.exit(1);
@@ -135,7 +135,7 @@ const promiseExecutor = function(onResolve, onReject, params) {
     topics = parsedParams.topics;
 
   // Only one topic is supported here. Neglecting the unsupported cases.
-  if (topics.length != 1) return Promise.resolve();
+  if (topics.length !== 1) return Promise.resolve();
 
   let topic = topics[0];
 
@@ -166,9 +166,6 @@ const promiseExecutor = function(onResolve, onReject, params) {
         return onReject(`no performer Klass Found for ${icDrivenTopicPerformers[topic]}`);
       }
 
-      logger.log('topic', topic);
-      logger.log('parsedParams.message.payload', parsedParams.message.payload);
-
       return new PerformerKlass(parsedParams.message.payload)
         .perform()
         .then(onResolve)
@@ -187,7 +184,9 @@ const PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseExecutor,
   timeoutInMilliSecs: -1
 });
 
-openSTNotification.subscribeEvent.rabbit(
+const openStNotification = SharedRabbitMqProvider.getInstance();
+
+openStNotification.subscribeEvent.rabbit(
   topicsToSubscribeArray,
   {
     queue: queueName,
@@ -222,7 +221,7 @@ function handle() {
   setTimeout(checkForUnAckTasks, 1000);
 }
 
-// handling gracefull process exit on getting SIGINT, SIGTERM.
+// Handling graceful process exit on getting SIGINT, SIGTERM.
 // Once signal found programme will stop consuming new messages. But need to clear running messages.
 process.on('SIGINT', handle);
 process.on('SIGTERM', handle);

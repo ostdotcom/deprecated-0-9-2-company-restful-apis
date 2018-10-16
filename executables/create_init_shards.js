@@ -26,10 +26,7 @@ let token_balance_shard_array = [],
   transaction_log_shard_array = [];
 
 const usageDemo = function() {
-  logger.log(
-    'usage:',
-    'node node executables/ddb_related_data_migrations/create_init_shards.js configStrategyFilePath'
-  );
+  logger.log('usage:', 'node executables/ddb_related_data_migrations/create_init_shards.js configStrategyFilePath');
   logger.log('* configStrategyFilePath is the path to the file which is storing the config strategy info.');
 };
 

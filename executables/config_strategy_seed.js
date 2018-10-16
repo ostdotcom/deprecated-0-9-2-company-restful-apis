@@ -90,6 +90,7 @@ seedConfigStrategies.prototype = {
     await oThis.seed_utility_geth_params();
     await oThis.seed_value_constants_params();
     await oThis.seed_value_geth_params();
+    await oThis.seed_rmq_params();
 
     logger.log('Successfully seeded all config parameters!! ');
     process.exit(0);
@@ -286,6 +287,53 @@ seedConfigStrategies.prototype = {
     const configStrategy = new configStrategyModel();
 
     await configStrategy.create('constants', process.argv[2], constants_params).then();
+  },
+
+  seed_rmq_params: async function() {
+    let rmq_params = {};
+    rmq_params['OST_RMQ_USERNAME'] = env_list.OST_RMQ_USERNAME;
+    rmq_params['OST_RMQ_PASSWORD'] = env_list.OST_RMQ_PASSWORD;
+    rmq_params['OST_RMQ_HOST'] = env_list.OST_RMQ_HOST;
+    rmq_params['OST_RMQ_PORT'] = env_list.OST_RMQ_PORT;
+    rmq_params['OST_RMQ_HEARTBEATS'] = env_list.OST_RMQ_HEARTBEATS;
+
+    const configStrategy = new configStrategyModel();
+
+    await configStrategy.create('rmq', process.argv[2], rmq_params).then();
+  },
+
+  populateChainGethProviders: async function() {
+    let promises = [],
+      valueRpcProviders = JSON.parse(env_list.OST_VALUE_GETH_RPC_PROVIDERS),
+      valueWsProviders = JSON.parse(env_list.OST_VALUE_GETH_WS_PROVIDERS),
+      utilityRpcProviders = JSON.parse(env_list.OST_UTILITY_GETH_RPC_PROVIDERS),
+      utilityWsProviders = JSON.parse(env_list.OST_UTILITY_GETH_WS_PROVIDERS);
+
+    // Value Chain
+    for (let i = 0; i < valueRpcProviders.length; i++) {
+      promises.push(
+        new ChainGethProviderModel().insertRecord({
+          chain_id: parseInt(env_list.OST_VALUE_CHAIN_ID),
+          chain_kind: 'value',
+          ws_provider: valueWsProviders[i],
+          rpc_provider: valueRpcProviders[i]
+        })
+      );
+    }
+
+    // Utility Chain
+    for (let i = 0; i < utilityRpcProviders.length; i++) {
+      promises.push(
+        new ChainGethProviderModel().insertRecord({
+          chain_id: parseInt(env_list.OST_UTILITY_CHAIN_ID),
+          chain_kind: 'utility',
+          ws_provider: utilityWsProviders[i],
+          rpc_provider: utilityRpcProviders[i]
+        })
+      );
+    }
+
+    await Promise.all(promises);
   }
 };
 
