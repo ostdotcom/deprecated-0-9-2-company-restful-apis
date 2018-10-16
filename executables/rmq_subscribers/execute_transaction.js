@@ -48,15 +48,15 @@ const OSTBase = require('@openstfoundation/openst-base');
 // All Module Requires.
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
-  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   ConfigStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
   rmqQueueConstants = require(rootPrefix + '/lib/global_constant/rmq_queue'),
+  TransactionMetaModel = require(rootPrefix + '/app/models/transaction_meta'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
   initProcessKlass = require(rootPrefix + '/lib/execute_transaction_management/init_process'),
-  processQueueAssociationConst = require(rootPrefix + '/lib/global_constant/process_queue_association'),
-  TransactionMetaModel = require(rootPrefix + '/app/models/transaction_meta'),
   transactionMetaConstants = require(rootPrefix + '/lib/global_constant/transaction_meta.js'),
+  processQueueAssociationConst = require(rootPrefix + '/lib/global_constant/process_queue_association'),
   CommandQueueProcessorKlass = require(rootPrefix + '/lib/execute_transaction_management/command_message_processor'),
   initProcess = new initProcessKlass({ process_id: processId });
 

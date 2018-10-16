@@ -269,6 +269,10 @@ NOTE: Create the file if not present.
 > node start_utility_services.js 'group_id'
 ```
 
+* Start Value Services script will start one transaction executing process. It expects at least one entry in
+    process_queue_association table. If during on-boarding, you have more than 1 entry in the table, start the extra
+    processes manually.
+
 * Start block scanner. Change utility chain id accordingly.
 ```bash
 # Start master process for Block scanner.
