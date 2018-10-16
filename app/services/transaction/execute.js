@@ -694,6 +694,16 @@ ExecuteTransactionService.prototype = {
 
     let workingProcessIds = processQueueAssociationRsp.data.workingProcessDetails;
 
+    if (workingProcessIds.length === 0) {
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 's_t_e_20',
+          api_error_identifier: '',
+          debug_options: { clientId: oThis.clientId }
+        })
+      );
+    }
+
     let index = oThis.fromUserId % workingProcessIds.length,
       topicName =
         RmqQueueConstants.executeTxTopicPrefix +
