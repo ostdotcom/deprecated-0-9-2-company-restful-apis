@@ -49,22 +49,24 @@ const validateAndSanitize = function() {
 // Validate and sanitize the input params.
 validateAndSanitize();
 
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+const InstanceComposer = require(rootPrefix + '/instance_composer'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
-  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
-  InstanceComposer = require(rootPrefix + '/instance_composer'),
   ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   ProcessLocker = new ProcessLockerKlass(program);
 
 let ic = null,
   web3InteractFactory = null;
 
-require(rootPrefix + '/lib/block_scanner/for_tx_status_and_balance_sync');
+const openStNotification = SharedRabbitMqProvider.getInstance();
+
 require(rootPrefix + '/lib/web3/interact/ws_interact');
+require(rootPrefix + '/lib/block_scanner/for_tx_status_and_balance_sync');
 
 // Load external packages
-const openSTNotification = require('@openstfoundation/openst-notification'),
-  OSTBase = require('@openstfoundation/openst-base');
+const OSTBase = require('@openstfoundation/openst-base');
 
 const warmUpGethPool = function() {
   return new Promise(async function(onResolve, onReject) {
@@ -162,7 +164,7 @@ warmUpGethPool().then(function() {
 
   let chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
 
-  openSTNotification.subscribeEvent.rabbit(
+  openStNotification.subscribeEvent.rabbit(
     ['block_scanner_execute_' + chain_id],
     {
       queue: 'block_scanner_execute_' + chain_id,

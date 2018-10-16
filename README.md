@@ -272,12 +272,12 @@ NOTE: Create the file if not present.
 * Start block scanner. Change utility chain id accordingly.
 ```bash
 # Start master process for Block scanner.
-node executables/block_scanner/transaction_delegator.js --group-id 1 --data-file-path ~/openst-setup/data/utility-chain-1000/block_scanner_execute_transaction.data --benchmark-file-path [file path]
+node executables/block_scanner/transaction_delegator.js --group-id 1000 --data-file-path ~/openst-setup/data/utility-chain-1000/block_scanner_execute_transaction.data --benchmark-file-path ~/openst-setup/logs/block_scanner_benchmark-1000.csv
 ```
 
 ```bash
 # Start one worker process for block scanner.
-node executables/rmq_subscribers/block_scanner.js --processlock-id processLockId --group-id group_id --prefetch-count prefetchCount --benchmark-file-path [~/openst-setup/logs/block_scanner_benchmark-1000.csv]
+node executables/rmq_subscribers/block_scanner.js --processlock-id processLockId --group-id 1000 --prefetch-count 1 --benchmark-file-path ~/openst-setup/logs/block_scanner_benchmark-1000.csv
 ```
 
 * Don't forget to start the cronjobs. 

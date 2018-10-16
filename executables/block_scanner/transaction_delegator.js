@@ -15,23 +15,25 @@
 
 const rootPrefix = '../..';
 
-const openSTNotification = require('@openstfoundation/openst-notification'),
-  program = require('commander'),
-  fs = require('fs');
+const fs = require('fs'),
+  program = require('commander');
 
 const MAX_TXS_PER_WORKER = 60;
 
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  InstanceComposer = require(rootPrefix + '/instance_composer'),
-  ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
-  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+const InstanceComposer = require(rootPrefix + '/instance_composer'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
+  ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   ProcessLocker = new ProcessLockerKlass();
 
-require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
 require(rootPrefix + '/lib/web3/interact/ws_interact');
+require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
 
 let configStrategy = {};
+
+const openStNotification = SharedRabbitMqProvider.getInstance();
 
 // Validate and sanitize the command line arguments.
 const validateAndSanitize = function() {
@@ -234,7 +236,7 @@ TransactionDelegator.prototype = {
         }
       };
 
-      let setToRMQ = await openSTNotification.publishEvent.perform(messageParams);
+      let setToRMQ = await openStNotification.publishEvent.perform(messageParams);
 
       //if could not set to RMQ run in async.
       if (setToRMQ.isFailure() || setToRMQ.data.publishedToRmq === 0) {
