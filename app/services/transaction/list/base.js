@@ -231,14 +231,12 @@ Base.prototype = {
     }
 
     let start_time = Date.now();
-    const transactionLogModel = oThis.ic().getTransactionLogModel();
+    const transactionLogCache = oThis.ic().getTransactionLogCache();
 
-    let transactionFetchResponse = await new transactionLogModel({
+    let transactionFetchResponse = await new transactionLogCache({
       client_id: oThis.clientId,
-      shard_name: oThis.ic().configStrategy.TRANSACTION_LOG_SHARD_NAME
-    }).batchGetItem(oThis.transactionUuids);
-
-    console.log('-------Transaction list time taken', (Date.now() - start_time) / 1000);
+      uuids: oThis.transactionUuids
+    }).fetch();
 
     // if no records found, return error.
     if (!transactionFetchResponse.data) {

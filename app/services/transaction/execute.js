@@ -31,6 +31,7 @@ require(rootPrefix + '/app/models/transaction_log');
 require(rootPrefix + '/lib/providers/price_oracle');
 require(rootPrefix + '/lib/providers/notification');
 require(rootPrefix + '/lib/cache_management/client_branded_token');
+require(rootPrefix + '/lib/cache_multi_management/transaction_log');
 require(rootPrefix + '/lib/cache_multi_management/managedAddresses');
 require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
 require(rootPrefix + '/lib/cache_management/process_queue_association');
@@ -627,6 +628,7 @@ ExecuteTransactionService.prototype = {
   _createTransactionLog: async function() {
     const oThis = this,
       transactionLogModel = oThis.ic().getTransactionLogModel(),
+      transactionLogCache = oThis.ic().getTransactionLogCache(),
       configStrategy = oThis.ic().configStrategy;
 
     oThis.transactionLogData = {
@@ -649,13 +651,23 @@ ExecuteTransactionService.prototype = {
     };
 
     let start_time = Date.now();
-
-    await new transactionLogModel({
+    let updateItemResponse = await new transactionLogModel({
       client_id: oThis.clientId,
       shard_name: configStrategy.TRANSACTION_LOG_SHARD_NAME
-    }).updateItem(oThis.transactionLogData);
+    }).updateItem(oThis.transactionLogData, false);
 
     logger.log('------- Time taken', (Date.now() - start_time) / 1000);
+    if (updateItemResponse.isFailure()) {
+      return updateItemResponse;
+    }
+
+    let dataToSetInCache = {};
+    dataToSetInCache[oThis.transactionUuid] = oThis.transactionLogData;
+    // not intentionally waiting for cache set to happen
+    new transactionLogCache({
+      uuids: [oThis.transactionUuid],
+      client_id: oThis.clientId
+    }).setCache(dataToSetInCache);
 
     return responseHelper.successWithData({});
   },

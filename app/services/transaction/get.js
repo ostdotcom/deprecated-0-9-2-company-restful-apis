@@ -12,7 +12,7 @@ const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   basicHelper = require(rootPrefix + '/helpers/basic');
 
-require(rootPrefix + '/app/models/transaction_log');
+require(rootPrefix + '/lib/cache_multi_management/transaction_log');
 
 /**
  * @constructor
@@ -95,12 +95,12 @@ GetTransactionsService.prototype = {
    */
   _fetchRecord: async function() {
     const oThis = this,
-      transactionLogModel = oThis.ic().getTransactionLogModel();
+      transactionLogCache = oThis.ic().getTransactionLogCache();
 
-    let transactionFetchResponse = await new transactionLogModel({
-      client_id: oThis.clientId,
-      shard_name: oThis.ic().configStrategy.TRANSACTION_LOG_SHARD_NAME
-    }).batchGetItem([oThis.transactionUuid]);
+    let transactionFetchResponse = await new transactionLogCache({
+      client_id: oThis.client_id,
+      uuids: [oThis.transactionUuid]
+    }).fetch();
 
     let transactionLogData = transactionFetchResponse.data[oThis.transactionUuid];
 

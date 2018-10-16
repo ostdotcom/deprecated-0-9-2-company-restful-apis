@@ -7,7 +7,7 @@ const rootPrefix = '../../..',
   transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log'),
   basicHelper = require(rootPrefix + '/helpers/basic');
 
-require(rootPrefix + '/app/models/transaction_log');
+require(rootPrefix + '/lib/cache_multi_management/transaction_log');
 
 /**
  * @constructor
@@ -90,14 +90,14 @@ GetStPTransferService.prototype = {
    */
   _fetchRecord: async function() {
     const oThis = this,
-      transactionLogModel = oThis.ic().getTransactionLogModel();
+      transactionLogCache = oThis.ic().getTransactionLogCache();
 
-    let transactionLogResponse = await new transactionLogModel({
+    let transactionLogResponse = await new transactionLogCache({
       client_id: oThis.client_id,
-      shard_name: oThis.ic().configStrategy.TRANSACTION_LOG_SHARD_NAME
-    }).batchGetItem([oThis.transactionUuid]);
+      uuids: [oThis.transactionUuid]
+    }).fetch();
 
-    if (!transactionLogResponse.data[oThis.transactionUuid]) {
+    if (transactionLogResponse.isFailure() || !transactionLogResponse.data[oThis.transactionUuid]) {
       return Promise.reject(
         responseHelper.error({
           internal_error_identifier: 's_stpt_g_3',
