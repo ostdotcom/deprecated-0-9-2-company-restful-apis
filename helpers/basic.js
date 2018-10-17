@@ -337,7 +337,7 @@ BasicHelperKlass.prototype = {
    * @return {Boolean}
    */
   isSandboxSubEnvironment: function() {
-    return coreConstants.SUB_ENVIRONMENT == 'main';
+    return coreConstants.SUB_ENVIRONMENT == 'sandbox';
   },
 
   /**

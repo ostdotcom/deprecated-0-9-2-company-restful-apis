@@ -14,6 +14,8 @@ let nonceManagerKlass,
   valueChainGasPriceCacheKlass,
   ChainGethProvidersCache,
   configStrategyHelper,
+  configStrategyConsts,
+  basicHelper,
   fetchPrivateKeyKlass;
 
 // NOTE :: Please define all your requires inside the function
@@ -27,6 +29,8 @@ const initRequires = function() {
   ChainGethProvidersCache = require(rootPrefix + '/lib/shared_cache_management/chain_geth_providers');
   configStrategyHelper = require(rootPrefix + '/helpers/config_strategy/by_client_id');
   fetchPrivateKeyKlass = require(rootPrefix + '/lib/shared_cache_management/address_private_key');
+  configStrategyConsts = require(rootPrefix + '/lib/global_constant/config_strategy');
+  basicHelper = require(rootPrefix + '/helpers/basic');
 };
 
 const SignRawTx = function(host, rawTx) {
@@ -45,6 +49,7 @@ const SignRawTx = function(host, rawTx) {
   oThis.chainGasPrice = null;
   oThis.bnChainGasPrice = null;
   oThis.chainKind = null;
+  oThis.chainType = null;
   oThis.clientId = null;
   oThis.chainId = null;
   oThis.gethWsProviders = null;
@@ -170,12 +175,20 @@ SignRawTx.prototype = {
         return Promise.reject(response);
       }
 
-      let cacheResponse = response.data;
+      let cacheResponse = response.data,
+        chainType = configStrategyConsts.gethChainType;
 
       // Set the variables for further use.
       oThis.chainId = cacheResponse['chainId'];
       oThis.chainKind = cacheResponse['chainKind'];
       oThis.gethWsProviders = cacheResponse['siblingEndpoints'];
+
+      // TEMP CODE TO SAY 42 (Kovan) is Parity
+      if (oThis.chainId == 42 && basicHelper.isSandboxSubEnvironment()) {
+        chainType = configStrategyConsts.parityChainType;
+      }
+
+      oThis.chainType = chainType;
 
       // Passing empty object as nonce manager class needs this as a param.
       oThis.configStrategy = {};
@@ -199,10 +212,12 @@ SignRawTx.prototype = {
         oThis.chainKind = 'value';
         oThis.gethWsProviders = valueProviders;
         oThis.chainId = oThis.configStrategy.OST_VALUE_CHAIN_ID;
+        oThis.chainType = oThis.configStrategy.OST_VALUE_CHAIN_TYPE;
       } else if (utilityProviders.includes(oThis.host)) {
         oThis.chainKind = 'utility';
         oThis.gethWsProviders = utilityProviders;
         oThis.chainId = oThis.configStrategy.OST_UTILITY_CHAIN_ID;
+        oThis.chainType = oThis.configStrategy.OST_UTILITY_CHAIN_TYPE;
       }
     }
 
@@ -237,9 +252,10 @@ SignRawTx.prototype = {
     if (oThis.bnChainGasPrice.isZero()) {
       logger.debug('WARN :: Gas Price for chainKind', oThis.chainKind, 'is zero.');
     } else {
-      oThis.rawTx.gasPrice = oThis.chainGasPrice;
       logger.debug('Auto-corrected gas price to', oThis.rawTx.gasPrice);
     }
+
+    oThis.rawTx.gasPrice = oThis.chainGasPrice;
   },
 
   /**
@@ -255,6 +271,7 @@ SignRawTx.prototype = {
     oThis.nonceManager = new nonceManagerKlass({
       address: oThis.fromAddress,
       chain_kind: oThis.chainKind,
+      chain_type: oThis.chainType,
       client_id: oThis.clientId,
       host: oThis.host,
       chain_id: oThis.chainId,

@@ -4,8 +4,8 @@
  * This is used to create Token Balances Shard and Transaction Log Shard using openSTStorage Provider.
  * Default prefix for shard names are 'token_balances_shard_00' and 'transaction_logs_shard_00'.
  *
- * Usage: node executables/create_init_shards.js configStrategyFilePath
- * Example: node executables/create_init_shards.js ~/config.json
+ * Usage: node executables/create_init_shards.js groupId
+ * Example: node executables/create_init_shards.js 1
  *
  * @module executables/create_init_shards.js
  */
@@ -13,17 +13,17 @@
 const rootPrefix = '..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
 require(rootPrefix + '/lib/providers/storage');
 require(rootPrefix + '/app/models/transaction_log');
 
 const args = process.argv,
-  config_file_path = args[2];
+  group_id = args[2];
 
 let token_balance_shard_array = [],
-  transaction_log_shard_array = [],
-  configStrategy = {};
+  transaction_log_shard_array = [];
 
 const usageDemo = function() {
   logger.log(
@@ -35,21 +35,15 @@ const usageDemo = function() {
 
 // Validate and sanitize the command line arguments.
 const validateAndSanitize = function() {
-  if (!config_file_path) {
-    logger.error('Config strategy file path is NOT passed in the arguments.');
+  if (!group_id) {
+    logger.error('Group id is not passed');
     usageDemo();
     process.exit(1);
   }
-  configStrategy = require(config_file_path);
 };
 
 // Validate and sanitize the input params.
 validateAndSanitize();
-
-const instanceComposer = new InstanceComposer(configStrategy),
-  storageProvider = instanceComposer.getStorageProvider(),
-  openSTStorage = storageProvider.getInstance(),
-  transactionLogModel = instanceComposer.getTransactionLogModel();
 
 /**
  *
@@ -95,7 +89,17 @@ CreateShards.prototype = {
    * @returns {promise}
    */
   asyncPerform: async function() {
-    const oThis = this;
+    const oThis = this,
+      strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash();
+
+    oThis.configStrategy = configStrategyResp.data;
+
+    let instanceComposer = new InstanceComposer(oThis.configStrategy),
+      storageProvider = instanceComposer.getStorageProvider();
+
+    oThis.transactionLogModel = instanceComposer.getTransactionLogModel();
+    oThis.openSTStorage = storageProvider.getInstance();
 
     await oThis.createTokenBalancesShards();
 
@@ -119,9 +123,9 @@ CreateShards.prototype = {
 
     for (let index = 1; index <= oThis.tokenBalancesShardCount; index++) {
       logger.info('starting to create tokenBalancesShard : ', index);
-      let shardName = configStrategy.DYNAMODB_TABLE_NAME_PREFIX + 'token_balances_shard_00' + index;
+      let shardName = oThis.configStrategy.OS_DYNAMODB_TABLE_NAME_PREFIX + 'token_balances_shard_00' + index;
       token_balance_shard_array.push(shardName);
-      let createRsp = await new openSTStorage.model.TokenBalance({ shard_name: shardName }).createShard();
+      let createRsp = await new oThis.openSTStorage.model.TokenBalance({ shard_name: shardName }).createShard();
       if (createRsp.isFailure()) {
         return Promise.reject(createRsp);
       }
@@ -140,9 +144,9 @@ CreateShards.prototype = {
 
     for (let index = 1; index <= oThis.transactionLogShardCount; index++) {
       logger.info('starting to create transactionLogShard : ', index);
-      let shardName = configStrategy.DYNAMODB_TABLE_NAME_PREFIX + 'transaction_logs_shard_00' + index;
+      let shardName = oThis.configStrategy.OS_DYNAMODB_TABLE_NAME_PREFIX + 'transaction_logs_shard_00' + index;
       transaction_log_shard_array.push(shardName);
-      let createRsp = await new transactionLogModel({ shard_name: shardName }).createShard();
+      let createRsp = await new oThis.transactionLogModel({ shard_name: shardName }).createShard();
       if (createRsp.isFailure()) {
         return Promise.reject(createRsp);
       }

@@ -10,17 +10,18 @@ const rootPrefix = '../..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
-  errorConfig = basicHelper.fetchErrorConfig(apiVersions.general);
+  errorConfig = basicHelper.fetchErrorConfig(apiVersions.general),
+  configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy');
 
-const getWeb3Instance = function(gethURL, chainKind) {
+const getWeb3Instance = function(gethURL, chainType) {
   const existingInstance = web3InstanceMap[gethURL];
 
   if (existingInstance) {
-    logger.log('Using existing web3 Instance of gethURL - ' + gethURL + ' and chainKind ' + chainKind);
+    logger.log('Using existing web3 Instance of gethURL - ' + gethURL + ' and chainType ' + chainType);
     return existingInstance;
   }
 
-  logger.log('Creating new web3 Instance of gethURL - ' + gethURL + ' and chainKind ' + chainKind);
+  logger.log('Creating new web3 Instance of gethURL - ' + gethURL + ' and chainType ' + chainType);
 
   const newInstance = new OstWeb3(gethURL, null, {
     providerOptions: {
@@ -29,15 +30,27 @@ const getWeb3Instance = function(gethURL, chainKind) {
     }
   });
 
-  newInstance.chainKind = chainKind;
-  newInstance.extend({
-    methods: [
-      {
-        name: 'pendingTransactions',
-        call: 'txpool_content'
-      }
-    ]
-  });
+  newInstance.chainType = chainType;
+
+  if (chainType === configStrategyConstants.gethChainType) {
+    newInstance.extend({
+      methods: [
+        {
+          name: 'pendingTransactions',
+          call: 'txpool_content'
+        }
+      ]
+    });
+  } else {
+    newInstance.extend({
+      methods: [
+        {
+          name: 'pendingTransactions',
+          call: 'parity_pendingTransactions'
+        }
+      ]
+    });
+  }
 
   web3InstanceMap[gethURL] = newInstance;
 
@@ -46,7 +59,7 @@ const getWeb3Instance = function(gethURL, chainKind) {
 
 const instanceMap = {};
 
-function getInstanceKey(fromAddress, chainKind, chainId) {
+function getInstanceKey(fromAddress, chainType, chainId) {
   let args = Array.prototype.slice.call(arguments);
   return args.join('_');
 }
@@ -75,19 +88,19 @@ const NonceHelperKlass = function() {};
 
 const NonceHelperKlassPrototype = {
   /**
-   * Get web3 instance for the given gethURL and chainKind
+   * Get web3 instance for the given gethURL and chainType
    *
    * @param {string} gethURL - geth provider url
-   * @param {string} chainKind - chain kind e.g value, utility
+   * @param {string} chainType - chain kind e.g value, utility
    *
    * @return {promise<result>}
    */
-  getWeb3Instance: function(gethURL, chainKind) {
-    return getWeb3Instance(gethURL, chainKind);
+  getWeb3Instance: function(gethURL, chainType) {
+    return getWeb3Instance(gethURL, chainType);
   },
 
-  getInstanceKey: function(fromAddress, chainKind, chainId) {
-    return getInstanceKey(fromAddress, chainKind, chainId);
+  getInstanceKey: function(fromAddress, chainType, chainId) {
+    return getInstanceKey(fromAddress, chainType, chainId);
   },
 
   getInstance: function(instanceKey) {
@@ -101,13 +114,13 @@ const NonceHelperKlassPrototype = {
   /**
    * Get mined transaction count for given address
    *
-   * @param {string} chainKind - chain kind e.g value, utility
+   * @param {string} chainType - chain kind e.g value, utility
    * @param {string} address - address whose nonce to be cleared
    * @param {array} gethProviders - list of geth providers.
    *
    * @return {promise<result>}
    */
-  getMinedTransactionCount: function(chainKind, address, gethProviders) {
+  getMinedTransactionCount: function(chainType, address, gethProviders) {
     const oThis = this;
 
     try {
@@ -116,7 +129,7 @@ const NonceHelperKlassPrototype = {
       for (let i = allGethNodes.length - 1; i >= 0; i--) {
         const gethURL = allGethNodes[i];
 
-        const web3Provider = oThis.getWeb3Instance(gethURL, chainKind);
+        const web3Provider = oThis.getWeb3Instance(gethURL, chainType);
         allNoncePromise.push(oThis.getNonceFromGethNode(address, web3Provider));
       }
 
@@ -160,12 +173,12 @@ const NonceHelperKlassPrototype = {
   /**
    * Get all queued transactions
    *
-   * @param {string} chainKind - chain kind e.g value, utility
+   * @param {string} chainType - chain kind e.g value, utility
    * @param {array} gethProviders - list of geth providers.
    *
    * @return {promise<result>}
    */
-  getAllQueuedTransaction: async function(chainKind, gethProviders) {
+  getAllQueuedTransaction: async function(chainType, gethProviders) {
     const oThis = this;
 
     try {
@@ -174,7 +187,7 @@ const NonceHelperKlassPrototype = {
 
       for (let i = allGethNodes.length - 1; i >= 0; i--) {
         const gethURL = allGethNodes[i];
-        const web3Provider = oThis.getWeb3Instance(gethURL, chainKind);
+        const web3Provider = oThis.getWeb3Instance(gethURL, chainType);
         allTxPoolPromise.push(oThis.getPendingTransactionsFromGethNode(web3Provider));
       }
 
@@ -231,18 +244,18 @@ const NonceHelperKlassPrototype = {
   /**
    * Clear all missing nonce
    *
-   * @param {string} chainKind - chain kind e.g value, utility
+   * @param {string} chainType - chain kind e.g value, utility
    * @param {object} scope - caller scope
    * @param {function} clearCallback - call back function that needs to be called when missing nonce is found
    * @param {array} gethProviders - list of geth providers.
    *
    * @return {promise<result>}
    */
-  clearAllMissingNonce: async function(chainKind, scope, clearCallback, gethProviders) {
+  clearAllMissingNonce: async function(chainType, scope, clearCallback, gethProviders) {
     const oThis = this;
 
     try {
-      const allQueuedTransaction = await oThis.getAllQueuedTransaction(chainKind, gethProviders);
+      const allQueuedTransaction = await oThis.getAllQueuedTransaction(chainType, gethProviders);
       if (allQueuedTransaction.isFailure()) {
         return Promise.resolve(
           responseHelper.error({
@@ -259,7 +272,7 @@ const NonceHelperKlassPrototype = {
       for (let address in queuedData) {
         const clearResponce = await oThis.clearMissingNonce(
           address,
-          chainKind,
+          chainType,
           queuedData[address],
           scope,
           clearCallback,
@@ -292,7 +305,7 @@ const NonceHelperKlassPrototype = {
    * Clear all missing nonce for a given address
    *
    * @param {string} address - address whose nonce to be cleared
-   * @param {string} chainKind - chain kind e.g value, utility
+   * @param {string} chainType - chain kind e.g value, utility
    * @param {array} pendingTransactions - array of pending transaction
    * @param {object} scope - caller scope
    * @param {function} clearCallback - call back function that needs to be called when missing nonce is found
@@ -300,7 +313,7 @@ const NonceHelperKlassPrototype = {
    *
    * @return {promise<result>}
    */
-  clearMissingNonce: async function(address, chainKind, pendingTransactions, scope, clearCallback, gethProviders) {
+  clearMissingNonce: async function(address, chainType, pendingTransactions, scope, clearCallback, gethProviders) {
     const oThis = this;
 
     if (!clearCallback) {
@@ -320,7 +333,7 @@ const NonceHelperKlassPrototype = {
       for (let i = allGethNodes.length - 1; i >= 0; i--) {
         const gethURL = allGethNodes[i];
 
-        const web3Provider = oThis.getWeb3Instance(gethURL, chainKind);
+        const web3Provider = oThis.getWeb3Instance(gethURL, chainType);
         allNoncePromise.push(oThis.getNonceFromGethNode(address, web3Provider));
       }
 

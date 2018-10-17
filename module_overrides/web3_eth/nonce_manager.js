@@ -36,6 +36,7 @@ const NonceManagerKlass = function(params) {
   const oThis = this,
     fromAddress = params['address'].toLowerCase(),
     chainKind = params['chain_kind'],
+    chainType = params['chain_type'],
     clientId = params['client_id'],
     currentWsHost = params['host'],
     chainId = params['chain_id'],
@@ -58,6 +59,7 @@ const NonceManagerKlass = function(params) {
   logger.log('NM :: NonceManagerKlass :: creating new instance');
 
   oThis.address = fromAddress;
+  oThis.chainType = chainType;
   oThis.chainKind = chainKind;
   oThis.clientId = clientId;
   oThis.currentWsHost = currentWsHost;
@@ -71,6 +73,7 @@ const NonceManagerKlass = function(params) {
 
 const NonceCacheKlassPrototype = {
   address: null,
+  chainType: null,
   chainKind: null,
   promiseQueue: null,
 
@@ -487,7 +490,7 @@ const NonceCacheKlassPrototype = {
     for (let i = oThis.gethWsProviders.length - 1; i >= 0; i--) {
       const gethURL = oThis.gethWsProviders[i];
 
-      const web3Provider = oThis.nonceHelper.getWeb3Instance(gethURL, oThis.chainKind);
+      const web3Provider = oThis.nonceHelper.getWeb3Instance(gethURL, oThis.chainType);
       allNoncePromise.push(oThis.nonceHelper.getNonceFromGethNode(oThis.address, web3Provider));
       allPendingTransactionPromise.push(oThis.nonceHelper.getPendingTransactionsFromGethNode(web3Provider));
     }

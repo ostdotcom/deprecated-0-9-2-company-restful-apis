@@ -188,10 +188,7 @@ const ChainGethProvidersModelSpecificPrototype = {
       response = {},
       activeStatus = configStrategyConstants.invertedStatuses[configStrategyConstants.activeStatus];
 
-    let chainsInfo = await oThis
-      .select('*')
-      .where(['status = ?', activeStatus])
-      .fire();
+    let chainsInfo = await oThis.select('*').fire();
 
     for (let i = 0; i < chainsInfo.length; i++) {
       chainIds.push(chainsInfo[i].chain_id);
