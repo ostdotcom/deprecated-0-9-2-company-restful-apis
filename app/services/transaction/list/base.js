@@ -7,7 +7,7 @@ const rootPrefix = '../../../..',
   commonValidator = require(rootPrefix + '/lib/validators/common'),
   transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log');
 
-require(rootPrefix + '/app/models/transaction_log');
+require(rootPrefix + '/lib/cache_multi_management/transaction_log');
 require(rootPrefix + '/lib/elasticsearch_saas/search');
 
 const Base = function(params) {
