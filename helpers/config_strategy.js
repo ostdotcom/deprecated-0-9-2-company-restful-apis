@@ -76,6 +76,15 @@ ConfigStrategyKlass.prototype = {
     }
 
     return Promise.resolve(responseHelper.successWithData(strategyIdForKind));
+  },
+
+  getMinimumSTPrimeLimitForClient: function() {
+    const oThis = this;
+
+    //TODO:- @dhananjay - take limit for cron from this function
+    // get promisedTxRateOfClient from config.
+    // promisedTxRateOfClient/workerCountForThatClient = txRatePerWorker
+    // thresholdForWorkerGas = (txRatePerWorker * gasForOneTx) + someAdditionalMarginOfGas
   }
 };
 

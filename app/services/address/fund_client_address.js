@@ -82,6 +82,8 @@ FundClientAddressKlass.prototype = {
 
     let r = await oThis._checkBalanceOfReserveAddress();
     if (r.isFailure()) {
+      //if reserve does not have sufficient balance, disassociate the workers of that client
+
       return Promise.resolve(r);
     }
 
