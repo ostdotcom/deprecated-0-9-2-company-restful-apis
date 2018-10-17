@@ -419,12 +419,15 @@ BasicHelperKlass.prototype = {
   /**
    * Returns the index of workingProcesses array which needs to be used.
    *
-   * @param fromUserId
-   * @param workingProcessesLength
-   * @returns {number}
+   * @param {Number} fromUserId
+   * @param {Array} workingProcesses
+   * @returns {Object}
    */
-  transactionDistributionLogic: function(fromUserId, workingProcessesLength) {
-    return fromUserId % workingProcessesLength;
+  transactionDistributionLogic: function(fromUserId, workingProcesses) {
+    let index = fromUserId % workingProcesses.length,
+      workerUuid = workingProcesses[index].workerUuid;
+
+    return { index: index, workerUuid: workerUuid };
   }
 };
 

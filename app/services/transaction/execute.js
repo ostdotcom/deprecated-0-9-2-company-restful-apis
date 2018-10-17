@@ -717,13 +717,14 @@ ExecuteTransactionService.prototype = {
       );
     }
 
-    let index = basicHelper.transactionDistributionLogic(oThis.fromUserId, workingProcessIds.length),
+    let basicHelperResp = basicHelper.transactionDistributionLogic(oThis.fromUserId, workingProcessIds),
+      index = basicHelperResp.index,
+      workerUuid = basicHelperResp.workerUuid,
       topicName =
         RmqQueueConstants.executeTxTopicPrefix +
         workingProcessIds[index].chain_id +
         '.' +
-        workingProcessIds[index].queue_name_suffix,
-      workerUuid = workingProcessIds[index].workerUuid;
+        workingProcessIds[index].queue_name_suffix;
     // Pass the workerUuid for transfer_bt class.
 
     const notificationProvider = ic.getNotificationProvider(),
