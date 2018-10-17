@@ -252,7 +252,7 @@ SignRawTx.prototype = {
     if (oThis.bnChainGasPrice.isZero()) {
       logger.debug('WARN :: Gas Price for chainKind', oThis.chainKind, 'is zero.');
     } else {
-      logger.debug('Auto-corrected gas price to', oThis.rawTx.gasPrice);
+      logger.debug('Auto-corrected gas price to', oThis.chainGasPrice);
     }
 
     oThis.rawTx.gasPrice = oThis.chainGasPrice;
