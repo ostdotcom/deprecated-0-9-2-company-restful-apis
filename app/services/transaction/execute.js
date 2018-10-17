@@ -9,20 +9,20 @@
 const uuidV4 = require('uuid/v4');
 
 const rootPrefix = '../../..',
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  InstanceComposer = require(rootPrefix + '/instance_composer'),
-  clientTransactionTypeConst = require(rootPrefix + '/lib/global_constant/client_transaction_types'),
-  transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
-  managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
   commonValidator = require(rootPrefix + '/lib/validators/common'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
-  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy'),
   RmqQueueConstants = require(rootPrefix + '/lib/global_constant/rmq_queue'),
-  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   TransactionMetaModel = require(rootPrefix + '/app/models/transaction_meta'),
+  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy'),
+  transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log'),
+  managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   transactionMetaConstants = require(rootPrefix + '/lib/global_constant/transaction_meta.js'),
+  clientTransactionTypeConst = require(rootPrefix + '/lib/global_constant/client_transaction_types'),
   errorConfig = basicHelper.fetchErrorConfig(apiVersions.general),
   configStrategyHelper = new ConfigStrategyHelperKlass();
 
@@ -717,7 +717,7 @@ ExecuteTransactionService.prototype = {
       );
     }
 
-    let index = oThis.fromUserId % workingProcessIds.length,
+    let index = basicHelper.transactionDistributionLogic(oThis.fromUserId, workingProcessIds.length),
       topicName =
         RmqQueueConstants.executeTxTopicPrefix +
         workingProcessIds[index].chain_id +
