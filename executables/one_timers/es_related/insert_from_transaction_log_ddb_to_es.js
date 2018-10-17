@@ -1,4 +1,4 @@
-const rootPrefix = '../..',
+const rootPrefix = '../../..',
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   manifest = require(rootPrefix + '/lib/elasticsearch/manifest'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');

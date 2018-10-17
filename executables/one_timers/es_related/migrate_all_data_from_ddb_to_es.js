@@ -1,10 +1,9 @@
 'use strict';
-
-const rootPrefix = '../..',
+const rootPrefix = '../../..',
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   dynamoDBFormatter = require(rootPrefix + '/lib/elasticsearch/helpers/dynamo_formatters'),
-  InsertInESKlass = require(rootPrefix + '/executables/es_related/insert_from_transaction_log_ddb_to_es'),
+  InsertInESKlass = require(rootPrefix + '/executables/one_timers/es_related/insert_from_transaction_log_ddb_to_es'),
   insertInESobj = new InsertInESKlass(),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   commonValidator = require(rootPrefix + '/lib/validators/common');
@@ -115,7 +114,7 @@ MigrateDataFromDDbToES.prototype = {
 const usageDemo = function() {
   logger.log(
     'usage:',
-    'node ./executables/es_related/migrate_all_data_from_ddb_to_es.js configStrategy_file_path shardName'
+    'node ./executables/one_timers/es_related/migrate_all_data_from_ddb_to_es.js configStrategy_file_path shardName'
   );
 };
 
