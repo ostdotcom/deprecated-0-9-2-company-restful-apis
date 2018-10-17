@@ -96,9 +96,19 @@ const commandResponseActions = async function(commandProcessorResponse) {
 const promiseTxExecutor = function(onResolve, onReject, params) {
   unAckCount++;
   // Process request
-  const parsedParams = JSON.parse(params),
-    kind = parsedParams.message.kind,
+  let parsedParams = {},
+    kind = {},
+    payload = {};
+  try {
+    parsedParams = JSON.parse(params);
+    kind = parsedParams.message.kind;
     payload = parsedParams.message.payload;
+  } catch (err) {
+    logger.error('Error in parsing the message. Error: ', err);
+    unAckCount--;
+    // ack RMQ
+    return onResolve();
+  }
 
   //Update in transaction meta
   logger.debug('Updating transaction in transaction meta table');
