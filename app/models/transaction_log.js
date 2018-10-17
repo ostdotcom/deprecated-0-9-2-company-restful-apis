@@ -44,7 +44,10 @@ const longToShortNamesMap = {
     to_address: 'ta',
     from_address: 'fa',
     transfer_events: 'te',
-    error_code: 'ec'
+    error_code: 'ec',
+    nonce: 'nn',
+    transaction_executor_address: 'tea',
+    raw_transaction: 'rt'
   },
   shortToLongNamesMap = util.invert(longToShortNamesMap);
 
@@ -568,6 +571,20 @@ const transactionLogModelSpecificPrototype = {
         formattedEventsData.push({ M: formattedEventData });
       }
       formattedRowData[oThis.shortNameFor('transfer_events')] = { L: formattedEventsData };
+    }
+
+    if (rowData.hasOwnProperty('nonce')) {
+      formattedRowData[oThis.shortNameFor('nonce')] = { S: rowData['nonce'] };
+    }
+
+    if (rowData.hasOwnProperty('transaction_executor_address')) {
+      formattedRowData[oThis.shortNameFor('transaction_executor_address')] = {
+        S: rowData['transaction_executor_address']
+      };
+    }
+
+    if (rowData.hasOwnProperty('raw_transaction')) {
+      formattedRowData[oThis.shortNameFor('raw_transaction')] = { S: rowData['raw_transaction'].toString() };
     }
 
     return formattedRowData;
