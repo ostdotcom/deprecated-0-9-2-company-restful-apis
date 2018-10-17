@@ -28,9 +28,9 @@ ProcessLocker.canStartProcess({ process_title: 'update_realtime_gasprice-' + pro
 const dynamicGasPriceProvider = require('@ostdotcom/ost-dynamic-gas-price'),
   BigNumber = require('bignumber.js');
 
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger.js'),
+const coreConstants = require(rootPrefix + '/config/core_constants'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  coreConstants = require(rootPrefix + '/config/core_constants'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger.js'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   valueChainGasPriceCacheKlass = require(rootPrefix + '/lib/shared_cache_management/estimate_value_chain_gas_price');
 
