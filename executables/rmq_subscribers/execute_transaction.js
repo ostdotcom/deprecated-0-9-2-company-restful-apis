@@ -196,6 +196,7 @@ const promiseTxExecutor = function(onResolve, onReject, params) {
     });
 };
 
+// TODO: Maybe update this? Remove try catch?
 const _updateInTransactionMeta = async function(payload) {
   try {
     let updatedRowsResponse = await new TransactionMetaModel()

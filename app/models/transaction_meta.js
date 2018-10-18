@@ -260,6 +260,21 @@ const TransactionMetaModelSpecificPrototype = {
   },
 
   /**
+   * Mark multiple statuses as mined.
+   *
+   * @param transaction_hashes
+   * @returns {*}
+   */
+  markStatusAsMinedByTxHashes(transaction_hashes) {
+    const oThis = this;
+
+    return oThis
+      .update(['status = ?', oThis.invertedStatuses[transactionMetaConst.mined]])
+      .where(['transaction_hash IN (?)', transaction_hashes])
+      .fire();
+  },
+
+  /**
    * Mark multiple statuses as unknown.
    *
    * @param transaction_uuids

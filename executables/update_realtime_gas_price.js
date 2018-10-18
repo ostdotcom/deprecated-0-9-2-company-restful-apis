@@ -10,7 +10,7 @@
  * processId: process id to start the process
  * group_id: group id for fetching config strategy
  *
- * Example: node executables/update_realtime_gas_price.js 12345 ~/config.js
+ * Example: node executables/update_realtime_gas_price.js 12345 1000
  *
  * @module executables/update_realtime_gas_price
  */
@@ -67,14 +67,11 @@ validateAndSanitize();
  *
  * @constructor
  */
-const UpdateRealTimeGasPrice = function() {
-  const oThis = this;
-};
+const UpdateRealTimeGasPrice = function() {};
 
 UpdateRealTimeGasPrice.prototype = {
   perform: async function() {
-    const oThis = this,
-      strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
+    const strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
       configStrategyResp = await strategyByGroupHelperObj.getCompleteHash();
 
     configStrategy = configStrategyResp.data;
@@ -88,7 +85,7 @@ UpdateRealTimeGasPrice.prototype = {
       estimatedGasPriceFloat = await dynamicGasPriceProvider.dynamicGasPrice.get(chainIdInternal);
       retrycount = retrycount - 1;
     }
-    //All constants will be stored in gwei
+    // All constants will be stored in Gwei.
     if (estimatedGasPriceFloat > 0) {
       let estimatedGasPrice = Math.ceil(estimatedGasPriceFloat),
         gasPriceToBeSubmittedHex = null,
