@@ -41,15 +41,15 @@ ContinuousLockableBaseKlass.prototype = {
    *
    * @return {Promise<Result>}
    */
-  acquireLock: function() {
+  acquireLock: async function() {
     const oThis = this;
 
     let modelKlass = oThis.getLockableModel(),
       query = oThis.getQuery();
 
-    query[0] += ' AND lock_id = NULL';
+    query[0] += ' AND lock_id IS NULL';
 
-    new modelKlass()
+    await new modelKlass()
       .update(['lock_id = ?', oThis.getLockId()])
       .where(query)
       .limit(oThis.getNoOfRowsToProcess())
