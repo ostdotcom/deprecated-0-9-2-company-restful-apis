@@ -81,7 +81,13 @@ function handle() {
   setTimeout(f, 1000);
 }
 
+function ostRmqError(err) {
+  logger.info('ostRmqError occured.', err);
+  process.emit('SIGINT');
+}
+
 // Handling graceful process exit on getting SIGINT, SIGTERM.
 // Once signal found programme will stop consuming new messages. But need to clear running messages.
 process.on('SIGINT', handle);
 process.on('SIGTERM', handle);
+process.on('ost_rmq_error', ostRmqError);

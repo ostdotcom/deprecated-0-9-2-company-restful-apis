@@ -93,7 +93,7 @@ const ClientWorkerManagedAddressIdModelSpecificPrototype = {
   },
 
   /*
-  * Get workers which are not associated with any process
+  * Get workers which are not associated with any process and has gas as well.
   * @param client_id
   * @returns {Promise<Object>}
   * */
@@ -103,9 +103,10 @@ const ClientWorkerManagedAddressIdModelSpecificPrototype = {
       clientAvailableWorkers = await oThis
         .select('id, process_id, client_id, managed_address_id, status, properties')
         .where([
-          'client_id in (?) AND status=? AND process_id IS NULL',
+          'client_id in (?) AND status=? AND properties = properties | ? AND process_id IS NULL',
           client_ids,
-          invertedStatuses[clientWorkerManagedAddressConst.activeStatus]
+          invertedStatuses[clientWorkerManagedAddressConst.activeStatus],
+          invertedProperties[clientWorkerManagedAddressConst.hasStPrimeBalanceProperty]
         ])
         .fire();
 
