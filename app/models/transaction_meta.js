@@ -3,6 +3,7 @@
 const rootPrefix = '../..',
   util = require(rootPrefix + '/lib/util'),
   ModelBaseKlass = require(rootPrefix + '/app/models/base'),
+  LockableBaseKlass = require(rootPrefix + '/app/models/lockable_base'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
   transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log'),
   transactionMetaConst = require(rootPrefix + '/lib/global_constant/transaction_meta');
@@ -19,6 +20,7 @@ const invertedKinds = util.invert(kinds);
 
 const TransactionMetaModel = function() {
   ModelBaseKlass.call(this, { dbName: dbName });
+  LockableBaseKlass.call(this);
 };
 
 TransactionMetaModel.prototype = Object.create(ModelBaseKlass.prototype);
@@ -306,5 +308,7 @@ const TransactionMetaModelSpecificPrototype = {
 };
 
 Object.assign(TransactionMetaModel.prototype, TransactionMetaModelSpecificPrototype);
+
+Object.assign(TransactionMetaModel.prototype, LockableBaseKlass.prototype);
 
 module.exports = TransactionMetaModel;

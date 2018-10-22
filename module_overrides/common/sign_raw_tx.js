@@ -272,6 +272,10 @@ SignRawTx.prototype = {
   _fetchNonceAndAddToRawTransaction: async function() {
     const oThis = this;
 
+    if (oThis.rawTx.nonce) {
+      return;
+    }
+
     oThis.nonceManager = new nonceManagerKlass({
       address: oThis.fromAddress,
       chain_kind: oThis.chainKind,

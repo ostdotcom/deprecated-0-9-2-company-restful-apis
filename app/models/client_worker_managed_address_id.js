@@ -3,6 +3,7 @@
 const rootPrefix = '../..',
   coreConstants = require(rootPrefix + '/config/core_constants'),
   ModelBaseKlass = require(rootPrefix + '/app/models/base'),
+  LockableBaseKlass = require(rootPrefix + '/app/models/lockable_base'),
   clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id'),
   bitWiseHelperKlass = require(rootPrefix + '/helpers/bitwise_operations'),
   util = require(rootPrefix + '/lib/util');
@@ -23,6 +24,7 @@ const dbName = 'saas_client_economy_' + coreConstants.SUB_ENVIRONMENT + '_' + co
 const ClientWorkerManagedAddressIdModel = function() {
   bitWiseHelperKlass.call(this);
   ModelBaseKlass.call(this, { dbName: dbName });
+  LockableBaseKlass.call(this);
 };
 
 ClientWorkerManagedAddressIdModel.prototype = Object.create(ModelBaseKlass.prototype);
@@ -350,5 +352,7 @@ const ClientWorkerManagedAddressIdModelSpecificPrototype = {
 };
 
 Object.assign(ClientWorkerManagedAddressIdModel.prototype, ClientWorkerManagedAddressIdModelSpecificPrototype);
+
+Object.assign(ClientWorkerManagedAddressIdModel.prototype, LockableBaseKlass.prototype);
 
 module.exports = ClientWorkerManagedAddressIdModel;
