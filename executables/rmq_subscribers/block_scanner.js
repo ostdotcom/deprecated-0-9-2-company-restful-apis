@@ -118,7 +118,8 @@ const promiseExecutor = async function(onResolve, onReject, params) {
       time_stamp: payload.timestamp,
       benchmark_file_path: program.benchmarkFilePath,
       web3_factory_obj: web3InteractFactory,
-      delegator_timestamp: payload.delegatorTimestamp
+      delegator_timestamp: payload.delegatorTimestamp,
+      process_id: program.processlockId
     });
 
   try {

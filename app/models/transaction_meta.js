@@ -52,6 +52,21 @@ const TransactionMetaModelSpecificPrototype = {
   },
 
   /**
+   * Get by lock ID
+   *
+   * @param lockId
+   * @returns {Promise<*>}
+   */
+  getByLockId: async function(lockId) {
+    const oThis = this;
+
+    return oThis
+      .select('*')
+      .where(['lock_id = ?', lockId])
+      .fire();
+  },
+
+  /**
    * bulk insert
    *
    * @param record - record to be inserted

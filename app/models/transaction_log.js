@@ -584,7 +584,9 @@ const transactionLogModelSpecificPrototype = {
     }
 
     if (rowData.hasOwnProperty('raw_transaction')) {
-      formattedRowData[oThis.shortNameFor('raw_transaction')] = { S: rowData['raw_transaction'].toString() };
+      formattedRowData[oThis.shortNameFor('raw_transaction')] = {
+        S: JSON.stringify(rowData['raw_transaction'] || {})
+      };
     }
 
     return formattedRowData;
@@ -700,6 +702,19 @@ const transactionLogModelSpecificPrototype = {
       formattedRowData['post_receipt_process_params'] = JSON.parse(
         rowData[oThis.shortNameFor('post_receipt_process_params')]['S'] || '{}'
       );
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('raw_transaction'))) {
+      formattedRowData['raw_transaction'] = JSON.parse(rowData[oThis.shortNameFor('raw_transaction')]['S'] || '{}');
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('nonce'))) {
+      formattedRowData['nonce'] = parseInt(rowData[oThis.shortNameFor('nonce')]['N']);
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('transaction_executor_address'))) {
+      formattedRowData['transaction_executor_address'] =
+        rowData[oThis.shortNameFor('transaction_executor_address')]['S'];
     }
 
     if (rowData.hasOwnProperty(oThis.shortNameFor('transfer_events'))) {
