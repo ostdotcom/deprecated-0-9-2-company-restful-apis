@@ -40,7 +40,7 @@ const NonceManagerKlass = function(params) {
     clientId = params['client_id'],
     currentWsHost = params['host'],
     chainId = params['chain_id'],
-    gethWsProviders = params['geth_providers'],
+    gethWsProviders = params['geth_ws_providers'],
     gethRpcProviders = params['geth_rpc_providers'],
     configStrategy = params['config_strategy'];
   // gethWsProviders being fetched are the ones that need to be used directly.

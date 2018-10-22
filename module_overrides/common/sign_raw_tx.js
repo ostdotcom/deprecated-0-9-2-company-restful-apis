@@ -279,7 +279,7 @@ SignRawTx.prototype = {
       client_id: oThis.clientId,
       host: oThis.host,
       chain_id: oThis.chainId,
-      geth_providers: oThis.gethWsProviders,
+      geth_ws_providers: oThis.gethWsProviders,
       geth_rpc_providers: oThis.gethRpcProviders,
       config_strategy: oThis.configStrategy
     });
