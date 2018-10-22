@@ -574,7 +574,7 @@ const transactionLogModelSpecificPrototype = {
     }
 
     if (rowData.hasOwnProperty('nonce')) {
-      formattedRowData[oThis.shortNameFor('nonce')] = { S: rowData['nonce'] };
+      formattedRowData[oThis.shortNameFor('nonce')] = { N: rowData['nonce'].toString() };
     }
 
     if (rowData.hasOwnProperty('transaction_executor_address')) {
