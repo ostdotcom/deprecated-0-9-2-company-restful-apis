@@ -32,40 +32,40 @@ const getWeb3Instance = function(gethURL, chainType) {
 
   newInstance.chainType = chainType;
 
-  if (chainType === configStrategyConstants.gethChainType) {
-    newInstance.extend({
-      methods: [
-        {
-          name: 'unminedTransactionsWithMoreData',
-          call: 'txpool_content'
-        },
-        {
-          name: 'unminedTransactionsWithLessData',
-          call: 'txpool_inspect'
-        },
-        {
-          name: 'unminedTransactionsCount',
-          call: 'txpool_status'
-        }
-      ]
-    });
-  } else if (chainType === configStrategyConstants.parityChainType) {
-    newInstance.extend({
-      methods: [
-        {
-          name: 'unminedTransactionsWithMoreData',
-          call: 'parity_pendingTransactions'
-        },
-        {
-          name: 'unminedTransactionsWithLessData',
-          call: 'parity_pendingTransactions'
-        },
-        {
-          name: 'unminedTransactionsCount',
-          call: 'txpool_status'
-        }
-      ]
-    });
+  switch (chainType) {
+    case configStrategyConstants.gethChainType:
+      newInstance.extend({
+        methods: [
+          {
+            name: 'unminedTransactionsWithMoreData',
+            call: 'txpool_content'
+          },
+          {
+            name: 'unminedTransactionsWithLessData',
+            call: 'txpool_inspect'
+          }
+        ]
+      });
+      break;
+
+    case configStrategyConstants.parityChainType:
+      newInstance.extend({
+        methods: [
+          {
+            name: 'unminedTransactionsWithMoreData',
+            call: 'parity_pendingTransactions'
+          },
+          {
+            name: 'unminedTransactionsWithLessData',
+            call: 'parity_pendingTransactions'
+          }
+        ]
+      });
+      break;
+
+    default:
+      console.trace('unhandled chainType found: ', chainType);
+      break;
   }
 
   web3InstanceMap[gethURL] = newInstance;
@@ -112,7 +112,7 @@ const NonceHelperKlassPrototype = {
         const gethURL = allGethNodes[i];
 
         const web3Provider = oThis.getWeb3Instance(gethURL, chainType);
-        allNoncePromise.push(oThis.getMinedTxCountFromGeth(address, web3Provider));
+        allNoncePromise.push(oThis.getMinedTxCountFromNode(address, web3Provider));
       }
 
       const allNoncePromiseResult = Promise.all(allNoncePromise);
@@ -170,7 +170,7 @@ const NonceHelperKlassPrototype = {
       for (let i = allGethNodes.length - 1; i >= 0; i--) {
         const gethURL = allGethNodes[i];
         const web3Provider = oThis.getWeb3Instance(gethURL, chainType);
-        allTxPoolPromise.push(oThis.getUnminedTransactionsFromGethNode(web3Provider));
+        allTxPoolPromise.push(oThis.getUnminedTransactionsFromNode(web3Provider));
       }
 
       const allTxPoolPromiseResult = await Promise.all(allTxPoolPromise);
@@ -316,7 +316,7 @@ const NonceHelperKlassPrototype = {
         const gethURL = allGethNodes[i];
 
         const web3Provider = oThis.getWeb3Instance(gethURL, chainType);
-        allNoncePromise.push(oThis.getMinedTxCountFromGeth(address, web3Provider));
+        allNoncePromise.push(oThis.getMinedTxCountFromNode(address, web3Provider));
       }
 
       const allNoncePromiseResult = await Promise.all(allNoncePromise);
@@ -365,7 +365,7 @@ const NonceHelperKlassPrototype = {
    *
    * @return {promise<result>}
    */
-  getMinedTxCountFromGeth: async function(address, web3Provider) {
+  getMinedTxCountFromNode: async function(address, web3Provider) {
     const oThis = this;
 
     return new Promise(function(onResolve, onReject) {
@@ -374,7 +374,7 @@ const NonceHelperKlassPrototype = {
           if (error) {
             return onResolve(
               responseHelper.error({
-                internal_error_identifier: 'mo_w_nh_getMinedTxCountFromGeth_1',
+                internal_error_identifier: 'mo_w_nh_getMinedTxCountFromNode_1',
                 api_error_identifier: 'something_went_wrong',
                 debug_options: { error: error },
                 error_config: errorConfig
@@ -386,7 +386,7 @@ const NonceHelperKlassPrototype = {
         });
       } catch (err) {
         //Format the error
-        logger.error('module_overrides/web3_eth/nonce_helper.js:getMinedTxCountFromGeth inside catch ', err);
+        logger.error('module_overrides/web3_eth/nonce_helper.js:getMinedTxCountFromNode inside catch ', err);
         return onResolve(
           responseHelper.error({
             internal_error_identifier: 'mo_w_nh_getMinedTxCountFromGeth_2',
@@ -405,7 +405,7 @@ const NonceHelperKlassPrototype = {
    * @param {string} rpcGethURL - rpc url (optional)
    * @return {promise<result>}
    */
-  getUnminedTransactionsFromGethNode: async function(wsWeb3Provider, rpcGethURL) {
+  getUnminedTransactionsFromNode: async function(wsWeb3Provider, rpcGethURL) {
     const oThis = this;
     return new Promise(async function(onResolve, onReject) {
       try {
@@ -417,7 +417,7 @@ const NonceHelperKlassPrototype = {
         }
         return onResolve(
           responseHelper.error({
-            internal_error_identifier: 'mo_w_nh_getUnminedTransactionsFromGethNode_1',
+            internal_error_identifier: 'mo_w_nh_getUnminedTransactionsFromNode_1',
             api_error_identifier: 'something_went_wrong',
             error_config: errorConfig
           })
@@ -433,17 +433,17 @@ const NonceHelperKlassPrototype = {
           } else {
             return onResolve(
               responseHelper.error({
-                internal_error_identifier: 'mo_w_nh_getPendingTransactionsFromGethNode_2',
+                internal_error_identifier: 'mo_w_nh_getUnminedTransactionsFromNode_2',
                 api_error_identifier: 'something_went_wrong',
                 error_config: errorConfig
               })
             );
           }
         }
-        logger.error('module_overrides/web3_eth/nonce_helper.js:getUnminedTransactionsFromGethNode inside catch ', err);
+        logger.error('module_overrides/web3_eth/nonce_helper.js:getUnminedTransactionsFromNode inside catch ', err);
         return onResolve(
           responseHelper.error({
-            internal_error_identifier: 'mo_w_nh_getUnminedTransactionsFromGethNode_3',
+            internal_error_identifier: 'mo_w_nh_getUnminedTransactionsFromNode_3',
             api_error_identifier: 'something_went_wrong',
             error_config: errorConfig
           })
