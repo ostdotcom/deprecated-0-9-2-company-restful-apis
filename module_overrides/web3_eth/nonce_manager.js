@@ -67,7 +67,6 @@ const NonceCacheKlassPrototype = {
   address: null,
   chainType: null,
   chainKind: null,
-  chainType: null,
   clientId: null,
   currentWsHost: null,
   chainId: null,
