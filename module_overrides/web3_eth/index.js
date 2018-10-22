@@ -68,6 +68,8 @@ const Derived = function() {
             txHashObtained = true;
             await signRawTx.markAsSuccess(hash);
           }
+
+          hackedReturnedPromiEvent.eventEmitter.emit('rawTransactionDetails', rawTx);
           hackedReturnedPromiEvent.eventEmitter.emit('transactionHash', hash);
 
           if (!hackedReturnedPromiEvent.eventEmitter || !hackedReturnedPromiEvent.eventEmitter._events) {
@@ -115,6 +117,7 @@ const Derived = function() {
             }
             logger.error('error', error);
             await signRawTx.markAsFailure();
+            hackedReturnedPromiEvent.eventEmitter.emit('rawTransactionDetails', rawTx);
             hackedReturnedPromiEvent.eventEmitter.emit('error', error);
             hackedReturnedPromiEvent.reject.apply(hackedReturnedPromiEvent, error);
           }
