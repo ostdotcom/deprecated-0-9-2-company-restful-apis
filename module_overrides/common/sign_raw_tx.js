@@ -15,6 +15,7 @@ let nonceManagerKlass,
   ChainGethProvidersCache,
   configStrategyHelper,
   configStrategyConsts,
+  basicHelper,
   fetchPrivateKeyKlass;
 
 // NOTE :: Please define all your requires inside the function
@@ -29,6 +30,7 @@ const initRequires = function() {
   configStrategyHelper = require(rootPrefix + '/helpers/config_strategy/by_client_id');
   fetchPrivateKeyKlass = require(rootPrefix + '/lib/shared_cache_management/address_private_key');
   configStrategyConsts = require(rootPrefix + '/lib/global_constant/config_strategy');
+  basicHelper = require(rootPrefix + '/helpers/basic');
 };
 
 const SignRawTx = function(host, rawTx) {
@@ -213,7 +215,7 @@ SignRawTx.prototype = {
         oThis.gethWsProviders = valueProviders;
         oThis.gethRpcProviders = valueRpcProviders;
         oThis.chainId = oThis.configStrategy.OST_VALUE_CHAIN_ID;
-        oThis.chainType = configStrategyConsts.gethChainType;
+        oThis.chainType = oThis.configStrategy.OST_VALUE_CHAIN_TYPE;
       } else if (utilityProviders.includes(oThis.host)) {
         oThis.chainKind = 'utility';
         oThis.gethWsProviders = utilityProviders;
@@ -254,9 +256,10 @@ SignRawTx.prototype = {
     if (oThis.bnChainGasPrice.isZero()) {
       logger.debug('WARN :: Gas Price for chainKind', oThis.chainKind, 'is zero.');
     } else {
-      oThis.rawTx.gasPrice = oThis.chainGasPrice;
-      logger.debug('Auto-corrected gas price to', oThis.rawTx.gasPrice);
+      logger.debug('Auto-corrected gas price to', oThis.chainGasPrice);
     }
+
+    oThis.rawTx.gasPrice = oThis.chainGasPrice;
   },
 
   /**
