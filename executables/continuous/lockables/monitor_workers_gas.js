@@ -52,7 +52,7 @@ let configStrategy = {};
 const MonitorGasOfWorkersKlass = function(params) {
   const oThis = this;
 
-  oThis.lockId = Math.floor(new Date().getTime());
+  oThis.lockId = Math.floor(new Date().getTime() / 1000);
 
   // oThis.startClientId = parseInt(command.startClientId);
   // oThis.endClientId = parseInt(command.endClientId);
@@ -88,21 +88,41 @@ const MonitorGasOfWorkersKlassPrototype = {
     await oThis._getBalanceOfWorkerAddress();
   },
 
+  /**
+   * Sets the lockId for this particular process.
+   *
+   * @returns {number}
+   */
   getLockId: function() {
     const oThis = this;
     return parseFloat(oThis.lockId + '.' + oThis.processId);
   },
 
+  /**
+   * Returns the model to be used.
+   *
+   * @returns {*}
+   */
   getLockableModel: function() {
     return ClientWorkerManagedAddressIdModel;
   },
 
+  /**
+   * Returns the whereClause array.
+   *
+   * @returns {*[]}
+   */
   getQuery: function() {
     const oThis = this;
 
     return oThis._getClientIdsRange();
   },
 
+  /**
+   * Gets the max number of rows to be processed.
+   *
+   * @returns {Number}
+   */
   getNoOfRowsToProcess: function() {
     const oThis = this;
 
@@ -110,7 +130,8 @@ const MonitorGasOfWorkersKlassPrototype = {
   },
 
   /**
-   * this function generates client range to be passed to get workers map
+   * This function generates client range to be passed to get workers map.
+   *
    * @returns {Promise<Array|*|*[]>}
    * @private
    */
@@ -131,15 +152,16 @@ const MonitorGasOfWorkersKlassPrototype = {
   },
 
   /**
-   * this function creates clients to workers map using client ids range
+   * This function creates clients to workers map using client ids range.
    *
    * @returns {Promise<void>}
    * @private
    */
   _getWorkersForClient: async function() {
     const oThis = this;
+
     let queryResponse = await new ClientWorkerManagedAddressIdModel()
-      .select('client_id,managed_address_id')
+      .select('client_id, managed_address_id')
       .where(['lock_id = ?', oThis.getLockId()])
       .fire();
 
@@ -148,9 +170,15 @@ const MonitorGasOfWorkersKlassPrototype = {
       oThis.clientToWorkersMap[rawResponse.client_id] = oThis.clientToWorkersMap[rawResponse.client_id] || [];
       oThis.clientToWorkersMap[rawResponse.client_id].push(rawResponse.managed_address_id);
     }
-    console.log('===clientToWorkersMap=====\n', oThis.clientToWorkersMap);
+    logger.log('===clientToWorkersMap=====\n', oThis.clientToWorkersMap);
   },
 
+  /**
+   * This function returns the address of clientWorkers.
+   *
+   * @returns {Promise<*|result>}
+   * @private
+   */
   _getAddressOfWorkers: async function() {
     const oThis = this;
 
@@ -163,11 +191,12 @@ const MonitorGasOfWorkersKlassPrototype = {
         oThis.workerToAddressMap[rawResponse.id] = rawResponse.ethereum_address;
       }
     }
-    console.log('====workerToAddressMap=====\n', oThis.workerToAddressMap);
+    logger.log('====workerToAddressMap=====\n', oThis.workerToAddressMap);
     return responseHelper.successWithData({});
   },
 
   /**
+   * This function gets the balance of worker addresses.
    *
    * @returns {Promise<void>}
    * @private
@@ -183,16 +212,14 @@ const MonitorGasOfWorkersKlassPrototype = {
 
       configStrategy = configStrategyResponse.data;
 
-      console.log('configStrategy', configStrategy);
-
       let instanceComposer = new InstanceComposer(configStrategy),
         openStPlatform = instanceComposer.getPlatformProvider().getInstance(),
         workerIdsArray = oThis.clientToWorkersMap[clientId];
 
       for (let index = 0; index < workerIdsArray.length; index++) {
         let workerId = workerIdsArray[index],
-          workereEthAddress = oThis.workerToAddressMap[workerId],
-          platformObj = new openStPlatform.services.balance.simpleTokenPrime({ address: workereEthAddress }),
+          workerEthAddress = oThis.workerToAddressMap[workerId],
+          platformObj = new openStPlatform.services.balance.simpleTokenPrime({ address: workerEthAddress }),
           workerBalanceRsp = await platformObj.perform();
 
         let stPrimeBalanceBigNumber = basicHelper.convertToBigNumber(workerBalanceRsp.data.balance);
@@ -204,7 +231,7 @@ const MonitorGasOfWorkersKlassPrototype = {
         if (stPrimeBalanceBigNumber.lessThan(basicHelper.convertToWei(0.1))) {
           oThis.workersWhoseBalanceIsLowMap[clientId] = workerId;
 
-          console.log('===oThis.workersWhoseBalanceIsLowMap====', oThis.workersWhoseBalanceIsLowMap);
+          logger.log('===oThis.workersWhoseBalanceIsLowMap====', oThis.workersWhoseBalanceIsLowMap);
 
           // if client has at least one worker with low gas, check balance of reserve,
           if (oThis.workersWhoseBalanceIsLowMap.length > 0) {
@@ -225,7 +252,7 @@ const MonitorGasOfWorkersKlassPrototype = {
                 transferParams = {
                   sender_address: oThis.reserveAddrObj.ethereum_address,
                   sender_passphrase: 'testtest',
-                  recipient_address: workereEthAddress,
+                  recipient_address: workerEthAddress,
                   amount_in_wei: transferAmountInWei,
                   options: { returnType: 'txReceipt', tag: '' }
                 };
@@ -263,6 +290,12 @@ const MonitorGasOfWorkersKlassPrototype = {
     }
   },
 
+  /**
+   * This function checks the balance of reserve address.
+   *
+   * @returns {Promise<*>}
+   * @private
+   */
   _checkBalanceOfReserveAddress: async function() {
     const oThis = this;
 
