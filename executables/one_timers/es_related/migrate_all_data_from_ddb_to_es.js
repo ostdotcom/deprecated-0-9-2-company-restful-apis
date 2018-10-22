@@ -1,23 +1,20 @@
 'use strict';
+
 const rootPrefix = '../../..',
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   dynamoDBFormatter = require(rootPrefix + '/lib/elasticsearch/helpers/dynamo_formatters'),
   InsertInESKlass = require(rootPrefix + '/executables/one_timers/es_related/insert_from_transaction_log_ddb_to_es'),
-  insertInESobj = new InsertInESKlass(),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   commonValidator = require(rootPrefix + '/lib/validators/common');
 
 require(rootPrefix + '/lib/providers/storage');
 
 const args = process.argv,
-  config_file_path = args[2],
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+  groupId = args[2],
   shardName = args[3],
-  configStrategy = require(config_file_path),
-  instanceComposer = new InstanceComposer(configStrategy),
-  storageProvider = instanceComposer.getStorageProvider(),
-  openSTStorage = storageProvider.getInstance(),
-  ddbServiceObj = openSTStorage.dynamoDBService;
+  insertInESobj = new InsertInESKlass({ group_id: groupId });
 
 const Limit = 20;
 
@@ -64,7 +61,14 @@ MigrateDataFromDDbToES.prototype = {
    * @returns {promise}
    */
   asyncPerform: async function() {
-    const oThis = this;
+    const oThis = this,
+      strategyByGroupHelperObj = new StrategyByGroupHelper(groupId),
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(),
+      configStrategy = configStrategyResp.data,
+      instanceComposer = new InstanceComposer(configStrategy),
+      storageProvider = instanceComposer.getStorageProvider(),
+      openSTStorage = storageProvider.getInstance(),
+      ddbServiceObj = openSTStorage.dynamoDBService;
 
     let batchNo = 1;
 
@@ -112,10 +116,7 @@ MigrateDataFromDDbToES.prototype = {
 };
 
 const usageDemo = function() {
-  logger.log(
-    'usage:',
-    'node ./executables/one_timers/es_related/migrate_all_data_from_ddb_to_es.js configStrategy_file_path shardName'
-  );
+  logger.log('usage:', 'node ./executables/one_timers/es_related/migrate_all_data_from_ddb_to_es.js groupId shardName');
 };
 
 const validateAndSanitize = function() {

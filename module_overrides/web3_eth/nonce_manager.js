@@ -48,6 +48,7 @@ const NonceManagerKlass = function(params) {
   oThis.nonceHelper = new nonceHelperKlass();
 
   oThis.address = fromAddress;
+  oThis.chainType = chainType;
   oThis.chainKind = chainKind;
   oThis.chainType = chainType;
   oThis.clientId = clientId;
@@ -64,6 +65,7 @@ const NonceManagerKlass = function(params) {
 
 const NonceCacheKlassPrototype = {
   address: null,
+  chainType: null,
   chainKind: null,
   chainType: null,
   clientId: null,
@@ -346,8 +348,8 @@ const NonceCacheKlassPrototype = {
         rpcGethURL = oThis.gethRpcProviders[i];
 
       const web3Provider = oThis.nonceHelper.getWeb3Instance(wsGethURL, oThis.chainType);
-      getMinedTxCountPromises.push(oThis.nonceHelper.getMinedTxCountFromGeth(oThis.address, web3Provider));
-      getPendingTxnsPromises.push(oThis.nonceHelper.getUnminedTransactionsFromGethNode(web3Provider, rpcGethURL));
+      getMinedTxCountPromises.push(oThis.nonceHelper.getMinedTxCountFromNode(oThis.address, web3Provider));
+      getPendingTxnsPromises.push(oThis.nonceHelper.getUnminedTransactionsFromNode(web3Provider, rpcGethURL));
     }
 
     let cumulativePromiseResponses = await Promise.all([

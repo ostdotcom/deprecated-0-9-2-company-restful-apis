@@ -162,6 +162,10 @@ listUserKlass.prototype = {
       if (!commonValidator.isVarNull(oThis.airdropped)) {
         next_page_payload.airdropped = oThis.airdropped;
       }
+
+      if (oThis.uuidsString) {
+        next_page_payload.id = oThis.uuidsString;
+      }
     }
 
     return Promise.resolve(

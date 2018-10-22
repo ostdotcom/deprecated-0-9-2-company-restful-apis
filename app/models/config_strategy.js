@@ -660,7 +660,8 @@ const ConfigStrategyModelSpecificPrototype = {
     let response = {};
     response.chainId = unencrypted_hash.OST_VALUE_CHAIN_ID;
     response.chainKind = 'value';
-    response.chainType = configStrategyConstants.gethChainType;
+    response.chainType = unencrypted_hash.OST_VALUE_CHAIN_TYPE;
+
     if (unencrypted_hash.OST_VALUE_GETH_WS_PROVIDERS.includes(gethProvider)) {
       response.siblingEndpoints = unencrypted_hash.OST_VALUE_GETH_WS_PROVIDERS;
     } else if (unencrypted_hash.OST_VALUE_GETH_RPC_PROVIDERS.includes(gethProvider)) {
