@@ -54,15 +54,16 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
+  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   ProcessLocker = new ProcessLockerKlass(program);
 
 let ic = null,
-  openStNotification = null,
   web3InteractFactory = null;
+
+const openStNotification = SharedRabbitMqProvider.getInstance();
 
 require(rootPrefix + '/lib/block_scanner/for_tx_status_and_balance_sync');
 require(rootPrefix + '/lib/web3/interact/ws_interact');
-require(rootPrefix + '/lib/providers/notification');
 
 // Load external packages
 const OSTBase = require('@openstfoundation/openst-base');
@@ -162,10 +163,7 @@ warmUpGethPool()
       }
     });
 
-    let chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID,
-      notificationProvider = ic.getNotificationProvider();
-
-    openStNotification = notificationProvider.getInstance();
+    let chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
 
     openStNotification.subscribeEvent.rabbit(
       ['block_scanner_execute_' + chain_id],

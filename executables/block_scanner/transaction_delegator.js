@@ -25,13 +25,15 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
+  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   ProcessLocker = new ProcessLockerKlass();
 
 require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
 require(rootPrefix + '/lib/web3/interact/ws_interact');
-require(rootPrefix + '/lib/providers/notification');
 
 let configStrategy = {};
+
+const openSTNotification = SharedRabbitMqProvider.getInstance();
 
 // Validate and sanitize the command line arguments.
 const validateAndSanitize = function() {
@@ -217,9 +219,7 @@ TransactionDelegator.prototype = {
 
       if (txHashes.length === 0) break;
 
-      let chain_id = oThis.ic.configStrategy.OST_UTILITY_CHAIN_ID,
-        notificationProvider = oThis.ic.getNotificationProvider(),
-        openSTNotification = notificationProvider.getInstance();
+      let chain_id = oThis.ic.configStrategy.OST_UTILITY_CHAIN_ID;
 
       let messageParams = {
         topics: ['block_scanner_execute_' + chain_id],
