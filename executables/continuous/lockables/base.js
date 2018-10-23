@@ -1,4 +1,5 @@
 const rootPrefix = '../../..',
+  commonUtils = require(rootPrefix + '/lib/validators/common'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
 /**
@@ -16,7 +17,11 @@ const ContinuousLockableBaseKlass = function(params) {
   oThis.processId = params.process_id;
 
   oThis.noOfRowsToProcess = params.no_of_rows_to_process;
-  oThis.lockReleaseRequired = params.release_lock_required;
+  if (commonUtils.isVarNull(params.release_lock_required)) {
+    oThis.lockReleaseRequired = true;
+  } else {
+    oThis.lockReleaseRequired = params.release_lock_required;
+  }
 };
 
 ContinuousLockableBaseKlass.prototype = {
