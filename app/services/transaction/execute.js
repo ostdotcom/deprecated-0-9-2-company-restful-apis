@@ -117,8 +117,6 @@ ExecuteTransactionService.prototype = {
 
     await oThis._validateFromUserBalance();
 
-    await oThis._createTransactionLog();
-
     await oThis._insertInTransactionMeta();
 
     // Transaction would be set in background & response would be returned with uuid.
@@ -625,7 +623,7 @@ ExecuteTransactionService.prototype = {
    *
    * @return {Promise<result>}
    */
-  _createTransactionLog: async function() {
+  _createTransactionLog: async function(workerUuid) {
     const oThis = this,
       transactionLogModel = oThis.ic().getTransactionLogModel(),
       transactionLogCache = oThis.ic().getTransactionLogCache(),
@@ -646,6 +644,7 @@ ExecuteTransactionService.prototype = {
       commission_percent: oThis.commissionPercent,
       gas_price: basicHelper.convertToBigNumber(configStrategy.OST_UTILITY_GAS_PRICE).toString(10),
       status: transactionLogConst.invertedStatuses[transactionLogConst.processingStatus],
+      transaction_executor_uuid: workerUuid,
       created_at: Date.now(),
       updated_at: Date.now()
     };
@@ -736,6 +735,8 @@ ExecuteTransactionService.prototype = {
         client_id: oThis.clientId,
         worker_uuid: workerUuid
       };
+
+    await oThis._createTransactionLog(workerUuid);
 
     const setToRMQ = await openStNotification.publishEvent
       .perform({

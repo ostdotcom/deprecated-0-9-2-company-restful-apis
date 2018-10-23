@@ -46,7 +46,7 @@ const longToShortNamesMap = {
     transfer_events: 'te',
     error_code: 'ec',
     nonce: 'nn',
-    transaction_executor_address: 'tea',
+    transaction_executor_uuid: 'teu',
     raw_transaction: 'rt'
   },
   shortToLongNamesMap = util.invert(longToShortNamesMap);
@@ -577,9 +577,9 @@ const transactionLogModelSpecificPrototype = {
       formattedRowData[oThis.shortNameFor('nonce')] = { N: rowData['nonce'].toString() };
     }
 
-    if (rowData.hasOwnProperty('transaction_executor_address')) {
-      formattedRowData[oThis.shortNameFor('transaction_executor_address')] = {
-        S: rowData['transaction_executor_address']
+    if (rowData.hasOwnProperty('transaction_executor_uuid')) {
+      formattedRowData[oThis.shortNameFor('transaction_executor_uuid')] = {
+        S: rowData['transaction_executor_uuid']
       };
     }
 
@@ -712,9 +712,8 @@ const transactionLogModelSpecificPrototype = {
       formattedRowData['nonce'] = parseInt(rowData[oThis.shortNameFor('nonce')]['N']);
     }
 
-    if (rowData.hasOwnProperty(oThis.shortNameFor('transaction_executor_address'))) {
-      formattedRowData['transaction_executor_address'] =
-        rowData[oThis.shortNameFor('transaction_executor_address')]['S'];
+    if (rowData.hasOwnProperty(oThis.shortNameFor('transaction_executor_uuid'))) {
+      formattedRowData['transaction_executor_uuid'] = rowData[oThis.shortNameFor('transaction_executor_uuid')]['S'];
     }
 
     if (rowData.hasOwnProperty(oThis.shortNameFor('transfer_events'))) {
