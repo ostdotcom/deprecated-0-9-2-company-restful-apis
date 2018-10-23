@@ -6,6 +6,7 @@ const rootPrefix = '../../..',
  *
  * @param {Integer} params - Process Id - This would be used as prefix in lockId.
  * @param {Integer} params - no_of_rows_to_process - Number of rows to process.
+ * @param {Boolean} params - release_lock_required - Lock has to be released or not.
  *
  * @constructor
  */
@@ -15,12 +16,10 @@ const ContinuousLockableBaseKlass = function(params) {
   oThis.processId = params.process_id;
 
   oThis.noOfRowsToProcess = params.no_of_rows_to_process;
-  oThis.dataToUpdateMap = {};
+  oThis.lockReleaseRequired = params.release_lock_required;
 };
 
 ContinuousLockableBaseKlass.prototype = {
-  dataToUpdateMap: null,
-
   /**
    * Perform Cron Operations
    *
@@ -33,7 +32,9 @@ ContinuousLockableBaseKlass.prototype = {
 
     await oThis.execute();
 
-    await oThis.releaseLock();
+    if (oThis.lockReleaseRequired) {
+      await oThis.releaseLock();
+    }
   },
 
   /**
@@ -44,16 +45,14 @@ ContinuousLockableBaseKlass.prototype = {
   acquireLock: async function() {
     const oThis = this;
 
-    let modelKlass = oThis.getLockableModel(),
-      query = oThis.getQuery();
+    let modelKlass = oThis.getModel();
 
-    query[0] += ' AND lock_id IS NULL';
-
-    await new modelKlass()
-      .update(['lock_id = ?', oThis.getLockId()])
-      .where(query)
-      .limit(oThis.getNoOfRowsToProcess())
-      .fire();
+    await new modelKlass().acquireLock(
+      oThis.getLockId(),
+      oThis.lockingConditions(),
+      oThis.updateItems(),
+      oThis.getNoOfRowsToProcess()
+    );
   },
 
   /**
@@ -64,37 +63,40 @@ ContinuousLockableBaseKlass.prototype = {
   releaseLock: async function() {
     const oThis = this;
 
-    if (Object.keys(oThis.dataToUpdateMap).length > 0) {
-      // {row_id: {column: 'value'}}
-      // Update Data accordingly
-      console.log(oThis.dataToUpdateMap);
-    } else {
-      let modelKlass = oThis.getLockableModel();
+    let modelKlass = oThis.getModel();
 
-      await new modelKlass()
-        .update(['lock_id = ?', null])
-        .where(['lock_id = ?', oThis.getLockId()])
-        .fire();
-    }
+    await new modelKlass().releaseLock(oThis.getLockId(), oThis.lockingConditions(), oThis.updateItems());
   },
 
   execute: function() {
     throw 'sub class to implement';
   },
 
+  /**
+   * Sets the lockId for this particular process.
+   */
   getLockId: function() {
     throw 'sub class to implement';
   },
 
-  getLockableModel: function() {
+  /**
+   * Sets model to acquire lock on.
+   */
+  getModel: function() {
     throw 'sub class to implement';
   },
 
-  getQuery: function() {
+  /**
+   * Conditions for acquiring lock, this would be used as where clause in locking.
+   */
+  lockingConditions: function() {
     throw 'sub class to implement';
   },
 
-  getNoOfRowsToProcess: function() {
+  /**
+   * Items for atomic update during acquiring or releasing lock.
+   */
+  updateItems: function() {
     throw 'sub class to implement';
   }
 };

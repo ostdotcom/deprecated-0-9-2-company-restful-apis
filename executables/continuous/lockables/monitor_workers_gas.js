@@ -67,6 +67,8 @@ const MonitorGasOfWorkersKlass = function(params) {
 
   oThis.reserveAddress = '';
 
+  Object.assign(params, { release_lock_required: false });
+
   baseKlass.call(oThis, params);
 };
 
@@ -103,7 +105,7 @@ const MonitorGasOfWorkersKlassPrototype = {
    *
    * @returns {*}
    */
-  getLockableModel: function() {
+  getModel: function() {
     return ClientWorkerManagedAddressIdModel;
   },
 
@@ -112,11 +114,18 @@ const MonitorGasOfWorkersKlassPrototype = {
    *
    * @returns {*[]}
    */
-  getQuery: function() {
+  lockingConditions: function() {
     const oThis = this;
 
     return oThis._getClientIdsRange();
   },
+
+  /**
+   * Items to update during lock.
+   *
+   * @returns {*[]}
+   */
+  updateItems: function() {},
 
   /**
    * Gets the max number of rows to be processed.
