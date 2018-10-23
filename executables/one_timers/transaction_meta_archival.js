@@ -1,67 +1,43 @@
 'use strict';
 
 /**
- * node ./executables/one_timers/transaction_meta_archival.js transaction_meta transaction_meta_archive 1 10
+ * This cron archives the tx meta table by removing entries within provided time interval from tx meta and adding them to tx meta archive table.
  *
- * @type {string}
+ *
+ * Usage: node ./executables/one_timers/transaction_meta_archival.js timeInterval [offsetForEndId]
+ * Command Line Parameters:
+ * timeInterval: Time Interval in hours to archive the data
+ * offsetForEndId: End Id for archival [optional], if not passed - default value is 4 hours
+ *
+ * Example: node ./executables/one_timers/transaction_meta_archival.js 24 6
+ *
+ * @module executables/one_timers/transaction_meta_archival
  */
 
 const rootPrefix = '../..',
   transactionMetaModel = require(rootPrefix + '/app/models/transaction_meta'),
-  mysqlWrapper = require(rootPrefix + '/lib/mysql_wrapper'),
+  transactionMetaArchiveModel = require(rootPrefix + '/app/models/transaction_meta_archive'),
+  transactionMetaConstants = require(rootPrefix + '/lib/global_constant/transaction_meta'),
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
 const args = process.argv,
-  fromTableName = args[2],
-  toTableName = args[3],
-  fromId = args[4],
-  toId = args[5];
-
-const tableNameToModelMap = {
-  transaction_meta: transactionMetaModel
-};
+  timeIntervalInHours = args[2],
+  offsetForEndIdArg = args[3];
 
 // Usage demo.
 const usageDemo = function() {
+  logger.log('usage:', 'node executables/one_timers/transaction_meta_archival.js timeInterval [offsetForEndId]');
   logger.log(
-    'usage:',
-    'node ./executables/one_timers/transaction_meta_archival.js fromTableName toTableName fromId toId'
+    '* timeIntervalInHours is used for ensuring that no other process with the same processId can run on a given machine.'
   );
-
-  logger.log('* fromTableName is the table name from which data is to be fetched.');
-  logger.log('* toTableName is the table to which data will be archived to.');
-  logger.log('* fromId is the id from which migration to start. ');
-  logger.log('* toId is the id upto which migration should run. ');
 };
 
 // Validate and sanitize the command line arguments.
 const validateAndSanitize = function() {
-  if (!fromTableName) {
-    logger.error('fromTableName is NOT passed in the arguments.');
+  if (!timeIntervalInHours) {
+    logger.error('timeIntervalInHours NOT passed in the arguments.');
     usageDemo();
-    process.exit(1);
-  }
-
-  if (!toTableName) {
-    logger.error('toTableName is NOT passed in the arguments.');
-    usageDemo();
-    process.exit(1);
-  }
-
-  if (!fromId) {
-    logger.error('fromId is not passed');
-    usageDemo();
-    process.exit(1);
-  }
-
-  if (!toId) {
-    logger.error('toId is not passed');
-    usageDemo();
-    process.exit(1);
-  }
-
-  if (!tableNameToModelMap[fromTableName]) {
-    logger.error('Incorrect table name');
     process.exit(1);
   }
 };
@@ -69,117 +45,162 @@ const validateAndSanitize = function() {
 // Validate and sanitize the input params.
 validateAndSanitize();
 
-const TransactionMetaArchival = function(params) {
+/**
+ *
+ * @constructor
+ */
+const TransactionMetaArchival = function() {
   const oThis = this;
 
-  oThis.fromTableName = params.from_table_name;
-  oThis.toTableName = params.to_table_name;
-  oThis.fromId = params.from_id;
-  oThis.toId = params.to_id;
-  oThis.modelForTable = tableNameToModelMap[oThis.fromTableName];
+  oThis.txMetaIds = [];
   oThis.batchSize = 3;
 };
 
 TransactionMetaArchival.prototype = {
+  /**
+   *
+   * @returns {Promise<T>}
+   */
   perform: function() {
     const oThis = this;
 
-    return oThis
-      .asyncPerform()
-      .then(function(resolve) {
-        logger.win('Migration Done');
-        process.exit(0);
-      })
-      .catch(function(error) {
-        logger.error(error);
-        process.exit(1);
-      });
+    return oThis.asyncPerform().catch(function(error) {
+      logger.error('executables/one_timers/transaction_meta_archival.js::perform::catch');
+      logger.error(error);
+    });
   },
 
+  /**
+   *
+   * @returns {Promise<{}>}
+   */
   asyncPerform: async function() {
     const oThis = this;
 
-    let startingId = parseInt(oThis.fromId),
-      endingId = parseInt(oThis.toId),
-      batchSize = parseInt(oThis.batchSize),
-      tableModelClass = oThis.modelForTable,
-      tableModelObj = new tableModelClass(),
-      dbConnection = tableModelObj.onWriteConnection();
+    await oThis._validate();
 
-    while (endingId >= startingId) {
-      let endingIdForThisLoop = startingId + batchSize;
+    let statusArray = [],
+      timeIntervalInSeconds = timeIntervalInHours * 3600 * 1000;
 
-      //To handle the border case when endingIdForThisLoop may exceed given endingId.
-      if (endingIdForThisLoop > endingId) {
-        endingIdForThisLoop = endingId + 1;
+    statusArray.push(transactionMetaConstants.invertedStatuses[transactionMetaConstants.failed]);
+    statusArray.push(transactionMetaConstants.invertedStatuses[transactionMetaConstants.mined]);
+
+    //startTimeStamp = currentTimeStamp - (archivalTimeInterval + offset)
+    let endTimeStamp = new Date(Date.now() - oThis.offset).toLocaleString(),
+      finalOffset = oThis.offset + parseInt(timeIntervalInSeconds),
+      startTimeStamp = new Date(Date.now() - finalOffset).toLocaleString();
+
+    logger.log('timeStampStartRange====', startTimeStamp);
+    logger.log('timeStampEndRange====', endTimeStamp);
+
+    if (endTimeStamp < startTimeStamp) {
+      logger.log('Can not archive data for this Time Interval!');
+      return Promise.reject({});
+    }
+
+    let whereClauseForIds = ['updated_at BETWEEN ? AND ? AND status IN (?)', startTimeStamp, endTimeStamp, statusArray];
+
+    let queryResponseForIds = await new transactionMetaModel()
+      .select('id')
+      .where(whereClauseForIds)
+      .fire();
+
+    for (let i = 0; i < queryResponseForIds.length; i++) {
+      let rawResponse = queryResponseForIds[i];
+      oThis.txMetaIds.push(rawResponse.id);
+    }
+
+    logger.log('txMeta Ids=======', oThis.txMetaIds);
+
+    let batchNo = 1;
+
+    while (true) {
+      const offset = (batchNo - 1) * oThis.batchSize,
+        batchedTxIds = oThis.txMetaIds.slice(offset, oThis.batchSize + offset);
+
+      if (batchedTxIds.length === 0) {
+        break;
       }
 
-      let response = await oThis
-        ._performMigration(startingId, endingIdForThisLoop, dbConnection)
-        .catch(async function(err) {
-          logger.error('Error in migration of batch starting at', startingId);
-          return Promise.reject(err);
-        });
+      logger.info(`starting processing for batch: ${batchNo}`);
 
-      startingId = endingIdForThisLoop;
+      let batchStartTime = Date.now();
+      await oThis._performArchival(batchedTxIds);
+
+      logger.info(`batchTime: ${batchNo} ${Date.now() - batchStartTime} ms`);
+
+      batchNo = batchNo + 1;
     }
 
     return Promise.resolve({});
   },
 
-  _performMigration: async function(startingId, endingIdForThisLoop, dbConnection) {
+  _performArchival: async function(batchedTxMetaIds) {
     const oThis = this;
 
-    return new Promise(function(onResolve, onReject) {
-      let queryString =
-        `INSERT INTO ${
-          oThis.toTableName
-        }(id, chain_id, transaction_hash, transaction_uuid, client_id, kind, post_receipt_process_params, created_at, updated_at) ` +
-        `SELECT id, chain_id, transaction_hash, transaction_uuid, client_id, kind, post_receipt_process_params, created_at, updated_at ` +
-        `FROM ${oThis.fromTableName}` +
-        ` WHERE id >= ${startingId} AND id < ${endingIdForThisLoop}`;
+    let txIdToDBRowMap = {},
+      queryResponseForMeta = await new transactionMetaModel().getByIds(batchedTxMetaIds);
 
-      let deleteQueryString =
-        `DELETE FROM ${oThis.fromTableName} ` + `WHERE id >= ${startingId} AND id < ${endingIdForThisLoop}`;
+    if (!queryResponseForMeta) {
+      return responseHelper.error({
+        internal_error_identifier: 'e_ot_tma_1',
+        debug_options: {}
+      });
+    }
 
-      let pre_query = Date.now(),
-        queryResponse = dbConnection.query(queryString, function(err, result, fields) {
-          logger.info('(' + (Date.now() - pre_query) + ' ms)', queryResponse.sql);
-          if (err) {
-            logger.log('Error in insert query', err);
-            return onReject(err);
-          } else {
-            logger.log('Successfully inserted data', result);
-            let before_query = Date.now(),
-              deleteQueryResponse = dbConnection.query(deleteQueryString, function(err, result, fields) {
-                logger.info('(' + (Date.now() - before_query) + ' ms)', deleteQueryResponse.sql);
-                if (err) {
-                  logger.log('err in delete query', err);
-                  onReject(err);
-                } else {
-                  onResolve(result);
-                  logger.log('Successfully deleted data', result);
-                }
-              });
-          }
-        });
-    });
+    for (let i = 0; i < queryResponseForMeta.length; i++) {
+      let rawResponse = queryResponseForMeta[i];
+      txIdToDBRowMap[rawResponse.id] = rawResponse;
+    }
+
+    for (let txId in txIdToDBRowMap) {
+      let insertParams = txIdToDBRowMap[txId],
+        queryResponseForMetaArchive = await new transactionMetaArchiveModel().insert(insertParams).fire(),
+        queryResponseDeletion = await new transactionMetaModel()
+          .delete()
+          .where(['id = ?', txId])
+          .fire();
+    }
+
+    return Promise.resolve(responseHelper.successWithData({}));
+  },
+
+  /**
+   * Sets offsets according to the command line argument and validates table schema.
+   * @returns {Promise<never>}
+   * @private
+   */
+  _validate: async function() {
+    const oThis = this;
+
+    if (!offsetForEndIdArg) {
+      // set to 4 hours, if not passed explicitly
+      oThis.offset = 4 * 3600 * 1000;
+    } else {
+      oThis.offset = offsetForEndIdArg * 3600 * 1000;
+    }
+
+    let queryResponseForMeta = await new transactionMetaModel().describe().fire(),
+      queryResponseForArchive = await new transactionMetaArchiveModel().describe().fire();
+
+    if (JSON.stringify(queryResponseForMeta) !== JSON.stringify(queryResponseForArchive)) {
+      logger.log('Transaction Meta Schema does not matches to transaction Meta Archive!');
+      return Promise.reject(JSON.stringify(queryResponseForArchive));
+    }
+
+    return Promise.resolve({});
   }
 };
 
-const transactionMetaArchivalObj = new TransactionMetaArchival({
-  from_table_name: fromTableName,
-  to_table_name: toTableName,
-  from_id: fromId,
-  to_id: toId
-});
+const transactionMetaArchivalObj = new TransactionMetaArchival({});
 
 transactionMetaArchivalObj
   .perform()
-  .then(function(r) {})
+  .then(function(r) {
+    logger.win('Tx Meta Archival Done.');
+    process.exit(0);
+  })
   .catch(function(r) {
     logger.error('Error in archival: ', r);
     process.exit(1);
   });
-
-module.exports = TransactionMetaArchival;
