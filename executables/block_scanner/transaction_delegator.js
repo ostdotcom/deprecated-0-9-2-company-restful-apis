@@ -15,8 +15,7 @@
 
 const rootPrefix = '../..';
 
-const openSTNotification = require('@openstfoundation/openst-notification'),
-  program = require('commander'),
+const program = require('commander'),
   fs = require('fs');
 
 const MAX_TXS_PER_WORKER = 60;
@@ -30,6 +29,7 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
 
 require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
 require(rootPrefix + '/lib/web3/interact/ws_interact');
+require(rootPrefix + '/lib/providers/notification');
 
 let configStrategy = {};
 
@@ -217,7 +217,9 @@ TransactionDelegator.prototype = {
 
       if (txHashes.length === 0) break;
 
-      let chain_id = oThis.ic.configStrategy.OST_UTILITY_CHAIN_ID;
+      let chain_id = oThis.ic.configStrategy.OST_UTILITY_CHAIN_ID,
+        notificationProvider = oThis.ic.getNotificationProvider(),
+        openSTNotification = notificationProvider.getInstance();
 
       let messageParams = {
         topics: ['block_scanner_execute_' + chain_id],
