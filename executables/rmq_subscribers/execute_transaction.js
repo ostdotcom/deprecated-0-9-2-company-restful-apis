@@ -199,14 +199,21 @@ const promiseTxExecutor = function(onResolve, onReject, params) {
 // TODO: Maybe update this? Remove try catch?
 const _updateInTransactionMeta = async function(payload) {
   try {
-    let updatedRowsResponse = await new TransactionMetaModel()
-      .update({ status: transactionMetaConstants.invertedStatuses[transactionMetaConstants.processing] })
-      .where([
-        'transaction_uuid = ? AND status = ?',
-        payload.transaction_uuid,
-        transactionMetaConstants.invertedStatuses[transactionMetaConstants.queued]
-      ]) //Change hard coding
-      .fire();
+    let waitTimeForProcessingSec = transactionMetaConstants.statusActionTime[transactionMetaConstants.processing],
+      currentTimeStampInSeconds = new Date().getTime() / 1000,
+      nextActionAt = currentTimeStampInSeconds + waitTimeForProcessingSec,
+      updatedRowsResponse = await new TransactionMetaModel()
+        .update({
+          status: transactionMetaConstants.invertedStatuses[transactionMetaConstants.processing],
+          next_action_at: nextActionAt,
+          retry_count: 0
+        })
+        .where([
+          'transaction_uuid = ? AND status = ?',
+          payload.transaction_uuid,
+          transactionMetaConstants.invertedStatuses[transactionMetaConstants.queued]
+        ]) //Change hard coding
+        .fire();
 
     if (updatedRowsResponse == undefined) {
       return Promise.reject('Error in updating tx meta');

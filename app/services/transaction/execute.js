@@ -677,11 +677,16 @@ ExecuteTransactionService.prototype = {
 
     logger.debug('Inserting transaction in transaction meta table');
 
+    let waitTimeForProcessingSec = transactionMetaConstants.statusActionTime[transactionMetaConstants.queued],
+      currentTimeStampInSeconds = new Date().getTime() / 1000,
+      nextActionAt = currentTimeStampInSeconds + waitTimeForProcessingSec;
+
     await new TransactionMetaModel().insertRecord({
       chain_id: configStrategy.OST_UTILITY_CHAIN_ID,
       transaction_hash: null,
       transaction_uuid: oThis.transactionUuid,
       client_id: oThis.clientId,
+      next_action_at: nextActionAt,
       status: transactionMetaConstants.invertedStatuses[transactionMetaConstants.queued],
       kind: new TransactionMetaModel().invertedKinds[transactionLogConst.tokenTransferTransactionType]
     });
