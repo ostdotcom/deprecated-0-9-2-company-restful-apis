@@ -651,8 +651,8 @@ const ConfigStrategyModelSpecificPrototype = {
         })
       );
     }
-    response.gethWsProviders = unencrypted_hash[readWriteKeyName].OST_UTILITY_GETH_WS_PROVIDERS;
-    response.gethRpcProviders = unencrypted_hash[readWriteKeyName].OST_UTILITY_GETH_RPC_PROVIDERS;
+    response.chainWsProviders = unencrypted_hash[readWriteKeyName].OST_UTILITY_GETH_WS_PROVIDERS;
+    response.chainRpcProviders = unencrypted_hash[readWriteKeyName].OST_UTILITY_GETH_RPC_PROVIDERS;
     return response;
   },
 
@@ -667,8 +667,8 @@ const ConfigStrategyModelSpecificPrototype = {
     } else if (unencrypted_hash.OST_VALUE_GETH_RPC_PROVIDERS.includes(gethProvider)) {
       response.siblingEndpoints = unencrypted_hash.OST_VALUE_GETH_RPC_PROVIDERS;
     }
-    response.gethWsProviders = unencrypted_hash.OST_VALUE_GETH_WS_PROVIDERS;
-    response.gethRpcProviders = unencrypted_hash.OST_VALUE_GETH_RPC_PROVIDERS;
+    response.chainWsProviders = unencrypted_hash.OST_VALUE_GETH_WS_PROVIDERS;
+    response.chainRpcProviders = unencrypted_hash.OST_VALUE_GETH_RPC_PROVIDERS;
 
     return response;
   },

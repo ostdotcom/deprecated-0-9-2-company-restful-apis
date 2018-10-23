@@ -40,10 +40,11 @@ const NonceManagerKlass = function(params) {
     clientId = params['client_id'],
     currentWsHost = params['host'],
     chainId = params['chain_id'],
-    gethWsProviders = params['geth_ws_providers'],
-    gethRpcProviders = params['geth_rpc_providers'],
+    chainWsProviders = params['chain_ws_providers'],
+    chainRpcProviders = params['chain_rpc_providers'],
     configStrategy = params['config_strategy'];
-  // gethWsProviders being fetched are the ones that need to be used directly.
+
+  // chainWsProviders being fetched are the ones that need to be used directly.
 
   oThis.nonceHelper = new nonceHelperKlass();
 
@@ -54,8 +55,8 @@ const NonceManagerKlass = function(params) {
   oThis.clientId = clientId;
   oThis.currentWsHost = currentWsHost;
   oThis.chainId = chainId;
-  oThis.gethWsProviders = gethWsProviders;
-  oThis.gethRpcProviders = gethRpcProviders;
+  oThis.chainWsProviders = chainWsProviders;
+  oThis.chainRpcProviders = chainRpcProviders;
   oThis.configStrategy = configStrategy;
 
   oThis.consistentBehavior = '0';
@@ -70,7 +71,8 @@ const NonceCacheKlassPrototype = {
   clientId: null,
   currentWsHost: null,
   chainId: null,
-  gethWsProviders: null,
+  chainWsProviders: null,
+  chainRpcProviders: null,
   configStrategy: null,
 
   /**
@@ -140,7 +142,7 @@ const NonceCacheKlassPrototype = {
       );
       customOnResolve(responseHelper.successWithData({ nonce: parseInt(nonce) }));
     } else {
-      oThis._acquireLockAndSyncNonceFromGeth(customOnResolve, customOnReject);
+      oThis._acquireLockAndSyncNonceFromChain(customOnResolve, customOnReject);
     }
 
     return promiseObj;
@@ -148,7 +150,7 @@ const NonceCacheKlassPrototype = {
 
   /**
    * 1. Acquire the lock
-   * 2. Fetch nonce from Geth
+   * 2. Fetch nonce from Chain
    * 3. Set it in cache
    * 4. release lock
    *
@@ -156,14 +158,14 @@ const NonceCacheKlassPrototype = {
    * @private
    * @ignore
    */
-  _acquireLockAndSyncNonceFromGeth: async function(onResolve, onReject) {
+  _acquireLockAndSyncNonceFromChain: async function(onResolve, onReject) {
     const oThis = this;
 
     const acquireLockAndReturnNonce = async function() {
       const acquireLockResponse = await oThis._acquireLock();
 
       if (acquireLockResponse.isSuccess()) {
-        let syncNonceResp = await oThis._getNonceFromGethAndSetCache();
+        let syncNonceResp = await oThis._getNonceFromChainAndSetCache();
         if (syncNonceResp.isSuccess()) {
           logger.debug(
             'NM :: getNonce :: syncNonceReturned: ',
@@ -263,7 +265,7 @@ const NonceCacheKlassPrototype = {
     logger.error('NM :: completionWithFailure called with shouldSyncNonce: ', shouldSyncNonce);
 
     if (shouldSyncNonce) {
-      await oThis._acquireLockAndSyncNonceFromGeth();
+      await oThis._acquireLockAndSyncNonceFromChain();
     }
 
     return responseHelper.successWithData({});
@@ -330,25 +332,25 @@ const NonceCacheKlassPrototype = {
   },
 
   /**
-   * 1. Fetch nonce from all the geth nodes
+   * 1. Fetch nonce from all the chain nodes
    * 2. set nonce in cache
    *
    * @return {promise<result>}
    * @private
    * @ignore
    */
-  _getNonceFromGethAndSetCache: async function() {
+  _getNonceFromChainAndSetCache: async function() {
     const oThis = this,
       getMinedTxCountPromises = [],
       getPendingTxnsPromises = [];
 
-    for (let i = oThis.gethWsProviders.length - 1; i >= 0; i--) {
-      const wsGethURL = oThis.gethWsProviders[i],
-        rpcGethURL = oThis.gethRpcProviders[i];
+    for (let i = oThis.chainWsProviders.length - 1; i >= 0; i--) {
+      const wsChainURL = oThis.chainWsProviders[i],
+        rpcChainURL = oThis.chainRpcProviders[i];
 
-      const web3Provider = oThis.nonceHelper.getWeb3Instance(wsGethURL, oThis.chainType);
+      const web3Provider = oThis.nonceHelper.getWeb3Instance(wsChainURL, oThis.chainType);
       getMinedTxCountPromises.push(oThis.nonceHelper.getMinedTxCountFromNode(oThis.address, web3Provider));
-      getPendingTxnsPromises.push(oThis.nonceHelper.getUnminedTransactionsFromNode(web3Provider, rpcGethURL));
+      getPendingTxnsPromises.push(oThis.nonceHelper.getUnminedTransactionsFromNode(web3Provider, rpcChainURL));
     }
 
     let cumulativePromiseResponses = await Promise.all([
@@ -417,7 +419,7 @@ const NonceCacheKlassPrototype = {
         responseHelper.error({
           internal_error_identifier: 'l_nm_syncNonce_fail_2',
           api_error_identifier: 'internal_server_error',
-          debug_options: { msg: 'unable to fetch nonce from geth nodes.' },
+          debug_options: { msg: 'unable to fetch nonce from chain nodes.' },
           error_config: errorConfig
         })
       );

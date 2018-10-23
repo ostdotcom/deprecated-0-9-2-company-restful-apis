@@ -26,6 +26,7 @@ const InstanceComposer = require(rootPrefix + '/instance_composer'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+  web3InteractFactory = require(rootPrefix + '/lib/web3/interact/ws_interact'),
   ProcessLocker = new ProcessLockerKlass();
 
 require(rootPrefix + '/lib/web3/interact/ws_interact');
@@ -85,8 +86,6 @@ TransactionDelegator.prototype = {
 
     configStrategy = configStrategyResp.data;
     oThis.ic = new InstanceComposer(configStrategy);
-
-    let web3InteractFactory = oThis.ic.getWeb3InteractHelper();
 
     let web3PoolSize = coreConstants.OST_WEB3_POOL_SIZE;
 
@@ -193,7 +192,6 @@ TransactionDelegator.prototype = {
   distributeTransactions: async function() {
     const oThis = this;
 
-    const web3InteractFactory = oThis.ic.getWeb3InteractHelper();
     let web3Interact = web3InteractFactory.getInstance('utility', oThis.gethArray[0]);
 
     oThis.currentBlockInfo = await web3Interact.getBlock(oThis.currentBlock);
@@ -338,8 +336,6 @@ TransactionDelegator.prototype = {
    */
   refreshHighestBlock: async function(provider) {
     const oThis = this;
-
-    const web3InteractFactory = oThis.ic.getWeb3InteractHelper();
 
     let web3Interact = web3InteractFactory.getInstance('utility', provider);
 

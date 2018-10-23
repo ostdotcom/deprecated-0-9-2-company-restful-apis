@@ -55,10 +55,10 @@ const InstanceComposer = require(rootPrefix + '/instance_composer'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+  web3InteractFactory = require(rootPrefix + '/lib/web3/interact/ws_interact'),
   ProcessLocker = new ProcessLockerKlass(program);
 
-let ic = null,
-  web3InteractFactory = null;
+let ic = null;
 
 const openStNotification = SharedRabbitMqProvider.getInstance();
 
@@ -76,7 +76,6 @@ const warmUpGethPool = function() {
       configStrategy = configStrategyResp.data;
 
     ic = new InstanceComposer(configStrategy);
-    web3InteractFactory = ic.getWeb3InteractHelper();
 
     let web3PoolSize = coreConstants.OST_WEB3_POOL_SIZE;
 

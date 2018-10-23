@@ -7,7 +7,7 @@ const BasePackage = require(basePackage);
 const rootPrefix = '../..';
 
 // Please declare your require variable here.
-let responseHelper, logger, coreConstants, SignRawTx, moUtils;
+let responseHelper, logger, coreConstants, SignRawTx, moUtils, web3InteractFactory;
 
 // NOTE :: Please define all your requires inside the function
 const initRequires = function() {
@@ -15,6 +15,7 @@ const initRequires = function() {
   logger = logger || require(rootPrefix + '/lib/logger/custom_console_logger');
   coreConstants = coreConstants || require(rootPrefix + '/config/core_constants');
   SignRawTx = SignRawTx || require(rootPrefix + '/module_overrides/common/sign_raw_tx');
+  web3InteractFactory = web3InteractFactory || require(rootPrefix + '/lib/web3/interact/ws_interact');
   moUtils = moUtils || require(rootPrefix + '/module_overrides/common/utils');
 };
 
@@ -60,9 +61,10 @@ const Derived = function() {
       let signRawTx = new SignRawTx(host, rawTx);
 
       let txHashObtained = false,
-        retryCount = 0;
+        nonceTooLowErrorRetryCount = 0,
+        chainNodeDownErrorRetryCount = 0;
 
-      const sendSignedTx = function(serializedTx) {
+      const sendSignedTx = function(signTxRsp) {
         const onTxHash = async function(hash) {
           if (!txHashObtained) {
             txHashObtained = true;
@@ -101,25 +103,51 @@ const Derived = function() {
         };
 
         const onError = async function(error) {
-          if (moUtils.isNonceTooLowError(error) && retryCount < moUtils.maxRetryCount) {
+          if (moUtils.isNonceTooLowError(error) && nonceTooLowErrorRetryCount < moUtils.nonceTooLowErrorMaxRetryCnt) {
             logger.error('NONCE too low error. retrying with higher nonce.');
-            retryCount = retryCount + 1;
+            nonceTooLowErrorRetryCount = nonceTooLowErrorRetryCount + 1;
 
-            // clear the nonce
+            // resync nonce from chain
             await signRawTx.markAsFailure(true);
 
             // retry
             executeTx();
+          } else if (
+            moUtils.isChainNodeDownError(error) &&
+            chainNodeDownErrorRetryCount < moUtils.chainNodeDownErrorMaxRetryCnt
+          ) {
+            chainNodeDownErrorRetryCount = chainNodeDownErrorRetryCount + 1;
+
+            let wsChainNodeUrl =
+              signTxRsp['chain_ws_providers'][chainNodeDownErrorRetryCount % signTxRsp['chain_ws_providers'].length];
+
+            logger.error(
+              `nodeDownRetryAttemptNo: ${chainNodeDownErrorRetryCount} Chain Node Down error for: ${host}. retrying on same / other node: ${wsChainNodeUrl}. error: ${
+                error.message
+              }`
+            );
+
+            let web3Instance = web3InteractFactory.getInstance('utility', wsChainNodeUrl).web3WsProvider;
+
+            // retry submitting this tx on a given chain node
+            moUtils.submitTransactionToChain({
+              web3Instance: web3Instance,
+              signTxRsp: signTxRsp,
+              onError: onError,
+              onReject: onReject,
+              onTxHash: onTxHash,
+              orgCallback: orgCallback
+            });
           } else {
             if (txHashObtained) {
               // neglect if hash was already given.
               return;
             }
-            logger.error('error', error);
+            logger.error('finalErrorAfterRetrying', error);
             await signRawTx.markAsFailure();
             hackedReturnedPromiEvent.eventEmitter.emit('rawTransactionDetails', rawTx);
             hackedReturnedPromiEvent.eventEmitter.emit('error', error);
-            hackedReturnedPromiEvent.reject.apply(hackedReturnedPromiEvent, error);
+            hackedReturnedPromiEvent.reject(error);
           }
         };
 
@@ -131,43 +159,26 @@ const Derived = function() {
           logger.error(arguments);
         };
 
-        // return oThis
-        //   .sendSignedTransaction('0x' + serializedTx.toString('hex'))
-        //   .once('transactionHash', onTxHash)
-        //   .once('receipt', onReceipt)
-        //   .on('error', onError)
-        //   .then(onResolve, onReject)
-        //   .catch(onReject);
-
-        let batchRequest = new oThis.BatchRequest();
-
-        let sendSignedTransactionRequest = oThis.sendSignedTransaction.request('0x' + serializedTx.toString('hex'));
-        sendSignedTransactionRequest.callback = function(err, txHash) {
-          try {
-            err && onError(err);
-            err && onReject(err);
-          } catch (e) {}
-          try {
-            txHash && onTxHash(txHash);
-          } catch (e) {}
-          try {
-            orgCallback && orgCallback(err, txHash);
-          } catch (e) {}
-        };
-
-        batchRequest.add(sendSignedTransactionRequest);
-        batchRequest.execute();
+        moUtils.submitTransactionToChain({
+          signTxRsp: signTxRsp,
+          onError: onError,
+          onReject: onReject,
+          onTxHash: onTxHash,
+          orgCallback: orgCallback,
+          web3Instance: oThis
+        });
 
         return Promise.resolve();
       };
 
       const executeTx = async function() {
-        let serializedTx, err;
+        let signTxRsp, serializedTx, err;
 
         await signRawTx
           .perform()
           .then(function(result) {
-            serializedTx = result;
+            signTxRsp = result;
+            serializedTx = signTxRsp.serializedTx;
           })
           .catch(function(reason) {
             logger.error('signRawTx error ::', reason);
@@ -175,11 +186,11 @@ const Derived = function() {
           });
 
         if (!serializedTx) {
-          hackedReturnedPromiEvent.reject({ message: err });
+          hackedReturnedPromiEvent.reject(err);
           return Promise.resolve();
         }
 
-        await sendSignedTx(serializedTx);
+        await sendSignedTx(signTxRsp);
       };
 
       executeTx();
