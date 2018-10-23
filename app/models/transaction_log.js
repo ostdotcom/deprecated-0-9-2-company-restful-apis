@@ -103,7 +103,7 @@ const transactionLogModelSpecificPrototype = {
    * Handles logic of shorting input param keys
    *
    * @private
-   * @param longName - long name of key
+   * @param shortName - short name of key
    *
    * @return {String}
    */

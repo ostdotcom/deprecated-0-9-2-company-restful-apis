@@ -10,7 +10,7 @@ const ResendRawTx = function(rawTx, gethUrl) {
   const oThis = this;
 
   oThis.rawTx = rawTx;
-  gethUrl = gethUrl || 'ws://127.0.0.1:19547';
+  gethUrl = gethUrl;
   oThis.gethProvider = new OstWeb3.providers.WebsocketProvider(gethUrl);
 };
 
