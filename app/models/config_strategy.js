@@ -705,19 +705,93 @@ const ConfigStrategyModelSpecificPrototype = {
 
       if (strategyKind === configStrategyConstants.value_geth) {
         keysWhoseValueShouldBeAnArray = ['OST_VALUE_GETH_RPC_PROVIDERS', 'OST_VALUE_GETH_WS_PROVIDERS'];
+        for (let index in keysWhoseValueShouldBeAnArray) {
+          let keyWhoseValueToCheck = keysWhoseValueShouldBeAnArray[index],
+            value = paramsToValidate[keyWhoseValueToCheck];
+
+          if (!(value instanceof Array)) {
+            logger.error(`[${keyWhoseValueToCheck}] should be an array`);
+            return Promise.reject(
+              responseHelper.error({
+                internal_error_identifier: 'm_tb_dshh_y_3',
+                api_error_identifier: 'something_went_wrong',
+                debug_options: {}
+              })
+            );
+          }
+        }
       } else {
-        keysWhoseValueShouldBeAnArray = ['OST_UTILITY_GETH_RPC_PROVIDERS', 'OST_UTILITY_GETH_WS_PROVIDERS'];
-      }
+        const keyWhoseValueShouldBeAnObject = ['read_only', 'read_write'];
 
-      for (let index in keysWhoseValueShouldBeAnArray) {
-        let keyWhoseValueToCheck = keysWhoseValueShouldBeAnArray[index],
-          value = paramsToValidate[keyWhoseValueToCheck];
+        for (let index in keyWhoseValueShouldBeAnObject) {
+          let keyWhoseValueToCheck = keyWhoseValueShouldBeAnObject[index],
+            value = paramsToValidate[keyWhoseValueToCheck];
 
-        if (!(value instanceof Array)) {
-          logger.error(`[${keyWhoseValueToCheck}] should be an array`);
+          if (value === undefined || typeof value !== 'object') {
+            logger.error(`[${keyWhoseValueShouldBeAnObject}] value should be an object.`);
+            return Promise.reject(
+              responseHelper.error({
+                internal_error_identifier: 'm_tb_dshh_y_2',
+                api_error_identifier: 'something_went_wrong',
+                debug_options: {}
+              })
+            );
+          }
+
+          let keysWhoseValueShouldBeAnArray = ['OST_UTILITY_GETH_RPC_PROVIDERS', 'OST_UTILITY_GETH_WS_PROVIDERS'];
+          for (let index in keysWhoseValueShouldBeAnArray) {
+            let keyName = keysWhoseValueShouldBeAnArray[index],
+              innerValueToCheck = value[keyName];
+
+            if (!(innerValueToCheck instanceof Array)) {
+              logger.error(`[${keyWhoseValueToCheck}] should be an array`);
+              return Promise.reject(
+                responseHelper.error({
+                  internal_error_identifier: 'm_tb_dshh_y_4',
+                  api_error_identifier: 'something_went_wrong',
+                  debug_options: {}
+                })
+              );
+            }
+          }
+        }
+
+        let validation = await _oThis._validateUtilityProviderForUniqueness(paramsToValidate);
+
+        if (validation.isFailure()) {
+          logger.error('Specific validation failed');
           return Promise.reject(
             responseHelper.error({
-              internal_error_identifier: 'm_tb_dshh_y_3',
+              internal_error_identifier: 'm_tb_dshh_y_6',
+              api_error_identifier: 'something_went_wrong',
+              debug_options: {},
+              error_config: errorConfig
+            })
+          );
+        }
+      }
+    }
+
+    return Promise.resolve(responseHelper.successWithData({}));
+  },
+
+  _validateUtilityProviderForUniqueness: async function(paramsToValidate) {
+    let keyWhoseValueShouldBeAnObject = ['read_only', 'read_write'],
+      keysWhoseValueShouldBeAnArray = ['OST_UTILITY_GETH_RPC_PROVIDERS', 'OST_UTILITY_GETH_WS_PROVIDERS'];
+
+    for (let index in keyWhoseValueShouldBeAnObject) {
+      let keyWhoseValueToCheck = keyWhoseValueShouldBeAnObject[index],
+        value = paramsToValidate[keyWhoseValueToCheck];
+
+      for (let i in keysWhoseValueShouldBeAnArray) {
+        let keyName = keysWhoseValueShouldBeAnArray[i],
+          providerArray = value[keyName];
+
+        if (providerArray.length !== new Set(providerArray).size) {
+          logger.error(`[${keysWhoseValueShouldBeAnArray[i]}] contains non-unique endpoints.`);
+          return Promise.reject(
+            responseHelper.error({
+              internal_error_identifier: 'm_tb_dshh_y_5',
               api_error_identifier: 'something_went_wrong',
               debug_options: {}
             })
