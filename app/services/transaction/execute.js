@@ -6,8 +6,7 @@
  * @module app/services/transaction/execute
  */
 
-const openSTNotification = require('@openstfoundation/openst-notification'),
-  uuid = require('uuid');
+const uuidV4 = require('uuid/v4');
 
 const rootPrefix = '../../..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
@@ -21,18 +20,20 @@ const rootPrefix = '../../..',
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy'),
   RmqQueueConstants = require(rootPrefix + '/lib/global_constant/rmq_queue'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   errorConfig = basicHelper.fetchErrorConfig(apiVersions.general),
   configStrategyHelper = new ConfigStrategyHelperKlass();
 
-require(rootPrefix + '/lib/cache_management/client_transaction_type/by_name');
-require(rootPrefix + '/lib/cache_management/client_transaction_type/by_id');
+require(rootPrefix + '/lib/economy_user_balance');
+require(rootPrefix + '/app/models/transaction_log');
+require(rootPrefix + '/lib/providers/price_oracle');
+require(rootPrefix + '/lib/providers/notification');
+require(rootPrefix + '/lib/cache_management/client_branded_token');
 require(rootPrefix + '/lib/cache_multi_management/managedAddresses');
 require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
-require(rootPrefix + '/lib/cache_management/client_branded_token');
-require(rootPrefix + '/app/models/transaction_log');
-require(rootPrefix + '/lib/economy_user_balance');
-require(rootPrefix + '/lib/providers/price_oracle');
 require(rootPrefix + '/lib/cache_management/process_queue_association');
+require(rootPrefix + '/lib/cache_management/client_transaction_type/by_id');
+require(rootPrefix + '/lib/cache_management/client_transaction_type/by_name');
 
 /**
  * @constructor
@@ -58,7 +59,7 @@ const ExecuteTransactionService = function(params) {
   oThis.commissionPercent = params.commission_percent;
 
   oThis.transactionLogData = null;
-  oThis.transactionUuid = uuid.v4();
+  oThis.transactionUuid = uuidV4();
   oThis.tokenSymbol = null;
   oThis.transactionTypeRecord = null;
   oThis.clientBrandedToken = null;
@@ -683,18 +684,28 @@ ExecuteTransactionService.prototype = {
       workerUuid = workingProcessIds[index].workerUuid;
     // Pass the workerUuid for transfer_bt class.
 
-    const setToRMQ = await openSTNotification.publishEvent.perform({
-      topics: [topicName], // topicName for distributor queue
-      publisher: 'OST',
-      message: {
-        kind: RmqQueueConstants.executeTx,
-        payload: {
-          transaction_uuid: oThis.transactionUuid,
-          client_id: oThis.clientId,
-          worker_uuid: workerUuid
+    const notificationProvider = ic.getNotificationProvider(),
+      openStNotification = await notificationProvider.getInstance({
+        connectionWaitSeconds: ConnectionTimeoutConst.appServer
+      }),
+      payload = {
+        transaction_uuid: oThis.transactionUuid,
+        client_id: oThis.clientId,
+        worker_uuid: workerUuid
+      };
+
+    const setToRMQ = await openStNotification.publishEvent
+      .perform({
+        topics: [topicName], // topicName for distributor queue
+        publisher: 'OST',
+        message: {
+          kind: RmqQueueConstants.executeTx,
+          payload: payload
         }
-      }
-    });
+      })
+      .catch(function(err) {
+        logger.error('Message for execute transaction was not published. Payload: ', payload, ' Error: ', err);
+      });
 
     //if could not set to RMQ run in async.
     if (setToRMQ.isFailure() || setToRMQ.data.publishedToRmq == 0) {
@@ -739,4 +750,5 @@ ExecuteTransactionService.prototype = {
   }
 };
 InstanceComposer.registerShadowableClass(ExecuteTransactionService, 'getExecuteTransactionService');
+
 module.exports = ExecuteTransactionService;

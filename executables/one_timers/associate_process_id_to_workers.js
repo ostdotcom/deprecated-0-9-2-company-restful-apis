@@ -6,7 +6,7 @@ const rootPrefix = '../..',
   ProcessQueueAssociationModel = require(rootPrefix + '/app/models/process_queue_association'),
   processQueueAssocConst = require(rootPrefix + '/lib/global_constant/process_queue_association'),
   ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/client_worker_managed_address_id'),
-  ClientWorkerManagedAddressIdConstant = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id');
+  clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id');
 
 const associateProcessId = function() {};
 
@@ -42,7 +42,7 @@ associateProcessId.prototype = {
 
     // Get all the workers with active status.
     let activeStatus = new ClientWorkerManagedAddressIdModel().invertedStatuses[
-        ClientWorkerManagedAddressIdConstant.activeStatus
+        clientWorkerManagedAddressConst.activeStatus
       ],
       clientDetails = await new ClientWorkerManagedAddressIdModel()
         .select('id, client_id, managed_address_id')
