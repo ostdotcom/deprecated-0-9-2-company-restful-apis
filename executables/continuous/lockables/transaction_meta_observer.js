@@ -16,6 +16,9 @@
 
 const rootPrefix = '../../..';
 
+//Always Include Module overrides First
+require(rootPrefix + '/module_overrides/index');
+
 const program = require('commander');
 
 program.option('--process-id <processId>', 'Process id').option('--prefetch-count <prefetchCount>', 'Prefetch Count');
