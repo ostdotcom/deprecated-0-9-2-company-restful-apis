@@ -37,6 +37,19 @@ ModuleOverrideUtils.prototype = {
     return error.message.indexOf('Invalid JSON RPC response') > -1 || error.message.indexOf('connection not open') > -1;
   },
 
+  isReplacementTxUnderPricedError: function(error) {
+    if (!error || !error.message) {
+      throw 'invalid error object passed.';
+    }
+    // with a nonce which was already used,
+    // 1. if same rawTx was resubmitted -> known transaction error is raised
+    // 2. if some other rawTx was submitted -> replacement transaction underpriced
+    return (
+      error.message.indexOf('replacement transaction underpriced') > -1 ||
+      error.message.indexOf('known transaction') > -1
+    );
+  },
+
   getHost: function(provider) {
     return provider.host ? provider.host : provider.connection._url;
   },
