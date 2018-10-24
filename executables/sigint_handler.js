@@ -6,7 +6,6 @@ const rootPrefix = '..',
 const SigIntHandler = function() {
   const oThis = this;
 
-  oThis.pendingTasksDone(); // Throw if the method is not implemented by caller
   oThis.attachHandlers();
 };
 
@@ -17,6 +16,8 @@ SigIntHandler.prototype = {
    */
   attachHandlers: function() {
     const oThis = this;
+
+    oThis.pendingTasksDone(); // Throw if the method is not implemented by caller
 
     let handle = function() {
       if (oThis.pendingTasksDone()) {
