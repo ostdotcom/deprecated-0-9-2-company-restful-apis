@@ -17,7 +17,7 @@ const ResendRawTx = function(rawTx, gethUrl) {
 
   oThis.rawTx = rawTx;
   oThis.gethProvider = new OstWeb3.providers.WebsocketProvider(gethUrl);
-  oThis.web3Instance = new web3InteractFactory.getInstance('utility', oThis.gethProvider).web3WsProvider;
+  oThis.web3Instance = web3InteractFactory.getInstance('utility', oThis.gethProvider).web3WsProvider;
 };
 
 ResendRawTx.prototype = {
