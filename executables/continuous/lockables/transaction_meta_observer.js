@@ -9,6 +9,9 @@
  *  - Geth Down
  *    If transaction meta says Geth is down then try resubmitting after sometime.
  *
+ *  - Submitted
+ *    If transaction meta says status submitted for sometime then check on geth.
+ *
  * Example: node executables/transaction_meta_observer.js
  *
  * @module executables/transaction_meta_observer
@@ -49,7 +52,10 @@ validateAndSanitize();
 
 const baseKlass = require(rootPrefix + '/executables/continuous/lockables/base'),
   TransactionMetaModel = require(rootPrefix + '/app/models/transaction_meta'),
-  transactionMetaConst = require(rootPrefix + '/lib/global_constant/transaction_meta');
+  transactionMetaConst = require(rootPrefix + '/lib/global_constant/transaction_meta'),
+  SigIntHandler = require(rootPrefix + '/executables/sigint_handler');
+
+let runCount = 1;
 
 let TransactionStatusHandlers = {};
 
@@ -77,15 +83,20 @@ const TransactionMetaObserverKlass = function(params) {
   oThis.lockId = new Date().getTime();
   oThis.currentTime = Math.floor(new Date().getTime() / 1000);
   oThis.transactionsToProcess = [];
+  oThis.handlerPromises = [];
 
   baseKlass.call(oThis, params);
+  SigIntHandler.call(oThis);
 };
 
 TransactionMetaObserverKlass.prototype = Object.create(baseKlass.prototype);
+Object.assign(TransactionMetaObserverKlass.prototype, SigIntHandler.prototype);
 
 const TransactionMetaObserverKlassPrototype = {
   execute: async function() {
     const oThis = this;
+
+    oThis.transactionsToProcess = [];
 
     oThis.transactionsToProcess = await new TransactionMetaModel()
       .select('*')
@@ -134,51 +145,45 @@ const TransactionMetaObserverKlassPrototype = {
       transactionsGroup[txMeta.status].push(txMeta);
     }
 
-    let promisesArray = [];
     for (let txStatus in TransactionStatusHandlers) {
       let handlerKlass = TransactionStatusHandlers[txStatus];
       if (transactionsGroup[txStatus] && transactionsGroup[txStatus].length > 0) {
-        promisesArray.push(new handlerKlass(transactionsGroup[txStatus]).perform());
+        oThis.handlerPromises.push(new handlerKlass(transactionsGroup[txStatus]).perform());
       }
     }
-    return await Promise.all(promisesArray);
+    await Promise.all(oThis.handlerPromises);
+    oThis.handlerPromises = [];
+  },
+
+  pendingTasksDone: function() {
+    const oThis = this;
+    return oThis.handlerPromises.length === 0;
   }
 };
 
 Object.assign(TransactionMetaObserverKlass.prototype, TransactionMetaObserverKlassPrototype);
 
-new TransactionMetaObserverKlass({
+let txMetaObserver = new TransactionMetaObserverKlass({
   process_id: program.processId,
   no_of_rows_to_process: program.prefetchCount,
   release_lock_required: false
-}).perform();
+});
 
-// // Using a single function to handle multiple signals
-// function handle() {
-//   logger.info('Received Signal');
-//
-//   if (!PromiseQueueManager.getPendingCount() && !unAckCount) {
-//     console.log('SIGINT/SIGTERM handle :: No pending Promises.');
-//     process.exit(1);
-//   }
-//
-//   let f = function() {
-//     if (unAckCount != PromiseQueueManager.getPendingCount()) {
-//       logger.error('ERROR :: unAckCount and pending counts are not in sync.');
-//     }
-//     if (PromiseQueueManager.getPendingCount() <= 0 || unAckCount <= 0) {
-//       console.log('SIGINT/SIGTERM handle :: No pending Promises.');
-//       process.exit(1);
-//     } else {
-//       logger.info('waiting for open tasks to be done.');
-//       setTimeout(f, 1000);
-//     }
-//   };
-//
-//   setTimeout(f, 1000);
-// }
-//
-// // handling gracefully process exit on getting SIGINT, SIGTERM.
-// // Once signal found programme will stop consuming new messages. But need to clear running messages.
-// process.on('SIGINT', handle);
-// process.on('SIGTERM', handle);
+const runTask = async function() {
+  await txMetaObserver.perform();
+
+  // If too much load that iteration has processed full prefetch transactions, then don't wait for much time.
+  let nextIterationTime = txMetaObserver.transactionsToProcess.length === program.prefetchCount ? 1000 : 120000;
+
+  if (runCount >= 10) {
+    // Executed 10 times now exiting
+    console.log(runCount + ' iteration is executed, Killing self now. ');
+    process.exit(1);
+  } else {
+    console.log(runCount + ' iteration is executed, Sleeping now for seconds ' + nextIterationTime / 1000);
+    runCount = runCount + 1;
+    setTimeout(runTask, nextIterationTime);
+  }
+};
+
+runTask();
