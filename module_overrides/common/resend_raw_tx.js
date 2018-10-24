@@ -1,16 +1,16 @@
 'use strict';
 
 const rootPrefix = '../..',
-  SignRawTx = require(rootPrefix + '/module_overrides/common/sign_raw_tx'),
-  moUtils = require(rootPrefix + '/module_overrides/common/utils'),
   OSTBase = require('@openstfoundation/openst-base'),
+  moUtils = require(rootPrefix + '/module_overrides/common/utils'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  SignRawTx = require(rootPrefix + '/module_overrides/common/sign_raw_tx'),
   OstWeb3 = OSTBase.OstWeb3;
 
 const ResendRawTx = function(rawTx, gethUrl) {
   const oThis = this;
 
   oThis.rawTx = rawTx;
-  gethUrl = gethUrl;
   oThis.gethProvider = new OstWeb3.providers.WebsocketProvider(gethUrl);
 };
 
@@ -35,11 +35,11 @@ ResendRawTx.prototype = {
     let web3 = new OstWeb3(oThis.gethProvider);
     web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'), (err, hash) => {
       if (err) {
-        console.log(err);
+        logger.error(err);
         return;
       }
 
-      console.log('Transaction hash: ' + hash);
+      logger.log('Transaction hash: ' + hash);
     });
   }
 };

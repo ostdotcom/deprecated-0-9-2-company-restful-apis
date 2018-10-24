@@ -72,6 +72,7 @@ const Derived = function() {
           }
 
           hackedReturnedPromiEvent.eventEmitter.emit('rawTransactionDetails', rawTx);
+          // Emit rawTransactionDetails before transactionHash returns Promise.resolve().
           hackedReturnedPromiEvent.eventEmitter.emit('transactionHash', hash);
 
           if (!hackedReturnedPromiEvent.eventEmitter || !hackedReturnedPromiEvent.eventEmitter._events) {
