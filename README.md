@@ -265,8 +265,8 @@ NOTE: Create the file if not present.
   {"lastProcessedBlock":0}
   
 > source set_env_vars.sh
-> node start_value_services.js 'group_id'
-> node start_utility_services.js 'group_id'
+> node start_value_services.js group_id
+> node start_utility_services.js group_id
 ```
 
 * Start Value Services script will start one transaction executing process. It expects at least one entry in
@@ -281,7 +281,7 @@ node executables/block_scanner/transaction_delegator.js --group-id 1000 --data-f
 
 ```bash
 # Start one worker process for block scanner.
-node executables/rmq_subscribers/block_scanner.js --processlock-id processLockId --group-id 1000 --prefetch-count 1 --benchmark-file-path ~/openst-setup/logs/block_scanner_benchmark-1000.csv
+node executables/rmq_subscribers/block_scanner.js --processlock-id processLockId --group-id group_id --prefetch-count prefetchCount --benchmark-file-path [~/openst-setup/logs/block_scanner_benchmark-1000.csv]
 ```
 
 * Don't forget to start the cronjobs. 

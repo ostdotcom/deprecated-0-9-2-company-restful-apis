@@ -150,33 +150,37 @@ const promiseExecutor = async function(onResolve, onReject, params) {
 
 let PromiseQueueManager = null;
 
-warmUpGethPool().then(function() {
-  PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseExecutor, {
-    name: 'blockscanner_promise_queue_manager',
-    timeoutInMilliSecs: 3 * 60 * 1000, //3 minutes
-    maxZombieCount: Math.round(prefetchCountInt * 0.25),
-    onMaxZombieCountReached: function() {
-      logger.warn('e_rmqs_bs_2', 'maxZombieCount reached. Triggering SIGTERM.');
-      // Trigger gracefully shutdown of process.
-      process.kill(process.pid, 'SIGTERM');
-    }
+warmUpGethPool()
+  .then(function() {
+    PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseExecutor, {
+      name: 'blockscanner_promise_queue_manager',
+      timeoutInMilliSecs: 3 * 60 * 1000, //3 minutes
+      maxZombieCount: Math.round(prefetchCountInt * 0.25),
+      onMaxZombieCountReached: function() {
+        logger.warn('e_rmqs_bs_2', 'maxZombieCount reached. Triggering SIGTERM.');
+        // Trigger gracefully shutdown of process.
+        process.kill(process.pid, 'SIGTERM');
+      }
+    });
+
+    let chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
+
+    openStNotification.subscribeEvent.rabbit(
+      ['block_scanner_execute_' + chain_id],
+      {
+        queue: 'block_scanner_execute_' + chain_id,
+        ackRequired: 1,
+        prefetch: prefetchCountInt
+      },
+      function(params) {
+        // Promise is required to be returned to manually ack messages in RMQ
+        return PromiseQueueManager.createPromise(params);
+      }
+    );
+  })
+  .catch(function(error) {
+    logger.error(error);
   });
-
-  let chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
-
-  openStNotification.subscribeEvent.rabbit(
-    ['block_scanner_execute_' + chain_id],
-    {
-      queue: 'block_scanner_execute_' + chain_id,
-      ackRequired: 1,
-      prefetch: prefetchCountInt
-    },
-    function(params) {
-      // Promise is required to be returned to manually ack messages in RMQ
-      return PromiseQueueManager.createPromise(params);
-    }
-  );
-});
 
 // Using a single function to handle multiple signals
 function handle() {

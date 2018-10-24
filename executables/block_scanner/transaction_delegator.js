@@ -15,8 +15,8 @@
 
 const rootPrefix = '../..';
 
-const fs = require('fs'),
-  program = require('commander');
+const program = require('commander'),
+  fs = require('fs');
 
 const MAX_TXS_PER_WORKER = 60;
 
@@ -34,7 +34,7 @@ require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
 
 let configStrategy = {};
 
-const openStNotification = SharedRabbitMqProvider.getInstance();
+const openSTNotification = SharedRabbitMqProvider.getInstance();
 
 // Validate and sanitize the command line arguments.
 const validateAndSanitize = function() {
@@ -234,7 +234,7 @@ TransactionDelegator.prototype = {
         }
       };
 
-      let setToRMQ = await openStNotification.publishEvent.perform(messageParams);
+      let setToRMQ = await openSTNotification.publishEvent.perform(messageParams);
 
       //if could not set to RMQ run in async.
       if (setToRMQ.isFailure() || setToRMQ.data.publishedToRmq === 0) {
