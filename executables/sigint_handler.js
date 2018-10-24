@@ -1,11 +1,12 @@
 'use strict';
 
-const rootPrefix = '../..',
+const rootPrefix = '..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
 const SigIntHandler = function() {
   const oThis = this;
 
+  oThis.pendingTasksDone(); // Throw if the method is not implemented by caller
   oThis.attachHandlers();
 };
 
@@ -19,6 +20,7 @@ SigIntHandler.prototype = {
 
     let handle = function() {
       if (oThis.pendingTasksDone()) {
+        logger.info(':: No pending tasks. Exiting ...');
         process.exit(1);
       }
       logger.info(':: There are pending tasks. Waiting for completion.');
