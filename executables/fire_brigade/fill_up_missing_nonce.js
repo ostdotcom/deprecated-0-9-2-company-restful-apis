@@ -117,7 +117,7 @@ Below is an example how to use this script on console
 ========================================================================
 
 FillUp = require('./executables/fire_brigade/fill_up_missing_nonce');
-fillUp = new FillUp({ from_address: '0x616F76d7e749a68b24f5449bcA520f30CA0F7Aa6', to_address: '0xeB85d9fE123A76Bd01d78a0C3F103216a56cbA33', chain_type: 'geth', missing_nonce: 26, geth_provider: 'ws://127.0.0.1:19548', gas_price: '0x3B9ACA00'});
+fillUp = new FillUp({ from_address: '0xeb85d9fe123a76bd01d78a0c3f103216a56cba33', to_address: '0x616F76d7e749a68b24f5449bcA520f30CA0F7Aa6', chain_type: 'geth', missing_nonce: 21, geth_provider: 'ws://127.0.0.1:19548', gas_price: '0x3B9ACA00'});
 
 fillUp.perform().then(console.log);
 

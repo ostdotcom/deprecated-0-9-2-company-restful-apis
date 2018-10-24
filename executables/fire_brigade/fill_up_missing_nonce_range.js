@@ -15,7 +15,7 @@ const rootPrefix = '../..',
  * @param {object} params - external passed parameters
  * @param {String} params.from_address - from_address
  * @param {String} params.to_address - to_address
- * @param {String} params.chain_kind - chain_kind (value | utilty)
+ * @param {String} params.chain_type - chain_type (geth | parity)
  * @param {Integer} params.missing_nonce - missing_nonce
  * @param {array} params.geth_providers - geth_provider (WS | RPC)
  * @param {String} params.gas_price - gas_price
@@ -28,7 +28,7 @@ const FillUpMissingNonceRange = function(params) {
   const oThis = this;
   oThis.nonceHelper = new nonceHelperKlass();
   oThis.toAddress = params.to_address.toLowerCase();
-  oThis.chainKind = params.chain_kind;
+  oThis.chainType = params.chain_type;
   oThis.gasPrice = params.gas_price;
   oThis.gethProviders = params.geth_providers;
   oThis.allPendingTasks = [];
@@ -41,7 +41,7 @@ FillUpMissingNonceRange.prototype = {
     const oThis = this;
 
     const clearQueuedResponse = await oThis.nonceHelper.clearAllMissingNonce(
-      oThis.chainKind,
+      oThis.chainType,
       oThis,
       oThis.fillNonce,
       oThis.gethProviders
@@ -58,7 +58,7 @@ FillUpMissingNonceRange.prototype = {
       params = {};
     params['from_address'] = address.toLowerCase();
     params['to_address'] = oThis.toAddress;
-    params['chain_kind'] = oThis.chainKind;
+    params['chain_type'] = oThis.chainType;
     params['missing_nonce'] = parseInt(nonce);
     params['gas_price'] = oThis.gasPrice;
     params['geth_provider'] = oThis.gethProviders[0];
@@ -104,38 +104,12 @@ module.exports = FillUpMissingNonceRange;
 /*
 
 
-Below is the code to run on console. Update toAddress and chainKind below.
+Below is the code to run on console. Update toAddress and chainType below.
 ====================================================================\
 
 var rootPrefix = '.';
 var FillUpMissingNonceRangeKlass = require(rootPrefix + '/executables/fire_brigade/fill_up_missing_nonce_range');
-var fillUpObject = new FillUpMissingNonceRangeKlass({to_address: '0xb98209453EAD1c7D6b3b8EC91F59d3a113a8dBf9', chain_kind: 'utility', gas_price: 0, geth_providers: ['ws://127.0.0.1:19547']});
+var fillUpObject = new FillUpMissingNonceRangeKlass({to_address: '0xeB85d9fE123A76Bd01d78a0C3F103216a56cbA33', chain_type: 'geth', gas_price: '0x3B9ACA00', geth_providers: ['ws://127.0.0.1:19548']});
 fillUpObject.perform().then(console.log);
-
-
-Below is the code to run on console. To get current nonce of the address
-====================================================================
-var fromAddress = '0x7118cDDc59beeA8D9b31594118A5C6bC8dc8f455';
-nonceManagerKlass = require(rootPrefix + '/module_overrides/web3_eth/nonce_manager');
- nonceManager = new nonceManagerKlass({address: fromAddress, chain_kind: chainKind});
- nonceManager.getNonce().then(function(response) {
-  console.log("response: ", response);
- });
-
-
-Below is the test code. To mess up nonce for the given address. (Use only for pure testing purpose)
-===========================================================================================
-var fromAddress = '0x5FF02fd90Baec50A62D4eE19fD22fF96D42046a8';
-var startNonce = 10
-for (var diff1 = 0; diff1 < 10; diff1++ ) {
-  startNonce = startNonce+diff1;
-  var diff = 5;
-  for (var i = startNonce; i < startNonce+diff; i++ ) {
-    fillUpObject.fillNonce(fromAddress, i);
-    fillUpObject.batchProcess()
-  }
-}
-
-
 
  */
