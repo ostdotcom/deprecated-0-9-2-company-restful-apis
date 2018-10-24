@@ -6,10 +6,10 @@
  *
  * You can compare and find mismatched balances from this script: executables/check_balances.js
  *
- * Usage: node executables/sync_ddb_balance_with_chain.js configStrategyFilePath
+ * Usage: node executables/sync_ddb_balance_with_chain.js group_id
  *
  * Command Line Parameters Description:
- * configStrategyFilePath: path to the file which is storing the config strategy info.
+ * group_id: Group id for fetching the config strategy
  *
  * It takes erc20 address to ethereum adresses map as input params
  *
@@ -20,6 +20,7 @@ const rootPrefix = '..',
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   configStrategyHelper = require(rootPrefix + '/helpers/config_strategy/by_client_id');
 
 require(rootPrefix + '/lib/providers/platform');
@@ -27,25 +28,23 @@ require(rootPrefix + '/lib/providers/storage');
 require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
 
 const args = process.argv,
-  configStrategyFilePath = args[2];
+  group_id = args[2];
 
 let configStrategy = {};
 
 // Usage demo.
 const usageDemo = function() {
-  logger.log('usage:', 'node ./executables/sync_ddb_balance_with_chain.js configStrategyFilePath');
-  logger.log('* configStrategyFilePath is the path to the file which is storing the config strategy info.');
+  logger.log('usage:', 'node ./executables/sync_ddb_balance_with_chain.js group_id');
+  logger.log('* grou_id is required to fetch config strategy');
 };
 
 // Validate and sanitize the command line arguments.
 const validateAndSanitize = function() {
-  if (!configStrategyFilePath) {
-    logger.error('Config strategy file path is NOT passed in the arguments.');
+  if (!group_id) {
+    logger.error('Group id is not passed in the input');
     usageDemo();
     process.exit(1);
   }
-
-  configStrategy = require(configStrategyFilePath);
 };
 
 // Validate and sanitize the input params.
@@ -110,8 +109,13 @@ SyncDdbBalancesWithChain.prototype = {
    * @returns {promise}
    */
   _syncForClient: async function(erc20Address, userAddresses) {
-    const oThis = this,
-      batchSize = 25,
+    const oThis = this;
+
+    let strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(),
+      configStrategy = configStrategyResp.data;
+
+    const batchSize = 25,
       ic = new InstanceComposer(configStrategy),
       platformProvider = ic.getPlatformProvider(),
       openSTPlaform = platformProvider.getInstance(),
