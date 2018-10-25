@@ -202,11 +202,11 @@ TransactionDelegator.prototype = {
       perBatchCount = totalTransactionCount / oThis.gethArray.length,
       offset = 0;
 
-    let noOfBatches = parseInt(totalTransactionCount / perBatchCount);
-    noOfBatches += totalTransactionCount % perBatchCount ? 1 : 0;
-
     // capping the per batch count
     perBatchCount = perBatchCount > MAX_TXS_PER_WORKER ? MAX_TXS_PER_WORKER : perBatchCount;
+
+    let noOfBatches = parseInt(totalTransactionCount / perBatchCount);
+    noOfBatches += totalTransactionCount % perBatchCount ? 1 : 0;
 
     let loopCount = 0;
 
@@ -234,7 +234,13 @@ TransactionDelegator.prototype = {
         }
       };
 
+      console.log('====blockNumber', oThis.currentBlock);
+
+      console.log('====txHashes', txHashes.length);
+
       let setToRMQ = await openSTNotification.publishEvent.perform(messageParams);
+
+      console.log('====setToRMQ status', setToRMQ.isSuccess());
 
       //if could not set to RMQ run in async.
       if (setToRMQ.isFailure() || setToRMQ.data.publishedToRmq === 0) {
