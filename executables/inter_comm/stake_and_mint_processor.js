@@ -18,8 +18,7 @@
  * @module executables/inter_comm/stake_and_mint_processor
  */
 
-const rootPrefix = '../..',
-  SigIntHandler = require(rootPrefix + '/executables/sigint_handler');
+const rootPrefix = '../..';
 
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
@@ -28,6 +27,7 @@ require(rootPrefix + '/lib/providers/platform');
 
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+  SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
 const usageDemo = function() {
