@@ -1,7 +1,6 @@
 'use strict';
 
 const rootPrefix = '..',
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   clientConfigStrategyCacheKlass = require(rootPrefix + '/lib/shared_cache_multi_management/client_config_strategies'),
   configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
@@ -22,13 +21,15 @@ ConfigStrategyKlass.prototype = {
    *
    * @return {Promise<Object>} Hash of config strategy
    */
-  getConfigStrategy: async function(clientId) {
+  getConfigStrategy: async function(clientId, gethEndPointType) {
     let clientConfigStrategyCacheObj = new clientConfigStrategyCacheKlass({ clientIds: [clientId] }),
       fetchCacheRsp = await clientConfigStrategyCacheObj.fetch();
 
     if (fetchCacheRsp.isFailure()) {
       return Promise.reject(fetchCacheRsp);
     }
+
+    gethEndPointType = gethEndPointType ? gethEndPointType : 'read_write';
 
     let cacheData = fetchCacheRsp.data[clientId];
 
@@ -47,7 +48,16 @@ ConfigStrategyKlass.prototype = {
       let configStrategy = configStrategyIdToDetailMap[configStrategyId];
 
       for (let strategyKind in configStrategy) {
-        Object.assign(finalConfigStrategyFlatHash, configStrategy[strategyKind]);
+        let partialConfig = configStrategy[strategyKind];
+
+        if (strategyKind == 'utility_geth') {
+          let tempConfig = partialConfig[gethEndPointType];
+          delete partialConfig['read_write'];
+          delete partialConfig['read_only'];
+          Object.assign(partialConfig, tempConfig);
+        }
+
+        Object.assign(finalConfigStrategyFlatHash, partialConfig);
       }
     }
 

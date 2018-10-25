@@ -90,6 +90,7 @@ seedConfigStrategies.prototype = {
     await oThis.seed_utility_geth_params();
     await oThis.seed_value_constants_params();
     await oThis.seed_value_geth_params();
+    await oThis.seed_rmq_params();
 
     logger.log('Successfully seeded all config parameters!! ');
     process.exit(0);
@@ -277,6 +278,19 @@ seedConfigStrategies.prototype = {
     const configStrategy = new configStrategyModel();
 
     await configStrategy.create('constants', process.argv[2], constants_params).then();
+  },
+
+  seed_rmq_params: async function() {
+    let rmq_params = {};
+    rmq_params['OST_RMQ_USERNAME'] = env_list.OST_RMQ_USERNAME;
+    rmq_params['OST_RMQ_PASSWORD'] = env_list.OST_RMQ_PASSWORD;
+    rmq_params['OST_RMQ_HOST'] = env_list.OST_RMQ_HOST;
+    rmq_params['OST_RMQ_PORT'] = env_list.OST_RMQ_PORT;
+    rmq_params['OST_RMQ_HEARTBEATS'] = env_list.OST_RMQ_HEARTBEATS;
+
+    const configStrategy = new configStrategyModel();
+
+    await configStrategy.create('rmq', process.argv[2], rmq_params).then();
   },
 
   populateChainGethProviders: async function() {

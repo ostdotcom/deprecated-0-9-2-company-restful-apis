@@ -71,9 +71,10 @@ ConfigStrategyByGroupId.prototype = {
    * This function gives a complete flat hash of all the strategies including the ones whose group id is NULL.
    *
    * [IMPORTANT][ASSUMPTION]: Multiple value_geth, constants, in_memory, value_constants kinds will not be present in the table.
+   * @param gethEndPointType - read_only or read_write(DEFAULT value)
    * @returns {Promise<*>}
    */
-  getCompleteHash: async function() {
+  getCompleteHash: async function(gethEndPointType) {
     const oThis = this,
       groupId = oThis.groupId;
 
@@ -92,7 +93,7 @@ ConfigStrategyByGroupId.prototype = {
       return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_03'));
     }
 
-    let finalFlatHash = oThis._cacheResponseFlatHashProvider(fetchConfigStrategyRsp);
+    let finalFlatHash = oThis._cacheResponseFlatHashProvider(fetchConfigStrategyRsp, gethEndPointType);
 
     return Promise.resolve(responseHelper.successWithData(finalFlatHash));
   },
@@ -140,6 +141,49 @@ ConfigStrategyByGroupId.prototype = {
       whereClause = ['group_id = ? AND kind = ?', groupId, strategyIdInt];
     }
 
+    return oThis._getByKindAndGroup(whereClause);
+  },
+
+  /**
+   * This function gives a hash with active status for the kind provided.
+   * It returns hash whose key is the strategy id and value is the flat hash of the strategy.
+   * Eg:
+   * {
+   *    1: {
+   *          OS_DYNAMODB_ACCESS_KEY_ID : 'xyz',
+   *          OS_DYNAMODB_SECRET_ACCESS_KEY: 'x',
+   *          .
+   *          .
+   *          .
+   *       }
+   * }
+   * @param kind
+   * @returns {Promise<*>}
+   */
+  getActiveByKind: async function(kind) {
+    const oThis = this;
+
+    let strategyIdInt = configStrategyConstants.invertedKinds[kind],
+      activeStatus = configStrategyConstants.invertedStatuses[configStrategyConstants.activeStatus],
+      whereClause = null;
+
+    if (strategyIdInt === undefined) {
+      logger.error('Provided kind is not proper. Please check kind');
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_04'));
+    }
+
+    if (oThis.groupId) {
+      whereClause = ['group_id = ? AND kind = ? AND status = ?', oThis.groupId, strategyIdInt, activeStatus];
+    } else {
+      whereClause = ['kind = ? AND status = ?', strategyIdInt, activeStatus];
+    }
+
+    return oThis._getByKindAndGroup(whereClause);
+  },
+
+  _getByKindAndGroup: async function(whereClause) {
+    const oThis = this;
+
     //Following is to fetch specific strategy id for the kind passed.
     let strategyIdsArray = await oThis._strategyIdsArrayProvider(whereClause);
 
@@ -174,8 +218,8 @@ ConfigStrategyByGroupId.prototype = {
    * WS provider and RPC provider is also inserted in the chain_geth_providers table.
    *
    * @param {string} kind (Eg:'dynamo')
-   * @param {object}params - Hash of config params related to this kind
-   * @param {number}managed_address_salt_id - managed_address_salt_id from managed_address_salt table
+   * @param {object} params - Hash of config params related to this kind
+   * @param {number} managed_address_salt_id - managed_address_salt_id from managed_address_salt table
    * @returns {Promise<never>}
    */
   addForKind: async function(kind, params, managed_address_salt_id) {
@@ -227,6 +271,13 @@ ConfigStrategyByGroupId.prototype = {
       if (queryResponse.length > 0) {
         logger.error(`Group Id [${groupId}] with kind [${kind}] already exists in the table.`);
         return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_12'));
+      }
+
+      let validateResponse = oThis._validateUtilityGethParams(kind, params);
+
+      if (validateResponse.isFailure()) {
+        logger.error('Error in inserting data in config_strategies table');
+        return validateResponse;
       }
 
       let configStrategyModelObj = new ConfigStrategyModel(),
@@ -464,24 +515,45 @@ ConfigStrategyByGroupId.prototype = {
       whereClause = ['group_id = ? AND kind = ?', groupId, strategyIdInt];
     }
 
-    //Following is to fetch specific strategy id for the kind passed.
-    //Specific strategy id is needed in order to use the function provided in model of config strategy which handles encryption
-    //decryption logic.
-    let strategyIdArray = await oThis._strategyIdsArrayProvider(whereClause);
+    let existingData = await new ConfigStrategyModel()
+      .select(['id', 'status'])
+      .where(whereClause)
+      .fire();
 
-    if (strategyIdArray.length === 0) {
+    if (existingData.length === 0) {
       logger.error('Strategy Id for the provided kind not found OR kind for the given group id does not exist');
       return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_25'));
     }
 
-    if (strategyIdArray.length > 1) {
+    if (existingData.length > 1) {
       logger.error('Multiple entries(rows) found for the same group id and kind combination');
       return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_26'));
     }
 
-    let strategyId = strategyIdArray[0],
-      configStrategyModelObj = new ConfigStrategyModel(),
-      updateResponse = await configStrategyModelObj.updateStrategyId(strategyId, params);
+    let currentStatus = existingData[0].status,
+      existingStrategyId = existingData[0].id;
+
+    let configStrategyFetchCacheObj = new configStrategyCacheKlass({ strategyIds: [existingStrategyId] }),
+      configStrategyFetchRsp = await configStrategyFetchCacheObj.fetch(),
+      existingDataInDb = configStrategyFetchRsp.data[existingStrategyId][kind];
+
+    if (currentStatus == configStrategyConstants.invertedStatuses[configStrategyConstants.activeStatus]) {
+      //Check whitelisting only when its status is active.
+      let whiteListingCheckResponse = await oThis._checkForWhiteListing(existingDataInDb, params, kind);
+      if (whiteListingCheckResponse.isFailure()) {
+        return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_34'));
+      }
+    }
+
+    let validateResponse = oThis._validateUtilityGethParams(kind, params);
+
+    if (validateResponse.isFailure()) {
+      logger.error('Error in inserting data in config_strategies table');
+      return validateResponse;
+    }
+
+    let configStrategyModelObj = new ConfigStrategyModel(),
+      updateResponse = await configStrategyModelObj.updateStrategyId(existingStrategyId, params);
 
     if (updateResponse.isFailure()) {
       logger.error('Error while updating data in config strategy table ');
@@ -489,8 +561,8 @@ ConfigStrategyByGroupId.prototype = {
     }
 
     //clearing the cache
-    let configStrategyCacheObj = new configStrategyCacheKlass({ strategyIds: [strategyId] }),
-      configStrategyFetchRsp = await configStrategyCacheObj.clear();
+    let configStrategyCacheObj = new configStrategyCacheKlass({ strategyIds: [existingStrategyId] }),
+      configStrategyRsp = await configStrategyCacheObj.clear();
 
     if (kind === 'value_geth' || kind === 'utility_geth') {
       //get both the geth end point and update
@@ -568,19 +640,31 @@ ConfigStrategyByGroupId.prototype = {
   /**
    * This function helps in preparing flat hash from the response given by cache
    * @param configStrategyResponse
+   * @param gethEndPointType - read_only or read_write(DEFAULT value)
    * @private
    */
-  _cacheResponseFlatHashProvider: function(configStrategyResponse) {
+  _cacheResponseFlatHashProvider: function(configStrategyResponse, gethEndPointType) {
     const oThis = this;
 
     let configStrategyIdToDetailMap = configStrategyResponse.data,
       finalConfigStrategyFlatHash = {};
 
+    gethEndPointType = gethEndPointType ? gethEndPointType : 'read_write';
+
     for (let configStrategyId in configStrategyIdToDetailMap) {
       let configStrategy = configStrategyIdToDetailMap[configStrategyId];
 
       for (let strategyKind in configStrategy) {
-        Object.assign(finalConfigStrategyFlatHash, configStrategy[strategyKind]);
+        let partialConfig = configStrategy[strategyKind];
+
+        if (strategyKind == 'utility_geth') {
+          let tempConfig = partialConfig[gethEndPointType];
+          delete partialConfig['read_write'];
+          delete partialConfig['read_only'];
+          Object.assign(partialConfig, tempConfig);
+        }
+
+        Object.assign(finalConfigStrategyFlatHash, partialConfig);
       }
     }
 
@@ -642,6 +726,64 @@ ConfigStrategyByGroupId.prototype = {
       api_error_identifier: 'something_went_wrong',
       debug_options: {}
     });
+  },
+
+  /**
+   * Validate utility geth hash - check if providers array has all keys and it is of correct data type.
+   */
+  _validateUtilityGethParams: function(kind, params) {
+    const oThis = this,
+      validKeys = ['read_only', 'read_write', 'OST_UTILITY_CHAIN_ID'];
+
+    if (kind == 'utility_geth') {
+      let keys = Object.keys(params);
+
+      for (let i = 0; i < validKeys.length; i++) {
+        if (!keys.includes(validKeys[i])) {
+          logger.error('Missing', validKeys[i], ' key in the input params');
+          return oThis._errorResponseHandler('h_cs_bgi_31');
+        }
+      }
+
+      for (let i = 0; i < keys.length; i++) {
+        if (['read_only', 'read_write'].includes(keys[i])) {
+          if (
+            !(params[keys[i]].OST_UTILITY_GETH_RPC_PROVIDERS instanceof Array) ||
+            !(params[keys[i]].OST_UTILITY_GETH_WS_PROVIDERS instanceof Array)
+          ) {
+            logger.error('Expecting', keys[i], "key's value to be an array");
+            return oThis._errorResponseHandler('h_cs_bgi_32');
+          }
+        }
+      }
+    }
+
+    return responseHelper.successWithData({});
+  },
+
+  _checkForWhiteListing: function(existingDataInDb, params, kind) {
+    const oThis = this;
+
+    let whiteListedKeysForKind = configStrategyConstants.whiteListedKeys[kind];
+
+    if (whiteListedKeysForKind === undefined) {
+      logger.error(`Updating ${kind} is not allowed when its status is active. Either deactivate it or add the kinds
+       and its keys in the whitelist present in global constants`);
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_35'));
+    }
+
+    for (let key in existingDataInDb) {
+      if (!whiteListedKeysForKind.includes(key)) {
+        //Since key not present in whitelisted entries Thus values should be similar.
+        if (existingDataInDb[key] !== params[key]) {
+          logger.error('Attempt to edit keys which are not whitelisted.');
+          logger.error('Only these keys are editable when kind is active: ', whiteListedKeysForKind);
+          return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_33'));
+        }
+      }
+    }
+
+    return Promise.resolve(responseHelper.successWithData({}));
   }
 };
 

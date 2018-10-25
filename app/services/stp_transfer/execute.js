@@ -6,21 +6,22 @@
  * @module app/services/stp_transfer/execute
  */
 
-const openSTNotification = require('@openstfoundation/openst-notification'),
-  uuid = require('uuid');
+const uuidV4 = require('uuid/v4');
 
 const rootPrefix = '../../..',
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  InstanceComposer = require(rootPrefix + '/instance_composer'),
-  responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
+  commonValidator = require(rootPrefix + '/lib/validators/common'),
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log'),
   notificationTopics = require(rootPrefix + '/lib/global_constant/notification_topics'),
-  commonValidator = require(rootPrefix + '/lib/validators/common');
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout');
 
-require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
-require(rootPrefix + '/lib/cache_management/client_branded_token');
+require(rootPrefix + '/lib/providers/notification');
 require(rootPrefix + '/app/models/transaction_log');
+require(rootPrefix + '/lib/cache_management/client_branded_token');
+require(rootPrefix + '/lib/cache_management/clientBrandedTokenSecure');
 
 /**
  * @constructor
@@ -41,7 +42,7 @@ const ExecuteSTPTransferService = function(params) {
 
   oThis.transactionLogId = null;
   oThis.clientTokenId = null;
-  oThis.transactionUuid = uuid.v4();
+  oThis.transactionUuid = uuidV4();
   oThis.tokenSymbol = null;
 };
 
@@ -49,7 +50,7 @@ ExecuteSTPTransferService.prototype = {
   /**
    * Perform
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   perform: function() {
     const oThis = this;
@@ -72,7 +73,7 @@ ExecuteSTPTransferService.prototype = {
   /**
    * Async perform
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   asyncPerform: async function() {
     const oThis = this;
@@ -128,7 +129,7 @@ ExecuteSTPTransferService.prototype = {
    *
    * Sets oThis.tokenSymbol
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   _fetchFromBtCache: async function() {
     const oThis = this;
@@ -156,7 +157,7 @@ ExecuteSTPTransferService.prototype = {
    *
    * Sets oThis.fromAddress, oThis.clientTokenId
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   _fetchFromBtSecureCache: async function() {
     const oThis = this;
@@ -187,7 +188,7 @@ ExecuteSTPTransferService.prototype = {
   /**
    * Validate params
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   _validateParams: async function() {
     const oThis = this;
@@ -278,7 +279,7 @@ ExecuteSTPTransferService.prototype = {
    * Create Entry in transaction logs
    *
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   _createTransactionLog: async function() {
     const oThis = this,
@@ -320,26 +321,36 @@ ExecuteSTPTransferService.prototype = {
   /**
    * Enqueue transaction for execution
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   enqueueTxForExecution: async function() {
     const oThis = this;
 
     let topicName = notificationTopics.stpTransfer;
 
-    const setToRMQ = await openSTNotification.publishEvent.perform({
-      topics: [topicName],
-      publisher: 'OST',
-      message: {
-        kind: 'background_job',
-        payload: {
-          transaction_uuid: oThis.transactionUuid,
-          client_id: oThis.clientId
-        }
-      }
-    });
+    const notificationProvider = oThis.ic().getNotificationProvider(),
+      openStNotification = notificationProvider.getInstance({
+        connectionWaitSeconds: ConnectionTimeoutConst.appServer
+      }),
+      payload = {
+        transaction_uuid: oThis.transactionUuid,
+        client_id: oThis.clientId
+      };
 
-    //if could not set to RMQ run in async.
+    const setToRMQ = await openStNotification.publishEvent
+      .perform({
+        topics: [topicName],
+        publisher: 'OST',
+        message: {
+          kind: 'background_job',
+          payload: payload
+        }
+      })
+      .catch(function(err) {
+        logger.error('Message for ST Prime transfer was not published. Payload: ', payload, ' Error: ', err);
+      });
+
+    // If could not set to RMQ run in async.
     if (setToRMQ.isFailure() || setToRMQ.data.publishedToRmq == 0) {
       return Promise.reject(
         responseHelper.error({

@@ -184,7 +184,9 @@ SignRawTx.prototype = {
     else {
       let configStrategyHelperObj = new configStrategyHelper(oThis.clientId);
 
-      let configStrategyResponse = await configStrategyHelperObj.get();
+      let utilityGethType = 'read_write',
+        configStrategyResponse = await configStrategyHelperObj.get(utilityGethType);
+
       if (configStrategyResponse.isFailure()) {
         return Promise.reject(configStrategyResponse);
       }
