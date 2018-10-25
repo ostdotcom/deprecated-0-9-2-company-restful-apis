@@ -22,7 +22,9 @@ const rootPrefix = '../../..';
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
 
-const program = require('commander');
+const program = require('commander'),
+  ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
+  ProcessLocker = new ProcessLockerKlass();
 
 program.option('--process-id <processId>', 'Process id').option('--prefetch-count <prefetchCount>', 'Prefetch Count');
 
@@ -38,6 +40,11 @@ program.on('--help', () => {
 });
 
 program.parse(process.argv);
+
+ProcessLocker.canStartProcess({
+  process_title: 'executables_continuous_transaction_meta_observer' + program.processId
+});
+ProcessLocker.endAfterTime({ time_in_minutes: 40 });
 
 // Validate and sanitize the commander parameters.
 const validateAndSanitize = function() {
