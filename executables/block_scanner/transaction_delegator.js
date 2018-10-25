@@ -204,11 +204,11 @@ TransactionDelegator.prototype = {
       perBatchCount = totalTransactionCount / oThis.gethArray.length,
       offset = 0;
 
-    let noOfBatches = parseInt(totalTransactionCount / perBatchCount);
-    noOfBatches += totalTransactionCount % perBatchCount ? 1 : 0;
-
     // capping the per batch count
     perBatchCount = perBatchCount > MAX_TXS_PER_WORKER ? MAX_TXS_PER_WORKER : perBatchCount;
+
+    let noOfBatches = parseInt(totalTransactionCount / perBatchCount);
+    noOfBatches += totalTransactionCount % perBatchCount ? 1 : 0;
 
     let loopCount = 0;
 
