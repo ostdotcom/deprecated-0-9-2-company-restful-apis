@@ -7,7 +7,7 @@ const rootPrefix = '../../../..',
   commonValidator = require(rootPrefix + '/lib/validators/common'),
   transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log');
 
-require(rootPrefix + '/app/models/transaction_log');
+require(rootPrefix + '/lib/cache_multi_management/transaction_log');
 require(rootPrefix + '/lib/elasticsearch_saas/search');
 
 const Base = function(params) {
@@ -231,14 +231,12 @@ Base.prototype = {
     }
 
     let start_time = Date.now();
-    const transactionLogModel = oThis.ic().getTransactionLogModel();
+    const transactionLogCache = oThis.ic().getTransactionLogCache();
 
-    let transactionFetchResponse = await new transactionLogModel({
+    let transactionFetchResponse = await new transactionLogCache({
       client_id: oThis.clientId,
-      shard_name: oThis.ic().configStrategy.TRANSACTION_LOG_SHARD_NAME
-    }).batchGetItem(oThis.transactionUuids);
-
-    console.log('-------Transaction list time taken', (Date.now() - start_time) / 1000);
+      uuids: oThis.transactionUuids
+    }).fetch();
 
     // if no records found, return error.
     if (!transactionFetchResponse.data) {

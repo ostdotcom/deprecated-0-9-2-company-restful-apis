@@ -16,22 +16,23 @@ require(rootPrefix + '/module_overrides/index');
 const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
   ProcessLocker = new ProcessLockerKlass();
 
-var unAckCount = 0;
-
 ProcessLocker.canStartProcess({ process_title: 'executables_rmq_subscribers_start_airdrop' });
 //ProcessLocker.endAfterTime({time_in_minutes: 60});
 
-// Load external packages
-const openSTNotification = require('@openstfoundation/openst-notification');
-
-//All Module Requires.
+// All Module Requires.
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
+  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id');
+
+const openStNotification = SharedRabbitMqProvider.getInstance();
 
 require(rootPrefix + '/lib/airdrop_management/distribute_tokens/start');
 
-openSTNotification.subscribeEvent.rabbit(
+// Declare variables.
+let unAckCount = 0;
+
+openStNotification.subscribeEvent.rabbit(
   ['airdrop.start.#'],
   {
     queue: 'start_airdrop_from_restful_apis',
@@ -83,10 +84,10 @@ openSTNotification.subscribeEvent.rabbit(
   }
 );
 
-// Using a single function to handle multiple signals
+// Using a single function to handle multiple signals.
 function handle() {
   logger.info('Received Signal');
-  var f = function() {
+  let f = function() {
     if (unAckCount <= 0) {
       process.exit(1);
     } else {
@@ -98,7 +99,13 @@ function handle() {
   setTimeout(f, 1000);
 }
 
-// handling gracefull process exit on getting SIGINT, SIGTERM.
+function ostRmqError(err) {
+  logger.info('ostRmqError occured.', err);
+  process.emit('SIGINT');
+}
+
+// Handling graceful process exit on getting SIGINT, SIGTERM.
 // Once signal found programme will stop consuming new messages. But need to clear running messages.
 process.on('SIGINT', handle);
 process.on('SIGTERM', handle);
+process.on('ost_rmq_error', ostRmqError);

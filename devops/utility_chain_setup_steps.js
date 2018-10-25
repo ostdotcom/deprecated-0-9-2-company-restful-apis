@@ -66,13 +66,13 @@ performer = async function(groupId) {
   console.log('insertedData: ', JSON.stringify(fetchRsp));
 };
 
-performer(188);
+performer(1);
 
 // Insert memcached Config
 
 performer = async function(groupId) {
   config_strategy_params = {
-    OST_MEMCACHE_SERVERS: '127.0.0.1:11212'
+    OST_MEMCACHE_SERVERS: '127.0.0.1:11211'
   };
   helperObj = new byGroupIdHelperKlass(groupId);
   console.log('inserting data');

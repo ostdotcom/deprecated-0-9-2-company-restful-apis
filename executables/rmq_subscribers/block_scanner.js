@@ -49,22 +49,24 @@ const validateAndSanitize = function() {
 // Validate and sanitize the input params.
 validateAndSanitize();
 
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+const InstanceComposer = require(rootPrefix + '/instance_composer'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
-  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
-  InstanceComposer = require(rootPrefix + '/instance_composer'),
   ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+  web3InteractFactory = require(rootPrefix + '/lib/web3/interact/ws_interact'),
   ProcessLocker = new ProcessLockerKlass(program);
 
-let ic = null,
-  web3InteractFactory = null;
+let ic = null;
 
-require(rootPrefix + '/lib/block_scanner/for_tx_status_and_balance_sync');
+const openStNotification = SharedRabbitMqProvider.getInstance();
+
 require(rootPrefix + '/lib/web3/interact/ws_interact');
+require(rootPrefix + '/lib/block_scanner/for_tx_status_and_balance_sync');
 
 // Load external packages
-const openSTNotification = require('@openstfoundation/openst-notification'),
-  OSTBase = require('@openstfoundation/openst-base');
+const OSTBase = require('@openstfoundation/openst-base');
 
 const warmUpGethPool = function() {
   return new Promise(async function(onResolve, onReject) {
@@ -74,7 +76,6 @@ const warmUpGethPool = function() {
       configStrategy = configStrategyResp.data;
 
     ic = new InstanceComposer(configStrategy);
-    web3InteractFactory = ic.getWeb3InteractHelper();
 
     let web3PoolSize = coreConstants.OST_WEB3_POOL_SIZE;
 
@@ -116,7 +117,8 @@ const promiseExecutor = async function(onResolve, onReject, params) {
       time_stamp: payload.timestamp,
       benchmark_file_path: program.benchmarkFilePath,
       web3_factory_obj: web3InteractFactory,
-      delegator_timestamp: payload.delegatorTimestamp
+      delegator_timestamp: payload.delegatorTimestamp,
+      process_id: program.processlockId
     });
 
   try {
@@ -148,33 +150,37 @@ const promiseExecutor = async function(onResolve, onReject, params) {
 
 let PromiseQueueManager = null;
 
-warmUpGethPool().then(function() {
-  PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseExecutor, {
-    name: 'blockscanner_promise_queue_manager',
-    timeoutInMilliSecs: 3 * 60 * 1000, //3 minutes
-    maxZombieCount: Math.round(prefetchCountInt * 0.25),
-    onMaxZombieCountReached: function() {
-      logger.warn('e_rmqs_bs_2', 'maxZombieCount reached. Triggering SIGTERM.');
-      // Trigger gracefully shutdown of process.
-      process.kill(process.pid, 'SIGTERM');
-    }
+warmUpGethPool()
+  .then(function() {
+    PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseExecutor, {
+      name: 'blockscanner_promise_queue_manager',
+      timeoutInMilliSecs: 3 * 60 * 1000, //3 minutes
+      maxZombieCount: Math.round(prefetchCountInt * 0.25),
+      onMaxZombieCountReached: function() {
+        logger.warn('e_rmqs_bs_2', 'maxZombieCount reached. Triggering SIGTERM.');
+        // Trigger gracefully shutdown of process.
+        process.kill(process.pid, 'SIGTERM');
+      }
+    });
+
+    let chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
+
+    openStNotification.subscribeEvent.rabbit(
+      ['block_scanner_execute_' + chain_id],
+      {
+        queue: 'block_scanner_execute_' + chain_id,
+        ackRequired: 1,
+        prefetch: prefetchCountInt
+      },
+      function(params) {
+        // Promise is required to be returned to manually ack messages in RMQ
+        return PromiseQueueManager.createPromise(params);
+      }
+    );
+  })
+  .catch(function(error) {
+    logger.error(error);
   });
-
-  let chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
-
-  openSTNotification.subscribeEvent.rabbit(
-    ['block_scanner_execute_' + chain_id],
-    {
-      queue: 'block_scanner_execute_' + chain_id,
-      ackRequired: 1,
-      prefetch: prefetchCountInt
-    },
-    function(params) {
-      // Promise is required to be returned to manually ack messages in RMQ
-      return PromiseQueueManager.createPromise(params);
-    }
-  );
-});
 
 // Using a single function to handle multiple signals
 function handle() {

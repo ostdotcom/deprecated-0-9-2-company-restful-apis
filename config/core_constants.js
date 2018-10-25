@@ -10,10 +10,10 @@ function define(name, value) {
   });
 }
 
-// Saas only cache engine
+// SaaS only cache engine
 // NOTE: Should always be memcached
 // Other required connection variables will still be read from cache flavour related variables
-if (process.env.CR_ONLY_SHARED_CACHE_ENGINE != 'memcached') {
+if (process.env.CR_ONLY_SHARED_CACHE_ENGINE !== 'memcached') {
   throw 'SAAS need CR_ONLY_SHARED_CACHE_ENGINE = "memcached" ENV variable for custom caching';
 }
 define('SAAS_ONLY_SHARED_CACHE_ENGINE', process.env.CR_ONLY_SHARED_CACHE_ENGINE);
@@ -46,12 +46,20 @@ define('DEFAULT_MYSQL_HOST', process.env.CR_DEFAULT_MYSQL_HOST);
 define('DEFAULT_MYSQL_USER', process.env.CR_DEFAULT_MYSQL_USER);
 define('DEFAULT_MYSQL_PASSWORD', process.env.CR_DEFAULT_MYSQL_PASSWORD);
 
-// Saas Economy DB Credentials
+// SaaS Economy DB Credentials
 define('CR_ECONOMY_DB_MYSQL_HOST', process.env.CR_ECONOMY_DB_MYSQL_HOST);
 define('CR_ECONOMY_DB_MYSQL_USER', process.env.CR_ECONOMY_DB_MYSQL_USER);
 define('CR_ECONOMY_DB_MYSQL_PASSWORD', process.env.CR_ECONOMY_DB_MYSQL_PASSWORD);
 
-// Saas Transaction DB Credentials
+// SaaS RabbitMQ credentials
+define('OST_RMQ_HOST', process.env.OST_RMQ_HOST);
+define('OST_RMQ_PORT', process.env.OST_RMQ_PORT);
+define('OST_RMQ_USERNAME', process.env.OST_RMQ_USERNAME);
+define('OST_RMQ_PASSWORD', process.env.OST_RMQ_PASSWORD);
+define('OST_RMQ_HEARTBEATS', process.env.OST_RMQ_HEARTBEATS);
+define('OST_RMQ_SUPPORT', process.env.OST_RMQ_SUPPORT);
+
+// SaaS Transaction DB Credentials
 define('CR_TRANSACTION_DB_MYSQL_HOST', process.env.CR_TRANSACTION_DB_MYSQL_HOST);
 define('CR_TRANSACTION_DB_MYSQL_USER', process.env.CR_TRANSACTION_DB_MYSQL_USER);
 define('CR_TRANSACTION_DB_MYSQL_PASSWORD', process.env.CR_TRANSACTION_DB_MYSQL_PASSWORD);

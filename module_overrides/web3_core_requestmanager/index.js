@@ -84,7 +84,7 @@ let proto = {
       }
 
       //We have failed. Is it nonce too low ?
-      if (!moUtils.isNonceTooLowError(err) || request.tryCnt >= moUtils.maxRetryCount) {
+      if (!moUtils.isNonceTooLowError(err) || request.tryCnt >= moUtils.nonceTooLowErrorMaxRetryCnt) {
         logger.info('calling request.signRawTx.markAsFailure');
         request.signRawTx.markAsFailure().catch(() => {
           //Do Nothing. Callback has been triggered.

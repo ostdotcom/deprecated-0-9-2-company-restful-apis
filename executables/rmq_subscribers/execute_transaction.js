@@ -32,29 +32,37 @@ const txQueuePrefetchCount = 25,
 let unAckCount = 0,
   processDetails = null,
   unAckCommandMessages = 0,
+  openStNotification = null,
   txQueueSubscribed = false,
-  commandQueueSubscribed = false;
+  commandQueueSubscribed = false,
+  intentToConsumerTagMap = { cmdQueue: null, exTxQueue: null };
 
 // Start process locker.
 ProcessLocker.canStartProcess({
   process_title: 'executables_rmq_subscribers_execute_transaction' + processId
 });
-ProcessLocker.endAfterTime({ time_in_minutes: 30 });
 
-// Load external packages
-const openSTNotification = require('@openstfoundation/openst-notification'),
-  OSTBase = require('@openstfoundation/openst-base');
+// Load external packages.
+const OSTBase = require('@openstfoundation/openst-base');
 
 // All Module Requires.
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
+  ConfigStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
   rmqQueueConstants = require(rootPrefix + '/lib/global_constant/rmq_queue'),
+  TransactionMetaModel = require(rootPrefix + '/app/models/transaction_meta'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+  configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
   initProcessKlass = require(rootPrefix + '/lib/execute_transaction_management/init_process'),
+  transactionMetaConstants = require(rootPrefix + '/lib/global_constant/transaction_meta.js'),
   processQueueAssociationConst = require(rootPrefix + '/lib/global_constant/process_queue_association'),
   CommandQueueProcessorKlass = require(rootPrefix + '/lib/execute_transaction_management/command_message_processor'),
+  recognizedInternalErrorIdentifiers = require(rootPrefix +
+    '/lib/global_constant/recognized_internal_error_identifiers'),
   initProcess = new initProcessKlass({ process_id: processId });
 
+require(rootPrefix + '/lib/providers/notification');
 require(rootPrefix + '/lib/transactions/transfer_bt');
 
 /**
@@ -74,12 +82,8 @@ const commandResponseActions = async function(commandProcessorResponse) {
     commandProcessorResponse.data.shouldStopTxQueConsume &&
     commandProcessorResponse.data.shouldStopTxQueConsume === 1
   ) {
-    process.emit('CANCEL_CONSUME');
+    process.emit('CANCEL_CONSUME', intentToConsumerTagMap.exTxQueue);
     txQueueSubscribed = false;
-    commandQueueSubscribed = false;
-    setTimeout(async function() {
-      await subscribeCommandQueue(processDetails.queue_name_suffix, processDetails.chain_id);
-    }, 500);
   }
 };
 
@@ -94,9 +98,22 @@ const commandResponseActions = async function(commandProcessorResponse) {
 const promiseTxExecutor = function(onResolve, onReject, params) {
   unAckCount++;
   // Process request
-  const parsedParams = JSON.parse(params),
-    kind = parsedParams.message.kind,
+  let parsedParams = {},
+    kind = {},
+    payload = {};
+  try {
+    parsedParams = JSON.parse(params);
+    kind = parsedParams.message.kind;
     payload = parsedParams.message.payload;
+  } catch (err) {
+    logger.error('Error in parsing the message. Error: ', err);
+    unAckCount--;
+    // ack RMQ
+    return onResolve();
+  }
+
+  //Update in transaction meta
+  logger.debug('Updating transaction in transaction meta table');
 
   let errorMsgType = '',
     msgExecutorObject = {};
@@ -128,6 +145,11 @@ const promiseTxExecutor = function(onResolve, onReject, params) {
         .perform()
         .then(function(response) {
           if (!response.isSuccess()) {
+            if (response.internalErrorCode.includes(recognizedInternalErrorIdentifiers.ddbDownError)) {
+              logger.error('Dynamo DB down');
+              //queuing the same message again in queue(UnAck)
+              return onReject();
+            }
             logger.error(
               'e_rmqs_et_1',
               'Something went wrong in ',
@@ -169,6 +191,39 @@ const promiseTxExecutor = function(onResolve, onReject, params) {
   });
 };
 
+// TODO: Maybe update this? Remove try catch?
+const _updateInTransactionMeta = async function(payload) {
+  try {
+    let waitTimeForProcessingSec = transactionMetaConstants.statusActionTime[transactionMetaConstants.processing],
+      currentTimeStampInSeconds = new Date().getTime() / 1000,
+      nextActionAt = currentTimeStampInSeconds + waitTimeForProcessingSec,
+      updatedRowsResponse = await new TransactionMetaModel()
+        .update({
+          status: transactionMetaConstants.invertedStatuses[transactionMetaConstants.processing],
+          next_action_at: nextActionAt,
+          retry_count: 0
+        })
+        .where([
+          'transaction_uuid = ? AND status = ?',
+          payload.transaction_uuid,
+          transactionMetaConstants.invertedStatuses[transactionMetaConstants.queued]
+        ]) //Change hard coding
+        .fire();
+
+    if (updatedRowsResponse == undefined) {
+      return Promise.reject('Error in updating tx meta');
+    }
+
+    if (updatedRowsResponse.changedRows != 1) {
+      return Promise.resolve('Failed');
+    } else {
+      return Promise.resolve('Success');
+    }
+  } catch (error) {
+    return Promise.reject(error);
+  }
+};
+
 /**
  * Promise Queue manager
  */
@@ -191,18 +246,25 @@ const PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseTxExecuto
  */
 const subscribeTxQueue = async function(qNameSuffix, chainId) {
   if (!txQueueSubscribed) {
-    await openSTNotification.subscribeEvent.rabbit(
-      [rmqQueueConstants.executeTxTopicPrefix + chainId + '.' + qNameSuffix],
-      {
-        queue: rmqQueueConstants.executeTxQueuePrefix + '_' + chainId + '_' + qNameSuffix,
-        ackRequired: 1,
-        prefetch: txQueuePrefetchCount
-      },
-      function(params) {
-        // Promise is required to be returned to manually ack messages in RMQ
-        return PromiseQueueManager.createPromise(params);
-      }
-    );
+    if (intentToConsumerTagMap.exTxQueue) {
+      process.emit('RESUME_CONSUME', intentToConsumerTagMap.exTxQueue);
+    } else {
+      await openStNotification.subscribeEvent.rabbit(
+        [rmqQueueConstants.executeTxTopicPrefix + chainId + '.' + qNameSuffix],
+        {
+          queue: rmqQueueConstants.executeTxQueuePrefix + '_' + chainId + '_' + qNameSuffix,
+          ackRequired: 1,
+          prefetch: txQueuePrefetchCount
+        },
+        function(params) {
+          // Promise is required to be returned to manually ack messages in RMQ
+          return PromiseQueueManager.createPromise(params);
+        },
+        function(consumerTag) {
+          intentToConsumerTagMap.exTxQueue = consumerTag;
+        }
+      );
+    }
     txQueueSubscribed = true;
   }
 };
@@ -234,7 +296,7 @@ const commandQueueExecutor = function(params) {
  */
 const subscribeCommandQueue = async function(qNameSuffix, chainId) {
   if (!commandQueueSubscribed) {
-    await openSTNotification.subscribeEvent.rabbit(
+    await openStNotification.subscribeEvent.rabbit(
       [rmqQueueConstants.commandMessageTopicPrefix + chainId + '.' + qNameSuffix],
       {
         queue: rmqQueueConstants.commandMessageQueuePrefix + '_' + chainId + '_' + qNameSuffix,
@@ -245,6 +307,9 @@ const subscribeCommandQueue = async function(qNameSuffix, chainId) {
         unAckCommandMessages++;
         // Promise is required to be returned to manually ack messages in RMQ
         return commandQueueExecutor(params);
+      },
+      function(consumerTag) {
+        intentToConsumerTagMap.cmdQueue = consumerTag;
       }
     );
     commandQueueSubscribed = true;
@@ -258,17 +323,43 @@ const subscribeCommandQueue = async function(qNameSuffix, chainId) {
  * @returns {Promise<void>}
  */
 let init = async function() {
-  let initProcessResp = await initProcess.perform();
+  let groupId = null,
+    initProcessResp = await initProcess.perform();
 
   processDetails = initProcessResp.processDetails;
-  let processStatus = processDetails.status,
-    queueSuffix = processDetails.queue_name_suffix,
-    chainId = processDetails.chain_id;
+  let chainId = processDetails.chain_id,
+    processStatus = processDetails.status,
+    queueSuffix = processDetails.queue_name_suffix;
+
+  // Fetch all utility geth config strategies.
+  let allUtilityConfig = await new ConfigStrategyModel()
+    .select('group_id, unencrypted_params')
+    .where({ kind: configStrategyConstants.invertedKinds.utility_geth })
+    .fire();
+
+  // Fetch groupId associated with the chainId.
+  for (let index = 0; index < allUtilityConfig.length; index++) {
+    let unencrypted_params = JSON.parse(allUtilityConfig[index].unencrypted_params);
+    if (unencrypted_params.OST_UTILITY_CHAIN_ID === chainId) {
+      groupId = allUtilityConfig[index].group_id;
+    }
+  }
+  // Get rmq configStrategy for the groupId.
+  const strategyByGroupHelperObj = new StrategyByGroupHelper(groupId),
+    configStrategyResp = await strategyByGroupHelperObj.getForKind(configStrategyConstants.rmq);
+  let configStrategy;
+  for (let key in configStrategyResp.data) {
+    configStrategy = configStrategyResp.data[key];
+  }
+
+  // Create instance of openst-notification.
+  let ic = new InstanceComposer(configStrategy),
+    notificationProvider = ic.getNotificationProvider();
+
+  openStNotification = notificationProvider.getInstance();
 
   if (processStatus === processQueueAssociationConst.processKilled) {
-    logger.warn(
-      'The process being is in killed status in the table. Recommended to check. Continuing to start the queue.'
-    );
+    logger.warn('The process is in killed status in the table. Recommended to check. Continuing to start the queue.');
   }
   if (initProcessResp.shouldStartTxQueConsume) {
     await subscribeTxQueue(queueSuffix, chainId);
@@ -304,10 +395,16 @@ function handle() {
   setTimeout(f, 1000);
 }
 
+function ostRmqError(err) {
+  logger.info('ostRmqError occured.', err);
+  process.emit('SIGINT');
+}
+
 // Handling graceful process exit on getting SIGINT, SIGTERM.
 // Once signal found, program will stop consuming new messages. But need to clear running messages.
 process.on('SIGINT', handle);
 process.on('SIGTERM', handle);
+process.on('ost_rmq_error', ostRmqError);
 
 // Call script initializer.
 init();

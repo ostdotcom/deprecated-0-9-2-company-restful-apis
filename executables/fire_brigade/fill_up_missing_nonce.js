@@ -17,7 +17,7 @@ const rootPrefix = '../..',
  * @param {object} params - external passed parameters
  * @param {String} params.from_address - from_address
  * @param {String} params.to_address - to_address
- * @param {String} params.chain_kind - chain_kind (value | utilty)
+ * @param {String} params.chain_type - chain_type (geth | parity)
  * @param {Integer} params.missing_nonce - missing_nonce
  * @param {String} params.geth_provider - geth_provider (WS | RPC)
  * @param {String} params.gas_price - gas_price
@@ -30,7 +30,7 @@ const FillUpMissingNonce = function(params) {
 
   oThis.fromAddress = params.from_address.toLowerCase();
   oThis.toAddress = params.to_address.toLowerCase();
-  oThis.chainKind = params.chain_kind;
+  oThis.chainType = params.chain_type;
   oThis.missingNonce = params.missing_nonce;
   oThis.provider = params.geth_provider;
   oThis.gasPrice = params.gas_price;
@@ -93,7 +93,7 @@ FillUpMissingNonce.prototype = {
 
     const serializedTx = tx.serialize();
 
-    const providerObj = nonceHelper.getWeb3Instance(oThis.provider, oThis.chainKind);
+    const providerObj = nonceHelper.getWeb3Instance(oThis.provider, oThis.chainType);
 
     return providerObj.eth
       .sendSignedTransaction('0x' + serializedTx.toString('hex'))
@@ -117,7 +117,7 @@ Below is an example how to use this script on console
 ========================================================================
 
 FillUp = require('./executables/fire_brigade/fill_up_missing_nonce');
-fillUp = new FillUp({ from_address: '0xBDF4C85e751C5FebCFf1d12bA9F0Fc4bd5fE83E2', to_address: '0xb98209453EAD1c7D6b3b8EC91F59d3a113a8dBf9', chain_kind: 'utility', missing_nonce: 5, geth_provider: 'ws://127.0.0.1:19547', gas_price: '1000000000'});
+fillUp = new FillUp({ from_address: '0xeb85d9fe123a76bd01d78a0c3f103216a56cba33', to_address: '0x616F76d7e749a68b24f5449bcA520f30CA0F7Aa6', chain_type: 'geth', missing_nonce: 21, geth_provider: 'ws://127.0.0.1:19548', gas_price: '0x3B9ACA00'});
 
 fillUp.perform().then(console.log);
 

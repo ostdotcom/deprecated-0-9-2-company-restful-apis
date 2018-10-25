@@ -15,27 +15,27 @@ const rootPrefix = '../..',
 ProcessLocker.canStartProcess({ process_title: 'executables_rmq_subscribers_send_error_emails' });
 ProcessLocker.endAfterTime({ time_in_minutes: 60 });
 
-// Load external packages
-const openSTNotification = require('@openstfoundation/openst-notification');
-
-//All Module Requires.
+// All Module Requires.
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   applicationMailerKlass = require(rootPrefix + '/lib/application_mailer'),
-  applicationMailer = new applicationMailerKlass();
+  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
+  applicationMailer = new applicationMailerKlass(),
+  openStNotification = SharedRabbitMqProvider.getInstance();
 
-// global variable defined for email aggregation
+// Global variable defined for email aggregation
 global.emailsAggregator = {};
 
-var waitingForEmail = false;
+// Declare variables.
+let waitingForEmail = false;
 
-openSTNotification.subscribeEvent.rabbit(['email_error.#'], { queue: 'send_error_email_from_restful_apis' }, function(
+openStNotification.subscribeEvent.rabbit(['email_error.#'], { queue: 'send_error_email_from_restful_apis' }, function(
   msgContent
 ) {
   msgContent = JSON.parse(msgContent);
   logger.debug('Consumed error message -> ', msgContent);
 
   const emailPayload = msgContent.message.payload;
-  var emailSubject = emailPayload.subject;
+  let emailSubject = emailPayload.subject;
 
   // aggregate same errors for a while
   if (global.emailsAggregator[emailSubject]) {
@@ -64,8 +64,8 @@ function sendAggregatedEmail() {
   const send_for_email = JSON.parse(JSON.stringify(global.emailsAggregator));
   global.emailsAggregator = {};
 
-  for (var subject in send_for_email) {
-    var emailPayload = send_for_email[subject];
+  for (let subject in send_for_email) {
+    let emailPayload = send_for_email[subject];
     emailPayload.body = 'Total Error Count: ' + emailPayload.count + '\n' + emailPayload.body;
     applicationMailer.perform(emailPayload);
   }
@@ -74,14 +74,20 @@ function sendAggregatedEmail() {
 // Using a single function to handle multiple signals
 function handle() {
   logger.info('Received Signal');
-  var f = function() {
+  const f = function() {
     sendAggregatedEmail();
     process.exit(1);
   };
   setTimeout(f, 1000);
 }
 
-// handling gracefull process exit on getting SIGINT, SIGTERM.
+function ostRmqError(err) {
+  logger.info('ostRmqError occured.', err);
+  process.emit('SIGINT');
+}
+
+// Handling graceful process exit on getting SIGINT, SIGTERM.
 // Once signal found programme will stop consuming new messages. But need to clear running messages.
 process.on('SIGINT', handle);
 process.on('SIGTERM', handle);
+process.on('ost_rmq_error', ostRmqError);

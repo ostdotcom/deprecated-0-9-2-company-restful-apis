@@ -9,13 +9,13 @@
 const BigNumber = require('bignumber.js');
 
 const rootPrefix = '..',
+  coreConstants = require(rootPrefix + '/config/core_constants'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
+  apiErrorConfig = require(rootPrefix + '/config/api_params/api_error_config'),
   v0ParamErrorConfig = require(rootPrefix + '/config/api_params/v0/error_config'),
   v1ParamErrorConfig = require(rootPrefix + '/config/api_params/v1/error_config'),
   v1Dot1ParamErrorConfig = require(rootPrefix + '/config/api_params/v1.1/error_config'),
-  internalParamErrorConfig = require(rootPrefix + '/config/api_params/internal/error_config'),
-  apiErrorConfig = require(rootPrefix + '/config/api_params/api_error_config'),
-  coreConstants = require(rootPrefix + '/config/core_constants');
+  internalParamErrorConfig = require(rootPrefix + '/config/api_params/internal/error_config');
 
 /**
  * Basic helper methods constructor
@@ -45,11 +45,11 @@ BasicHelperKlass.prototype = {
     const oneForMod = new BigNumber('1');
 
     // Convert amount in BigNumber
-    var bigNumAmount = null;
+    let bigNumAmount = null;
     if (amountInWei instanceof BigNumber) {
       bigNumAmount = amountInWei;
     } else {
-      var numAmount = Number(amountInWei);
+      let numAmount = Number(amountInWei);
       if (!isNaN(numAmount)) {
         bigNumAmount = new BigNumber(amountInWei);
       }
@@ -178,10 +178,7 @@ BasicHelperKlass.prototype = {
    * @return {boolean}
    */
   isBTConversionRateValid: function(conversionRate) {
-    if (!isNaN(conversionRate) && parseFloat(conversionRate) > 0) {
-      return true;
-    }
-    return false;
+    return !isNaN(conversionRate) && parseFloat(conversionRate) > 0;
   },
 
   /**
@@ -238,7 +235,7 @@ BasicHelperKlass.prototype = {
     if (typeof string !== 'string') {
       return false;
     }
-    var reg_ex = /\b(?:anal|anus|arse|ballsack|bitch|biatch|blowjob|blow job|bollock|bollok|boner|boob|bugger|bum|butt|buttplug|clitoris|cock|coon|crap|cunt|dick|dildo|dyke|fag|feck|fellate|fellatio|felching|fuck|f u c k|fudgepacker|fudge packer|flange|Goddamn|God damn|homo|jerk|Jew|jizz|Kike|knobend|knob end|labia|muff|nigger|nigga|penis|piss|poop|prick|pube|pussy|scrotum|sex|shit|s hit|sh1t|slut|smegma|spunk|tit|tosser|turd|twat|vagina|wank|whore|porn)\b/i;
+    let reg_ex = /\b(?:anal|anus|arse|ballsack|bitch|biatch|blowjob|blow job|bollock|bollok|boner|boob|bugger|bum|butt|buttplug|clitoris|cock|coon|crap|cunt|dick|dildo|dyke|fag|feck|fellate|fellatio|felching|fuck|f u c k|fudgepacker|fudge packer|flange|Goddamn|God damn|homo|jerk|Jew|jizz|Kike|knobend|knob end|labia|muff|nigger|nigga|penis|piss|poop|prick|pube|pussy|scrotum|sex|shit|s hit|sh1t|slut|smegma|spunk|tit|tosser|turd|twat|vagina|wank|whore|porn)\b/i;
     return reg_ex.test(string);
   },
 
@@ -250,9 +247,9 @@ BasicHelperKlass.prototype = {
    * @return {Array}
    */
   shuffleArray: function(array) {
-    for (var i = array.length - 1; i >= 0; i--) {
-      var j = Math.floor(Math.random() * (i + 1));
-      var temp = array[i];
+    for (let i = array.length - 1; i >= 0; i--) {
+      let j = Math.floor(Math.random() * (i + 1));
+      let temp = array[i];
       array[i] = array[j];
       array[j] = temp;
     }
@@ -268,7 +265,7 @@ BasicHelperKlass.prototype = {
    * @return {object}
    */
   fetchErrorConfig: function(apiVersion) {
-    var paramErrorConfig;
+    let paramErrorConfig;
 
     if (apiVersion === apiVersions.v0) {
       paramErrorConfig = v0ParamErrorConfig;
@@ -337,7 +334,7 @@ BasicHelperKlass.prototype = {
    * @return {Boolean}
    */
   isSandboxSubEnvironment: function() {
-    return coreConstants.SUB_ENVIRONMENT == 'main';
+    return coreConstants.SUB_ENVIRONMENT == 'sandbox';
   },
 
   /**
@@ -417,6 +414,20 @@ BasicHelperKlass.prototype = {
         onResolve();
       }, timeInMilliSeconds);
     });
+  },
+
+  /**
+   * Returns the index of workingProcesses array which needs to be used.
+   *
+   * @param {Number} fromUserId
+   * @param {Array} workingProcesses
+   * @returns {Object}
+   */
+  transactionDistributionLogic: function(fromUserId, workingProcesses) {
+    let index = fromUserId % workingProcesses.length,
+      workerUuid = workingProcesses[index].workerUuid;
+
+    return { index: index, workerUuid: workerUuid };
   }
 };
 

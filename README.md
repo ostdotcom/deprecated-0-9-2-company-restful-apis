@@ -265,14 +265,18 @@ NOTE: Create the file if not present.
   {"lastProcessedBlock":0}
   
 > source set_env_vars.sh
-> node start_value_services.js 1000
-> node start_utility_services.js 1000
+> node start_value_services.js group_id
+> node start_utility_services.js group_id
 ```
+
+* Start Value Services script will start one transaction executing process. It expects at least one entry in
+    process_queue_association table. If during on-boarding, you have more than 1 entry in the table, start the extra
+    processes manually.
 
 * Start block scanner. Change utility chain id accordingly.
 ```bash
 # Start master process for Block scanner.
-node executables/block_scanner/transaction_delegator.js --group-id 1 --data-file-path ~/openst-setup/data/utility-chain-1000/block_scanner_execute_transaction.data --benchmark-file-path [file path]
+node executables/block_scanner/transaction_delegator.js --group-id 1000 --data-file-path ~/openst-setup/data/utility-chain-1000/block_scanner_execute_transaction.data --benchmark-file-path ~/openst-setup/logs/block_scanner_benchmark-1000.csv
 ```
 
 ```bash

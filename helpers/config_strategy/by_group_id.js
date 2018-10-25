@@ -140,6 +140,49 @@ ConfigStrategyByGroupId.prototype = {
       whereClause = ['group_id = ? AND kind = ?', groupId, strategyIdInt];
     }
 
+    return oThis._getByKindAndGroup(whereClause);
+  },
+
+  /**
+   * This function gives a hash with active status for the kind provided.
+   * It returns hash whose key is the strategy id and value is the flat hash of the strategy.
+   * Eg:
+   * {
+   *    1: {
+   *          OS_DYNAMODB_ACCESS_KEY_ID : 'xyz',
+   *          OS_DYNAMODB_SECRET_ACCESS_KEY: 'x',
+   *          .
+   *          .
+   *          .
+   *       }
+   * }
+   * @param kind
+   * @returns {Promise<*>}
+   */
+  getActiveByKind: async function(kind) {
+    const oThis = this;
+
+    let strategyIdInt = configStrategyConstants.invertedKinds[kind],
+      activeStatus = configStrategyConstants.invertedStatuses[configStrategyConstants.activeStatus],
+      whereClause = null;
+
+    if (strategyIdInt === undefined) {
+      logger.error('Provided kind is not proper. Please check kind');
+      return Promise.reject(oThis._errorResponseHandler('h_cs_bgi_04'));
+    }
+
+    if (oThis.groupId) {
+      whereClause = ['group_id = ? AND kind = ? AND status = ?', oThis.groupId, strategyIdInt, activeStatus];
+    } else {
+      whereClause = ['kind = ? AND status = ?', strategyIdInt, activeStatus];
+    }
+
+    return oThis._getByKindAndGroup(whereClause);
+  },
+
+  _getByKindAndGroup: async function(whereClause) {
+    const oThis = this;
+
     //Following is to fetch specific strategy id for the kind passed.
     let strategyIdsArray = await oThis._strategyIdsArrayProvider(whereClause);
 
@@ -174,8 +217,8 @@ ConfigStrategyByGroupId.prototype = {
    * WS provider and RPC provider is also inserted in the chain_geth_providers table.
    *
    * @param {string} kind (Eg:'dynamo')
-   * @param {object}params - Hash of config params related to this kind
-   * @param {number}managed_address_salt_id - managed_address_salt_id from managed_address_salt table
+   * @param {object} params - Hash of config params related to this kind
+   * @param {number} managed_address_salt_id - managed_address_salt_id from managed_address_salt table
    * @returns {Promise<never>}
    */
   addForKind: async function(kind, params, managed_address_salt_id) {

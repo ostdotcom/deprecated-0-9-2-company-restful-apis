@@ -15,6 +15,7 @@ let nonceManagerKlass,
   ChainGethProvidersCache,
   configStrategyHelper,
   configStrategyConsts,
+  basicHelper,
   fetchPrivateKeyKlass;
 
 // NOTE :: Please define all your requires inside the function
@@ -29,6 +30,7 @@ const initRequires = function() {
   configStrategyHelper = require(rootPrefix + '/helpers/config_strategy/by_client_id');
   fetchPrivateKeyKlass = require(rootPrefix + '/lib/shared_cache_management/address_private_key');
   configStrategyConsts = require(rootPrefix + '/lib/global_constant/config_strategy');
+  basicHelper = require(rootPrefix + '/helpers/basic');
 };
 
 const SignRawTx = function(host, rawTx) {
@@ -50,7 +52,8 @@ const SignRawTx = function(host, rawTx) {
   oThis.chainType = null;
   oThis.clientId = null;
   oThis.chainId = null;
-  oThis.gethWsProviders = null;
+  oThis.chainWsProviders = null;
+  oThis.chainRpcProviders = null;
   oThis.privateKeyObj = null;
   oThis.configStrategy = null;
   oThis.nonceManager = null;
@@ -151,8 +154,14 @@ SignRawTx.prototype = {
 
       tx.sign(privateKeyObj);
 
-      return tx.serialize();
+      return {
+        serializedTx: tx.serialize(),
+        // rawTx: oThis.rawTx,
+        chain_ws_providers: oThis.chainWsProviders,
+        chain_rpc_providers: oThis.chainRpcProviders
+      };
     };
+
     oThis.clientId = fetchPrivateKeyRsp.data['client_id'];
   },
 
@@ -183,8 +192,8 @@ SignRawTx.prototype = {
       oThis.chainId = cacheResponse['chainId'];
       oThis.chainKind = cacheResponse['chainKind'];
       oThis.chainType = cacheResponse['chainType'];
-      oThis.gethWsProviders = cacheResponse['siblingEndpoints'];
-      oThis.gethRpcProviders = cacheResponse['gethRpcProviders'];
+      oThis.chainWsProviders = cacheResponse['chainWsProviders'];
+      oThis.chainRpcProviders = cacheResponse['chainRpcProviders'];
 
       // Passing empty object as nonce manager class needs this as a param.
       oThis.configStrategy = {};
@@ -210,14 +219,14 @@ SignRawTx.prototype = {
       // We identify chain kind and geth providers in this manner to save one cache hit.
       if (valueProviders.includes(oThis.host)) {
         oThis.chainKind = 'value';
-        oThis.gethWsProviders = valueProviders;
-        oThis.gethRpcProviders = valueRpcProviders;
+        oThis.chainWsProviders = valueProviders;
+        oThis.chainRpcProviders = valueRpcProviders;
         oThis.chainId = oThis.configStrategy.OST_VALUE_CHAIN_ID;
-        oThis.chainType = configStrategyConsts.gethChainType;
+        oThis.chainType = oThis.configStrategy.OST_VALUE_CHAIN_TYPE;
       } else if (utilityProviders.includes(oThis.host)) {
         oThis.chainKind = 'utility';
-        oThis.gethWsProviders = utilityProviders;
-        oThis.gethRpcProviders = utilityRpcProviders;
+        oThis.chainWsProviders = utilityProviders;
+        oThis.chainRpcProviders = utilityRpcProviders;
         oThis.chainId = oThis.configStrategy.OST_UTILITY_CHAIN_ID;
         oThis.chainType = oThis.configStrategy.OST_UTILITY_CHAIN_TYPE;
       }
@@ -254,9 +263,10 @@ SignRawTx.prototype = {
     if (oThis.bnChainGasPrice.isZero()) {
       logger.debug('WARN :: Gas Price for chainKind', oThis.chainKind, 'is zero.');
     } else {
-      oThis.rawTx.gasPrice = oThis.chainGasPrice;
-      logger.debug('Auto-corrected gas price to', oThis.rawTx.gasPrice);
+      logger.debug('Auto-corrected gas price to', oThis.chainGasPrice);
     }
+
+    oThis.rawTx.gasPrice = oThis.chainGasPrice;
   },
 
   /**
@@ -269,6 +279,10 @@ SignRawTx.prototype = {
   _fetchNonceAndAddToRawTransaction: async function() {
     const oThis = this;
 
+    if (oThis.rawTx.nonce) {
+      return;
+    }
+
     oThis.nonceManager = new nonceManagerKlass({
       address: oThis.fromAddress,
       chain_kind: oThis.chainKind,
@@ -276,11 +290,12 @@ SignRawTx.prototype = {
       client_id: oThis.clientId,
       host: oThis.host,
       chain_id: oThis.chainId,
-      geth_providers: oThis.gethWsProviders,
-      geth_rpc_providers: oThis.gethRpcProviders,
+      chain_ws_providers: oThis.chainWsProviders,
+      chain_rpc_providers: oThis.chainRpcProviders,
       config_strategy: oThis.configStrategy
     });
-    // We are passing gethWsProviders here as we don't want to make another cache hit in nonce manager class.
+
+    // We are passing chainWsProviders here as we don't want to make another cache hit in nonce manager class.
     // The providers have been fetched depending on the clientId as well as the cache kind.
 
     const getNonceResponse = await oThis.nonceManager.getNonce();

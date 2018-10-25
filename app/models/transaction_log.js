@@ -10,12 +10,14 @@ const rootPrefix = '../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
+  commonValidator = require(rootPrefix + '/lib/validators/common'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
   errorConfig = basicHelper.fetchErrorConfig(apiVersions.general),
   BigNumber = require('bignumber.js'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
 require(rootPrefix + '/lib/providers/storage');
+require(rootPrefix + '/lib/cache_multi_management/transaction_log');
 
 const longToShortNamesMap = {
     transaction_hash: 'txh',
@@ -42,7 +44,10 @@ const longToShortNamesMap = {
     to_address: 'ta',
     from_address: 'fa',
     transfer_events: 'te',
-    error_code: 'ec'
+    error_code: 'ec',
+    nonce: 'nn',
+    transaction_executor_uuid: 'teu',
+    raw_transaction: 'rt'
   },
   shortToLongNamesMap = util.invert(longToShortNamesMap);
 
@@ -98,7 +103,7 @@ const transactionLogModelSpecificPrototype = {
    * Handles logic of shorting input param keys
    *
    * @private
-   * @param longName - long name of key
+   * @param shortName - short name of key
    *
    * @return {String}
    */
@@ -169,7 +174,8 @@ const transactionLogModelSpecificPrototype = {
 
     let dataBatchNo = 1,
       formattedErrorCount = 1,
-      allPromisesData = [];
+      allPromisesData = [],
+      transactionUuids = [];
 
     while (true) {
       const offset = (dataBatchNo - 1) * batchPutLimit,
@@ -178,6 +184,7 @@ const transactionLogModelSpecificPrototype = {
 
       for (let i = 0; i < batchedrawData.length; i++) {
         let rowData = batchedrawData[i];
+        transactionUuids.push(rowData['transaction_uuid']);
         batchedFormattedData.push({
           PutRequest: {
             Item: oThis._formatDataForPutItem(rowData)
@@ -247,6 +254,14 @@ const transactionLogModelSpecificPrototype = {
 
       if (batchedrawData.length === 0) break;
     }
+
+    //TODO: We can consider optimizing, by only flushing for uuids which were successfully updated
+    let transactionLogCache = oThis.ic().getTransactionLogCache();
+    // not intentionally waiting for cache flush to happen
+    new transactionLogCache({
+      uuids: transactionUuids,
+      client_id: oThis.clientId
+    }).clear();
 
     return Promise.resolve(responseHelper.successWithData({}));
   },
@@ -344,17 +359,22 @@ const transactionLogModelSpecificPrototype = {
   /**
    * Update given items of transaction log record.
    *
-   * @params {Object} params - Parameters
+   * @params {Object} dataToUpdate - data to be updated in DB
+   * @params {Boolean} flushCache - boolean which governs if flush cache is required
    *
    * @return {promise<result>}
    */
-  updateItem: async function(params) {
+  updateItem: async function(dataToUpdate, flushCache) {
     const oThis = this,
       expressionAttributeValues = {},
       updateExpression = [];
 
-    const keyObj = oThis._keyObj({ transaction_uuid: params['transaction_uuid'] });
-    const updateData = oThis._formatDataForPutItem(params);
+    if (commonValidator.isVarNull(flushCache)) {
+      flushCache = true;
+    }
+
+    const keyObj = oThis._keyObj({ transaction_uuid: dataToUpdate['transaction_uuid'] });
+    const updateData = oThis._formatDataForPutItem(dataToUpdate);
 
     for (var i in updateData) {
       if (keyObj[i]) continue;
@@ -387,7 +407,7 @@ const transactionLogModelSpecificPrototype = {
 
     const txLogsParams = {
       TableName: oThis.shardName,
-      Key: oThis._keyObj({ transaction_uuid: params['transaction_uuid'] }),
+      Key: oThis._keyObj({ transaction_uuid: dataToUpdate['transaction_uuid'] }),
       UpdateExpression: 'SET ' + updateExpression.join(','),
       ExpressionAttributeValues: expressionAttributeValues,
       ReturnValues: 'NONE'
@@ -395,7 +415,20 @@ const transactionLogModelSpecificPrototype = {
 
     const updateResponse = await oThis.ddbServiceObj.updateItem(txLogsParams, 10);
 
-    return Promise.resolve(responseHelper.successWithData(updateResponse));
+    if (updateResponse.isFailure()) {
+      return updateResponse;
+    }
+
+    if (flushCache) {
+      let transactionLogCache = oThis.ic().getTransactionLogCache();
+      // not intentionally waiting for cache flush to happen
+      new transactionLogCache({
+        uuids: [dataToUpdate['transaction_uuid']],
+        client_id: oThis.clientId
+      }).clear();
+    }
+
+    return Promise.resolve(updateResponse);
   },
 
   /**
@@ -540,6 +573,22 @@ const transactionLogModelSpecificPrototype = {
       formattedRowData[oThis.shortNameFor('transfer_events')] = { L: formattedEventsData };
     }
 
+    if (rowData.hasOwnProperty('nonce')) {
+      formattedRowData[oThis.shortNameFor('nonce')] = { N: rowData['nonce'].toString() };
+    }
+
+    if (rowData.hasOwnProperty('transaction_executor_uuid')) {
+      formattedRowData[oThis.shortNameFor('transaction_executor_uuid')] = {
+        S: rowData['transaction_executor_uuid']
+      };
+    }
+
+    if (rowData.hasOwnProperty('raw_transaction')) {
+      formattedRowData[oThis.shortNameFor('raw_transaction')] = {
+        S: JSON.stringify(rowData['raw_transaction'] || {})
+      };
+    }
+
     return formattedRowData;
   },
 
@@ -653,6 +702,18 @@ const transactionLogModelSpecificPrototype = {
       formattedRowData['post_receipt_process_params'] = JSON.parse(
         rowData[oThis.shortNameFor('post_receipt_process_params')]['S'] || '{}'
       );
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('raw_transaction'))) {
+      formattedRowData['raw_transaction'] = JSON.parse(rowData[oThis.shortNameFor('raw_transaction')]['S'] || '{}');
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('nonce'))) {
+      formattedRowData['nonce'] = parseInt(rowData[oThis.shortNameFor('nonce')]['N']);
+    }
+
+    if (rowData.hasOwnProperty(oThis.shortNameFor('transaction_executor_uuid'))) {
+      formattedRowData['transaction_executor_uuid'] = rowData[oThis.shortNameFor('transaction_executor_uuid')]['S'];
     }
 
     if (rowData.hasOwnProperty(oThis.shortNameFor('transfer_events'))) {

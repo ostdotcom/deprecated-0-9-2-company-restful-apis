@@ -3,6 +3,7 @@
 const rootPrefix = '../..',
   coreConstants = require(rootPrefix + '/config/core_constants'),
   ModelBaseKlass = require(rootPrefix + '/app/models/base'),
+  LockableBaseKlass = require(rootPrefix + '/app/models/lockable_base'),
   clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id'),
   bitWiseHelperKlass = require(rootPrefix + '/helpers/bitwise_operations'),
   util = require(rootPrefix + '/lib/util');
@@ -23,6 +24,7 @@ const dbName = 'saas_client_economy_' + coreConstants.SUB_ENVIRONMENT + '_' + co
 const ClientWorkerManagedAddressIdModel = function() {
   bitWiseHelperKlass.call(this);
   ModelBaseKlass.call(this, { dbName: dbName });
+  LockableBaseKlass.call(this);
 };
 
 ClientWorkerManagedAddressIdModel.prototype = Object.create(ModelBaseKlass.prototype);
@@ -93,7 +95,7 @@ const ClientWorkerManagedAddressIdModelSpecificPrototype = {
   },
 
   /*
-  * Get workers which are not associated with any process
+  * Get workers which are not associated with any process and has gas as well.
   * @param client_id
   * @returns {Promise<Object>}
   * */
@@ -103,9 +105,10 @@ const ClientWorkerManagedAddressIdModelSpecificPrototype = {
       clientAvailableWorkers = await oThis
         .select('id, process_id, client_id, managed_address_id, status, properties')
         .where([
-          'client_id in (?) AND status=? AND process_id IS NULL',
+          'client_id in (?) AND status=? AND properties = properties | ? AND process_id IS NULL',
           client_ids,
-          invertedStatuses[clientWorkerManagedAddressConst.activeStatus]
+          invertedStatuses[clientWorkerManagedAddressConst.activeStatus],
+          invertedProperties[clientWorkerManagedAddressConst.hasStPrimeBalanceProperty]
         ])
         .fire();
 
@@ -349,5 +352,7 @@ const ClientWorkerManagedAddressIdModelSpecificPrototype = {
 };
 
 Object.assign(ClientWorkerManagedAddressIdModel.prototype, ClientWorkerManagedAddressIdModelSpecificPrototype);
+
+Object.assign(ClientWorkerManagedAddressIdModel.prototype, LockableBaseKlass.prototype);
 
 module.exports = ClientWorkerManagedAddressIdModel;

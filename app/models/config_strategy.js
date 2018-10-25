@@ -7,18 +7,18 @@
  */
 
 const rootPrefix = '../..',
-  coreConstants = require(rootPrefix + '/config/core_constants'),
-  ModelBaseKlass = require(rootPrefix + '/app/models/base'),
-  configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
-  InMemoryCacheProvider = require(rootPrefix + '/lib/providers/in_memory_cache'),
-  localCipher = require(rootPrefix + '/lib/encryptors/local_cipher'),
-  ManagedAddressSaltModel = require(rootPrefix + '/app/models/managed_address_salt'),
-  kmsWrapperKlass = require(rootPrefix + '/lib/authentication/kms_wrapper'),
-  responseHelper = require(rootPrefix + '/lib/formatter/response'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
+  ModelBaseKlass = require(rootPrefix + '/app/models/base'),
+  coreConstants = require(rootPrefix + '/config/core_constants'),
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  localCipher = require(rootPrefix + '/lib/encryptors/local_cipher'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
-  errorConfig = basicHelper.fetchErrorConfig(apiVersions.general),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+  kmsWrapperKlass = require(rootPrefix + '/lib/authentication/kms_wrapper'),
+  InMemoryCacheProvider = require(rootPrefix + '/lib/providers/in_memory_cache'),
+  ManagedAddressSaltModel = require(rootPrefix + '/app/models/managed_address_salt'),
+  configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
+  errorConfig = basicHelper.fetchErrorConfig(apiVersions.general);
 
 const dbName = 'saas_config_' + coreConstants.SUB_ENVIRONMENT + '_' + coreConstants.ENVIRONMENT;
 
@@ -424,9 +424,8 @@ const ConfigStrategyModelSpecificPrototype = {
 
   /**
    *
-   * @param(integer) strategy_id
-   * @param(object) configStrategyParams
-   * @param configStrategyParamsNotToEncrypt
+   * @param {integer} strategy_id
+   * @param {object} config_strategy_params
    * @returns {Promise<*>}
    */
   updateStrategyId: async function(strategy_id, config_strategy_params) {
@@ -652,8 +651,8 @@ const ConfigStrategyModelSpecificPrototype = {
         })
       );
     }
-    response.gethWsProviders = unencrypted_hash[readWriteKeyName].OST_UTILITY_GETH_WS_PROVIDERS;
-    response.gethRpcProviders = unencrypted_hash[readWriteKeyName].OST_UTILITY_GETH_RPC_PROVIDERS;
+    response.chainWsProviders = unencrypted_hash[readWriteKeyName].OST_UTILITY_GETH_WS_PROVIDERS;
+    response.chainRpcProviders = unencrypted_hash[readWriteKeyName].OST_UTILITY_GETH_RPC_PROVIDERS;
     return response;
   },
 
@@ -661,14 +660,15 @@ const ConfigStrategyModelSpecificPrototype = {
     let response = {};
     response.chainId = unencrypted_hash.OST_VALUE_CHAIN_ID;
     response.chainKind = 'value';
-    response.chainType = configStrategyConstants.gethChainType;
+    response.chainType = unencrypted_hash.OST_VALUE_CHAIN_TYPE;
+
     if (unencrypted_hash.OST_VALUE_GETH_WS_PROVIDERS.includes(gethProvider)) {
       response.siblingEndpoints = unencrypted_hash.OST_VALUE_GETH_WS_PROVIDERS;
     } else if (unencrypted_hash.OST_VALUE_GETH_RPC_PROVIDERS.includes(gethProvider)) {
       response.siblingEndpoints = unencrypted_hash.OST_VALUE_GETH_RPC_PROVIDERS;
     }
-    response.gethWsProviders = unencrypted_hash.OST_VALUE_GETH_WS_PROVIDERS;
-    response.gethRpcProviders = unencrypted_hash.OST_VALUE_GETH_RPC_PROVIDERS;
+    response.chainWsProviders = unencrypted_hash.OST_VALUE_GETH_WS_PROVIDERS;
+    response.chainRpcProviders = unencrypted_hash.OST_VALUE_GETH_RPC_PROVIDERS;
 
     return response;
   },

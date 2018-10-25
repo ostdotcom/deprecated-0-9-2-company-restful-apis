@@ -10,7 +10,7 @@
  * processId: process id to start the process
  * group_id: group id for fetching config strategy
  *
- * Example: node executables/update_realtime_gas_price.js 12345 ~/config.js
+ * Example: node executables/update_realtime_gas_price.js 12345 1000
  *
  * @module executables/update_realtime_gas_price
  */
@@ -28,9 +28,9 @@ ProcessLocker.canStartProcess({ process_title: 'update_realtime_gasprice-' + pro
 const dynamicGasPriceProvider = require('@ostdotcom/ost-dynamic-gas-price'),
   BigNumber = require('bignumber.js');
 
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger.js'),
+const coreConstants = require(rootPrefix + '/config/core_constants'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  coreConstants = require(rootPrefix + '/config/core_constants'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger.js'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   valueChainGasPriceCacheKlass = require(rootPrefix + '/lib/shared_cache_management/estimate_value_chain_gas_price');
 
@@ -67,14 +67,11 @@ validateAndSanitize();
  *
  * @constructor
  */
-const UpdateRealTimeGasPrice = function() {
-  const oThis = this;
-};
+const UpdateRealTimeGasPrice = function() {};
 
 UpdateRealTimeGasPrice.prototype = {
   perform: async function() {
-    const oThis = this,
-      strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
+    const strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
       configStrategyResp = await strategyByGroupHelperObj.getCompleteHash();
 
     configStrategy = configStrategyResp.data;
@@ -88,7 +85,7 @@ UpdateRealTimeGasPrice.prototype = {
       estimatedGasPriceFloat = await dynamicGasPriceProvider.dynamicGasPrice.get(chainIdInternal);
       retrycount = retrycount - 1;
     }
-    //All constants will be stored in gwei
+    // All constants will be stored in Gwei.
     if (estimatedGasPriceFloat > 0) {
       let estimatedGasPrice = Math.ceil(estimatedGasPriceFloat),
         gasPriceToBeSubmittedHex = null,

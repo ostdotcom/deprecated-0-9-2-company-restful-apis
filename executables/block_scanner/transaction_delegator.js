@@ -15,23 +15,26 @@
 
 const rootPrefix = '../..';
 
-const openSTNotification = require('@openstfoundation/openst-notification'),
-  program = require('commander'),
+const program = require('commander'),
   fs = require('fs');
 
 const MAX_TXS_PER_WORKER = 60;
 
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  InstanceComposer = require(rootPrefix + '/instance_composer'),
-  ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
-  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+const InstanceComposer = require(rootPrefix + '/instance_composer'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
+  ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+  web3InteractFactory = require(rootPrefix + '/lib/web3/interact/ws_interact'),
   ProcessLocker = new ProcessLockerKlass();
 
-require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
 require(rootPrefix + '/lib/web3/interact/ws_interact');
+require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
 
 let configStrategy = {};
+
+const openSTNotification = SharedRabbitMqProvider.getInstance();
 
 // Validate and sanitize the command line arguments.
 const validateAndSanitize = function() {
@@ -83,8 +86,6 @@ TransactionDelegator.prototype = {
 
     configStrategy = configStrategyResp.data;
     oThis.ic = new InstanceComposer(configStrategy);
-
-    let web3InteractFactory = oThis.ic.getWeb3InteractHelper();
 
     let web3PoolSize = coreConstants.OST_WEB3_POOL_SIZE;
 
@@ -191,7 +192,6 @@ TransactionDelegator.prototype = {
   distributeTransactions: async function() {
     const oThis = this;
 
-    const web3InteractFactory = oThis.ic.getWeb3InteractHelper();
     let web3Interact = web3InteractFactory.getInstance('utility', oThis.gethArray[0]);
 
     oThis.currentBlockInfo = await web3Interact.getBlock(oThis.currentBlock);
@@ -336,8 +336,6 @@ TransactionDelegator.prototype = {
    */
   refreshHighestBlock: async function(provider) {
     const oThis = this;
-
-    const web3InteractFactory = oThis.ic.getWeb3InteractHelper();
 
     let web3Interact = web3InteractFactory.getInstance('utility', provider);
 
