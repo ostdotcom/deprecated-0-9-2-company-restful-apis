@@ -7,7 +7,14 @@ const BasePackage = require(basePackage);
 const rootPrefix = '../..';
 
 // Please declare your require variable here.
-let responseHelper, logger, coreConstants, SignRawTx, moUtils, web3InteractFactory;
+let responseHelper,
+  logger,
+  coreConstants,
+  SignRawTx,
+  moUtils,
+  web3InteractFactory,
+  basicHelper,
+  recognizedErrorIdentifiers;
 
 // NOTE :: Please define all your requires inside the function
 const initRequires = function() {
@@ -16,6 +23,9 @@ const initRequires = function() {
   coreConstants = coreConstants || require(rootPrefix + '/config/core_constants');
   SignRawTx = SignRawTx || require(rootPrefix + '/module_overrides/common/sign_raw_tx');
   web3InteractFactory = web3InteractFactory || require(rootPrefix + '/lib/web3/interact/ws_interact');
+  basicHelper = basicHelper || require(rootPrefix + '/helpers/basic');
+  recognizedErrorIdentifiers =
+    recognizedErrorIdentifiers || require(rootPrefix + '/lib/global_constant/recognized_internal_error_identifiers');
   moUtils = moUtils || require(rootPrefix + '/module_overrides/common/utils');
 };
 
@@ -113,14 +123,52 @@ const Derived = function() {
 
             // retry
             executeTx();
+          } else if (moUtils.isGasToLowError(error)) {
+            // shuffle array and pick URL of a node other than current host
+            let chainWsProviders = basicHelper.shuffleArray(signTxRsp['chain_ws_providers']),
+              wsChainNodeUrl;
+
+            for (let i = 0; i < chainWsProviders.length; i++) {
+              if (host !== chainWsProviders[i]) {
+                wsChainNodeUrl = chainWsProviders[i];
+                break;
+              }
+            }
+
+            if (!wsChainNodeUrl) {
+              onUnhandledError(error);
+              return;
+            }
+
+            logger.error(
+              `gasTooLowError: Gas Too Low Error from: ${host}. checking if this node is in sync with other(s): ${wsChainNodeUrl}.`
+            );
+
+            let web3InteractInstance = web3InteractFactory.getInstance('utility', wsChainNodeUrl),
+              highestBlockFromAlternateNode = await web3InteractInstance.getBlockNumber(),
+              highestBlockFromCurrentNode = await oThis.currentProvider.getBlockNumber();
+
+            let blockDiff = highestBlockFromAlternateNode - highestBlockFromCurrentNode;
+
+            if (blockDiff >= moUtils.exceptableBlockDelayAmongstNodes) {
+              logger.error(
+                `chainNodeSyncError: Looks like: ${host} is out on sync with other(s): ${wsChainNodeUrl} by ${blockDiff} blocks`
+              );
+              let customError = new Error('');
+              onUnhandledError(customError);
+            } else {
+              onUnhandledError(error);
+            }
           } else if (
             moUtils.isChainNodeDownError(error) &&
             chainNodeDownErrorRetryCount < moUtils.chainNodeDownErrorMaxRetryCnt
           ) {
             chainNodeDownErrorRetryCount = chainNodeDownErrorRetryCount + 1;
 
-            let wsChainNodeUrl =
-              signTxRsp['chain_ws_providers'][chainNodeDownErrorRetryCount % signTxRsp['chain_ws_providers'].length];
+            // shuffle array so that we load balance sending txs on all in this pool.
+            let chainWsProviders = basicHelper.shuffleArray(signTxRsp['chain_ws_providers']);
+
+            let wsChainNodeUrl = chainWsProviders[chainNodeDownErrorRetryCount % chainWsProviders.length];
 
             logger.error(
               `nodeDownRetryAttemptNo: ${chainNodeDownErrorRetryCount} Chain Node Down error for: ${host}. retrying on same / other node: ${wsChainNodeUrl}. error: ${
@@ -140,15 +188,7 @@ const Derived = function() {
               orgCallback: orgCallback
             });
           } else {
-            if (txHashObtained) {
-              // neglect if hash was already given.
-              return;
-            }
-            logger.error('finalErrorAfterRetrying', error);
-            await signRawTx.markAsFailure();
-            hackedReturnedPromiEvent.eventEmitter.emit('rawTransactionDetails', rawTx);
-            hackedReturnedPromiEvent.eventEmitter.emit('error', error);
-            hackedReturnedPromiEvent.reject(error);
+            onUnhandledError(error);
           }
         };
 
@@ -158,6 +198,18 @@ const Derived = function() {
 
         const onReject = function() {
           logger.error(arguments);
+        };
+
+        const onUnhandledError = async function(error) {
+          if (txHashObtained) {
+            // neglect if hash was already given.
+            return;
+          }
+          logger.error('finalErrorAfterRetrying', error);
+          await signRawTx.markAsFailure();
+          hackedReturnedPromiEvent.eventEmitter.emit('rawTransactionDetails', rawTx);
+          hackedReturnedPromiEvent.eventEmitter.emit('error', error);
+          hackedReturnedPromiEvent.reject(error);
         };
 
         moUtils.submitTransactionToChain({
