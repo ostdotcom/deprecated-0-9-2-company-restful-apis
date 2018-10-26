@@ -74,6 +74,8 @@ const setTransactionStatusHandlers = function() {
     '/lib/transaction_error_handlers/submitted_handler');
   TransactionStatusHandlers[parseInt(is[transactionMetaConst.geth_down])] = require(rootPrefix +
     '/lib/transaction_error_handlers/geth_down_handler');
+  TransactionStatusHandlers[parseInt(is[transactionMetaConst.geth_out_of_sync])] = require(rootPrefix +
+    '/lib/transaction_error_handlers/geth_down_handler');
 };
 
 setTransactionStatusHandlers();

@@ -6,8 +6,8 @@
  *
  * Usage: node ./executables/one_timers/transaction_meta_archival.js timeInterval [offsetForEndId]
  * Command Line Parameters:
- * timeInterval: Time Interval in hours to archive the data
- * offsetForEndId: End Id for archival [optional], if not passed - default value is 4 hours
+ * timeInterval: Time Interval in hours to archive the data (in hours).
+ * offsetForEndId: Time (in hours) to get end id for archival [optional], if not passed - default value is 4 hours
  *
  * Example: node ./executables/one_timers/transaction_meta_archival.js 24 6
  *
@@ -53,7 +53,7 @@ const TransactionMetaArchival = function() {
   const oThis = this;
 
   oThis.txMetaIds = [];
-  oThis.batchSize = 3;
+  oThis.batchSize = 500;
 };
 
 TransactionMetaArchival.prototype = {
@@ -90,8 +90,8 @@ TransactionMetaArchival.prototype = {
       finalOffset = oThis.offset + parseInt(timeIntervalInSeconds),
       startTimeStamp = new Date(Date.now() - finalOffset).toLocaleString();
 
-    logger.log('timeStampStartRange====', startTimeStamp);
-    logger.log('timeStampEndRange====', endTimeStamp);
+    logger.win('start timeStamp----', startTimeStamp);
+    logger.win('end timeStamp----', endTimeStamp);
 
     if (endTimeStamp < startTimeStamp) {
       logger.log('Can not archive data for this Time Interval!');
@@ -110,7 +110,7 @@ TransactionMetaArchival.prototype = {
       oThis.txMetaIds.push(rawResponse.id);
     }
 
-    logger.log('txMeta Ids=======', oThis.txMetaIds);
+    logger.log('txMeta Ids-----', oThis.txMetaIds);
 
     let batchNo = 1;
 
@@ -138,28 +138,49 @@ TransactionMetaArchival.prototype = {
   _performArchival: async function(batchedTxMetaIds) {
     const oThis = this;
 
-    let txIdToDBRowMap = {},
-      queryResponseForMeta = await new transactionMetaModel().getByIds(batchedTxMetaIds);
+    let insertColumns = [
+        'id',
+        'chain_id',
+        'transaction_hash',
+        'transaction_uuid',
+        'client_id',
+        'status',
+        'retry_count',
+        'kind',
+        'next_action_at',
+        'lock_id',
+        'post_receipt_process_params',
+        'created_at',
+        'updated_at'
+      ],
+      queryResponsegetIdsForMeta = await new transactionMetaModel().getByIds(batchedTxMetaIds);
 
-    if (!queryResponseForMeta) {
+    if (!queryResponsegetIdsForMeta) {
       return responseHelper.error({
         internal_error_identifier: 'e_ot_tma_1',
         debug_options: {}
       });
     }
 
-    for (let i = 0; i < queryResponseForMeta.length; i++) {
-      let rawResponse = queryResponseForMeta[i];
-      txIdToDBRowMap[rawResponse.id] = rawResponse;
+    let insertParams = [];
+
+    for (let i = 0; i < queryResponsegetIdsForMeta.length; i++) {
+      insertParams.push(Object.values(queryResponsegetIdsForMeta[i]));
     }
 
-    for (let txId in txIdToDBRowMap) {
-      let insertParams = txIdToDBRowMap[txId],
-        queryResponseForMetaArchive = await new transactionMetaArchiveModel().insert(insertParams).fire(),
-        queryResponseDeletion = await new transactionMetaModel()
-          .delete()
-          .where(['id = ?', txId])
-          .fire();
+    let queryResponseForMetaArchive = await new transactionMetaArchiveModel()
+      .insertMultiple(insertColumns, insertParams)
+      .fire();
+
+    if (queryResponseForMetaArchive) {
+      logger.win('TxMetaArchive Insert rsp---', queryResponseForMetaArchive);
+
+      let queryResponseTxMetaDeletion = await new transactionMetaModel()
+        .delete()
+        .where(['id IN (?)', batchedTxMetaIds])
+        .fire();
+
+      logger.win('TxMeta Delete rsp---', queryResponseTxMetaDeletion);
     }
 
     return Promise.resolve(responseHelper.successWithData({}));

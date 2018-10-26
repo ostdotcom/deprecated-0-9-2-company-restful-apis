@@ -8,8 +8,9 @@ let ModuleOverrideUtils = function() {};
 
 ModuleOverrideUtils.prototype = {
   nonceTooLowErrorMaxRetryCnt: 0,
-
   chainNodeDownErrorMaxRetryCnt: 10,
+
+  exceptableBlockDelayAmongstNodes: 100,
 
   getUnlockableKeysMap: function() {
     coreConstants = coreConstants || require(rootPrefix + '/config/core_constants');
@@ -35,6 +36,13 @@ ModuleOverrideUtils.prototype = {
       throw 'invalid error object passed.';
     }
     return error.message.indexOf('Invalid JSON RPC response') > -1 || error.message.indexOf('connection not open') > -1;
+  },
+
+  isGasToLowError: function(error) {
+    if (!error || !error.message) {
+      throw 'invalid error object passed.';
+    }
+    return error.message.indexOf('insufficient funds for gas * price + value') > -1;
   },
 
   isReplacementTxUnderPricedError: function(error) {
