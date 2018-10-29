@@ -6,15 +6,15 @@
  */
 
 const rootPrefix = '../..',
+  BigNumber = require('bignumber.js'),
   util = require(rootPrefix + '/lib/util'),
+  basicHelper = require(rootPrefix + '/helpers/basic'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
+  commonValidator = require(rootPrefix + '/lib/validators/common'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  basicHelper = require(rootPrefix + '/helpers/basic'),
-  commonValidator = require(rootPrefix + '/lib/validators/common'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
-  errorConfig = basicHelper.fetchErrorConfig(apiVersions.general),
-  BigNumber = require('bignumber.js'),
-  InstanceComposer = require(rootPrefix + '/instance_composer');
+  errorConfig = basicHelper.fetchErrorConfig(apiVersions.general);
 
 require(rootPrefix + '/lib/providers/storage');
 require(rootPrefix + '/lib/cache_multi_management/transaction_log');
@@ -77,7 +77,7 @@ const transactionLogModelSpecificPrototype = {
   /**
    * Create and register shard
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   createShard: function() {
     const oThis = this;
@@ -150,7 +150,7 @@ const transactionLogModelSpecificPrototype = {
    * @params {array} rawData
    * @params {Integer} unprocessedItemsRetryCount - Retry count for unprocessed Items
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   batchPutItem: async function(rawData, unprocessedItemsRetryCount) {
     const oThis = this,
@@ -200,8 +200,8 @@ const transactionLogModelSpecificPrototype = {
       }
 
       if (
-        allPromisesData.length == parallelPromisesCount ||
-        (batchedrawData.length == 0 && allPromisesData.length > 0)
+        allPromisesData.length === parallelPromisesCount ||
+        (batchedrawData.length === 0 && allPromisesData.length > 0)
       ) {
         logger.info(`batchPutItem clientId : ${oThis.clientId} batch : ${dataBatchNo}`);
 
@@ -272,7 +272,7 @@ const transactionLogModelSpecificPrototype = {
    * @params {array} uuidsToFetch
    * @params {Integer} unprocessedKeysRetryCount - Retry count for unprocessed Keys
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   batchGetItem: async function(uuidsToFetch, unprocessedKeysRetryCount, fieldsToFetch) {
     const oThis = this;
@@ -307,7 +307,7 @@ const transactionLogModelSpecificPrototype = {
     if (fieldsToFetch) {
       let projectionExpressionArr = [];
 
-      for (var i = 0; i < fieldsToFetch.length; i++) {
+      for (let i = 0; i < fieldsToFetch.length; i++) {
         let shortFieldName = oThis.shortNameFor(fieldsToFetch[i]);
         if (!shortFieldName) continue;
 
@@ -316,7 +316,7 @@ const transactionLogModelSpecificPrototype = {
 
       if (projectionExpressionArr.length > 0) {
         //transaction_uuid is mandatory to have in fetch list.
-        if (projectionExpressionArr.indexOf(shortNameForTxUuid) == -1) {
+        if (projectionExpressionArr.indexOf(shortNameForTxUuid) === -1) {
           projectionExpressionArr.push(shortNameForTxUuid);
         }
         let projectionExpression = projectionExpressionArr.join(',');
@@ -362,7 +362,7 @@ const transactionLogModelSpecificPrototype = {
    * @params {Object} dataToUpdate - data to be updated in DB
    * @params {Boolean} flushCache - boolean which governs if flush cache is required
    *
-   * @return {promise<result>}
+   * @return {Promise<result>}
    */
   updateItem: async function(dataToUpdate, flushCache) {
     const oThis = this,
@@ -376,14 +376,14 @@ const transactionLogModelSpecificPrototype = {
     const keyObj = oThis._keyObj({ transaction_uuid: dataToUpdate['transaction_uuid'] });
     const updateData = oThis._formatDataForPutItem(dataToUpdate);
 
-    for (var i in updateData) {
+    for (let i in updateData) {
       if (keyObj[i]) continue;
 
       expressionAttributeValues[':' + i] = updateData[i];
       updateExpression.push(i + '=:' + i);
     }
 
-    if (updateExpression.length == 0) {
+    if (updateExpression.length === 0) {
       return Promise.reject(
         responseHelper.error({
           internal_error_identifier: 'm_tb_set_1',
