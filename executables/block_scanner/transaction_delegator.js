@@ -18,7 +18,8 @@ const rootPrefix = '../..';
 const program = require('commander'),
   fs = require('fs');
 
-const MAX_TXS_PER_WORKER = 60;
+const MAX_TXS_PER_WORKER = 60,
+  MIN_TXS_PER_WORKER = 10;
 
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
@@ -198,14 +199,17 @@ TransactionDelegator.prototype = {
 
     oThis.currentBlockInfo = await web3Interact.getBlock(oThis.currentBlock);
 
+    let totalTransactionCount = oThis.currentBlockInfo.transactions.length;
+    if (totalTransactionCount === 0) return;
+
     if (oThis.benchmarkFilePath) oThis.granularTimeTaken.push('eth.getBlock-' + (Date.now() - oThis.startTime) + 'ms');
 
-    let totalTransactionCount = oThis.currentBlockInfo.transactions.length,
-      perBatchCount = totalTransactionCount / oThis.gethArray.length,
+    let perBatchCount = totalTransactionCount / oThis.gethArray.length,
       offset = 0;
 
     // capping the per batch count
     perBatchCount = perBatchCount > MAX_TXS_PER_WORKER ? MAX_TXS_PER_WORKER : perBatchCount;
+    perBatchCount = perBatchCount < MIN_TXS_PER_WORKER ? MIN_TXS_PER_WORKER : perBatchCount;
 
     let noOfBatches = parseInt(totalTransactionCount / perBatchCount);
     noOfBatches += totalTransactionCount % perBatchCount ? 1 : 0;
