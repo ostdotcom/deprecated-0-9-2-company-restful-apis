@@ -10,9 +10,9 @@
  *    If transaction meta says Geth is down then try resubmitting after sometime.
  *
  *  - Submitted
- *    If transaction meta says status submitted for sometime then check on geth.
+ *    If transaction meta says status submitted for sometime then check on geth, and resubmit if not found on geth.
  *
- * Example: node executables/transaction_meta_observer.js
+ * Example: node executables/continuous/lockables/transaction_meta_observer.js
  *
  * @module executables/transaction_meta_observer
  */
@@ -89,8 +89,7 @@ setTransactionStatusHandlers();
 const TransactionMetaObserverKlass = function(params) {
   const oThis = this;
 
-  oThis.lockId = new Date().getTime();
-  oThis.currentTime = Math.floor(new Date().getTime() / 1000);
+  oThis.setCurrentTime();
   oThis.transactionsToProcess = [];
   oThis.handlerPromises = [];
 
@@ -102,6 +101,12 @@ TransactionMetaObserverKlass.prototype = Object.create(baseKlass.prototype);
 Object.assign(TransactionMetaObserverKlass.prototype, SigIntHandler.prototype);
 
 const TransactionMetaObserverKlassPrototype = {
+  setCurrentTime: function() {
+    const oThis = this;
+    oThis.lockId = new Date().getTime();
+    oThis.currentTime = Math.floor(new Date().getTime() / 1000);
+  },
+
   execute: async function() {
     const oThis = this;
 
@@ -179,10 +184,11 @@ let txMetaObserver = new TransactionMetaObserverKlass({
 });
 
 const runTask = async function() {
+  txMetaObserver.setCurrentTime();
   await txMetaObserver.perform();
 
   // If too much load that iteration has processed full prefetch transactions, then don't wait for much time.
-  let nextIterationTime = txMetaObserver.transactionsToProcess.length === program.prefetchCount ? 1000 : 120000;
+  let nextIterationTime = txMetaObserver.transactionsToProcess.length == program.prefetchCount ? 1000 : 120000;
 
   if (runCount >= 10) {
     // Executed 10 times now exiting
