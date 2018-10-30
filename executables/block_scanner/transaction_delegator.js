@@ -212,9 +212,6 @@ TransactionDelegator.prototype = {
     let noOfBatches = parseInt(totalTransactionCount / perBatchCount);
     noOfBatches += totalTransactionCount % perBatchCount ? 1 : 0;
 
-    let noOfBatches = parseInt(totalTransactionCount / perBatchCount);
-    noOfBatches += totalTransactionCount % perBatchCount ? 1 : 0;
-
     let loopCount = 0;
 
     while (loopCount < noOfBatches) {
