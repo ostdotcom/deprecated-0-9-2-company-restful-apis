@@ -123,7 +123,7 @@ const Derived = function() {
 
             // retry
             executeTx();
-          } else if (moUtils.isGasToLowError(error)) {
+          } else if (moUtils.isGasLowError(error)) {
             // shuffle array and pick URL of a node other than current host
             let chainWsProviders = basicHelper.shuffleArray(signTxRsp['chain_ws_providers']),
               wsChainNodeUrl;
@@ -150,11 +150,12 @@ const Derived = function() {
 
             let blockDiff = highestBlockFromAlternateNode - highestBlockFromCurrentNode;
 
+            // as Chain node gets reset sometimes and starts resynincing from 0
+            // till it covers up we would treat it seperately
             if (blockDiff >= moUtils.exceptableBlockDelayAmongstNodes) {
-              logger.error(
-                `chainNodeSyncError: Looks like: ${host} is out on sync with other(s): ${wsChainNodeUrl} by ${blockDiff} blocks`
-              );
-              let customError = new Error('');
+              let errorStr = `chainNodeSyncError: Looks like: ${host} is out on sync with other(s): ${wsChainNodeUrl} by ${blockDiff} blocks`;
+              logger.error(errorStr);
+              let customError = new Error(errorStr);
               onUnhandledError(customError);
             } else {
               onUnhandledError(error);
