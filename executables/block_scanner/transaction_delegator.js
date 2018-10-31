@@ -259,6 +259,7 @@ TransactionDelegator.prototype = {
         );
       }
 
+      logger.debug('===published======txHashes', txHashes, '====from block', oThis.currentBlock);
       logger.log('==== published', txHashes.length, 'transactions', '====from block', oThis.currentBlock);
       loopCount++;
     }
