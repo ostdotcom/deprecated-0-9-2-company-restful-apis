@@ -90,6 +90,8 @@ TransactionDelegator.prototype = {
 
     let web3PoolSize = coreConstants.OST_WEB3_POOL_SIZE;
 
+    logger.log('====Warming up geth pool for providers', configStrategy.OST_UTILITY_GETH_WS_PROVIDERS);
+
     for (let ind = 0; ind < configStrategy.OST_UTILITY_GETH_WS_PROVIDERS.length; ind++) {
       let provider = configStrategy.OST_UTILITY_GETH_WS_PROVIDERS[ind];
       for (let i = 0; i < web3PoolSize; i++) {
@@ -114,7 +116,10 @@ TransactionDelegator.prototype = {
           oThis.granularTimeTaken.push('getGethsWithCurrentBlock-' + (Date.now() - oThis.startTime) + 'ms');
 
         // return if nothing more to do, as of now.
-        if (oThis.gethArray.length === 0) return oThis.schedule();
+        if (oThis.gethArray.length === 0) {
+          logger.info('==== No geths with block', oThis.scannerData.lastProcessedBlock + 1, '==rescheduling...');
+          return oThis.schedule();
+        }
 
         oThis.currentBlock = oThis.scannerData.lastProcessedBlock + 1;
 
@@ -150,7 +155,6 @@ TransactionDelegator.prototype = {
       logger.error('executables/block_scanner/transaction_delegator.js::processNewBlocksAsync::catch');
       logger.error(error);
 
-      // TODO - error handling to be introduced to avoid double settlement.
       oThis.schedule();
     });
   },
@@ -184,6 +188,8 @@ TransactionDelegator.prototype = {
         oThis.gethArray.push(provider);
       }
     }
+
+    logger.log('====Block', oThis.scannerData.lastProcessedBlock + 1, '==is found on ', oThis.gethArray);
   },
 
   /**
@@ -212,6 +218,8 @@ TransactionDelegator.prototype = {
     let noOfBatches = parseInt(totalTransactionCount / perBatchCount);
     noOfBatches += totalTransactionCount % perBatchCount ? 1 : 0;
 
+    logger.log('====Batch count', noOfBatches, '====Txs per batch', perBatchCount);
+
     let loopCount = 0;
 
     while (loopCount < noOfBatches) {
@@ -238,13 +246,7 @@ TransactionDelegator.prototype = {
         }
       };
 
-      console.log('====blockNumber', oThis.currentBlock);
-
-      console.log('====txHashes', txHashes.length);
-
       let setToRMQ = await openSTNotification.publishEvent.perform(messageParams);
-
-      console.log('====setToRMQ status', setToRMQ.isSuccess());
 
       //if could not set to RMQ run in async.
       if (setToRMQ.isFailure() || setToRMQ.data.publishedToRmq === 0) {
@@ -256,6 +258,8 @@ TransactionDelegator.prototype = {
           })
         );
       }
+
+      logger.log('==== published', txHashes.length, 'transactions', '====from block', oThis.currentBlock);
       loopCount++;
     }
   },
