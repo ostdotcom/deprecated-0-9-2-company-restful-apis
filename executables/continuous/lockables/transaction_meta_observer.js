@@ -188,7 +188,7 @@ const runTask = async function() {
   await txMetaObserver.perform();
 
   // If too much load that iteration has processed full prefetch transactions, then don't wait for much time.
-  let nextIterationTime = txMetaObserver.transactionsToProcess.length == program.prefetchCount ? 1000 : 120000;
+  let nextIterationTime = txMetaObserver.transactionsToProcess.length == program.prefetchCount ? 10 : 120000;
 
   if (runCount >= 10) {
     // Executed 10 times now exiting
