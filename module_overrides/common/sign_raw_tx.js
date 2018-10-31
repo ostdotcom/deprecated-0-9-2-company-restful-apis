@@ -279,7 +279,8 @@ SignRawTx.prototype = {
   _fetchNonceAndAddToRawTransaction: async function() {
     const oThis = this;
 
-    if (oThis.rawTx.nonce) {
+    // if nonce already present in the raw tx, return.
+    if (oThis.rawTx.hasOwnProperty('nonce')) {
       return;
     }
 

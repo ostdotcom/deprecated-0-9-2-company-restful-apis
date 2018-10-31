@@ -123,7 +123,7 @@ const Derived = function() {
 
             // retry
             executeTx();
-          } else if (moUtils.isGasToLowError(error)) {
+          } else if (moUtils.isGasLowError(error)) {
             // shuffle array and pick URL of a node other than current host
             let chainWsProviders = basicHelper.shuffleArray(signTxRsp['chain_ws_providers']),
               wsChainNodeUrl;
