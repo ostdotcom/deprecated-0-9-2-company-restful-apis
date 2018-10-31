@@ -150,11 +150,12 @@ const Derived = function() {
 
             let blockDiff = highestBlockFromAlternateNode - highestBlockFromCurrentNode;
 
+            // as Chain node gets reset sometimes and starts resynincing from 0
+            // till it covers up we would treat it seperately
             if (blockDiff >= moUtils.exceptableBlockDelayAmongstNodes) {
-              logger.error(
-                `chainNodeSyncError: Looks like: ${host} is out on sync with other(s): ${wsChainNodeUrl} by ${blockDiff} blocks`
-              );
-              let customError = new Error('');
+              let errorStr = `chainNodeSyncError: Looks like: ${host} is out on sync with other(s): ${wsChainNodeUrl} by ${blockDiff} blocks`;
+              logger.error(errorStr);
+              let customError = new Error(errorStr);
               onUnhandledError(customError);
             } else {
               onUnhandledError(error);

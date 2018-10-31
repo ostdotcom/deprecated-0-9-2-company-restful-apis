@@ -259,15 +259,10 @@ const NonceCacheKlassPrototype = {
 
   completionWithFailure: async function(shouldSyncNonce) {
     const oThis = this;
-
-    // oThis.completionFailureCnt++;
-
     logger.error('NM :: completionWithFailure called with shouldSyncNonce: ', shouldSyncNonce);
-
     if (shouldSyncNonce) {
-      await oThis._acquireLockAndSyncNonceFromChain();
+      await oThis._deleteNonceFromCache();
     }
-
     return responseHelper.successWithData({});
   },
 
@@ -326,9 +321,9 @@ const NonceCacheKlassPrototype = {
    * @private
    * @ignore
    */
-  _decrementNonce: async function() {
+  _deleteNonceFromCache: async function() {
     const oThis = this;
-    return oThis.cacheImplementer.decrement(oThis.cacheKey);
+    return oThis.cacheImplementer.del(oThis.cacheKey);
   },
 
   /**
