@@ -17,14 +17,15 @@
  * @module executables/transaction_meta_observer
  */
 
-const rootPrefix = '../../..';
+const rootPrefix = '../../..',
+  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
+  CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
+  CronProcessHandlerObject = new CronProcessesHandler();
 
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
 
-const program = require('commander'),
-  ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
-  ProcessLocker = new ProcessLockerKlass();
+const program = require('commander');
 
 program.option('--process-id <processId>', 'Process id').option('--prefetch-count <prefetchCount>', 'Prefetch Count');
 
@@ -41,10 +42,16 @@ program.on('--help', () => {
 
 program.parse(process.argv);
 
-ProcessLocker.canStartProcess({
-  process_title: 'executables_continuous_transaction_meta_observer' + program.processId
+// Define cronKind.
+let cronKind = CronProcessesConstants.transactionMetaObserver;
+
+// Check whether the cron can be started or not.
+CronProcessHandlerObject.canStartProcess({
+  id: program.processId,
+  cron_kind: cronKind
 });
-ProcessLocker.endAfterTime({ time_in_minutes: 40 });
+
+CronProcessHandlerObject.endAfterTime({ time_in_minutes: 40 });
 
 // Validate and sanitize the commander parameters.
 const validateAndSanitize = function() {
@@ -62,9 +69,8 @@ const baseKlass = require(rootPrefix + '/executables/continuous/lockables/base')
   transactionMetaConst = require(rootPrefix + '/lib/global_constant/transaction_meta'),
   SigIntHandler = require(rootPrefix + '/executables/sigint_handler');
 
-let runCount = 1;
-
-let TransactionStatusHandlers = {};
+let runCount = 1,
+  TransactionStatusHandlers = {};
 
 const setTransactionStatusHandlers = function() {
   let is = transactionMetaConst.invertedStatuses;
@@ -94,7 +100,7 @@ const TransactionMetaObserverKlass = function(params) {
   oThis.handlerPromises = [];
 
   baseKlass.call(oThis, params);
-  SigIntHandler.call(oThis);
+  SigIntHandler.call(oThis, { id: program.processId });
 };
 
 TransactionMetaObserverKlass.prototype = Object.create(baseKlass.prototype);
