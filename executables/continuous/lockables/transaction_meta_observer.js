@@ -17,15 +17,15 @@
  * @module executables/transaction_meta_observer
  */
 
-const rootPrefix = '../../..',
-  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
-  CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
-  CronProcessHandlerObject = new CronProcessesHandler();
+const rootPrefix = '../../..';
 
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
 
-const program = require('commander');
+const program = require('commander'),
+  CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
+  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
+  CronProcessHandlerObject = new CronProcessesHandler();
 
 program.option('--process-id <processId>', 'Process id').option('--prefetch-count <prefetchCount>', 'Prefetch Count');
 
@@ -42,7 +42,7 @@ program.on('--help', () => {
 
 program.parse(process.argv);
 
-// Define cronKind.
+// Declare variables.
 let cronKind = CronProcessesConstants.transactionMetaObserver;
 
 // Check whether the cron can be started or not.
