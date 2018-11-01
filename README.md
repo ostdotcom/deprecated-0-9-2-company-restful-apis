@@ -15,11 +15,6 @@
 > brew install rabbitmq
 ```
 
-* Start Redis.
-```bash
-> sudo redis-server --port 6379  --requirepass 'st123'
-```
-
 * Start Memcached.
 ```bash
 > memcached -p 11211 -d
@@ -138,12 +133,6 @@ b.activate();
 ```
                                          
 # Start SAAS Services
-
-* Start Redis.
-```bash
-> sudo redis-server --port 6379  --requirepass 'st123'
-```
-
 * Start Memcached.
 ```bash
 > memcached -p 11211 -d

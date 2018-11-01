@@ -77,7 +77,6 @@ seedConfigStrategies.prototype = {
   asyncPerform: async function() {
     const oThis = this;
 
-    await oThis.seed_redis_params();
     await oThis.seed_dynamo_params();
     await oThis.seed_memcached_params();
     await oThis.seed_nonce_memcached_params();
@@ -94,16 +93,6 @@ seedConfigStrategies.prototype = {
 
     logger.log('Successfully seeded all config parameters!! ');
     process.exit(0);
-  },
-
-  seed_redis_params: async function() {
-    let redis_params = {};
-    redis_params['OST_REDIS_HOST'] = env_list.OST_REDIS_HOST;
-    redis_params['OST_REDIS_PORT'] = env_list.OST_REDIS_PORT;
-    redis_params['OST_REDIS_PASS'] = env_list.OST_REDIS_PASS;
-    redis_params['OST_REDIS_TLS_ENABLED'] = env_list.OST_REDIS_TLS_ENABLED;
-    const configStrategy = new configStrategyModel();
-    await configStrategy.create('redis', process.argv[2], redis_params, group_id).then();
   },
 
   seed_dynamo_params: async function() {
