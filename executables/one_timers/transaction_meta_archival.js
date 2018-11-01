@@ -3,7 +3,6 @@
 /**
  * This cron archives the tx meta table by removing entries within provided time interval from tx meta and adding them to tx meta archive table.
  *
- *
  * Usage: node ./executables/one_timers/transaction_meta_archival.js timeInterval [offsetForEndId]
  * Command Line Parameters:
  * timeInterval: Time Interval in hours to archive the data (in hours).
@@ -11,6 +10,7 @@
  *
  * Example: node ./executables/one_timers/transaction_meta_archival.js 24 6
  *
+ * NOTE:- Only Tx Meta entries with status 'failed' or 'mined' are archived.
  * @module executables/one_timers/transaction_meta_archival
  */
 
@@ -53,7 +53,8 @@ const TransactionMetaArchival = function() {
   const oThis = this;
 
   oThis.txMetaIds = [];
-  oThis.batchSize = 500;
+  oThis.batchSize = 5;
+  oThis.archiveColumns = [];
 };
 
 TransactionMetaArchival.prototype = {
@@ -85,7 +86,7 @@ TransactionMetaArchival.prototype = {
     statusArray.push(transactionMetaConstants.invertedStatuses[transactionMetaConstants.failed]);
     statusArray.push(transactionMetaConstants.invertedStatuses[transactionMetaConstants.mined]);
 
-    //startTimeStamp = currentTimeStamp - (archivalTimeInterval + offset)
+    //startTimeStamp calculated as - currentTimeStamp - (archivalTimeInterval + offset)
     let endTimeStamp = new Date(Date.now() - oThis.offset).toLocaleString(),
       finalOffset = oThis.offset + parseInt(timeIntervalInSeconds),
       startTimeStamp = new Date(Date.now() - finalOffset).toLocaleString();
@@ -138,24 +139,10 @@ TransactionMetaArchival.prototype = {
   _performArchival: async function(batchedTxMetaIds) {
     const oThis = this;
 
-    let insertColumns = [
-        'id',
-        'chain_id',
-        'transaction_hash',
-        'transaction_uuid',
-        'client_id',
-        'status',
-        'retry_count',
-        'kind',
-        'next_action_at',
-        'lock_id',
-        'post_receipt_process_params',
-        'created_at',
-        'updated_at'
-      ],
-      queryResponsegetIdsForMeta = await new transactionMetaModel().getByIds(batchedTxMetaIds);
+    let insertColumns = oThis.archiveColumns,
+      getIdsForMetaResponse = await new transactionMetaModel().getByIds(batchedTxMetaIds);
 
-    if (!queryResponsegetIdsForMeta) {
+    if (!getIdsForMetaResponse) {
       return responseHelper.error({
         internal_error_identifier: 'e_ot_tma_1',
         debug_options: {}
@@ -164,8 +151,8 @@ TransactionMetaArchival.prototype = {
 
     let insertParams = [];
 
-    for (let i = 0; i < queryResponsegetIdsForMeta.length; i++) {
-      insertParams.push(Object.values(queryResponsegetIdsForMeta[i]));
+    for (let i = 0; i < getIdsForMetaResponse.length; i++) {
+      insertParams.push(Object.values(getIdsForMetaResponse[i]));
     }
 
     let queryResponseForMetaArchive = await new transactionMetaArchiveModel()
@@ -195,18 +182,30 @@ TransactionMetaArchival.prototype = {
     const oThis = this;
 
     if (!offsetForEndIdArg) {
+      let timeConversionFactor = 3600 * 1000; //hours to millisecond conversion
       // set to 4 hours, if not passed explicitly
-      oThis.offset = 4 * 3600 * 1000;
+      oThis.offset = 24 * timeConversionFactor;
     } else {
       oThis.offset = offsetForEndIdArg * 3600 * 1000;
     }
 
-    let queryResponseForMeta = await new transactionMetaModel().describe().fire(),
-      queryResponseForArchive = await new transactionMetaArchiveModel().describe().fire();
+    let queryResponseForMeta = await new transactionMetaModel().showColumns().fire(),
+      queryResponseForArchive = await new transactionMetaArchiveModel().showColumns().fire();
 
-    if (JSON.stringify(queryResponseForMeta) !== JSON.stringify(queryResponseForArchive)) {
+    let metaColumns = [];
+    oThis.archiveColumns = [];
+
+    if (queryResponseForMeta.length === queryResponseForArchive.length) {
+      for (let i = 0; i < queryResponseForMeta.length; i++) {
+        let rowOfMeta = queryResponseForMeta[i],
+          rowOfArchive = queryResponseForArchive[i];
+
+        metaColumns.push(rowOfMeta['Field']);
+        oThis.archiveColumns.push(rowOfArchive['Field']);
+      }
+    } else {
       logger.log('Transaction Meta Schema does not matches to transaction Meta Archive!');
-      return Promise.reject(JSON.stringify(queryResponseForArchive));
+      return Promise.reject(JSON.stringify(metaColumns));
     }
 
     return Promise.resolve({});
