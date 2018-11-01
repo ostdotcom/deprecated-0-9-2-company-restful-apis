@@ -29,6 +29,7 @@ ResendRawTx.prototype = {
 
     let signTxRsp = await signRawTx.perform().catch(function(error) {
         logger.error('signRawTx error ::', error);
+        return {};
       }),
       serializedTx = signTxRsp.serializedTx;
 

@@ -297,7 +297,7 @@ ExecuteSTPTransferService.prototype = {
     let dataToSetInCache = {};
     dataToSetInCache[oThis.transactionUuid] = oThis.transactionLog;
     // not intentionally waiting for cache set to happen
-    await new transactionLogCache({
+    new transactionLogCache({
       uuids: [oThis.transactionUuid],
       client_id: oThis.clientId
     }).setCache(dataToSetInCache);

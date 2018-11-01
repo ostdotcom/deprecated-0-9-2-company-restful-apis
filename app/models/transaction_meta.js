@@ -142,136 +142,17 @@ const TransactionMetaModelSpecificPrototype = {
   },
 
   /**
-   * Mark multiple statuses as queued.
+   * @param {string} status - status which is to be marked for given uuids
+   * @param {array} transaction_uuids - transaction_uuids
    *
-   * @param transaction_uuids
-   * @returns {*}
    */
-  markStatusAsQueued(transaction_uuids) {
+  changeStatusOfUuids(status, transaction_uuids) {
     const oThis = this;
 
-    return oThis
-      .update(['status = ?', oThis.invertedStatuses[transactionMetaConst.queued]])
-      .where(['transaction_uuid IN (?)', transaction_uuids])
-      .fire();
-  },
-
-  /**
-   * Mark multiple statuses as processing.
-   *
-   * @param transaction_uuids
-   * @returns {*}
-   */
-  markStatusAsProcessing(transaction_uuids) {
-    const oThis = this;
+    let txMetaStatus = oThis.invertedStatuses[transactionMetaConst[status]];
 
     return oThis
-      .update(['status = ?', oThis.invertedStatuses[transactionMetaConst.processing]])
-      .where(['transaction_uuid IN (?)', transaction_uuids])
-      .fire();
-  },
-
-  /**
-   * Mark multiple statuses as failed.
-   *
-   * @param transaction_uuids
-   * @returns {*}
-   */
-  markStatusAsFailed(transaction_uuids) {
-    const oThis = this;
-
-    return oThis
-      .update(['status = ?', oThis.invertedStatuses[transactionMetaConst.failed]])
-      .where(['transaction_uuid IN (?)', transaction_uuids])
-      .fire();
-  },
-
-  /**
-   * Mark multiple statuses as submitted.
-   *
-   * @param transaction_uuids
-   * @returns {*}
-   */
-  markStatusAsSubmitted(transaction_uuids) {
-    const oThis = this;
-
-    return oThis
-      .update(['status = ?', oThis.invertedStatuses[transactionMetaConst.submitted]])
-      .where(['transaction_uuid IN (?)', transaction_uuids])
-      .fire();
-  },
-
-  /**
-   * Mark multiple statuses as geth_down.
-   *
-   * @param transaction_uuids
-   * @returns {*}
-   */
-  markStatusAsGethDown(transaction_uuids) {
-    const oThis = this;
-
-    return oThis
-      .update(['status = ?', oThis.invertedStatuses[transactionMetaConst.geth_down]])
-      .where(['transaction_uuid IN (?)', transaction_uuids])
-      .fire();
-  },
-
-  /**
-   * Mark multiple statuses as insufficient_gas.
-   *
-   * @param transaction_uuids
-   * @returns {*}
-   */
-  markStatusAsInsufficientGas(transaction_uuids) {
-    const oThis = this;
-
-    return oThis
-      .update(['status = ?', oThis.invertedStatuses[transactionMetaConst.insufficient_gas]])
-      .where(['transaction_uuid IN (?)', transaction_uuids])
-      .fire();
-  },
-
-  /**
-   * Mark multiple statuses as nonce_too_low.
-   *
-   * @param transaction_uuids
-   * @returns {*}
-   */
-  markStatusAsNonceTooLow(transaction_uuids) {
-    const oThis = this;
-
-    return oThis
-      .update(['status = ?', oThis.invertedStatuses[transactionMetaConst.nonce_too_low]])
-      .where(['transaction_uuid IN (?)', transaction_uuids])
-      .fire();
-  },
-
-  /**
-   * Mark multiple statuses as replacement_tx_under_priced.
-   *
-   * @param transaction_uuids
-   * @returns {*}
-   */
-  markStatusAsReplacementTxUnderpriced(transaction_uuids) {
-    const oThis = this;
-
-    return oThis
-      .update(['status = ?', oThis.invertedStatuses[transactionMetaConst.replacement_tx_under_priced]])
-      .where(['transaction_uuid IN (?)', transaction_uuids])
-      .fire();
-  },
-
-  /**
-   * Mark multiple statuses as mined.
-   *
-   * @param transaction_uuids
-   * @returns {*}
-   */
-  markStatusAsMined(transaction_uuids) {
-    const oThis = this;
-
-    return oThis
-      .update(['status = ?', oThis.invertedStatuses[transactionMetaConst.mined]])
+      .update(['status = ?', txMetaStatus])
       .where(['transaction_uuid IN (?)', transaction_uuids])
       .fire();
   },

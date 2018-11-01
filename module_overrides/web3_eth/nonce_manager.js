@@ -120,12 +120,12 @@ const NonceCacheKlassPrototype = {
     let promiseObj;
 
     if (!customOnResolve || !customOnReject) {
-      promiseObj = new Promise(async function(onResolve, onReject) {
+      promiseObj = new Promise(function(onResolve, onReject) {
         customOnReject = onReject;
         customOnResolve = onResolve;
       });
     } else {
-      promiseObj = new Promise(async function(customOnResolve, customOnReject) {});
+      promiseObj = new Promise(function(customOnResolve, customOnReject) {});
     }
 
     if (!oThis.cacheImplementer) {
@@ -201,7 +201,7 @@ const NonceCacheKlassPrototype = {
           .catch(function(reason) {
             logger.error('NM :: acquireLockAndReturn rejected the Promise. reason :: ', reason);
             return responseHelper.error({
-              internal_error_identifier: 'l_nm_aqLockCatch_1',
+              internal_error_identifier: 'acquireLockAndReturnNonce_ex_catch_1',
               api_error_identifier: 'internal_server_error',
               error_config: errorConfig
             });
@@ -214,7 +214,7 @@ const NonceCacheKlassPrototype = {
             } else if (
               acquireLockResponseData.err &&
               acquireLockResponseData.err.internal_id &&
-              String(acquireLockResponseData.err.internal_id).indexOf('l_nm_aqLockCatch_1') >= 0
+              String(acquireLockResponseData.err.internal_id).indexOf('acquireLockAndReturnNonce_ex_catch_1') >= 0
             ) {
               //Safety-Net. acquireLockAndReturn reject the Promise.
               return onResolve(response);
@@ -259,15 +259,10 @@ const NonceCacheKlassPrototype = {
 
   completionWithFailure: async function(shouldSyncNonce) {
     const oThis = this;
-
-    // oThis.completionFailureCnt++;
-
     logger.error('NM :: completionWithFailure called with shouldSyncNonce: ', shouldSyncNonce);
-
     if (shouldSyncNonce) {
-      await oThis._acquireLockAndSyncNonceFromChain();
+      await oThis._deleteNonceFromCache();
     }
-
     return responseHelper.successWithData({});
   },
 
@@ -326,9 +321,9 @@ const NonceCacheKlassPrototype = {
    * @private
    * @ignore
    */
-  _decrementNonce: async function() {
+  _deleteNonceFromCache: async function() {
     const oThis = this;
-    return oThis.cacheImplementer.decrement(oThis.cacheKey);
+    return oThis.cacheImplementer.del(oThis.cacheKey);
   },
 
   /**

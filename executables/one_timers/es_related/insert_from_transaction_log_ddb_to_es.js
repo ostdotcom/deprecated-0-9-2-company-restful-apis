@@ -87,7 +87,7 @@ InsertESTransactionLog.prototype = {
 };
 
 //Eg:
-// const insertObj = new InsertESTransactionLog();
+// const insertObj = new InsertESTransactionLog({group_id: 123});
 // insertObj.insertRecordsInES( "s_sb_transaction_logs_shard_001" , ["465hjghj4654" , "6876gfg78bjhghj"]);
 
 module.exports = InsertESTransactionLog;

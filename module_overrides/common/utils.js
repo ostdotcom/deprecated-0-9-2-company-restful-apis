@@ -12,42 +12,76 @@ ModuleOverrideUtils.prototype = {
 
   exceptableBlockDelayAmongstNodes: 100,
 
+  /**
+   * Map of addresses for which the keystore file exists
+   *
+   * @returns {object}
+   */
   getUnlockableKeysMap: function() {
     coreConstants = coreConstants || require(rootPrefix + '/config/core_constants');
     return coreConstants.ADDRESSES_TO_UNLOCK_VIA_KEYSTORE_FILE_MAP || {};
   },
 
+  /**
+   * Is unlockable
+   *
+   * @param address - eth address
+   * @returns {boolean}
+   */
   isUnlockable: function(address) {
     const oThis = this;
-    console.log('address', address);
     address = address.toLowerCase();
     return oThis.getUnlockableKeysMap()[address] ? true : false;
   },
 
+  /**
+   * is nonce too low error
+   *
+   * @param error
+   * @returns {boolean}
+   */
   isNonceTooLowError: function(error) {
     if (!error || !error.message) {
-      throw 'invalid error object passed.';
+      return false;
     }
     return error.message.indexOf('nonce too low') > -1;
   },
 
+  /**
+   * is chain node down error
+   *
+   * @param error
+   * @returns {boolean}
+   */
   isChainNodeDownError: function(error) {
     if (!error || !error.message) {
-      throw 'invalid error object passed.';
+      return false;
     }
     return error.message.indexOf('Invalid JSON RPC response') > -1 || error.message.indexOf('connection not open') > -1;
   },
 
-  isGasToLowError: function(error) {
+  /**
+   * is gas low error
+   *
+   * @param error
+   * @returns {boolean}
+   */
+  isGasLowError: function(error) {
     if (!error || !error.message) {
-      throw 'invalid error object passed.';
+      return false;
     }
     return error.message.indexOf('insufficient funds for gas * price + value') > -1;
   },
 
+  /**
+   * is replacement tx under oriced error
+   *
+   * @param error
+   * @returns {boolean}
+   */
   isReplacementTxUnderPricedError: function(error) {
     if (!error || !error.message) {
-      throw 'invalid error object passed.';
+      return false;
     }
     // with a nonce which was already used,
     // 1. if same rawTx was resubmitted -> known transaction error is raised
@@ -58,16 +92,27 @@ ModuleOverrideUtils.prototype = {
     );
   },
 
+  /**
+   * get host from the web3 provider
+   *
+   * @param provider
+   * @returns {*}
+   */
   getHost: function(provider) {
     return provider.host ? provider.host : provider.connection._url;
   },
 
+  /**
+   * submit transaction to chain
+   *
+   * @param params
+   */
   submitTransactionToChain: function(params) {
     let pSignTxRsp = params['signTxRsp'],
-      pOnError = params['onError'],
-      pOnReject = params['onReject'],
-      pOnTxHash = params['onTxHash'],
-      pOrgCallback = params['orgCallback'],
+      onError = params['onError'],
+      onReject = params['onReject'],
+      onTxHash = params['onTxHash'],
+      orgCallback = params['orgCallback'],
       web3Instance = params['web3Instance'];
 
     let BatchRequestKlass = web3Instance.BatchRequest || web3Instance.eth.BatchRequest,
@@ -81,14 +126,15 @@ ModuleOverrideUtils.prototype = {
     sendSignedTransactionRequest.callback = function(err, txHash) {
       console.error('errorObject', err);
       try {
-        err && pOnError(err);
-        err && pOnReject(err);
+        err && onError && onError(err);
+        err && onReject && onReject(err);
+      } catch (e) {}
+
+      try {
+        txHash && onTxHash && onTxHash(txHash);
       } catch (e) {}
       try {
-        txHash && pOnTxHash(txHash);
-      } catch (e) {}
-      try {
-        pOrgCallback && pOrgCallback(err, txHash);
+        orgCallback && orgCallback(err, txHash);
       } catch (e) {}
     };
 

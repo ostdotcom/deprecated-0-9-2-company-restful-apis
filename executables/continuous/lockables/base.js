@@ -15,6 +15,7 @@ const ContinuousLockableBaseKlass = function(params) {
   const oThis = this;
 
   oThis.processId = params.process_id;
+  oThis.lockAcquired = false;
 
   oThis.noOfRowsToProcess = params.no_of_rows_to_process;
   if (commonUtils.isVarNull(params.release_lock_required)) {
@@ -34,12 +35,14 @@ ContinuousLockableBaseKlass.prototype = {
     const oThis = this;
 
     await oThis.acquireLock();
+    oThis.lockAcquired = true;
 
     await oThis.execute();
 
     if (oThis.lockReleaseRequired) {
       await oThis.releaseLock();
     }
+    oThis.lockAcquired = false;
   },
 
   /**

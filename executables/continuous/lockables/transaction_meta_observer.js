@@ -123,7 +123,7 @@ const TransactionMetaObserverKlassPrototype = {
       .where(['lock_id = ?', oThis.getLockId()])
       .fire();
 
-    await oThis._processPendingTransactions();
+    return oThis._processPendingTransactions();
   },
 
   getLockId: function() {
@@ -173,11 +173,12 @@ const TransactionMetaObserverKlassPrototype = {
     }
     await Promise.all(oThis.handlerPromises);
     oThis.handlerPromises = [];
+    return Promise.resolve(oThis.handlerPromises);
   },
 
   pendingTasksDone: function() {
     const oThis = this;
-    return oThis.handlerPromises.length === 0;
+    return oThis.handlerPromises.length === 0 && !oThis.lockAcquired;
   }
 };
 
@@ -191,20 +192,29 @@ let txMetaObserver = new TransactionMetaObserverKlass({
 
 const runTask = async function() {
   txMetaObserver.setCurrentTime();
-  await txMetaObserver.perform();
 
-  // If too much load that iteration has processed full prefetch transactions, then don't wait for much time.
-  let nextIterationTime = txMetaObserver.transactionsToProcess.length == program.prefetchCount ? 1000 : 120000;
+  function onExecutionComplete() {
+    // If too much load that iteration has processed full prefetch transactions, then don't wait for much time.
+    let nextIterationTime = txMetaObserver.transactionsToProcess.length == program.prefetchCount ? 10 : 120000;
 
-  if (runCount >= 10) {
-    // Executed 10 times now exiting
-    console.log(runCount + ' iteration is executed, Killing self now. ');
-    process.exit(1);
-  } else {
-    console.log(runCount + ' iteration is executed, Sleeping now for seconds ' + nextIterationTime / 1000);
-    runCount = runCount + 1;
-    setTimeout(runTask, nextIterationTime);
+    if (runCount >= 10) {
+      // Executed 10 times now exiting
+      console.log(runCount + ' iteration is executed, Killing self now. ');
+      process.exit(1);
+    } else {
+      console.log(runCount + ' iteration is executed, Sleeping now for seconds ' + nextIterationTime / 1000);
+      runCount = runCount + 1;
+      setTimeout(runTask, nextIterationTime);
+    }
   }
+  txMetaObserver
+    .perform()
+    .then(function() {
+      onExecutionComplete();
+    })
+    .catch(function() {
+      onExecutionComplete();
+    });
 };
 
 runTask();
