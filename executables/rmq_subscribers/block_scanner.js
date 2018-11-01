@@ -4,7 +4,7 @@
  * This code acts as a worker process for block scanner, which takes the transactions from delegator
  * and processes it using block scanner class. [ lib/block_scanner/for_tx_status_and_balance_sync.js ]
  *
- * Usage: node executables/rmq_subscribers/block_scanner.js processLockId group_id prefetchCountStr [benchmarkFilePath]
+ * Usage: node executables/rmq_subscribers/block_scanner.js --processLock-id 1 --group-id 197 --prefetch-count 2 --benchmark-file-path [benchmarkFilePath]
  *
  * Command Line Parameters Description:
  * processLockId: used for ensuring that no other process with the same processLockId can run on a given machine.
@@ -23,7 +23,7 @@ const program = require('commander'),
   CronProcessHandlerObject = new CronProcessesHandler();
 
 program
-  .option('--processlock-id <processLockId>', 'Process Lock id')
+  .option('--processLock-id <processLockId>', 'Process Lock id')
   .option('--group-id <groupId>', 'Group id')
   .option('--prefetch-count <prefetchCount>', 'Prefetch Count')
   .option('--benchmark-file-path [benchmarkFilePath]', 'Path to benchmark file path');
@@ -33,7 +33,7 @@ program.on('--help', () => {
   console.log('  Example:');
   console.log('');
   console.log(
-    '    node ./executables/rmq_subscribers/block_scanner.js --processlock-id 1 --group-id 197 --prefetch-count 2 --benchmark-file-path [benchmarkFilePath]'
+    '    node executables/rmq_subscribers/block_scanner.js --processLock-id 1 --group-id 197 --prefetch-count 2 --benchmark-file-path [benchmarkFilePath]'
   );
   console.log('');
   console.log('');
@@ -104,7 +104,6 @@ const BlockScannerPrototype = {
    * validateAndSanitize
    */
   validateAndSanitize: function() {
-    const oThis = this;
     if (!program.processLockId || !program.groupId || !program.prefetchCount) {
       program.help();
       process.exit(1);
@@ -116,8 +115,6 @@ const BlockScannerPrototype = {
    *
    */
   warmUpGethPool: function() {
-    const oThis = this;
-
     return new Promise(async function(onResolve, onReject) {
       let utilityGethType = 'read_only',
         strategyByGroupHelperObj = new StrategyByGroupHelper(program.groupId),
@@ -140,13 +137,14 @@ const BlockScannerPrototype = {
   },
 
   /**
-   * startSubscription
+   * Start subscription
+   *
    */
   startSubscription: function() {
-    const oThis = this;
+    const oThis = this,
+      chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
 
-    let chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
-
+    // Subscribe to queue.
     openStNotification.subscribeEvent.rabbit(
       ['block_scanner_execute_' + chain_id],
       {
@@ -162,75 +160,84 @@ const BlockScannerPrototype = {
   },
 
   /**
-   * _promiseExecutor
+   * This method executes the promises.
    *
    * @private
    */
-
   _promiseExecutor: function(onResolve, onReject, params) {
-    const oThis = this;
-
     unAckCount++;
 
-    // Process request
-    // TODO: put try catch around JSON parse
-    const parsedParams = JSON.parse(params);
-
-    const payload = parsedParams.message.payload;
-
-    let BlockScannerKlass = ic.getBlockScannerKlass(),
-      blockScannerObj = new BlockScannerKlass({
-        block_number: payload.blockNumber,
-        geth_array: payload.gethArray,
-        transaction_hashes: payload.transactionHashes,
-        time_stamp: payload.timestamp,
-        benchmark_file_path: program.benchmarkFilePath,
-        web3_factory_obj: web3InteractFactory,
-        delegator_timestamp: payload.delegatorTimestamp,
-        process_id: program.processLockId
-      });
-
+    // Trying because of JSON.parse.
     try {
-      blockScannerObj
-        .perform()
-        .then(function() {
-          unAckCount--;
-          logger.debug('------ unAckCount -> ', unAckCount);
-          // ack RMQ
-          return onResolve();
-        })
-        .catch(function(err) {
-          logger.error(
-            'e_rmqs_bs_1',
-            'Something went wrong in blockscanner execution. unAckCount ->',
-            unAckCount,
-            err,
-            params
-          );
-          unAckCount--;
-          // ack RMQ
-          return onResolve();
+      // Process request
+      const parsedParams = JSON.parse(params),
+        payload = parsedParams.message.payload;
+
+      let BlockScannerKlass = ic.getBlockScannerKlass(),
+        blockScannerObj = new BlockScannerKlass({
+          block_number: payload.blockNumber,
+          geth_array: payload.gethArray,
+          transaction_hashes: payload.transactionHashes,
+          time_stamp: payload.timestamp,
+          benchmark_file_path: program.benchmarkFilePath,
+          web3_factory_obj: web3InteractFactory,
+          delegator_timestamp: payload.delegatorTimestamp,
+          process_id: program.processLockId
         });
-    } catch (err) {
+
+      try {
+        blockScannerObj
+          .perform()
+          .then(function() {
+            unAckCount--;
+            logger.debug('------ unAckCount -> ', unAckCount);
+            // ack RMQ
+            return onResolve();
+          })
+          .catch(function(err) {
+            logger.error(
+              'e_rmqs_bs_1',
+              'Something went wrong in blockscanner execution. unAckCount ->',
+              unAckCount,
+              err,
+              params
+            );
+            unAckCount--;
+            // ack RMQ
+            return onResolve();
+          });
+      } catch (err) {
+        unAckCount--;
+        logger.error('e_rmqs_bs_2', 'Listener could not process blockscanner.. Catch. unAckCount -> ', unAckCount);
+      }
+    } catch (error) {
       unAckCount--;
-      logger.error('Listener could not process blockscanner.. Catch. unAckCount -> ', unAckCount);
+      logger.error(
+        'e_rmqs_bs_3',
+        'Error in parsing the message. unAckCount ->',
+        unAckCount,
+        'Error: ',
+        error,
+        'Params: ',
+        params
+      );
+      // ack RMQ
+      return onResolve();
     }
   },
 
   /**
-   * pendingTasksDone
+   * This function checks if there are any pending tasks left or not.
+   *
+   * @returns {boolean}
    */
   pendingTasksDone: function() {
     const oThis = this;
 
-    if (unAckCount != oThis.PromiseQueueManager.getPendingCount()) {
+    if (unAckCount !== oThis.PromiseQueueManager.getPendingCount()) {
       logger.error('ERROR :: unAckCount and pending counts are not in sync.');
     }
-    if (!oThis.PromiseQueueManager.getPendingCount() && !unAckCount) {
-      return true;
-    }
-
-    return false;
+    return !oThis.PromiseQueueManager.getPendingCount() && !unAckCount;
   }
 };
 
