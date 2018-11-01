@@ -5,8 +5,8 @@
  *
  * Usage: node ./executables/one_timers/transaction_meta_archival.js timeInterval [offsetForEndId]
  * Command Line Parameters:
- * timeInterval: Time Interval in hours to archive the data (in hours).
- * offsetForEndId: Time (in hours) to get end id for archival [optional], if not passed - default value is 4 hours
+ * timeInterval: [optional] Time Interval in hours to archive the data (in hours).
+ * offsetForEndId: [optional] Time (in hours) to get end id for archival, if not passed - default value is 4 hours
  *
  * Example: node ./executables/one_timers/transaction_meta_archival.js 24 6
  *
@@ -24,26 +24,6 @@ const rootPrefix = '../..',
 const args = process.argv,
   timeIntervalInHours = args[2],
   offsetForEndIdArg = args[3];
-
-// Usage demo.
-const usageDemo = function() {
-  logger.log('usage:', 'node executables/one_timers/transaction_meta_archival.js timeInterval [offsetForEndId]');
-  logger.log(
-    '* timeIntervalInHours is used for ensuring that no other process with the same processId can run on a given machine.'
-  );
-};
-
-// Validate and sanitize the command line arguments.
-const validateAndSanitize = function() {
-  if (!timeIntervalInHours) {
-    logger.error('timeIntervalInHours NOT passed in the arguments.');
-    usageDemo();
-    process.exit(1);
-  }
-};
-
-// Validate and sanitize the input params.
-validateAndSanitize();
 
 /**
  *
@@ -81,7 +61,14 @@ TransactionMetaArchival.prototype = {
     await oThis._validate();
 
     let statusArray = [],
+      timeIntervalInSeconds = 0;
+
+    if (!timeIntervalInHours) {
+      //by default, this cron archives entries from two days ago.
+      timeIntervalInSeconds = 24 * 3600 * 1000;
+    } else {
       timeIntervalInSeconds = timeIntervalInHours * 3600 * 1000;
+    }
 
     statusArray.push(transactionMetaConstants.invertedStatuses[transactionMetaConstants.failed]);
     statusArray.push(transactionMetaConstants.invertedStatuses[transactionMetaConstants.mined]);
@@ -183,7 +170,7 @@ TransactionMetaArchival.prototype = {
 
     if (!offsetForEndIdArg) {
       let timeConversionFactor = 3600 * 1000; //hours to millisecond conversion
-      // set to 4 hours, if not passed explicitly
+      // set to 24 hours, if not passed explicitly
       oThis.offset = 24 * timeConversionFactor;
     } else {
       oThis.offset = offsetForEndIdArg * 3600 * 1000;
