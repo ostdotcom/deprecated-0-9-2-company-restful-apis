@@ -9,32 +9,16 @@
 const rootPrefix = '../..',
   coreConstants = require(rootPrefix + '/config/core_constants'),
   ModelBaseKlass = require(rootPrefix + '/app/models/base'),
-  util = require(rootPrefix + '/lib/util'),
   cronProcessesConstant = require(rootPrefix + '/lib/global_constant/cron_processes');
 
-const dbName = 'saas_config_' + coreConstants.SUB_ENVIRONMENT + '_' + coreConstants.ENVIRONMENT,
-  kinds = {
-    '1': cronProcessesConstant.executeTxCron,
-    '2': cronProcessesConstant.onBoardingCron,
-    '3': cronProcessesConstant.factoryCron,
-    '4': cronProcessesConstant.gethDownHandlerCron,
-    '5': cronProcessesConstant.submittedHandlerCron,
-    '6': cronProcessesConstant.queuedHandlerCron
-  },
-  invertedKinds = util.invert(kinds),
-  statuses = {
-    '1': cronProcessesConstant.runningStatus,
-    '2': cronProcessesConstant.stoppedStatus,
-    '3': cronProcessesConstant.inactiveStatus
-  },
-  invertedStatuses = util.invert(statuses);
+const dbName = 'saas_config_' + coreConstants.SUB_ENVIRONMENT + '_' + coreConstants.ENVIRONMENT;
 
-const CronProcessInfoModel = function() {
+const CronProcessesModel = function() {
   const oThis = this;
   ModelBaseKlass.call(oThis, { dbName: dbName });
 };
 
-CronProcessInfoModel.prototype = Object.create(ModelBaseKlass.prototype);
+CronProcessesModel.prototype = Object.create(ModelBaseKlass.prototype);
 
 /*
  * Public methods
@@ -46,13 +30,25 @@ const CronProcessInfoModelSpecificPrototype = {
     const oThis = this;
 
     let response = oThis
-      .select(['kind, ip_address', 'params', 'status', 'last_start_time', 'last_end_time'])
+      .select(['kind', 'ip_address', 'group_id', 'params', 'status', 'last_start_time', 'last_end_time'])
       .where({ id: id })
       .fire();
 
     return Promise.resolve(response);
   },
 
+  /**
+   *
+   * @param params
+   *        params.kind {string}
+   *        params.ip_address {string}
+   *        params.group_id {number}
+   *        params.params {string}
+   *        params.status {string}
+   *        params.last_start_time {number}
+   *        params.last_end_time {number}
+   * @returns {*}
+   */
   insertRecord: function(params) {
     const oThis = this;
 
@@ -60,51 +56,67 @@ const CronProcessInfoModelSpecificPrototype = {
       !params.hasOwnProperty('kind') ||
       !params.hasOwnProperty('ip_address') ||
       !params.hasOwnProperty('status') ||
-      !params.hasOwnProperty('last_start_time') ||
-      !params.hasOwnProperty('last_end_time')
+      !params.hasOwnProperty('group_id')
     ) {
       throw 'Mandatory parameters are missing.';
     }
 
-    if (
-      typeof params.kind !== 'number' ||
-      typeof params.ip_address !== 'string' ||
-      typeof params.status !== 'number' ||
-      typeof params.last_start_time !== 'number' ||
-      typeof params.last_end_time !== 'number'
-    ) {
+    if (typeof params.kind !== 'string' || typeof params.ip_address !== 'string' || typeof params.status !== 'string') {
       throw TypeError('Insertion parameters are of wrong params types.');
     }
-    params.status = oThis.invertedStatuses[params.status];
+    params.status = cronProcessesConstant.invertedStatuses[params.status];
+    params.kind = cronProcessesConstant.invertedKinds[params.kind];
 
     return oThis.insert(params).fire();
   },
 
-  updateLastStartTime: function(params) {
+  /**
+   *
+   * @param params
+   * @param params.id {number}
+   * @param params.kind {string}
+   * @param params.new_last_start_time {string}
+   * @param params.new_status {string}
+   * @returns {*}
+   */
+  updateLastStartTimeAndStatus: function(params) {
     const oThis = this;
 
-    if (!params.id || !params.last_start_time) {
-      throw 'Mandatory parameters are missing. Expected an object with the following keys: {id, last_start_time}';
+    if (!params.id || !params.new_last_start_time || !params.new_status || !params.kind) {
+      throw 'Mandatory parameters are missing. Expected an object with the following keys: {id, kind, new_last_start_time, new_status}';
     }
+    params.new_status = cronProcessesConstant.invertedStatuses[params.new_status];
+    params.kind = cronProcessesConstant.invertedKinds[params.kind];
+
     return oThis
-      .update({ last_start_time: params.last_start_time })
+      .update({ last_start_time: params.new_last_start_time, status: params.new_status })
       .where({ id: params.id })
       .fire();
   },
 
-  updateLastEndTime: function(params) {
+  /**
+   *
+   * @param params
+   *        params.id {number}
+   *        params.new_last_end_time {number}
+   *        params.new_status {string}
+   * @returns {*}
+   */
+  updateLastEndTimeAndStatus: function(params) {
     const oThis = this;
 
-    if (!params.id || !params.last_end_time) {
-      throw 'Mandatory parameters are missing. Expected an object with the following keys: {id, last_end_time}';
+    if (!params.id || !params.new_last_end_time || !params.new_status) {
+      throw 'Mandatory parameters are missing. Expected an object with the following keys: {id, new_last_end_time, new_status}';
     }
+    params.new_status = cronProcessesConstant.invertedStatuses[params.new_status];
+
     return oThis
-      .update({ last_end_time: params.last_end_time })
+      .update({ last_end_time: params.new_last_end_time, status: params.new_status })
       .where({ id: params.id })
       .fire();
   }
 };
 
-Object.assign(CronProcessInfoModel.prototype, CronProcessInfoModelSpecificPrototype);
+Object.assign(CronProcessesModel.prototype, CronProcessInfoModelSpecificPrototype);
 
-module.exports = CronProcessInfoModel;
+module.exports = CronProcessesModel;
