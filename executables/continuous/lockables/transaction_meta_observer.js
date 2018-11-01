@@ -172,7 +172,7 @@ const TransactionMetaObserverKlassPrototype = {
 
   pendingTasksDone: function() {
     const oThis = this;
-    return oThis.handlerPromises.length === 0;
+    return oThis.handlerPromises.length === 0 && !oThis.lockAcquired;
   }
 };
 
