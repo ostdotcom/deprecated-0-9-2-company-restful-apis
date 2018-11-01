@@ -53,7 +53,7 @@ const TransactionMetaArchival = function() {
   const oThis = this;
 
   oThis.txMetaIds = [];
-  oThis.batchSize = 5;
+  oThis.batchSize = 500;
   oThis.archiveColumns = [];
 };
 
