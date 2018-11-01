@@ -13,6 +13,7 @@ const rootPrefix = '../..',
 
 const dbName = 'saas_config_' + coreConstants.SUB_ENVIRONMENT + '_' + coreConstants.ENVIRONMENT;
 
+//Constructor
 const CronProcessesModel = function() {
   const oThis = this;
   ModelBaseKlass.call(oThis, { dbName: dbName });
@@ -25,7 +26,11 @@ CronProcessesModel.prototype = Object.create(ModelBaseKlass.prototype);
  */
 const CronProcessInfoModelSpecificPrototype = {
   tableName: 'cron_processes',
-
+  /**
+   *
+   * @param id
+   * @returns {Promise<any>}
+   */
   get: function(id) {
     const oThis = this;
 
@@ -77,14 +82,21 @@ const CronProcessInfoModelSpecificPrototype = {
    * @param params.kind {string}
    * @param params.new_last_start_time {string}
    * @param params.new_status {string}
-   * @returns {*}
+   * @returns {Promise<*>}
    */
-  updateLastStartTimeAndStatus: function(params) {
+  updateLastStartTimeAndStatus: async function(params) {
     const oThis = this;
 
-    if (!params.id || !params.new_last_start_time || !params.new_status || !params.kind) {
+    // Perform validations.
+    if (
+      !params.hasOwnProperty('id') ||
+      !params.hasOwnProperty('new_last_start_time') ||
+      !params.hasOwnProperty('new_status') ||
+      !params.hasOwnProperty('kind')
+    ) {
       throw 'Mandatory parameters are missing. Expected an object with the following keys: {id, kind, new_last_start_time, new_status}';
     }
+
     params.new_status = cronProcessesConstant.invertedStatuses[params.new_status];
     params.kind = cronProcessesConstant.invertedKinds[params.kind];
 
@@ -100,17 +112,18 @@ const CronProcessInfoModelSpecificPrototype = {
    *        params.id {number}
    *        params.new_last_end_time {number}
    *        params.new_status {string}
-   * @returns {*}
+   * @returns {Promise<*>}
    */
-  updateLastEndTimeAndStatus: function(params) {
+  updateLastEndTimeAndStatus: async function(params) {
     const oThis = this;
 
+    // Perform validations.
     if (!params.id || !params.new_last_end_time || !params.new_status) {
       throw 'Mandatory parameters are missing. Expected an object with the following keys: {id, new_last_end_time, new_status}';
     }
     params.new_status = cronProcessesConstant.invertedStatuses[params.new_status];
 
-    return oThis
+    await oThis
       .update({ last_end_time: params.new_last_end_time, status: params.new_status })
       .where({ id: params.id })
       .fire();
