@@ -57,6 +57,7 @@ const CronProcessInfoModelSpecificPrototype = {
   insertRecord: function(params) {
     const oThis = this;
 
+    // Perform validations.
     if (
       !params.hasOwnProperty('kind') ||
       !params.hasOwnProperty('ip_address') ||
