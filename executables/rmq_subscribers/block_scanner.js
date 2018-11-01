@@ -55,7 +55,7 @@ let ic = null,
 
 // Check whether the cron can be started or not.
 CronProcessHandlerObject.canStartProcess({
-  id: program.processLockId,
+  id: +program.processLockId, // Implicit string to int conversion.
   cron_kind: cronKind
 });
 
