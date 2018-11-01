@@ -39,13 +39,6 @@ StartServicesKlass.prototype = {
     const oThis = this,
       servicesList = [];
 
-    // Start REDIS server
-    logger.step('** Starting Redis Server');
-    var cmd =
-      "redis-server --port 6379  --requirepass 'st123'" + ' >> ' + homeAbsolutePath + '/openst-setup/logs/redis.log';
-    // servicesList.push(cmd);
-    oThis._asyncCommand(cmd);
-
     // Start Memcached server
     logger.step('** Starting Memcached Server');
     var cmd = 'memcached -p 11211 -d' + ' >> ' + homeAbsolutePath + '/openst-setup/logs/memcached.log';

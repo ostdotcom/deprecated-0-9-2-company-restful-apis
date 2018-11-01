@@ -33,12 +33,6 @@ define('SUB_ENVIRONMENT_SHORT', process.env.CR_SUB_ENVIRONMENT.substring(0, 2));
 define('OST_UTILITY_GAS_PRICE', process.env.OST_UTILITY_GAS_PRICE);
 define('OST_VALUE_GAS_PRICE', process.env.OST_VALUE_GAS_PRICE);
 
-// Redis details
-define('OST_REDIS_HOST', process.env.OST_REDIS_HOST);
-define('OST_REDIS_PORT', process.env.OST_REDIS_PORT);
-define('OST_REDIS_PASS', process.env.OST_REDIS_PASS);
-define('OST_REDIS_TLS_ENABLED', process.env.OST_REDIS_TLS_ENABLED);
-
 // MySQL details
 define('MYSQL_CONNECTION_POOL_SIZE', process.env.CR_MYSQL_CONNECTION_POOL_SIZE);
 
