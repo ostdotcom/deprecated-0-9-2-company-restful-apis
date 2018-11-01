@@ -3,7 +3,7 @@
 /**
  * This script will populate entries for existing clients for nonce_memcached config stratey
  *
- * node executables/one_timers/populate_nonce_memcached_strategy_for_existing_clients.js [1]
+ * node executables/one_timers/associate_shared_strategy_for_existing_clients.js [1]
  */
 
 const rootPrefix = '../..',
@@ -15,11 +15,11 @@ const rootPrefix = '../..',
 const args = process.argv,
   configStrategyId = args[2];
 
-function PopulateNonceMemcachedForClients() {
+function AssociateSharedStrategyForClients() {
   const oThis = this;
 }
 
-PopulateNonceMemcachedForClients.prototype = {
+AssociateSharedStrategyForClients.prototype = {
   /**
    * Perform
    *
@@ -105,10 +105,10 @@ PopulateNonceMemcachedForClients.prototype = {
 };
 
 const usageDemo = function() {
-  logger.log('usage:', 'node ./executables/one_timers/populate_nonce_memcached_strategy_for_existing_clients.js');
+  logger.log('usage:', 'node ./executables/one_timers/associate_shared_strategy_for_existing_clients.js 12');
 };
 
-const object = new PopulateNonceMemcachedForClients();
+const object = new AssociateSharedStrategyForClients();
 object
   .perform()
   .then(function(a) {
