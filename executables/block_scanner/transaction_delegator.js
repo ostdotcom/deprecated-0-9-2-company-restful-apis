@@ -272,12 +272,12 @@ TransactionDelegator.prototype = {
     const oThis = this;
 
     process.on('SIGINT', function() {
-      logger.win('* Received SIGINT. Signal registerred.');
+      logger.win('* Received SIGINT. Signal registered.');
       oThis.interruptSignalObtained = true;
     });
 
     process.on('SIGTERM', function() {
-      logger.win('* Received SIGTERM. Signal registerred.');
+      logger.win('* Received SIGTERM. Signal registered.');
       oThis.interruptSignalObtained = true;
     });
   },
