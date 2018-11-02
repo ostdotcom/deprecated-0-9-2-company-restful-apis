@@ -265,7 +265,7 @@ NOTE: Create the file if not present.
 * Start block scanner. Change utility chain id accordingly.
 ```bash
 # Start master process for Block scanner.
-node executables/block_scanner/transaction_delegator.js --group-id 1000 --data-file-path ~/openst-setup/data/utility-chain-1000/block_scanner_execute_transaction.data --benchmark-file-path ~/openst-setup/logs/block_scanner_benchmark-1000.csv
+node executables/block_scanner/transaction_delegator.js --process_id  8 --group_id 197 --data_file_path $HOME/openst-setup/data/utility-chain-1000/block_scanner_execute_transaction.data --benchmark_file_path $HOME/openst-setup/logs/block_scanner_benchmark-1000.csv
 ```
 
 ```bash
