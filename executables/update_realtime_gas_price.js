@@ -55,12 +55,6 @@ validateAndSanitize();
 // Declare variables.
 const cronKind = CronProcessesConstants.updateRealtimeGasPrice;
 
-// Check whether the cron can be started or not.
-CronProcessHandlerObject.canStartProcess({
-  id: +processId, // Implicit string to int conversion.
-  cron_kind: cronKind
-});
-
 const dynamicGasPriceProvider = require('@ostdotcom/ost-dynamic-gas-price'),
   BigNumber = require('bignumber.js');
 
@@ -146,11 +140,19 @@ UpdateRealTimeGasPrice.prototype = {
   }
 };
 
-// Perform action.
-const UpdateRealTimeGasPriceObj = new UpdateRealTimeGasPrice();
-UpdateRealTimeGasPriceObj.perform().then(async function() {
-  logger.info('Cron last run at', Date.now());
-  setTimeout(function() {
-    process.exit(0);
-  }, 5000); //To kill the process after 5 seconds expecting that the cache will be set by then.
+// Check whether the cron can be started or not.
+CronProcessHandlerObject.canStartProcess({
+  id: +processId, // Implicit string to int conversion.
+  cron_kind: cronKind
+}).then(function() {
+  console.log('---2---2---');
+  // Perform action.
+  const UpdateRealTimeGasPriceObj = new UpdateRealTimeGasPrice();
+  console.log('---3---3---');
+  UpdateRealTimeGasPriceObj.perform().then(async function() {
+    logger.info('Cron last run at: ', Date.now());
+    setTimeout(function() {
+      process.exit(0);
+    }, 5000); //To kill the process after 5 seconds expecting that the cache will be set by then.
+  });
 });

@@ -44,12 +44,11 @@ const args = process.argv,
   filePath = args[3].trim(),
   group_id = args[4];
 
-let configStrategy = {},
-  cronKind = CronProcessesConstants.stakeAndMintProcessor; // Define cronKind.
+const cronKind = CronProcessesConstants.stakeAndMintProcessor; // Define cronKind.
 
 // Check whether the cron can be started or not.
 CronProcessHandlerObject.canStartProcess({
-  id: processId,
+  id: +processId, // Implicit string to int conversion.
   cron_kind: cronKind
 });
 
@@ -107,9 +106,12 @@ const StartIntercommPrototype = {
     logger.win('InterComm Script for Stake and Mint Processor initiated.');
   },
 
+  /**
+   * Returns a boolean which checks whether all the pending tasks are done or not.
+   *
+   * @returns {boolean}
+   */
   pendingTasksDone: function() {
-    const oThis = this;
-
     return true;
   }
 };

@@ -47,7 +47,7 @@ let cronKind = CronProcessesConstants.transactionMetaObserver;
 
 // Check whether the cron can be started or not.
 CronProcessHandlerObject.canStartProcess({
-  id: program.processId,
+  id: +program.processId, // Implicit string to int conversion.
   cron_kind: cronKind
 });
 
