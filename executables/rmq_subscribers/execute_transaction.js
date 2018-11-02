@@ -19,8 +19,9 @@ const rootPrefix = '../..';
 require(rootPrefix + '/module_overrides/index');
 
 // Include Process Locker File
-const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
-  ProcessLocker = new ProcessLockerKlass();
+const CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
+  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
+  CronProcessHandlerObject = new CronProcessesHandler();
 
 const args = process.argv,
   processId = args[2];
@@ -35,11 +36,13 @@ let unAckCount = 0,
   openStNotification = null,
   txQueueSubscribed = false,
   commandQueueSubscribed = false,
+  cronKind = CronProcessesConstants.executeTx,
   intentToConsumerTagMap = { cmdQueue: null, exTxQueue: null };
 
-// Start process locker.
-ProcessLocker.canStartProcess({
-  process_title: 'executables_rmq_subscribers_execute_transaction' + processId
+// Check whether the cron can be started or not.
+CronProcessHandlerObject.canStartProcess({
+  id: +processId, // Implicit string to int conversion.
+  cron_kind: cronKind
 });
 
 // Load external packages.
@@ -379,20 +382,25 @@ function handle() {
   }
 
   // The OLD Way - Begin
-  let f = function() {
+  const signalHandler = function() {
     if (unAckCount !== PromiseQueueManager.getPendingCount()) {
       logger.error('ERROR :: unAckCount and pending counts are not in sync.');
     }
     if ((PromiseQueueManager.getPendingCount() <= 0 || unAckCount <= 0) && unAckCommandMessages === 0) {
-      console.log('SIGINT/SIGTERM handle :: No pending Promises.');
-      process.exit(1);
+      logger.log('SIGINT/SIGTERM handle :: No pending Promises.');
+      cronProcessHandlerObject.stopProcess(processId).then(function() {
+        logger.info('Status and last_end_time updated in table. Killing process.');
+
+        // Stop the process only after the entry has been updated in the table.
+        process.exit(1);
+      });
     } else {
       logger.info('waiting for open tasks to be done.');
-      setTimeout(f, 1000);
+      setTimeout(signalHandler, 1000);
     }
   };
 
-  setTimeout(f, 1000);
+  setTimeout(signalHandler, 1000);
 }
 
 function ostRmqError(err) {
