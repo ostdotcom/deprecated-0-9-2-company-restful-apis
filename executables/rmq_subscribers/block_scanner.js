@@ -60,8 +60,6 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
 let ic = null,
   web3InteractFactory = null;
 
-const openStNotification = SharedRabbitMqProvider.getInstance();
-
 require(rootPrefix + '/lib/block_scanner/for_tx_status_and_balance_sync');
 require(rootPrefix + '/lib/web3/interact/ws_interact');
 
@@ -151,7 +149,7 @@ const promiseExecutor = async function(onResolve, onReject, params) {
 let PromiseQueueManager = null;
 
 warmUpGethPool()
-  .then(function() {
+  .then(async function() {
     PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseExecutor, {
       name: 'blockscanner_promise_queue_manager',
       timeoutInMilliSecs: 3 * 60 * 1000, //3 minutes
@@ -164,6 +162,8 @@ warmUpGethPool()
     });
 
     let chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
+
+    const openStNotification = await SharedRabbitMqProvider.getInstance();
 
     openStNotification.subscribeEvent.rabbit(
       ['block_scanner_execute_' + chain_id],

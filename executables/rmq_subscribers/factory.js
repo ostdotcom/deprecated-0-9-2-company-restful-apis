@@ -184,21 +184,23 @@ const PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseExecutor,
   timeoutInMilliSecs: -1
 });
 
-const openStNotification = SharedRabbitMqProvider.getInstance();
+const subscribeEvent = async function() {
+  const openStNotification = await SharedRabbitMqProvider.getInstance();
 
-openStNotification.subscribeEvent.rabbit(
-  topicsToSubscribeArray,
-  {
-    queue: queueName,
-    ackRequired: 1,
-    prefetch: 25
-  },
-  function(params) {
-    // Promise is required to be returned to manually ack messages in RMQ
-    return PromiseQueueManager.createPromise(params);
-  }
-);
-
+  openStNotification.subscribeEvent.rabbit(
+    topicsToSubscribeArray,
+    {
+      queue: queueName,
+      ackRequired: 1,
+      prefetch: 25
+    },
+    function(params) {
+      // Promise is required to be returned to manually ack messages in RMQ
+      return PromiseQueueManager.createPromise(params);
+    }
+  );
+};
+subscribeEvent();
 // Using a single function to handle multiple signals
 function handle() {
   logger.info('Received Signal');

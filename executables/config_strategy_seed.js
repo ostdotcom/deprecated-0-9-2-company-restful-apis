@@ -290,7 +290,21 @@ seedConfigStrategies.prototype = {
 
     const configStrategy = new configStrategyModel();
 
-    await configStrategy.create('rmq', process.argv[2], rmq_params).then();
+    await configStrategy.create('rmq', process.argv[2], rmq_params, group_id).then();
+  },
+
+  seed_shared_rmq_params: async function() {
+    let shared_rmq_params = {};
+    shared_rmq_params['OST_SHARED_RMQ_USERNAME'] = env_list.OST_SHARED_RMQ_USERNAME;
+    shared_rmq_params['OST_SHARED_RMQ_PASSWORD'] = env_list.OST_SHARED_RMQ_PASSWORD;
+    shared_rmq_params['OST_SHARED_RMQ_HOST'] = env_list.OST_SHARED_RMQ_HOST;
+    shared_rmq_params['OST_SHARED_RMQ_PORT'] = env_list.OST_SHARED_RMQ_PORT;
+    shared_rmq_params['OST_SHARED_RMQ_HEARTBEATS'] = env_list.OST_SHARED_RMQ_HEARTBEATS;
+    shared_rmq_params['OST_SHARED_RMQ_CLUSTER_NODES'] = env_list.OST_SHARED_RMQ_CLUSTER_NODES;
+
+    const configStrategy = new configStrategyModel();
+
+    await configStrategy.create('shared_rmq', process.argv[2], shared_rmq_params);
   },
 
   populateChainGethProviders: async function() {

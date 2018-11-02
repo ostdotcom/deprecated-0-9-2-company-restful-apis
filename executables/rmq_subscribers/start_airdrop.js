@@ -25,64 +25,66 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id');
 
-const openStNotification = SharedRabbitMqProvider.getInstance();
-
 require(rootPrefix + '/lib/airdrop_management/distribute_tokens/start');
 
 // Declare variables.
 let unAckCount = 0;
 
-openStNotification.subscribeEvent.rabbit(
-  ['airdrop.start.#'],
-  {
-    queue: 'start_airdrop_from_restful_apis',
-    ackRequired: 1,
-    prefetch: 5
-  },
-  function(params) {
-    // Promise is required to be returned to manually ack messages in RMQ
-    return new Promise(async function(onResolve, onReject) {
-      unAckCount++;
-      // Process request
-      const parsedParams = JSON.parse(params);
-      logger.step('Consumed airdrop start params -> ', parsedParams);
+const subscribeAirdrop = async function() {
+  const openStNotification = await SharedRabbitMqProvider.getInstance();
 
-      const payload = parsedParams.message.payload,
-        clientAirdropId = payload.client_airdrop_id,
-        criticalInteractionLogId = payload.critical_chain_interaction_log_id,
-        userIds = payload.user_ids;
+  openStNotification.subscribeEvent.rabbit(
+    ['airdrop.start.#'],
+    {
+      queue: 'start_airdrop_from_restful_apis',
+      ackRequired: 1,
+      prefetch: 5
+    },
+    function(params) {
+      // Promise is required to be returned to manually ack messages in RMQ
+      return new Promise(async function(onResolve, onReject) {
+        unAckCount++;
+        // Process request
+        const parsedParams = JSON.parse(params);
+        logger.step('Consumed airdrop start params -> ', parsedParams);
 
-      let configStrategyHelper = new ConfigStrategyHelperKlass(payload.client_id);
-      configStrategyHelper.get().then(function(configStrategyRsp) {
-        let ic = new InstanceComposer(configStrategyRsp.data),
-          startAirdropKlass = ic.getDistributeTokensStartClass(),
-          startAirdrop = new startAirdropKlass({
-            client_airdrop_id: clientAirdropId,
-            critical_chain_interaction_log_id: criticalInteractionLogId,
-            user_ids: userIds
-          });
+        const payload = parsedParams.message.payload,
+          clientAirdropId = payload.client_airdrop_id,
+          criticalInteractionLogId = payload.critical_chain_interaction_log_id,
+          userIds = payload.user_ids;
 
-        startAirdrop
-          .perform()
-          .then(function(response) {
-            if (!response.isSuccess()) {
-              logger.notify('e_rmqs_sa_1', 'Something went wrong in airdrop distribution', response, params);
-            }
-            unAckCount--;
-            // ack RMQ
-            return onResolve();
-          })
-          .catch(function(err) {
-            logger.notify('e_rmqs_sa_2', 'Something went wrong in airdrop distribution', err, params);
+        let configStrategyHelper = new ConfigStrategyHelperKlass(payload.client_id);
+        configStrategyHelper.get().then(function(configStrategyRsp) {
+          let ic = new InstanceComposer(configStrategyRsp.data),
+            startAirdropKlass = ic.getDistributeTokensStartClass(),
+            startAirdrop = new startAirdropKlass({
+              client_airdrop_id: clientAirdropId,
+              critical_chain_interaction_log_id: criticalInteractionLogId,
+              user_ids: userIds
+            });
 
-            unAckCount--;
-            // ack RMQ
-            return onResolve();
-          });
+          startAirdrop
+            .perform()
+            .then(function(response) {
+              if (!response.isSuccess()) {
+                logger.notify('e_rmqs_sa_1', 'Something went wrong in airdrop distribution', response, params);
+              }
+              unAckCount--;
+              // ack RMQ
+              return onResolve();
+            })
+            .catch(function(err) {
+              logger.notify('e_rmqs_sa_2', 'Something went wrong in airdrop distribution', err, params);
+
+              unAckCount--;
+              // ack RMQ
+              return onResolve();
+            });
+        });
       });
-    });
-  }
-);
+    }
+  );
+};
 
 // Using a single function to handle multiple signals.
 function handle() {
@@ -109,3 +111,5 @@ function ostRmqError(err) {
 process.on('SIGINT', handle);
 process.on('SIGTERM', handle);
 process.on('ost_rmq_error', ostRmqError);
+
+subscribeAirdrop();
