@@ -110,7 +110,7 @@ function handle() {
   const signalHandler = function() {
     if (unAckCount <= 0) {
       logger.log('SIGINT/SIGTERM handle :: No pending Promises.');
-      cronProcessHandlerObject.stopProcess(processId).then(function() {
+      CronProcessHandlerObject.stopProcess(processId).then(function() {
         logger.info('Status and last_end_time updated in table. Killing process.');
 
         // Stop the process only after the entry has been updated in the table.
