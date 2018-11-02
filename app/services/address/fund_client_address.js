@@ -18,6 +18,7 @@ const rootPrefix = '../../..',
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  notifier = require(rootPrefix + '/helpers/notifier'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
   ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/client_worker_managed_address_id'),
@@ -244,7 +245,7 @@ FundClientAddressKlass.prototype = {
       balanceResponse = await fetchBalanceObj.perform();
 
     if (balanceResponse.isFailure()) {
-      logger.notify('e_fa_e_ceb_1', 'Error in fetching balance of Address - ' + ethereumAddress, balanceResponse, {
+      notifier.notify('e_fa_e_ceb_1', 'Error in fetching balance of Address - ' + ethereumAddress, balanceResponse, {
         clientId: oThis.clientId,
         ethereum_address: ethereumAddress
       });
@@ -289,7 +290,7 @@ FundClientAddressKlass.prototype = {
     const transferResponse = await transferSTPrimeBalanceObj.perform();
 
     if (transferResponse.isFailure()) {
-      logger.notify(
+      notifier.notify(
         'a_fca_tb_1',
         'Error in transfer of ' + transferAmountInWei + ' Wei Eth to Address - ' + recipientAddress,
         transferResponse,

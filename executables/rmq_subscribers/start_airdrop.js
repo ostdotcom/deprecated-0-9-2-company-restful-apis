@@ -21,6 +21,7 @@ ProcessLocker.canStartProcess({ process_title: 'executables_rmq_subscribers_star
 
 // All Module Requires.
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  notifier = require(rootPrefix + '/helpers/notifier'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id');
@@ -67,14 +68,14 @@ const subscribeAirdrop = async function() {
             .perform()
             .then(function(response) {
               if (!response.isSuccess()) {
-                logger.notify('e_rmqs_sa_1', 'Something went wrong in airdrop distribution', response, params);
+                notifier.notify('e_rmqs_sa_1', 'Something went wrong in airdrop distribution', response, params);
               }
               unAckCount--;
               // ack RMQ
               return onResolve();
             })
             .catch(function(err) {
-              logger.notify('e_rmqs_sa_2', 'Something went wrong in airdrop distribution', err, params);
+              notifier.notify('e_rmqs_sa_2', 'Something went wrong in airdrop distribution', err, params);
 
               unAckCount--;
               // ack RMQ

@@ -31,6 +31,7 @@ require(rootPrefix + '/lib/providers/platform');
 
 // Load Packages
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  notifier = require(rootPrefix + '/helpers/notifier'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
@@ -128,7 +129,7 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
     const ucOwnerBalanceBigNumberInWei = ucOwnerBalanceResponse.data.balance;
 
     if (ucOwnerBalanceBigNumberInWei.lessThan(minUCOBalanceInWei)) {
-      logger.notify('e_fa_e_cboco_1', 'ST PRIME Balance Of Utility Chain Owner is LOW', {
+      notifier.notify('e_fa_e_cboco_1', 'ST PRIME Balance Of Utility Chain Owner is LOW', {
         utiltiy_chain_owner_utility_chain_address: oThis._utilityChainAddressFor('utilityChainOwner'),
         utility_chain_owner_balance_st_prime: basicHelper.convertToNormal(ucOwnerBalanceBigNumberInWei),
         min_required_balance: oThis._utilityChainMinBalanceFor('utilityChainOwner')
@@ -156,7 +157,7 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
     oThis.openStPlatform = openStPlatform; // for later use
 
     if (balanceResponse.isFailure()) {
-      logger.notify('e_fa_sp_ceb_1', 'Error in fetching balance of Address', balanceResponse, {
+      notifier.notify('e_fa_sp_ceb_1', 'Error in fetching balance of Address', balanceResponse, {
         ethereum_address: ethereumAddress
       });
       return Promise.resolve(balanceResponse);
@@ -188,7 +189,7 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
     const transferResponse = await transferSTPrimeBalanceObj.perform();
 
     if (transferResponse.isFailure()) {
-      logger.notify(
+      notifier.notify(
         'e_fa_sp_teb_1',
         'Error in transfer of ' + transferAmountInWei + 'Wei ST Prime to Address - ' + ethereumAddress,
         transferResponse
@@ -213,7 +214,7 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
       nameData = utilityChainBalance[name];
 
     if (!nameData) {
-      logger.notify('e_fa_sp_ucbb_1', 'Invalid user name passed for getting data - ' + name);
+      notifier.notify('e_fa_sp_ucbb_1', 'Invalid user name passed for getting data - ' + name);
 
       throw 'Invalid user name passed for getting data - ' + name;
     }
@@ -235,7 +236,7 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
       nameData = utilityChainBalance[name];
 
     if (!nameData) {
-      logger.notify('e_fa_sp_ucaf_1', 'Invalid user name passed for getting data - ' + name);
+      notifier.notify('e_fa_sp_ucaf_1', 'Invalid user name passed for getting data - ' + name);
 
       throw 'Invalid user name passed for getting data - ' + name;
     }
