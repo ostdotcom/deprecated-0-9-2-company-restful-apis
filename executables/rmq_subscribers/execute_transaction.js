@@ -349,8 +349,13 @@ function handle() {
   logger.info('Received Signal');
 
   if (!PromiseQueueManager.getPendingCount() && !unAckCount) {
-    console.log('SIGINT/SIGTERM handle :: No pending Promises.');
-    process.exit(1);
+    logger.log('SIGINT/SIGTERM handle :: No pending Promises.');
+    CronProcessHandlerObject.stopProcess(processId).then(function() {
+      logger.info('Status and last_end_time updated in table. Killing process.');
+
+      // Stop the process only after the entry has been updated in the table.
+      process.exit(1);
+    });
   }
 
   // The OLD Way - Begin
@@ -360,7 +365,7 @@ function handle() {
     }
     if ((PromiseQueueManager.getPendingCount() <= 0 || unAckCount <= 0) && unAckCommandMessages === 0) {
       logger.log('SIGINT/SIGTERM handle :: No pending Promises.');
-      cronProcessHandlerObject.stopProcess(processId).then(function() {
+      CronProcessHandlerObject.stopProcess(processId).then(function() {
         logger.info('Status and last_end_time updated in table. Killing process.');
 
         // Stop the process only after the entry has been updated in the table.
