@@ -18,13 +18,18 @@ const rootPrefix = '../..';
 // Always include module overrides first
 require(rootPrefix + '/module_overrides/index');
 
-// Include Process Locker File
+// Include Cron Process Handler.
 const CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
   CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
   CronProcessHandlerObject = new CronProcessesHandler();
 
 const args = process.argv,
   processId = args[2];
+
+if (!processId) {
+  logger.error('Please pass the processId.');
+  process.exit(1);
+}
 
 // Declare variables.
 const txQueuePrefetchCount = 100,
