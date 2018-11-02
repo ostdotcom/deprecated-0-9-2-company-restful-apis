@@ -37,6 +37,10 @@ export CR_CA_SHARED_MYSQL_HOST='127.0.0.1'
 export CR_CA_SHARED_MYSQL_USER='root'
 export CR_CA_SHARED_MYSQL_PASSWORD='root'
 
+export CR_SAAS_ANALYTICS_DB_HOST=127.0.0.1
+export CR_SAAS_ANALYTICS_DB_USER=root
+export CR_SAAS_ANALYTICS_DB_PASSWORD=root
+
 # DB details of openst-payments.
 export OP_MYSQL_HOST='127.0.0.1'
 export OP_MYSQL_USER='root'
