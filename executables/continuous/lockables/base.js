@@ -34,8 +34,8 @@ ContinuousLockableBaseKlass.prototype = {
   perform: async function() {
     const oThis = this;
 
-    await oThis.acquireLock();
     oThis.lockAcquired = true;
+    await oThis.acquireLock();
 
     await oThis.execute();
 

@@ -27,6 +27,7 @@ const InstanceComposer = require(rootPrefix + '/instance_composer'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+  SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
   web3InteractFactory = require(rootPrefix + '/lib/web3/interact/ws_interact'),
   ProcessLocker = new ProcessLockerKlass();
 
@@ -54,9 +55,14 @@ const TransactionDelegator = function(params) {
   oThis.scannerData = {};
   oThis.interruptSignalObtained = false;
   oThis.highestBlock = 0;
+  oThis.canExit = true;
+
+  SigIntHandler.call(oThis, {});
 };
 
-TransactionDelegator.prototype = {
+TransactionDelegator.prototype = Object.create(SigIntHandler.prototype);
+
+const TransactionDelegatorPrototype = {
   /**
    * Intentional block delay.
    */
@@ -121,6 +127,8 @@ TransactionDelegator.prototype = {
           return oThis.schedule();
         }
 
+        oThis.canExit = false;
+
         oThis.currentBlock = oThis.scannerData.lastProcessedBlock + 1;
 
         logger.log('Current Block =', oThis.currentBlock);
@@ -144,7 +152,7 @@ TransactionDelegator.prototype = {
 
         if (oThis.interruptSignalObtained) {
           logger.win('* Exiting Process after interrupt signal obtained.');
-          process.exit(1);
+          oThis.canExit = true;
         } else {
           oThis.reInit();
         }
@@ -328,7 +336,7 @@ TransactionDelegator.prototype = {
 
     if (oThis.interruptSignalObtained) {
       logger.win('* Exiting Process after interrupt signal obtained.');
-      process.exit(1);
+      oThis.canExit = true;
     }
   },
 
@@ -363,8 +371,19 @@ TransactionDelegator.prototype = {
     logger.win('* Obtained highest block on', provider, 'as', oThis.highestBlock);
 
     return Promise.resolve(highestBlockOfProvider);
+  },
+
+  /**
+   * pendingTasksDone
+   */
+  pendingTasksDone: function() {
+    const oThis = this;
+
+    return oThis.canExit;
   }
 };
+
+Object.assign(TransactionDelegator.prototype, TransactionDelegatorPrototype);
 
 program
   .option('--group-id <groupId>', 'Group Id')
