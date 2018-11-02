@@ -42,7 +42,7 @@ SigIntHandler.prototype = {
   },
 
   /**
-   * pendingTasksDone - Provides info whether the process has to exit
+   * This function provides info whether the process has to exit
    *
    */
   pendingTasksDone: function() {

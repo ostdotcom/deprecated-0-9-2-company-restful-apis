@@ -377,7 +377,9 @@ const TransactionDelegatorPrototype = {
   },
 
   /**
-   * pendingTasksDone
+   * Returns a boolean which checks whether all the pending tasks are done or not.
+   *
+   * @returns {boolean}
    */
   pendingTasksDone: function() {
     const oThis = this;
