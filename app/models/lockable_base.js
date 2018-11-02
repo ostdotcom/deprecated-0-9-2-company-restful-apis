@@ -1,6 +1,12 @@
 'use strict';
 
 /**
+ * Extend this in Model which needs to be lockable.
+ *
+ * @module app/models/lockable_base
+ */
+
+/**
  * constructor
  *
  * @constructor

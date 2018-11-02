@@ -53,12 +53,7 @@ StartServicesKlass.prototype = {
       valueChainStatus = openSTPlaform.services.utils.valueChainStatus,
       servicesList = [];
 
-    // Start REDIS server
-    logger.step('** Starting Redis Server');
-    let cmd =
-      "redis-server --port 6379  --requirepass 'st123'" + ' >> ' + homeAbsolutePath + '/openst-setup/logs/redis.log';
-    // servicesList.push(cmd);
-    oThis._asyncCommand(cmd);
+    let cmd = '';
 
     // Start Memcached server
     logger.step('** Starting Memcached Server');
