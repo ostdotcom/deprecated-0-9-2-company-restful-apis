@@ -77,6 +77,10 @@ define('KMS_API_KEY_ID', process.env.CR_API_KEY_KMS_ID);
 define('KMS_MANAGED_ADDR_KEY_ARN', process.env.CR_MANAGED_ADDRESS_KMS_ARN);
 define('KMS_MANAGED_ADDR_KEY_ID', process.env.CR_MANAGED_ADDRESS_KMS_ID);
 
+// Binance API Credentials
+define('BINANCE_API_KEY', process.env.CR_BINANCE_API_KEY);
+define('BINANCE_API_SECRET', process.env.CR_BINANCE_API_SECRET);
+
 // JWT details
 define('SAAS_API_SECRET_KEY', process.env.CA_SAAS_API_SECRET_KEY);
 
