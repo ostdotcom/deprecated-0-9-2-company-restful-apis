@@ -6,7 +6,7 @@
  * Usage: node ./executables/one_timers/transaction_meta_archival.js timeInterval [offsetForEndId]
  * Command Line Parameters:
  * timeInterval: [optional] Time Interval in hours to archive the data (in hours).
- * offsetForEndId: [optional] Time (in hours) to get end id for archival, if not passed - default value is 4 hours
+ * offsetToGetEndTimestamp: [optional] Time (in hours) to get end timestamp for archival, if not passed - default value is 24 hours
  *
  * Example: node ./executables/one_timers/transaction_meta_archival.js 24 6
  *
@@ -23,7 +23,7 @@ const rootPrefix = '../..',
 
 const args = process.argv,
   timeIntervalInHours = args[2],
-  offsetForEndIdArg = args[3];
+  offsetToGetEndTimestamp = args[3];
 
 /**
  *
@@ -72,6 +72,7 @@ TransactionMetaArchival.prototype = {
 
     statusArray.push(transactionMetaConstants.invertedStatuses[transactionMetaConstants.failed]);
     statusArray.push(transactionMetaConstants.invertedStatuses[transactionMetaConstants.mined]);
+    statusArray.push(transactionMetaConstants.invertedStatuses[transactionMetaConstants.insufficient_gas]);
 
     //startTimeStamp calculated as - currentTimeStamp - (archivalTimeInterval + offset)
     let endTimeStamp = new Date(Date.now() - oThis.offset).toLocaleString(),
@@ -168,12 +169,12 @@ TransactionMetaArchival.prototype = {
   _validate: async function() {
     const oThis = this;
 
-    if (!offsetForEndIdArg) {
+    if (!offsetToGetEndTimestamp) {
       let timeConversionFactor = 3600 * 1000; //hours to millisecond conversion
       // set to 24 hours, if not passed explicitly
       oThis.offset = 24 * timeConversionFactor;
     } else {
-      oThis.offset = offsetForEndIdArg * 3600 * 1000;
+      oThis.offset = offsetToGetEndTimestamp * 3600 * 1000;
     }
 
     let queryResponseForMeta = await new transactionMetaModel().showColumns().fire(),
