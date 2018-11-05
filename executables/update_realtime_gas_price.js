@@ -16,9 +16,14 @@
  */
 
 const rootPrefix = '..',
+  coreConstants = require(rootPrefix + '/config/core_constants'),
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
   SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger.js'),
   CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
+  valueChainGasPriceCacheKlass = require(rootPrefix + '/lib/shared_cache_management/estimate_value_chain_gas_price'),
   CronProcessHandlerObject = new CronProcessesHandler();
 
 const args = process.argv,
@@ -57,12 +62,6 @@ const cronKind = CronProcessesConstants.updateRealtimeGasPrice;
 
 const dynamicGasPriceProvider = require('@ostdotcom/ost-dynamic-gas-price'),
   BigNumber = require('bignumber.js');
-
-const coreConstants = require(rootPrefix + '/config/core_constants'),
-  responseHelper = require(rootPrefix + '/lib/formatter/response'),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger.js'),
-  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
-  valueChainGasPriceCacheKlass = require(rootPrefix + '/lib/shared_cache_management/estimate_value_chain_gas_price');
 
 /**
  *
