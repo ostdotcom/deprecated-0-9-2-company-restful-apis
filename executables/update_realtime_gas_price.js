@@ -4,13 +4,12 @@
  * This fetches an estimated gas price for which Transaction could get mined in less than 5 minutes.
  * source: 'https://ethgasstation.info/txPoolReport.php'
  *
- * Usage: node executables/update_realtime_gas_price.js processId group_id
+ * Usage: node executables/update_realtime_gas_price.js processId
  *
  * Command Line Parameters Description:
  * processId: process id to start the process
- * group_id: group id for fetching config strategy
  *
- * Example: node executables/update_realtime_gas_price.js 12345 1000
+ * Example: node executables/update_realtime_gas_price.js 12345
  *
  * @module executables/update_realtime_gas_price
  */
@@ -23,12 +22,12 @@ const rootPrefix = '..',
   CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
+  configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
   valueChainGasPriceCacheKlass = require(rootPrefix + '/lib/shared_cache_management/estimate_value_chain_gas_price'),
   CronProcessHandlerObject = new CronProcessesHandler();
 
 const args = process.argv,
-  processId = args[2],
-  group_id = args[3];
+  processId = args[2];
 
 // Usage demo.
 const usageDemo = function() {
@@ -36,19 +35,12 @@ const usageDemo = function() {
   logger.log(
     '* processId is used for ensuring that no other process with the same processId can run on a given machine.'
   );
-  logger.log('* group_id is needed for fetching config strategy');
 };
 
 // Validate and sanitize the command line arguments.
 const validateAndSanitize = function() {
   if (!processId) {
     logger.error('Process id NOT passed in the arguments.');
-    usageDemo();
-    process.exit(1);
-  }
-
-  if (!group_id) {
-    logger.error('group_id is not passed');
     usageDemo();
     process.exit(1);
   }
@@ -84,15 +76,18 @@ const UpdateRealTimeGasPricePrototype = {
    */
   perform: async function() {
     // Fetch configStrategy.
-    const strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
-      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash();
+    const strategyByGroupHelperObj = new StrategyByGroupHelper(),
+      configStrategyResp = await strategyByGroupHelperObj.getForKind(configStrategyConstants.value_geth);
 
-    let configStrategy = configStrategyResp.data;
+    let chainIdInternal,
+      configStrategy = configStrategyResp.data;
+    for (let strategyId in configStrategy) {
+      chainIdInternal = configStrategy[strategyId].OST_VALUE_CHAIN_ID;
+    }
 
     // Declare variables.
     let estimatedGasPriceFloat = 0,
       valueChainGasPriceCacheObj = new valueChainGasPriceCacheKlass(),
-      chainIdInternal = configStrategy.OST_VALUE_CHAIN_ID,
       retryCount = 10;
 
     while (retryCount > 0 && estimatedGasPriceFloat === 0) {
