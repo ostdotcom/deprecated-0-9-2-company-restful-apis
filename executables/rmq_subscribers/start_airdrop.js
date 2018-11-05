@@ -2,7 +2,12 @@
 /**
  * This is script to start airdrop for a client token by subscribing to RMQ events.
  *
- * Usage: node executables/rmq_subscribers/start_airdrop.js
+ * Usage: node executables/rmq_subscribers/start_airdrop.js processId
+ *
+ * Command Line Parameters Description:
+ * processId: process id to start the process
+ *
+ * Example: node executables/rmq_subscribers/start_airdrop.js 1
  *
  * @module executables/rmq_subscribers/start_airdrop
  */
@@ -12,12 +17,27 @@ const rootPrefix = '../..';
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
 
-// Include Process Locker File
-const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
-  ProcessLocker = new ProcessLockerKlass();
+// Include Cron Process Handler.
+const CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
+  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
+  CronProcessHandlerObject = new CronProcessesHandler();
 
-ProcessLocker.canStartProcess({ process_title: 'executables_rmq_subscribers_start_airdrop' });
-//ProcessLocker.endAfterTime({time_in_minutes: 60});
+const args = process.argv,
+  processId = args[2];
+
+if (!processId) {
+  logger.error('Please pass the processId.');
+  process.exit(1);
+}
+
+// Declare variables.
+const cronKind = CronProcessesConstants.startAirdrop;
+
+// Check whether the cron can be started or not.
+CronProcessHandlerObject.canStartProcess({
+  id: +processId, // Implicit string to int conversion.
+  cron_kind: cronKind
+});
 
 // All Module Requires.
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
@@ -87,20 +107,26 @@ openStNotification.subscribeEvent.rabbit(
 // Using a single function to handle multiple signals.
 function handle() {
   logger.info('Received Signal');
-  let f = function() {
+  const signalHandler = function() {
     if (unAckCount <= 0) {
-      process.exit(1);
+      logger.log('SIGINT/SIGTERM handle :: No pending Promises.');
+      CronProcessHandlerObject.stopProcess(processId).then(function() {
+        logger.info('Status and last_end_time updated in table. Killing process.');
+
+        // Stop the process only after the entry has been updated in the table.
+        process.exit(1);
+      });
     } else {
       logger.info('waiting for open tasks to be done.');
-      setTimeout(f, 1000);
+      setTimeout(signalHandler, 1000);
     }
   };
 
-  setTimeout(f, 1000);
+  setTimeout(signalHandler, 1000);
 }
 
 function ostRmqError(err) {
-  logger.info('ostRmqError occured.', err);
+  logger.info('ostRmqError occurred.', err);
   process.emit('SIGINT');
 }
 

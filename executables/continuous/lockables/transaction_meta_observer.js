@@ -12,39 +12,54 @@
  *  - Submitted
  *    If transaction meta says status submitted for sometime then check on geth, and resubmit if not found on geth.
  *
- * Example: node executables/continuous/lockables/transaction_meta_observer.js
+ * Example: node executables/continuous/lockables/transaction_meta_observer.js --process-id 123 --prefetch-count 10
  *
  * @module executables/transaction_meta_observer
  */
 
 const rootPrefix = '../../..';
 
-//Always Include Module overrides First
+// Always include module overrides first.
 require(rootPrefix + '/module_overrides/index');
 
+// Require modules.
 const program = require('commander'),
-  ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
-  ProcessLocker = new ProcessLockerKlass();
+  SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger.js'),
+  CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
+  baseKlass = require(rootPrefix + '/executables/continuous/lockables/base'),
+  TransactionMetaModel = require(rootPrefix + '/app/models/transaction_meta'),
+  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
+  transactionMetaConst = require(rootPrefix + '/lib/global_constant/transaction_meta'),
+  CronProcessHandlerObject = new CronProcessesHandler();
 
 program.option('--process-id <processId>', 'Process id').option('--prefetch-count <prefetchCount>', 'Prefetch Count');
 
 program.on('--help', () => {
-  console.log('');
-  console.log('  Example:');
-  console.log('');
-  console.log(
+  logger.log('');
+  logger.log('  Example:');
+  logger.log('');
+  logger.log(
     '    node ./executables/continuous/lockables/transaction_meta_observer.js --process-id 123 --prefetch-count 10'
   );
-  console.log('');
-  console.log('');
+  logger.log('');
+  logger.log('');
 });
 
 program.parse(process.argv);
 
-ProcessLocker.canStartProcess({
-  process_title: 'executables_continuous_transaction_meta_observer' + program.processId
+// Declare variables.
+let runCount = 1,
+  cronKind = CronProcessesConstants.transactionMetaObserver,
+  TransactionStatusHandlers = {};
+
+// Check whether the cron can be started or not.
+CronProcessHandlerObject.canStartProcess({
+  id: +program.processId, // Implicit string to int conversion.
+  cron_kind: cronKind
 });
-ProcessLocker.endAfterTime({ time_in_minutes: 40 });
+
+CronProcessHandlerObject.endAfterTime({ time_in_minutes: 40 });
 
 // Validate and sanitize the commander parameters.
 const validateAndSanitize = function() {
@@ -56,15 +71,6 @@ const validateAndSanitize = function() {
 
 // Validate and sanitize the input params.
 validateAndSanitize();
-
-const baseKlass = require(rootPrefix + '/executables/continuous/lockables/base'),
-  TransactionMetaModel = require(rootPrefix + '/app/models/transaction_meta'),
-  transactionMetaConst = require(rootPrefix + '/lib/global_constant/transaction_meta'),
-  SigIntHandler = require(rootPrefix + '/executables/sigint_handler');
-
-let runCount = 1;
-
-let TransactionStatusHandlers = {};
 
 const setTransactionStatusHandlers = function() {
   let is = transactionMetaConst.invertedStatuses;
@@ -94,7 +100,7 @@ const TransactionMetaObserverKlass = function(params) {
   oThis.handlerPromises = [];
 
   baseKlass.call(oThis, params);
-  SigIntHandler.call(oThis);
+  SigIntHandler.call(oThis, { id: program.processId });
 };
 
 TransactionMetaObserverKlass.prototype = Object.create(baseKlass.prototype);
@@ -193,10 +199,10 @@ const runTask = async function() {
 
     if (runCount >= 10) {
       // Executed 10 times now exiting
-      console.log(runCount + ' iteration is executed, Killing self now. ');
+      logger.log(runCount + ' iteration is executed, Killing self now. ');
       process.exit(1);
     } else {
-      console.log(runCount + ' iteration is executed, Sleeping now for seconds ' + nextIterationTime / 1000);
+      logger.log(runCount + ' iteration is executed, Sleeping now for seconds ' + nextIterationTime / 1000);
       runCount = runCount + 1;
       setTimeout(runTask, nextIterationTime);
     }

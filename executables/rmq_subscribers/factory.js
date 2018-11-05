@@ -21,12 +21,14 @@ require(rootPrefix + '/module_overrides/index');
 // Load external packages
 const OSTBase = require('@openstfoundation/openst-base');
 
-const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
-  notificationTopics = require(rootPrefix + '/lib/global_constant/notification_topics'),
+const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
-  IntercomStatusKlass = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js');
+  CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
+  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
+  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
+  notificationTopics = require(rootPrefix + '/lib/global_constant/notification_topics'),
+  IntercomStatusKlass = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js'),
+  CronProcessHandlerObject = new CronProcessesHandler();
 
 const usageDemo = function() {
   logger.log('usage:', 'node ./executables/rmq_subscribers/factory.js processLockId queueSuffix topicsToSubscribe');
@@ -37,15 +39,20 @@ const usageDemo = function() {
   logger.log('* topicsToSubscribe is a JSON stringified version of topics to be subscribed for this RMQ subscriber.');
 };
 
-const ProcessLocker = new ProcessLockerKlass(),
-  args = process.argv,
+const args = process.argv,
   processLockId = args[2],
   queueSuffix = args[3],
   topicsToSubscribe = args[4];
 
-let topicsToSubscribeArray = null;
+// Declare variables.
+let topicsToSubscribeArray = null,
+  cronKind = CronProcessesConstants.rmqFactory;
 
-ProcessLocker.canStartProcess({ process_title: 'executables_rmq_subscribers_factory' + processLockId });
+// Check whether the cron can be started or not.
+CronProcessHandlerObject.canStartProcess({
+  id: +processLockId, // Implicit string to int conversion.
+  cron_kind: cronKind
+});
 
 const queueName = 'executables_rmq_subscribers_factory_' + queueSuffix;
 
@@ -99,7 +106,7 @@ const RmqFactory = function() {
     timeoutInMilliSecs: -1
   });
 
-  SigIntHandler.call(oThis, {});
+  SigIntHandler.call(oThis, { id: processLockId });
 };
 
 RmqFactory.prototype = Object.create(SigIntHandler.prototype);

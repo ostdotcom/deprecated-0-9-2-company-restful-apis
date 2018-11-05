@@ -1,10 +1,14 @@
 'use strict';
 
 const rootPrefix = '..',
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  cronProcessHandler = require(rootPrefix + '/lib/cron_processes_handler'),
+  cronProcessHandlerObject = new cronProcessHandler();
 
-const SigIntHandler = function() {
+// Constructor
+const SigIntHandler = function(params) {
   const oThis = this;
+  oThis.idToBeKilled = params.id;
 
   oThis.attachHandlers();
 };
@@ -21,8 +25,13 @@ SigIntHandler.prototype = {
 
     let handle = function() {
       if (oThis.pendingTasksDone()) {
-        logger.info(':: No pending tasks. Exiting ...');
-        process.exit(1);
+        logger.info(':: No pending tasks. Changing the status ');
+        cronProcessHandlerObject.stopProcess(oThis.idToBeKilled).then(function() {
+          logger.info('Status and last_end_time updated in table. Killing process.');
+
+          // Stop the process only after the entry has been updated in the table.
+          process.exit(1);
+        });
       }
       logger.info(':: There are pending tasks. Waiting for completion.');
       setTimeout(handle, 1000);
@@ -33,7 +42,7 @@ SigIntHandler.prototype = {
   },
 
   /**
-   * pendingTasksDone - Provides info whether the process has to exit
+   * This function provides info whether the process has to exit
    *
    */
   pendingTasksDone: function() {

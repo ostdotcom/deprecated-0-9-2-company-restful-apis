@@ -20,10 +20,16 @@ require(rootPrefix + '/module_overrides/index');
 
 // Include Process Locker File
 const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   ProcessLocker = new ProcessLockerKlass();
 
 const args = process.argv,
   processId = args[2];
+
+if (!processId) {
+  logger.error('Please pass the processId.');
+  process.exit(1);
+}
 
 // Declare variables.
 const txQueuePrefetchCount = 25,
@@ -46,8 +52,7 @@ ProcessLocker.canStartProcess({
 const OSTBase = require('@openstfoundation/openst-base');
 
 // All Module Requires.
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  InstanceComposer = require(rootPrefix + '/instance_composer'),
+const InstanceComposer = require(rootPrefix + '/instance_composer'),
   ConfigStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
   rmqQueueConstants = require(rootPrefix + '/lib/global_constant/rmq_queue'),
   TransactionMetaModel = require(rootPrefix + '/app/models/transaction_meta'),
