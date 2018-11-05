@@ -76,7 +76,8 @@ const UpdateRealTimeGasPrice = function() {
 
 UpdateRealTimeGasPrice.prototype = Object.create(SigIntHandler.prototype);
 
-UpdateRealTimeGasPrice.prototype = {
+// Prototype for UpdateRealTimeGasPrice.
+const UpdateRealTimeGasPricePrototype = {
   /**
    * Main performer for this class.
    *
@@ -137,6 +138,8 @@ UpdateRealTimeGasPrice.prototype = {
     return true;
   }
 };
+
+Object.assign(UpdateRealTimeGasPrice.prototype, UpdateRealTimeGasPricePrototype);
 
 // Check whether the cron can be started or not.
 CronProcessHandlerObject.canStartProcess({
