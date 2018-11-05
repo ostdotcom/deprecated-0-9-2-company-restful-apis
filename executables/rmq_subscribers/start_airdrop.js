@@ -18,7 +18,8 @@ const rootPrefix = '../..';
 require(rootPrefix + '/module_overrides/index');
 
 // Include Cron Process Handler.
-const CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
+const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
   CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
   CronProcessHandlerObject = new CronProcessesHandler();
 
@@ -40,8 +41,7 @@ CronProcessHandlerObject.canStartProcess({
 });
 
 // All Module Requires.
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  InstanceComposer = require(rootPrefix + '/instance_composer'),
+const InstanceComposer = require(rootPrefix + '/instance_composer'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id');
 
