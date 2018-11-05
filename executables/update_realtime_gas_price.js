@@ -64,8 +64,6 @@ const coreConstants = require(rootPrefix + '/config/core_constants'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   valueChainGasPriceCacheKlass = require(rootPrefix + '/lib/shared_cache_management/estimate_value_chain_gas_price');
 
-let configStrategy = {};
-
 /**
  *
  * @constructor
@@ -89,7 +87,7 @@ UpdateRealTimeGasPrice.prototype = {
     const strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
       configStrategyResp = await strategyByGroupHelperObj.getCompleteHash();
 
-    configStrategy = configStrategyResp.data;
+    let configStrategy = configStrategyResp.data;
 
     // Declare variables.
     let estimatedGasPriceFloat = 0,
@@ -145,10 +143,8 @@ CronProcessHandlerObject.canStartProcess({
   id: +processId, // Implicit string to int conversion.
   cron_kind: cronKind
 }).then(function() {
-  console.log('---2---2---');
-  // Perform action.
+  // Perform action if cron can be started.
   const UpdateRealTimeGasPriceObj = new UpdateRealTimeGasPrice();
-  console.log('---3---3---');
   UpdateRealTimeGasPriceObj.perform().then(async function() {
     logger.info('Cron last run at: ', Date.now());
     setTimeout(function() {
