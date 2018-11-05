@@ -13,14 +13,14 @@
  * @module executables/rmq_subscribers/execute_transaction
  */
 
-const rootPrefix = '../..',
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+const rootPrefix = '../..';
 
 // Always include module overrides first
 require(rootPrefix + '/module_overrides/index');
 
 // Include Process Locker File
 const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   ProcessLocker = new ProcessLockerKlass();
 
 const args = process.argv,
