@@ -3,34 +3,31 @@
 /**
  * This code acts as a master process to block scanner, which delegates the transactions from a block to block scanner worker processes
  *
- * Usage: node executables/block_scanner/transaction_delegator.js processId group_id datafilePath [benchmarkFilePath]
+ * Usage: node executables/block_scanner/transaction_delegator.js --process_id processId --group_id group_id --data_file_Path dataFilePath [benchmarkFilePath]
  *
  * Command Line Parameters Description:
- * group_id: group_id to fetch config strategy
+ * process_id: process_id to identify process.
+ * group_id: group_id to fetch config strategy.
  * datafilePath: path to the file which is storing the last block scanned info.
  * [benchmarkFilePath]: path to the file which is storing the benchmarking info.
  *
  * @module executables/block_scanner/transaction_delegator
  */
 
-const rootPrefix = '../..',
-  CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
-  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
-  CronProcessHandlerObject = new CronProcessesHandler();
-
 const program = require('commander'),
   fs = require('fs');
 
-const MAX_TXS_PER_WORKER = 60,
-  MIN_TXS_PER_WORKER = 10;
-
-const InstanceComposer = require(rootPrefix + '/instance_composer'),
+const rootPrefix = '../..',
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
+  CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
+  web3InteractFactory = require(rootPrefix + '/lib/web3/interact/ws_interact'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
-  SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
-  web3InteractFactory = require(rootPrefix + '/lib/web3/interact/ws_interact');
+  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
+  CronProcessHandlerObject = new CronProcessesHandler();
 
 require(rootPrefix + '/lib/web3/interact/ws_interact');
 require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
@@ -38,6 +35,9 @@ require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
 // Declare variables.
 let configStrategy = {},
   cronKind = CronProcessesConstants.blockScannerTxDelegator;
+
+const MAX_TXS_PER_WORKER = 60,
+  MIN_TXS_PER_WORKER = 10;
 
 const openSTNotification = SharedRabbitMqProvider.getInstance();
 
@@ -49,6 +49,13 @@ const validateAndSanitize = function() {
   }
 };
 
+/**
+ *
+ * @param {Object} params
+ * @param {String} params.data_file_path
+ * @param {String} params.benchmark_file_path
+ * @constructor
+ */
 const TransactionDelegator = function(params) {
   const oThis = this;
 
@@ -110,7 +117,7 @@ const TransactionDelegatorPrototype = {
   },
 
   /**
-   * Check for new blocks
+   * Check for new blocks.
    */
   checkForNewBlocks: async function() {
     const oThis = this;
@@ -182,7 +189,7 @@ const TransactionDelegatorPrototype = {
   },
 
   /**
-   * Get Geth servers array with the current block
+   * Get Geth servers array with the current block.
    */
   getGethsWithCurrentBlock: async function() {
     const oThis = this;
@@ -204,8 +211,7 @@ const TransactionDelegatorPrototype = {
   },
 
   /**
-   * Distribute transactions to different queues
-   *
+   * Distribute transactions to different queues.
    */
   distributeTransactions: async function() {
     const oThis = this;
@@ -313,7 +319,7 @@ const TransactionDelegatorPrototype = {
   },
 
   /**
-   * Re init
+   * Re-initialize the delegator.
    */
   reInit: function() {
     const oThis = this;
@@ -324,7 +330,7 @@ const TransactionDelegatorPrototype = {
   },
 
   /**
-   * Update scanner data file
+   * Update scanner data file.
    */
   updateScannerDataFile: function() {
     const oThis = this;
@@ -344,7 +350,7 @@ const TransactionDelegatorPrototype = {
   },
 
   /**
-   * Update executation statistics to benchmark file.
+   * Update execution statistics to benchmark file.
    */
   updateBenchmarkFile: function() {
     const oThis = this;
@@ -359,6 +365,9 @@ const TransactionDelegatorPrototype = {
 
   /**
    * Get highest block
+   *
+   * @param {String} provider: gethProvider
+   * @returns {Promise<any>}
    */
   refreshHighestBlock: async function(provider) {
     const oThis = this;
@@ -408,18 +417,19 @@ program.on('--help', function() {
 
 program.parse(process.argv);
 
+// Validate and sanitize the input params.
+validateAndSanitize();
+
 // Check whether the cron can be started or not.
 CronProcessHandlerObject.canStartProcess({
   id: +program.process_id, // Implicit string to int conversion
   cron_kind: cronKind
-});
+}).then(function() {
+  // Perform action if cron can be started.
+  const blockScannerMasterObj = new TransactionDelegator(program);
 
-// Validate and sanitize the input params.
-validateAndSanitize();
-
-const blockScannerMasterObj = new TransactionDelegator(program);
-
-blockScannerMasterObj.registerInterruptSignalHandlers();
-blockScannerMasterObj.init().then(function(r) {
-  logger.win('Blockscanner Master Process Started');
+  blockScannerMasterObj.registerInterruptSignalHandlers();
+  blockScannerMasterObj.init().then(function(r) {
+    logger.win('Blockscanner Master Process Started');
+  });
 });

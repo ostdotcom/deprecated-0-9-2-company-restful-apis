@@ -148,6 +148,7 @@ CronProcessHandlerObject.canStartProcess({
 }).then(function() {
   // Perform action if cron can be started.
   const UpdateRealTimeGasPriceObj = new UpdateRealTimeGasPrice();
+
   UpdateRealTimeGasPriceObj.perform().then(async function() {
     logger.info('Cron last run at: ', Date.now());
     setTimeout(function() {

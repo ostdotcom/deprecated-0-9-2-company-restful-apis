@@ -25,12 +25,12 @@ require(rootPrefix + '/module_overrides/index');
 
 require(rootPrefix + '/lib/providers/platform');
 
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+const InstanceComposer = require(rootPrefix + '/instance_composer'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
-  InstanceComposer = require(rootPrefix + '/instance_composer'),
-  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
   CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
   CronProcessHandlerObject = new CronProcessesHandler();
 
 const usageDemo = function() {
