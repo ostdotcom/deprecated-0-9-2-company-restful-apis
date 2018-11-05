@@ -62,6 +62,10 @@ define('CA_SHARED_MYSQL_HOST', process.env.CR_CA_SHARED_MYSQL_HOST);
 define('CA_SHARED_MYSQL_USER', process.env.CR_CA_SHARED_MYSQL_USER);
 define('CA_SHARED_MYSQL_PASSWORD', process.env.CR_CA_SHARED_MYSQL_PASSWORD);
 
+define('CR_SAAS_ANALYTICS_DB_HOST', process.env.CR_SAAS_ANALYTICS_DB_HOST);
+define('CR_SAAS_ANALYTICS_DB_USER', process.env.CR_SAAS_ANALYTICS_DB_USER);
+define('CR_SAAS_ANALYTICS_DB_PASSWORD', process.env.CR_SAAS_ANALYTICS_DB_PASSWORD);
+
 // AWS details
 define('AWS_ACCESS_KEY', process.env.CR_AWS_ACCESS_KEY);
 define('AWS_SECRET_KEY', process.env.CR_AWS_SECRET_KEY);
@@ -72,6 +76,10 @@ define('KMS_API_KEY_ARN', process.env.CR_API_KEY_KMS_ARN);
 define('KMS_API_KEY_ID', process.env.CR_API_KEY_KMS_ID);
 define('KMS_MANAGED_ADDR_KEY_ARN', process.env.CR_MANAGED_ADDRESS_KMS_ARN);
 define('KMS_MANAGED_ADDR_KEY_ID', process.env.CR_MANAGED_ADDRESS_KMS_ID);
+
+// Binance API Credentials
+define('BINANCE_API_KEY', process.env.CR_BINANCE_API_KEY);
+define('BINANCE_API_SECRET', process.env.CR_BINANCE_API_SECRET);
 
 // JWT details
 define('SAAS_API_SECRET_KEY', process.env.CA_SAAS_API_SECRET_KEY);

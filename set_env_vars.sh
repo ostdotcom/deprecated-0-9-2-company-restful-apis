@@ -37,6 +37,10 @@ export CR_CA_SHARED_MYSQL_HOST='127.0.0.1'
 export CR_CA_SHARED_MYSQL_USER='root'
 export CR_CA_SHARED_MYSQL_PASSWORD='root'
 
+export CR_SAAS_ANALYTICS_DB_HOST=127.0.0.1
+export CR_SAAS_ANALYTICS_DB_USER=root
+export CR_SAAS_ANALYTICS_DB_PASSWORD=root
+
 # DB details of openst-payments.
 export OP_MYSQL_HOST='127.0.0.1'
 export OP_MYSQL_USER='root'
@@ -54,6 +58,10 @@ export CR_API_KEY_KMS_ARN='arn:aws:kms:us-east-1:604850698061:key'
 export CR_API_KEY_KMS_ID='eab8148d-fd9f-451d-9eb9-16c115645635'
 export CR_MANAGED_ADDRESS_KMS_ARN='arn:aws:kms:us-east-1:604850698061:key'
 export CR_MANAGED_ADDRESS_KMS_ID='eab8148d-fd9f-451d-9eb9-16c115645635'
+
+# Binance API credentials
+export CR_BINANCE_API_KEY='hubPRB0cd2ULFlXl1Xv3tQF0pybQRbc8t0q36zPudmSHnw3wagDy8lP01YepqKNq'
+export CR_BINANCE_API_SECRET='YKZqzEQRxEBR0VWYffLhPQN1PrZovBZW3i9HblUZZzwo7SomRwbRSELwajhiaGN3'
 
 # JWT details
 export CA_SAAS_API_SECRET_KEY='1somethingsarebetterkeptinenvironemntvariables'
