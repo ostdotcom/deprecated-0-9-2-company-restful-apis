@@ -13,15 +13,15 @@
  * @module executables/rmq_subscribers/execute_transaction
  */
 
-const rootPrefix = '../..';
+const rootPrefix = '../..',
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
 // Always include module overrides first
 require(rootPrefix + '/module_overrides/index');
 
-// Include Cron Process Handler.
-const CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
-  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
-  CronProcessHandlerObject = new CronProcessesHandler();
+// Include Process Locker File
+const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
+  ProcessLocker = new ProcessLockerKlass();
 
 const args = process.argv,
   processId = args[2];
@@ -41,21 +41,18 @@ let unAckCount = 0,
   openStNotification = null,
   txQueueSubscribed = false,
   commandQueueSubscribed = false,
-  cronKind = CronProcessesConstants.executeTx,
   intentToConsumerTagMap = { cmdQueue: null, exTxQueue: null };
 
-// Check whether the cron can be started or not.
-CronProcessHandlerObject.canStartProcess({
-  id: +processId, // Implicit string to int conversion.
-  cron_kind: cronKind
+// Start process locker.
+ProcessLocker.canStartProcess({
+  process_title: 'executables_rmq_subscribers_execute_transaction' + processId
 });
 
 // Load external packages.
 const OSTBase = require('@openstfoundation/openst-base');
 
 // All Module Requires.
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  InstanceComposer = require(rootPrefix + '/instance_composer'),
+const InstanceComposer = require(rootPrefix + '/instance_composer'),
   ConfigStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
   rmqQueueConstants = require(rootPrefix + '/lib/global_constant/rmq_queue'),
   TransactionMetaModel = require(rootPrefix + '/app/models/transaction_meta'),
@@ -349,35 +346,25 @@ function handle() {
   logger.info('Received Signal');
 
   if (!PromiseQueueManager.getPendingCount() && !unAckCount) {
-    logger.log('SIGINT/SIGTERM handle :: No pending Promises.');
-    CronProcessHandlerObject.stopProcess(processId).then(function() {
-      logger.info('Status and last_end_time updated in table. Killing process.');
-
-      // Stop the process only after the entry has been updated in the table.
-      process.exit(1);
-    });
+    console.log('SIGINT/SIGTERM handle :: No pending Promises.');
+    process.exit(1);
   }
 
   // The OLD Way - Begin
-  const signalHandler = function() {
+  let f = function() {
     if (unAckCount !== PromiseQueueManager.getPendingCount()) {
       logger.error('ERROR :: unAckCount and pending counts are not in sync.');
     }
     if ((PromiseQueueManager.getPendingCount() <= 0 || unAckCount <= 0) && unAckCommandMessages === 0) {
-      logger.log('SIGINT/SIGTERM handle :: No pending Promises.');
-      CronProcessHandlerObject.stopProcess(processId).then(function() {
-        logger.info('Status and last_end_time updated in table. Killing process.');
-
-        // Stop the process only after the entry has been updated in the table.
-        process.exit(1);
-      });
+      console.log('SIGINT/SIGTERM handle :: No pending Promises.');
+      process.exit(1);
     } else {
       logger.info('waiting for open tasks to be done.');
-      setTimeout(signalHandler, 1000);
+      setTimeout(f, 1000);
     }
   };
 
-  setTimeout(signalHandler, 1000);
+  setTimeout(f, 1000);
 }
 
 function ostRmqError(err) {
