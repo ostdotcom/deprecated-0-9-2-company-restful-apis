@@ -20,6 +20,7 @@
     "aws-sdk": "2.263.1",
     "bignumber.js": "4.1.0",
     "body-parser": "1.18.2",
+    "ccxt": "1.17.473",
     "cluster": "0.7.7",
     "coinmarketcap-api": "3.0.0",
     "commander": "2.19.0",

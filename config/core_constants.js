@@ -81,6 +81,13 @@ define('KMS_MANAGED_ADDR_KEY_ID', process.env.CR_MANAGED_ADDRESS_KMS_ID);
 define('BINANCE_API_KEY', process.env.CR_BINANCE_API_KEY);
 define('BINANCE_API_SECRET', process.env.CR_BINANCE_API_SECRET);
 
+// Coinmarketcap API Credentials
+define('COINMARKETCAP_API_KEY', process.env.CR_COINMARKETCAP_API_KEY);
+
+// Binance API Credentials
+define('KRAKEN_API_KEY', process.env.CR_KRAKEN_API_KEY);
+define('KRAKEN_API_SECRET', process.env.CR_KRAKEN_API_SECRET);
+
 // JWT details
 define('SAAS_API_SECRET_KEY', process.env.CA_SAAS_API_SECRET_KEY);
 
