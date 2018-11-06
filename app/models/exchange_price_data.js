@@ -8,15 +8,15 @@ const rootPrefix = '../..',
 
 const dbName = 'saas_analytics_' + coreConstants.ENVIRONMENT;
 
-const ExchangeTradeDataModel = function() {
+const ExchangePriceDataModel = function() {
   const oThis = this;
   ModelBaseKlass.call(this, { dbName: dbName });
 };
 
-ExchangeTradeDataModel.prototype = Object.create(ModelBaseKlass.prototype);
+ExchangePriceDataModel.prototype = Object.create(ModelBaseKlass.prototype);
 
-const ExchangeTradeDataPrototype = {
-  tableName: 'exchange_trade_data',
+const ExchangePriceDataPrototype = {
+  tableName: 'exchange_price_data',
 
   exchanges: exchangeTradeDataConst.exchanges,
 
@@ -38,6 +38,6 @@ const ExchangeTradeDataPrototype = {
   }
 };
 
-Object.assign(ExchangeTradeDataModel.prototype, ExchangeTradeDataPrototype);
+Object.assign(ExchangePriceDataModel.prototype, ExchangePriceDataPrototype);
 
-module.exports = ExchangeTradeDataModel;
+module.exports = ExchangePriceDataModel;
