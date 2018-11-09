@@ -10,7 +10,7 @@
  * [duration] in minutes duration for which we should go back in time to fetch orders
  * Note- If duration is not passed then default value is set to 10 Minutes.
  *
- * Example: node ./executables/populate_exchange_trade_data.js --pageLimit 1000 --duration 100
+ * Example: node ./executables/populate_exchange_trade_data.js --duration 100
  *
  * @module
  */
