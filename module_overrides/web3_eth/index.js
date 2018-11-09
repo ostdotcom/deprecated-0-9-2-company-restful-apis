@@ -146,14 +146,16 @@ const Derived = function() {
 
             let web3InteractInstance = web3InteractFactory.getInstance('utility', wsChainNodeUrl),
               highestBlockFromAlternateNode = await web3InteractInstance.getBlockNumber(),
-              highestBlockFromCurrentNode = await oThis.currentProvider.getBlockNumber();
+              highestBlockFromCurrentNode = await oThis.getBlockNumber();
 
             let blockDiff = highestBlockFromAlternateNode - highestBlockFromCurrentNode;
 
             // as Chain node gets reset sometimes and starts resynincing from 0
             // till it covers up we would treat it seperately
             if (blockDiff >= moUtils.exceptableBlockDelayAmongstNodes) {
-              let errorStr = `chainNodeSyncError: Looks like: ${host} is out on sync with other(s): ${wsChainNodeUrl} by ${blockDiff} blocks`;
+              let errorStr = `${
+                recognizedErrorIdentifiers.chainNodeSyncError
+              }: Looks like: ${host} is out on sync with other(s): ${wsChainNodeUrl} by ${blockDiff} blocks`;
               logger.error(errorStr);
               let customError = new Error(errorStr);
               onUnhandledError(customError);
