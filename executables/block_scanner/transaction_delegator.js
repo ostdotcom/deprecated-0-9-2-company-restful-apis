@@ -19,7 +19,8 @@ const program = require('commander'),
   fs = require('fs');
 
 const MAX_TXS_PER_WORKER = 60,
-  MIN_TXS_PER_WORKER = 10;
+  MIN_TXS_PER_WORKER = 10,
+  FAILURE_CODE = -1;
 
 const InstanceComposer = require(rootPrefix + '/instance_composer'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
@@ -46,6 +47,13 @@ const validateAndSanitize = function() {
   }
 };
 
+/**
+ *
+ * @param {Object} params
+ * @param {String} params.dataFilePath
+ * @param {String} params.benchmarkFilePath
+ * @constructor
+ */
 const TransactionDelegator = function(params) {
   const oThis = this;
 
@@ -91,6 +99,11 @@ const TransactionDelegatorPrototype = {
       strategyByGroupHelperObj = new StrategyByGroupHelper(program.groupId),
       configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(utilityGethType);
 
+    if (configStrategyResp.isFailure()) {
+      logger.log('=====');
+      process.exit(1);
+    }
+
     configStrategy = configStrategyResp.data;
     oThis.ic = new InstanceComposer(configStrategy);
 
@@ -133,10 +146,16 @@ const TransactionDelegatorPrototype = {
 
         logger.log('Current Block =', oThis.currentBlock);
 
-        await oThis.distributeTransactions();
+        let response = await oThis.distributeTransactions();
 
         if (oThis.benchmarkFilePath)
           oThis.granularTimeTaken.push('distributeTransactions-' + (Date.now() - oThis.startTime) + 'ms');
+
+        // Do this before block number update in the file
+        if (response == FAILURE_CODE) {
+          oThis.canExit = true;
+          return oThis.schedule();
+        }
 
         oThis.updateScannerDataFile();
 
@@ -149,13 +168,9 @@ const TransactionDelegatorPrototype = {
         oThis.schedule();
       } catch (err) {
         logger.error('Exception:', err);
+        oThis.canExit = true;
 
-        if (oThis.interruptSignalObtained) {
-          logger.win('* Exiting Process after interrupt signal obtained.');
-          oThis.canExit = true;
-        } else {
-          oThis.reInit();
-        }
+        oThis.reInit(); // Restarts block scanning after 1 sec
       }
     };
 
@@ -211,6 +226,10 @@ const TransactionDelegatorPrototype = {
 
     oThis.currentBlockInfo = await web3Interact.getBlock(oThis.currentBlock);
 
+    if (!oThis.currentBlockInfo) {
+      return FAILURE_CODE;
+    }
+
     let totalTransactionCount = oThis.currentBlockInfo.transactions.length;
     if (totalTransactionCount === 0) return;
 
@@ -258,36 +277,14 @@ const TransactionDelegatorPrototype = {
 
       //if could not set to RMQ run in async.
       if (setToRMQ.isFailure() || setToRMQ.data.publishedToRmq === 0) {
-        return Promise.reject(
-          responseHelper.error({
-            internal_error_identifier: 'e_bs_td_1',
-            api_error_identifier: 'something_went_wrong',
-            debug_options: {}
-          })
-        );
+        logger.error("====Couldn't publish the message to RMQ====");
+        return FAILURE_CODE;
       }
 
       logger.debug('===published======txHashes', txHashes, '====from block', oThis.currentBlock);
       logger.log('==== published', txHashes.length, 'transactions', '====from block', oThis.currentBlock);
       loopCount++;
     }
-  },
-
-  /**
-   * Register interrupt signal handlers
-   */
-  registerInterruptSignalHandlers: function() {
-    const oThis = this;
-
-    process.on('SIGINT', function() {
-      logger.win('* Received SIGINT. Signal registerred.');
-      oThis.interruptSignalObtained = true;
-    });
-
-    process.on('SIGTERM', function() {
-      logger.win('* Received SIGTERM. Signal registerred.');
-      oThis.interruptSignalObtained = true;
-    });
   },
 
   /**
@@ -310,7 +307,7 @@ const TransactionDelegatorPrototype = {
   },
 
   /**
-   * Re init
+   * Re-initialize the delegator.
    */
   reInit: function() {
     const oThis = this;
@@ -334,14 +331,11 @@ const TransactionDelegatorPrototype = {
 
     logger.win('* Updated last processed block = ', oThis.scannerData.lastProcessedBlock);
 
-    if (oThis.interruptSignalObtained) {
-      logger.win('* Exiting Process after interrupt signal obtained.');
-      oThis.canExit = true;
-    }
+    oThis.canExit = true;
   },
 
   /**
-   * Update executation statistics to benchmark file.
+   * Update execution statistics to benchmark file.
    */
   updateBenchmarkFile: function() {
     const oThis = this;
@@ -356,6 +350,9 @@ const TransactionDelegatorPrototype = {
 
   /**
    * Get highest block
+   *
+   * @param {String} provider: gethProvider
+   * @returns {Promise<any>}
    */
   refreshHighestBlock: async function(provider) {
     const oThis = this;
@@ -374,7 +371,9 @@ const TransactionDelegatorPrototype = {
   },
 
   /**
-   * pendingTasksDone
+   * Returns a boolean which checks whether all the pending tasks are done or not.
+   *
+   * @returns {boolean}
    */
   pendingTasksDone: function() {
     const oThis = this;
@@ -412,7 +411,6 @@ validateAndSanitize();
 
 const blockScannerMasterObj = new TransactionDelegator(program);
 
-blockScannerMasterObj.registerInterruptSignalHandlers();
 blockScannerMasterObj.init().then(function(r) {
   logger.win('Blockscanner Master Process Started');
 });

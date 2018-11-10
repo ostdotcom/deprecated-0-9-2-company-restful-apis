@@ -42,6 +42,7 @@ DeployPriceOracleKlass.prototype = {
       DeployAndSetOpsKlass = instanceComposer.getPriceOracleProvider().getInstance().deployAndSetOps;
 
     const deployerObj = new DeployAndSetOpsKlass();
+
     var resp = await deployerObj.perform({
       gasPrice: configStrategy.OST_UTILITY_GAS_PRICE,
       baseCurrency: 'OST',

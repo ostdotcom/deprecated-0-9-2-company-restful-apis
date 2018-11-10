@@ -294,7 +294,7 @@ seedConfigStrategies.prototype = {
 
     const configStrategy = new configStrategyModel();
 
-    await configStrategy.create('rmq', process.argv[2], rmq_params).then();
+    await configStrategy.create('rmq', process.argv[2], rmq_params, group_id).then();
   },
 
   populateChainGethProviders: async function() {
