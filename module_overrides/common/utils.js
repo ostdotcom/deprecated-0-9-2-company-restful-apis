@@ -44,7 +44,7 @@ ModuleOverrideUtils.prototype = {
     if (!error || !error.message) {
       return false;
     }
-    return error.message.indexOf('nonce too low') > -1;
+    return error.message.indexOf('nonce too low') > -1 || error.message.indexOf('Transaction nonce is too low') > -1;
   },
 
   /**
@@ -124,7 +124,6 @@ ModuleOverrideUtils.prototype = {
     );
 
     sendSignedTransactionRequest.callback = function(err, txHash) {
-      console.error('errorObject', err);
       try {
         err && onError && onError(err);
         err && onReject && onReject(err);

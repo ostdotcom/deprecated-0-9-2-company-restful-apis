@@ -107,7 +107,9 @@ SignRawTx.prototype = {
    */
   markAsFailure: async function(shouldSyncNonce) {
     const oThis = this;
-
+    if (!oThis.nonceManager) {
+      oThis._instantiateNonceManager();
+    }
     return oThis.nonceManager.completionWithFailure(shouldSyncNonce);
   },
 
@@ -284,17 +286,9 @@ SignRawTx.prototype = {
       return;
     }
 
-    oThis.nonceManager = new nonceManagerKlass({
-      address: oThis.fromAddress,
-      chain_kind: oThis.chainKind,
-      chain_type: oThis.chainType,
-      client_id: oThis.clientId,
-      host: oThis.host,
-      chain_id: oThis.chainId,
-      chain_ws_providers: oThis.chainWsProviders,
-      chain_rpc_providers: oThis.chainRpcProviders,
-      config_strategy: oThis.configStrategy
-    });
+    if (!oThis.nonceManager) {
+      oThis._instantiateNonceManager();
+    }
 
     // We are passing chainWsProviders here as we don't want to make another cache hit in nonce manager class.
     // The providers have been fetched depending on the clientId as well as the cache kind.
@@ -306,6 +300,26 @@ SignRawTx.prototype = {
     }
 
     oThis.rawTx.nonce = getNonceResponse.data.nonce;
+  },
+
+  /**
+   * Instantiate NM
+   *
+   * @private
+   */
+  _instantiateNonceManager: function() {
+    const oThis = this;
+    oThis.nonceManager = new nonceManagerKlass({
+      address: oThis.fromAddress,
+      chain_kind: oThis.chainKind,
+      chain_type: oThis.chainType,
+      client_id: oThis.clientId,
+      host: oThis.host,
+      chain_id: oThis.chainId,
+      chain_ws_providers: oThis.chainWsProviders,
+      chain_rpc_providers: oThis.chainRpcProviders,
+      config_strategy: oThis.configStrategy
+    });
   },
 
   /**
