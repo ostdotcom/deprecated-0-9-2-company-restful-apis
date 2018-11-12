@@ -83,7 +83,7 @@ seedConfigStrategies.prototype = {
     await oThis.seed_autoscaling_params();
     await oThis.seed_in_memory_params();
     await oThis.seed_constants_params();
-    await oThis.seed_dax_params();
+    // await oThis.seed_dax_params();
     await oThis.seed_es_params();
     await oThis.seed_utility_constants_params();
     await oThis.seed_utility_geth_params();
@@ -162,6 +162,7 @@ seedConfigStrategies.prototype = {
     value_geth_params['OST_VALUE_GETH_RPC_PROVIDERS'] = env_list.OST_VALUE_GETH_RPC_PROVIDERS;
     value_geth_params['OST_VALUE_GETH_WS_PROVIDERS'] = env_list.OST_VALUE_GETH_WS_PROVIDERS;
     value_geth_params['OST_VALUE_CHAIN_ID'] = env_list.OST_VALUE_CHAIN_ID;
+    value_geth_params['OST_VALUE_CHAIN_TYPE'] = env_list.OST_VALUE_CHAIN_TYPE;
 
     const configStrategy = new configStrategyModel();
 
@@ -193,11 +194,16 @@ seedConfigStrategies.prototype = {
 
   seed_utility_geth_params: async function() {
     let utility_geth_params = {};
-    utility_geth_params['OST_UTILITY_GETH_RPC_PROVIDER'] = env_list.OST_UTILITY_GETH_RPC_PROVIDER;
-    utility_geth_params['OST_UTILITY_GETH_WS_PROVIDER'] = env_list.OST_UTILITY_GETH_WS_PROVIDER;
-    utility_geth_params['OST_UTILITY_GETH_RPC_PROVIDERS'] = env_list.OST_UTILITY_GETH_RPC_PROVIDERS;
-    utility_geth_params['OST_UTILITY_GETH_WS_PROVIDERS'] = env_list.OST_UTILITY_GETH_WS_PROVIDERS;
+    let geth_params = {
+      OST_UTILITY_GETH_RPC_PROVIDER: env_list.OST_UTILITY_GETH_RPC_PROVIDER,
+      OST_UTILITY_GETH_WS_PROVIDER: env_list.OST_UTILITY_GETH_WS_PROVIDER,
+      OST_UTILITY_GETH_RPC_PROVIDERS: env_list.OST_UTILITY_GETH_RPC_PROVIDERS,
+      OST_UTILITY_GETH_WS_PROVIDERS: env_list.OST_UTILITY_GETH_WS_PROVIDERS
+    };
     utility_geth_params['OST_UTILITY_CHAIN_ID'] = env_list.OST_UTILITY_CHAIN_ID;
+    utility_geth_params['OST_UTILITY_CHAIN_TYPE'] = env_list.OST_UTILITY_CHAIN_TYPE;
+    utility_geth_params['read_only'] = geth_params;
+    utility_geth_params['read_write'] = geth_params;
 
     const configStrategy = new configStrategyModel();
 
@@ -288,7 +294,7 @@ seedConfigStrategies.prototype = {
 
     const configStrategy = new configStrategyModel();
 
-    await configStrategy.create('rmq', process.argv[2], rmq_params).then();
+    await configStrategy.create('rmq', process.argv[2], rmq_params, group_id).then();
   },
 
   populateChainGethProviders: async function() {

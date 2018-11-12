@@ -4,8 +4,8 @@
  *
  * This script is used to get the tx related metrics for blockNumbers specified in arguments.
  *
- * Usage: node executables/one_timers/blockchain_metrics_script.js 'providerEndpoint' startBlockNumber endBlockNumber
- * Example: node executables/one_timers/blockchain_metrics_script.js 'ws://127.0.0.1:19547' 1000 1500
+ * Usage: node executables/blockchain_metrics_script.js 'providerEndpoint' startBlockNumber endBlockNumber
+ * Example: node executables/blockchain_metrics_script.js 'ws://121.132.96.103:8551' 39542 46402
  *
  */
 
@@ -18,6 +18,7 @@ const Web3 = require('web3'),
   web3 = new Web3(provider);
 
 let totalTxCount = 0,
+  totalBlockCount = 0,
   totalSuccessCount = 0,
   totalFailureCount = 0;
 
@@ -35,8 +36,10 @@ GetCount.prototype = {
       let totalBlockTxCount = await web3.eth.getBlockTransactionCount(i);
       // blockData = await web3.eth.getBlock(i, true);
 
-      console.log(`${i} -> ${totalBlockTxCount} -> ${totalTxCount}`);
-
+      if (totalBlockTxCount > 0) {
+        console.log(`${i} -> ${totalBlockTxCount} -> ${totalTxCount}`);
+        totalBlockCount = totalBlockCount + 1;
+      }
       // if (blockData.transactions.length !== 0) {
       //   let transactionsArray = blockData.transactions;
       //   for (let index in transactionsArray) {
@@ -61,7 +64,7 @@ GetCount.prototype = {
 let obj = new GetCount();
 
 obj.perform().then(function(r) {
-  console.log('Total number of Blocks: ', endBlock - startBlock);
+  console.log('Total number of Blocks: ', totalBlockCount);
   console.log('Total transaction count (Cumulative txCount): ', totalTxCount);
   // console.log('Total success count: ', totalSuccessCount);
   // console.log('Total failure count: ', totalFailureCount);
@@ -70,7 +73,7 @@ obj.perform().then(function(r) {
     //To handle case when only 1 block is needed.
     console.log('Average transaction count for given range', totalTxCount);
   } else {
-    let averageTxCount = totalTxCount / (endBlock - startBlock);
+    let averageTxCount = totalTxCount / totalBlockCount;
     console.log('Average transaction count for given range', averageTxCount);
   }
 
