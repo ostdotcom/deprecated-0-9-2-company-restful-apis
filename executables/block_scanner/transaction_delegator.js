@@ -18,18 +18,22 @@ const rootPrefix = '../..';
 const program = require('commander'),
   fs = require('fs');
 
-const MAX_TXS_PER_WORKER = 60;
+const MAX_TXS_PER_WORKER = 60,
+  MIN_TXS_PER_WORKER = 10,
+  FAILURE_CODE = -1;
 
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  InstanceComposer = require(rootPrefix + '/instance_composer'),
-  ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
-  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+const InstanceComposer = require(rootPrefix + '/instance_composer'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
+  ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+  SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
+  web3InteractFactory = require(rootPrefix + '/lib/web3/interact/ws_interact'),
   ProcessLocker = new ProcessLockerKlass();
 
-require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
 require(rootPrefix + '/lib/web3/interact/ws_interact');
+require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
 
 let configStrategy = {};
 
@@ -41,6 +45,13 @@ const validateAndSanitize = function() {
   }
 };
 
+/**
+ *
+ * @param {Object} params
+ * @param {String} params.dataFilePath
+ * @param {String} params.benchmarkFilePath
+ * @constructor
+ */
 const TransactionDelegator = function(params) {
   const oThis = this;
 
@@ -50,9 +61,14 @@ const TransactionDelegator = function(params) {
   oThis.scannerData = {};
   oThis.interruptSignalObtained = false;
   oThis.highestBlock = 0;
+  oThis.canExit = true;
+
+  SigIntHandler.call(oThis, {});
 };
 
-TransactionDelegator.prototype = {
+TransactionDelegator.prototype = Object.create(SigIntHandler.prototype);
+
+const TransactionDelegatorPrototype = {
   /**
    * Intentional block delay.
    */
@@ -81,12 +97,17 @@ TransactionDelegator.prototype = {
       strategyByGroupHelperObj = new StrategyByGroupHelper(program.groupId),
       configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(utilityGethType);
 
+    if (configStrategyResp.isFailure()) {
+      logger.log('=====');
+      process.exit(1);
+    }
+
     configStrategy = configStrategyResp.data;
     oThis.ic = new InstanceComposer(configStrategy);
 
-    let web3InteractFactory = oThis.ic.getWeb3InteractHelper();
-
     let web3PoolSize = coreConstants.OST_WEB3_POOL_SIZE;
+
+    logger.log('====Warming up geth pool for providers', configStrategy.OST_UTILITY_GETH_WS_PROVIDERS);
 
     for (let ind = 0; ind < configStrategy.OST_UTILITY_GETH_WS_PROVIDERS.length; ind++) {
       let provider = configStrategy.OST_UTILITY_GETH_WS_PROVIDERS[ind];
@@ -112,16 +133,27 @@ TransactionDelegator.prototype = {
           oThis.granularTimeTaken.push('getGethsWithCurrentBlock-' + (Date.now() - oThis.startTime) + 'ms');
 
         // return if nothing more to do, as of now.
-        if (oThis.gethArray.length === 0) return oThis.schedule();
+        if (oThis.gethArray.length === 0) {
+          logger.info('==== No geths with block', oThis.scannerData.lastProcessedBlock + 1, '==rescheduling...');
+          return oThis.schedule();
+        }
+
+        oThis.canExit = false;
 
         oThis.currentBlock = oThis.scannerData.lastProcessedBlock + 1;
 
         logger.log('Current Block =', oThis.currentBlock);
 
-        await oThis.distributeTransactions();
+        let response = await oThis.distributeTransactions();
 
         if (oThis.benchmarkFilePath)
           oThis.granularTimeTaken.push('distributeTransactions-' + (Date.now() - oThis.startTime) + 'ms');
+
+        // Do this before block number update in the file
+        if (response == FAILURE_CODE) {
+          oThis.canExit = true;
+          return oThis.schedule();
+        }
 
         oThis.updateScannerDataFile();
 
@@ -134,13 +166,9 @@ TransactionDelegator.prototype = {
         oThis.schedule();
       } catch (err) {
         logger.error('Exception:', err);
+        oThis.canExit = true;
 
-        if (oThis.interruptSignalObtained) {
-          logger.win('* Exiting Process after interrupt signal obtained.');
-          process.exit(1);
-        } else {
-          oThis.reInit();
-        }
+        oThis.reInit(); // Restarts block scanning after 1 sec
       }
     };
 
@@ -148,7 +176,6 @@ TransactionDelegator.prototype = {
       logger.error('executables/block_scanner/transaction_delegator.js::processNewBlocksAsync::catch');
       logger.error(error);
 
-      // TODO - error handling to be introduced to avoid double settlement.
       oThis.schedule();
     });
   },
@@ -182,6 +209,8 @@ TransactionDelegator.prototype = {
         oThis.gethArray.push(provider);
       }
     }
+
+    logger.log('====Block', oThis.scannerData.lastProcessedBlock + 1, '==is found on ', oThis.gethArray);
   },
 
   /**
@@ -191,22 +220,30 @@ TransactionDelegator.prototype = {
   distributeTransactions: async function() {
     const oThis = this;
 
-    const web3InteractFactory = oThis.ic.getWeb3InteractHelper();
     let web3Interact = web3InteractFactory.getInstance('utility', oThis.gethArray[0]);
 
     oThis.currentBlockInfo = await web3Interact.getBlock(oThis.currentBlock);
 
+    if (!oThis.currentBlockInfo) {
+      return FAILURE_CODE;
+    }
+
+    let totalTransactionCount = oThis.currentBlockInfo.transactions.length;
+    if (totalTransactionCount === 0) return;
+
     if (oThis.benchmarkFilePath) oThis.granularTimeTaken.push('eth.getBlock-' + (Date.now() - oThis.startTime) + 'ms');
 
-    let totalTransactionCount = oThis.currentBlockInfo.transactions.length,
-      perBatchCount = totalTransactionCount / oThis.gethArray.length,
+    let perBatchCount = totalTransactionCount / oThis.gethArray.length,
       offset = 0;
+
+    // capping the per batch count
+    perBatchCount = perBatchCount > MAX_TXS_PER_WORKER ? MAX_TXS_PER_WORKER : perBatchCount;
+    perBatchCount = perBatchCount < MIN_TXS_PER_WORKER ? MIN_TXS_PER_WORKER : perBatchCount;
 
     let noOfBatches = parseInt(totalTransactionCount / perBatchCount);
     noOfBatches += totalTransactionCount % perBatchCount ? 1 : 0;
 
-    // capping the per batch count
-    perBatchCount = perBatchCount > MAX_TXS_PER_WORKER ? MAX_TXS_PER_WORKER : perBatchCount;
+    logger.log('====Batch count', noOfBatches, '====Txs per batch', perBatchCount);
 
     let loopCount = 0;
 
@@ -239,33 +276,14 @@ TransactionDelegator.prototype = {
 
       //if could not set to RMQ run in async.
       if (setToRMQ.isFailure() || setToRMQ.data.publishedToRmq === 0) {
-        return Promise.reject(
-          responseHelper.error({
-            internal_error_identifier: 'e_bs_td_1',
-            api_error_identifier: 'something_went_wrong',
-            debug_options: {}
-          })
-        );
+        logger.error("====Couldn't publish the message to RMQ====");
+        return FAILURE_CODE;
       }
+
+      logger.debug('===published======txHashes', txHashes, '====from block', oThis.currentBlock);
+      logger.log('==== published', txHashes.length, 'transactions', '====from block', oThis.currentBlock);
       loopCount++;
     }
-  },
-
-  /**
-   * Register interrupt signal handlers
-   */
-  registerInterruptSignalHandlers: function() {
-    const oThis = this;
-
-    process.on('SIGINT', function() {
-      logger.win('* Received SIGINT. Signal registerred.');
-      oThis.interruptSignalObtained = true;
-    });
-
-    process.on('SIGTERM', function() {
-      logger.win('* Received SIGTERM. Signal registerred.');
-      oThis.interruptSignalObtained = true;
-    });
   },
 
   /**
@@ -288,7 +306,7 @@ TransactionDelegator.prototype = {
   },
 
   /**
-   * Re init
+   * Re-initialize the delegator.
    */
   reInit: function() {
     const oThis = this;
@@ -312,14 +330,11 @@ TransactionDelegator.prototype = {
 
     logger.win('* Updated last processed block = ', oThis.scannerData.lastProcessedBlock);
 
-    if (oThis.interruptSignalObtained) {
-      logger.win('* Exiting Process after interrupt signal obtained.');
-      process.exit(1);
-    }
+    oThis.canExit = true;
   },
 
   /**
-   * Update executation statistics to benchmark file.
+   * Update execution statistics to benchmark file.
    */
   updateBenchmarkFile: function() {
     const oThis = this;
@@ -334,11 +349,12 @@ TransactionDelegator.prototype = {
 
   /**
    * Get highest block
+   *
+   * @param {String} provider: gethProvider
+   * @returns {Promise<any>}
    */
   refreshHighestBlock: async function(provider) {
     const oThis = this;
-
-    const web3InteractFactory = oThis.ic.getWeb3InteractHelper();
 
     let web3Interact = web3InteractFactory.getInstance('utility', provider);
 
@@ -351,8 +367,21 @@ TransactionDelegator.prototype = {
     logger.win('* Obtained highest block on', provider, 'as', oThis.highestBlock);
 
     return Promise.resolve(highestBlockOfProvider);
+  },
+
+  /**
+   * Returns a boolean which checks whether all the pending tasks are done or not.
+   *
+   * @returns {boolean}
+   */
+  pendingTasksDone: function() {
+    const oThis = this;
+
+    return oThis.canExit;
   }
 };
+
+Object.assign(TransactionDelegator.prototype, TransactionDelegatorPrototype);
 
 program
   .option('--group-id <groupId>', 'Group Id')
@@ -381,7 +410,6 @@ validateAndSanitize();
 
 const blockScannerMasterObj = new TransactionDelegator(program);
 
-blockScannerMasterObj.registerInterruptSignalHandlers();
 blockScannerMasterObj.init().then(function(r) {
   logger.win('Blockscanner Master Process Started');
 });

@@ -48,14 +48,18 @@ const OSTBase = require('@openstfoundation/openst-base');
 // All Module Requires.
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
-  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   ConfigStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
   rmqQueueConstants = require(rootPrefix + '/lib/global_constant/rmq_queue'),
+  TransactionMetaModel = require(rootPrefix + '/app/models/transaction_meta'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
   initProcessKlass = require(rootPrefix + '/lib/execute_transaction_management/init_process'),
+  transactionMetaConstants = require(rootPrefix + '/lib/global_constant/transaction_meta.js'),
   processQueueAssociationConst = require(rootPrefix + '/lib/global_constant/process_queue_association'),
   CommandQueueProcessorKlass = require(rootPrefix + '/lib/execute_transaction_management/command_message_processor'),
+  recognizedInternalErrorIdentifiers = require(rootPrefix +
+    '/lib/global_constant/recognized_internal_error_identifiers'),
   initProcess = new initProcessKlass({ process_id: processId });
 
 require(rootPrefix + '/lib/providers/notification');
@@ -94,9 +98,22 @@ const commandResponseActions = async function(commandProcessorResponse) {
 const promiseTxExecutor = function(onResolve, onReject, params) {
   unAckCount++;
   // Process request
-  const parsedParams = JSON.parse(params),
-    kind = parsedParams.message.kind,
+  let parsedParams = {},
+    kind = {},
+    payload = {};
+  try {
+    parsedParams = JSON.parse(params);
+    kind = parsedParams.message.kind;
     payload = parsedParams.message.payload;
+  } catch (err) {
+    logger.error('Error in parsing the message. Error: ', err);
+    unAckCount--;
+    // ack RMQ
+    return onResolve();
+  }
+
+  //Update in transaction meta
+  logger.debug('Updating transaction in transaction meta table');
 
   let errorMsgType = '',
     msgExecutorObject = {};
@@ -128,6 +145,11 @@ const promiseTxExecutor = function(onResolve, onReject, params) {
         .perform()
         .then(function(response) {
           if (!response.isSuccess()) {
+            if (response.internalErrorCode.includes(recognizedInternalErrorIdentifiers.ddbDownError)) {
+              logger.error('Dynamo DB down');
+              //queuing the same message again in queue(UnAck)
+              return onReject();
+            }
             logger.error(
               'e_rmqs_et_1',
               'Something went wrong in ',

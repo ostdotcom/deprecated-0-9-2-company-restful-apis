@@ -35,6 +35,7 @@ const usageDemo = function() {
 
 const InstanceComposer = require(rootPrefix + '/instance_composer'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+  SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
 const args = process.argv,
@@ -71,16 +72,15 @@ process.on('uncaughtException', function(args) {
   }, 60000);
 });
 
-process.on('SIGINT', function(args) {
-  logger.error('Received SIGINT. Exiting');
-  process.exit(0);
-});
-
 const StartIntercomm = function() {
   const oThis = this;
+
+  SigIntHandler.call(oThis, {});
 };
 
-StartIntercomm.prototype = {
+StartIntercomm.prototype = Object.create(SigIntHandler.prototype);
+
+const StartIntercommPrototype = {
   perform: async function() {
     const oThis = this,
       strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
@@ -96,8 +96,20 @@ StartIntercomm.prototype = {
     stakeHunterInterCommObj.init();
 
     logger.win('InterComm Script for Stake Hunter initiated.');
+  },
+
+  /**
+   * Check if pending tasks are completed
+   *
+   */
+  pendingTasksDone: function() {
+    const oThis = this;
+
+    return true;
   }
 };
+
+Object.assign(StartIntercomm.prototype, StartIntercommPrototype);
 
 let startIntercomm = new StartIntercomm();
 startIntercomm.perform().then(function(r) {});

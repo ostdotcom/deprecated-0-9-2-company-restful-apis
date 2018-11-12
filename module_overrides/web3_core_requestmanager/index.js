@@ -75,7 +75,7 @@ let proto = {
       if (result) {
         logger.info('calling request.signRawTx.markAsSuccess');
         request.signRawTx.markAsSuccess().catch(() => {
-          logger.warn('signRawTx.markAsSuccess threw an error. Redis seems to be donw.');
+          logger.warn('signRawTx.markAsSuccess threw an error. Nonce memcache seems to be down.');
           //Do Nothing. Callback has been triggered.
         });
 
@@ -84,11 +84,11 @@ let proto = {
       }
 
       //We have failed. Is it nonce too low ?
-      if (!moUtils.isNonceTooLowError(err) || request.tryCnt >= moUtils.maxRetryCount) {
+      if (!moUtils.isNonceTooLowError(err) || request.tryCnt >= moUtils.nonceTooLowErrorMaxRetryCnt) {
         logger.info('calling request.signRawTx.markAsFailure');
         request.signRawTx.markAsFailure().catch(() => {
           //Do Nothing. Callback has been triggered.
-          logger.warn('signRawTx.markAsFailure threw an error. Redis seems to be donw.');
+          logger.warn('signRawTx.markAsFailure threw an error. Nonce memcache seems to be down.');
         });
         callback && callback(err, null);
         return;
@@ -102,7 +102,7 @@ let proto = {
           return oBatch.signRequest(request);
         })
         .catch(() => {
-          logger.warn('signRawTx.markAsFailure( true ) threw an error. Redis OR Geth seems to be donw.');
+          logger.warn('signRawTx.markAsFailure( true ) threw an error. Nonce memcache seems to be down.');
           return callback(err, null);
         });
     });

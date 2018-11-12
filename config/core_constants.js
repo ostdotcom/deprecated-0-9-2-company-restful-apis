@@ -33,12 +33,6 @@ define('SUB_ENVIRONMENT_SHORT', process.env.CR_SUB_ENVIRONMENT.substring(0, 2));
 define('OST_UTILITY_GAS_PRICE', process.env.OST_UTILITY_GAS_PRICE);
 define('OST_VALUE_GAS_PRICE', process.env.OST_VALUE_GAS_PRICE);
 
-// Redis details
-define('OST_REDIS_HOST', process.env.OST_REDIS_HOST);
-define('OST_REDIS_PORT', process.env.OST_REDIS_PORT);
-define('OST_REDIS_PASS', process.env.OST_REDIS_PASS);
-define('OST_REDIS_TLS_ENABLED', process.env.OST_REDIS_TLS_ENABLED);
-
 // MySQL details
 define('MYSQL_CONNECTION_POOL_SIZE', process.env.CR_MYSQL_CONNECTION_POOL_SIZE);
 
@@ -100,10 +94,6 @@ define('ACCEPTED_PRICE_FLUCTUATION_FOR_PAYMENT', accepted_margin);
 define('SHARED_MEMCACHE_KEY_PREFIX', 'ca_sa_shared_');
 
 define('CONFIG_STRATEGY_SALT', 'config_strategy_salt');
-
-define('DYNAMODB_TABLE_NAME_PREFIX', process.env.OS_DYNAMODB_TABLE_NAME_PREFIX
-  ? process.env.OS_DYNAMODB_TABLE_NAME_PREFIX
-  : '');
 
 define('OST_WEB3_POOL_SIZE', process.env.OST_WEB3_POOL_SIZE);
 

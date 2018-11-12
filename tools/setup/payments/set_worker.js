@@ -10,15 +10,13 @@ const rootPrefix = '../../..';
 require(rootPrefix + '/module_overrides/index');
 
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
 require(rootPrefix + '/lib/providers/payments');
 
 const args = process.argv,
-  configStrategyFilePath = args[2],
-  configStrategy = require(configStrategyFilePath),
-  instanceComposer = new InstanceComposer(configStrategy),
-  openStPayments = instanceComposer.getPaymentsProvider().getInstance();
+  group_id = args[2];
 
 /**
  * Set Worker for OpenSt Payments
@@ -34,8 +32,18 @@ SetPaymentsWorkerKlass.prototype = {
    * @return {Promise<void>}
    */
   perform: async function() {
+    const oThis = this,
+      strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(),
+      configStrategy = configStrategyResp.data;
+
+    let instanceComposer = new InstanceComposer(configStrategy),
+      openStPayments = instanceComposer.getPaymentsProvider().getInstance();
+
     const setWorkerKlass = openStPayments.services.workers.deployWorkersAndSetOps;
+
     let setWorkerObj = new setWorkerKlass();
+
     var resp = await setWorkerObj.perform({
       gasPrice: configStrategy.OST_UTILITY_GAS_PRICE,
       chainId: configStrategy.OST_UTILITY_CHAIN_ID
@@ -43,6 +51,7 @@ SetPaymentsWorkerKlass.prototype = {
 
     logger.debug(' ********* Response *****');
     logger.debug(resp);
+
     process.exit(0);
   }
 };

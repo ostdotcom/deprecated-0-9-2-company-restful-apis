@@ -153,7 +153,7 @@ ConfigStrategyByClientId.prototype = {
 
     //prepare a hash and return
     let configStrategyIdToDetailMap = configStrategyFetchRsp.data,
-      finalConfigStrategyHash = {};
+      finalConfigStrategyHash = strategyIdsFetchRsp.data[clientId].shard_names; //Initializing the final array with auxilary data.
 
     finalConfigStrategyHash[strategyId] = configStrategyIdToDetailMap[strategyId][kind];
 

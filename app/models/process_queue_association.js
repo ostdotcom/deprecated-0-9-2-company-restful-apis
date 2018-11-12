@@ -50,7 +50,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
     const oThis = this;
 
     let response = await oThis
-      .select(['process_id', 'rmq_config_id', 'queue_name_suffix', 'status'])
+      .select(['process_id', 'queue_name_suffix', 'status'])
       .where({ id: id })
       .fire();
 
@@ -70,7 +70,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
     const oThis = this;
 
     let response = await oThis
-      .select(['process_id', 'rmq_config_id', 'queue_name_suffix', 'status'])
+      .select(['process_id', 'queue_name_suffix', 'status'])
       .where(['id IN (?)', ids])
       .fire();
 
@@ -91,7 +91,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
     const oThis = this;
 
     let response = await oThis
-      .select(['process_id', 'rmq_config_id', 'chain_id', 'queue_name_suffix', 'status'])
+      .select(['process_id', 'chain_id', 'queue_name_suffix', 'status'])
       .where({ process_id: processId })
       .fire();
 
@@ -113,7 +113,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
       processDetailsMap = {};
 
     let response = await oThis
-      .select(['process_id', 'rmq_config_id', 'queue_name_suffix', 'chain_id', 'status'])
+      .select(['process_id', 'queue_name_suffix', 'chain_id', 'status'])
       .where(['process_id IN (?)', processIds])
       .fire();
 
@@ -122,47 +122,6 @@ const ProcessQueueAssociationModelSpecificPrototype = {
       processDetailsMap[response[i].process_id] = response[i];
     }
     return Promise.resolve(processDetailsMap);
-  },
-
-  /**
-   * Get details using the rmqId.
-   *
-   * @param rmqId
-   * @return {*}
-   *
-   */
-  getByRmqId: async function(rmqId) {
-    const oThis = this;
-
-    let response = await oThis
-      .select(['process_id', 'rmq_config_id', 'queue_name_suffix', 'status'])
-      .where({ rmq_config_id: rmqId })
-      .fire();
-
-    response[0].status = oThis.statuses[response[0].status];
-
-    return Promise.resolve(response);
-  },
-
-  /**
-   * Get details for multiple rmqIds.
-   *
-   * @param rmqIds
-   * @return {*}
-   *
-   */
-  getByRmqIds: async function(rmqIds) {
-    const oThis = this;
-
-    let response = await oThis
-      .select(['process_id', 'rmq_config_id', 'queue_name_suffix', 'status'])
-      .where(['rmq_config_id IN (?)', rmqIds])
-      .fire();
-
-    for (let i = 0; i < response.length; i++) {
-      response[i].status = oThis.statuses[response[i].status];
-    }
-    return Promise.resolve(response);
   },
 
   /**
@@ -176,7 +135,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
     const oThis = this;
 
     let response = await oThis
-      .select(['process_id', 'rmq_config_id', 'queue_name_suffix', 'status'])
+      .select(['process_id', 'queue_name_suffix', 'status'])
       .where({ queue_name_suffix: topicName })
       .fire();
 
@@ -196,7 +155,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
     const oThis = this;
 
     let response = await oThis
-      .select(['process_id', 'rmq_config_id', 'queue_name_suffix', 'status'])
+      .select(['process_id', 'queue_name_suffix', 'status'])
       .where(['queue_name_suffix IN (?)', topicNames])
       .fire();
 
@@ -209,7 +168,7 @@ const ProcessQueueAssociationModelSpecificPrototype = {
   /**
    * Get processes with any particular status
    *
-   * @param status
+   * @param status eg. available
    * @returns {Promise<*>}
    *
    */
@@ -228,7 +187,6 @@ const ProcessQueueAssociationModelSpecificPrototype = {
    * @param params
    *        {number} - params.chain_id: chainId to be added.
    *        {number} - params.process_id: processId to be added.
-   *        {number} - params.rmq_config_id: rmqId to be added.
    *        {string} - params.queue_name_suffix: topicName to be added.
    *        {string} - params.status: status to be added.
    * @return {*}
@@ -240,7 +198,6 @@ const ProcessQueueAssociationModelSpecificPrototype = {
     if (
       !params.hasOwnProperty('chain_id') ||
       !params.hasOwnProperty('process_id') ||
-      !params.hasOwnProperty('rmq_config_id') ||
       !params.hasOwnProperty('queue_name_suffix') ||
       !params.hasOwnProperty('status')
     ) {
@@ -250,7 +207,6 @@ const ProcessQueueAssociationModelSpecificPrototype = {
     if (
       typeof params.chain_id !== 'number' ||
       typeof params.process_id !== 'number' ||
-      typeof params.rmq_config_id !== 'number' ||
       typeof params.queue_name_suffix !== 'string' ||
       typeof params.status !== 'string'
     ) {
@@ -268,7 +224,6 @@ const ProcessQueueAssociationModelSpecificPrototype = {
    * @param params
    *        {number} - params.id: Id for which record is to be updated.
    *        {number} - params.new_process_id: new processId value.
-   *        {number} - params.new_rmq_id: new rmqId value.
    *        {string} - params.new_topic_name: new topicName.
    *        {string} - params.new_status: new status
    * @return {*}
@@ -276,13 +231,12 @@ const ProcessQueueAssociationModelSpecificPrototype = {
   updateUsingId: function(params) {
     const oThis = this;
 
-    if (!params.id || !params.new_process_id || !params.new_rmq_id || !params.new_topic_name || !params.new_status) {
+    if (!params.id || !params.new_process_id || !params.new_topic_name || !params.new_status) {
       throw 'Mandatory parameters are missing. Expected an object with the following keys: {id, new_process_id, new_rmq_id, new_topic_name, new_status}';
     }
 
     if (
       typeof params.new_process_id !== 'number' ||
-      typeof params.new_rmq_id !== 'number' ||
       typeof params.new_topic_name !== 'string' ||
       typeof params.new_status !== 'string'
     ) {
@@ -294,7 +248,6 @@ const ProcessQueueAssociationModelSpecificPrototype = {
     return oThis
       .update({
         process_id: params.new_process_id,
-        rmq_config_id: params.new_rmq_id,
         queue_name_suffix: params.new_topic_name,
         status: params.new_status
       })
@@ -309,7 +262,6 @@ const ProcessQueueAssociationModelSpecificPrototype = {
    *
    * @param params
    *        {number} - params.process_id: processId for which record is to be updated.
-   *        {number} - params.new_rmq_id: new rmqId value.
    *        {string} - params.new_topic_name: new topicName.
    *        {string} - params.new_status: new status
    * @return {*}
@@ -333,7 +285,6 @@ const ProcessQueueAssociationModelSpecificPrototype = {
 
     return oThis
       .update({
-        rmq_config_id: params.new_rmq_id,
         queue_name_suffix: params.new_topic_name,
         status: params.new_status
       })

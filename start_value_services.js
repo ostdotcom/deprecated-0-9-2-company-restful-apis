@@ -53,12 +53,7 @@ StartServicesKlass.prototype = {
       valueChainStatus = openSTPlaform.services.utils.valueChainStatus,
       servicesList = [];
 
-    // Start REDIS server
-    logger.step('** Starting Redis Server');
-    let cmd =
-      "redis-server --port 6379  --requirepass 'st123'" + ' >> ' + homeAbsolutePath + '/openst-setup/logs/redis.log';
-    // servicesList.push(cmd);
-    oThis._asyncCommand(cmd);
+    let cmd = '';
 
     // Start Memcached server
     logger.step('** Starting Memcached Server');
@@ -106,16 +101,6 @@ StartServicesKlass.prototype = {
     servicesList.push(cmd);
     oThis._asyncCommand(cmd);
 
-    /*
-    logger.step('** Starting Slow Processor to execute transactions');
-    cmd =
-      'node executables/rmq_subscribers/execute_transaction.js 2 slow' +
-      ' >> ' +
-      homeAbsolutePath +
-      '/openst-setup/logs/slow_execute_transaction.log';
-    servicesList.push(cmd);
-    oThis._asyncCommand(cmd);
-*/
     logger.step('** Starting worker to process events');
     cmd =
       'node executables/rmq_subscribers/factory.js 1 \'temp\' \'["on_boarding.#","airdrop_allocate_tokens","stake_and_mint.#","event.stake_and_mint_processor.#","event.block_scanner.#","airdrop.approve.contract", "transaction.stp_transfer"]\'' +

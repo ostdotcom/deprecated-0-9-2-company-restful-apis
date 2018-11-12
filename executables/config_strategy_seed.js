@@ -18,7 +18,6 @@
 
 const rootPrefix = '..',
   configStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
-  ChainGethProviderModel = require(rootPrefix + '/app/models/chain_geth_providers'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
 const group_id = process.argv[3];
@@ -78,32 +77,23 @@ seedConfigStrategies.prototype = {
   asyncPerform: async function() {
     const oThis = this;
 
-    await oThis.seed_redis_params();
     await oThis.seed_dynamo_params();
     await oThis.seed_memcached_params();
+    await oThis.seed_nonce_memcached_params();
     await oThis.seed_autoscaling_params();
     await oThis.seed_in_memory_params();
     await oThis.seed_constants_params();
-    await oThis.seed_dax_params();
+    // await oThis.seed_dax_params();
     await oThis.seed_es_params();
     await oThis.seed_utility_constants_params();
     await oThis.seed_utility_geth_params();
     await oThis.seed_value_constants_params();
     await oThis.seed_value_geth_params();
     await oThis.seed_rmq_params();
+    await oThis.seed_shared_rmq_params();
 
     logger.log('Successfully seeded all config parameters!! ');
     process.exit(0);
-  },
-
-  seed_redis_params: async function() {
-    let redis_params = {};
-    redis_params['OST_REDIS_HOST'] = env_list.OST_REDIS_HOST;
-    redis_params['OST_REDIS_PORT'] = env_list.OST_REDIS_PORT;
-    redis_params['OST_REDIS_PASS'] = env_list.OST_REDIS_PASS;
-    redis_params['OST_REDIS_TLS_ENABLED'] = env_list.OST_REDIS_TLS_ENABLED;
-    const configStrategy = new configStrategyModel();
-    await configStrategy.create('redis', process.argv[2], redis_params, group_id).then();
   },
 
   seed_dynamo_params: async function() {
@@ -148,6 +138,15 @@ seedConfigStrategies.prototype = {
     await configStrategy.create('memcached', process.argv[2], memcached_params, group_id).then();
   },
 
+  seed_nonce_memcached_params: async function() {
+    let memcached_params = {};
+    memcached_params['OST_NONCE_MEMCACHE_SERVERS'] = env_list.OST_NONCE_MEMCACHE_SERVERS;
+
+    const configStrategy = new configStrategyModel();
+
+    await configStrategy.create('nonce_memcached', process.argv[2], memcached_params, group_id).then();
+  },
+
   seed_in_memory_params: async function() {
     let in_memory_params = {};
     in_memory_params['OST_INMEMORY_CACHE_NAMESPACE'] = env_list.OST_INMEMORY_CACHE_NAMESPACE;
@@ -164,6 +163,7 @@ seedConfigStrategies.prototype = {
     value_geth_params['OST_VALUE_GETH_RPC_PROVIDERS'] = env_list.OST_VALUE_GETH_RPC_PROVIDERS;
     value_geth_params['OST_VALUE_GETH_WS_PROVIDERS'] = env_list.OST_VALUE_GETH_WS_PROVIDERS;
     value_geth_params['OST_VALUE_CHAIN_ID'] = env_list.OST_VALUE_CHAIN_ID;
+    value_geth_params['OST_VALUE_CHAIN_TYPE'] = env_list.OST_VALUE_CHAIN_TYPE;
 
     const configStrategy = new configStrategyModel();
 
@@ -195,11 +195,16 @@ seedConfigStrategies.prototype = {
 
   seed_utility_geth_params: async function() {
     let utility_geth_params = {};
-    utility_geth_params['OST_UTILITY_GETH_RPC_PROVIDER'] = env_list.OST_UTILITY_GETH_RPC_PROVIDER;
-    utility_geth_params['OST_UTILITY_GETH_WS_PROVIDER'] = env_list.OST_UTILITY_GETH_WS_PROVIDER;
-    utility_geth_params['OST_UTILITY_GETH_RPC_PROVIDERS'] = env_list.OST_UTILITY_GETH_RPC_PROVIDERS;
-    utility_geth_params['OST_UTILITY_GETH_WS_PROVIDERS'] = env_list.OST_UTILITY_GETH_WS_PROVIDERS;
+    let geth_params = {
+      OST_UTILITY_GETH_RPC_PROVIDER: env_list.OST_UTILITY_GETH_RPC_PROVIDER,
+      OST_UTILITY_GETH_WS_PROVIDER: env_list.OST_UTILITY_GETH_WS_PROVIDER,
+      OST_UTILITY_GETH_RPC_PROVIDERS: env_list.OST_UTILITY_GETH_RPC_PROVIDERS,
+      OST_UTILITY_GETH_WS_PROVIDERS: env_list.OST_UTILITY_GETH_WS_PROVIDERS
+    };
     utility_geth_params['OST_UTILITY_CHAIN_ID'] = env_list.OST_UTILITY_CHAIN_ID;
+    utility_geth_params['OST_UTILITY_CHAIN_TYPE'] = env_list.OST_UTILITY_CHAIN_TYPE;
+    utility_geth_params['read_only'] = geth_params;
+    utility_geth_params['read_write'] = geth_params;
 
     const configStrategy = new configStrategyModel();
 

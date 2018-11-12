@@ -142,8 +142,10 @@ GenerateAddressKlass.prototype = {
       );
     }
 
-    const managedAddressCache = new ManagedAddressCacheKlass({ uuids: [addrUuid] });
-    managedAddressCache.clear();
+    if (oThis.clientId) {
+      const managedAddressCache = new ManagedAddressCacheKlass({ uuids: [addrUuid] });
+      managedAddressCache.clear();
+    }
 
     var userData = {
       id: insertedRec.insertId,
@@ -230,8 +232,10 @@ GenerateAddressKlass.prototype = {
       generateSaltRsp.data['managed_address_salt_id']
     );
 
-    const managedAddressCache = new ManagedAddressCacheKlass({ uuids: [addrUuid] });
-    managedAddressCache.clear();
+    if (oThis.clientId) {
+      const managedAddressCache = new ManagedAddressCacheKlass({ uuids: [addrUuid] });
+      managedAddressCache.clear();
+    }
 
     if (addressType == managedAddressConst.internalChainIndenpendentAddressType) {
       const ethAddrPrivateKeyCache = new EthAddrPrivateKeyCacheKlass({ address: eth_address });
@@ -272,7 +276,10 @@ GenerateAddressKlass.prototype = {
       insertedRec = await new ManagedAddressSaltModel()
         .insert({ client_id: clientId, managed_address_salt: addressSalt })
         .fire();
-      new ClientAddressSaltMapping({ client_id: clientId }).clear();
+
+      if (clientId) {
+        new ClientAddressSaltMapping({ client_id: clientId }).clear();
+      }
 
       if (insertedRec.affectedRows == 0) {
         return Promise.reject(
