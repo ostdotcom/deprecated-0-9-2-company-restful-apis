@@ -4,13 +4,13 @@
  * This script populates the trade data from binance exchange using - lib/price_stabilization/populate_exchange_trade_data.js
  *
  *
- * Usage: node ./executables/populate_exchange_trade_data_from_binance.js --pageLimit pageLimit
+ * Usage: node ./executables/populate_exchange_trade_data.js --pageLimit pageLimit
  *
  * Command Line Parameters Description:
- * [pageLimit]: Group id for fetching the config strategy (Optional)
- * Note- If page limit is not passed then default value is set to max value i.e. 1000.
+ * [duration] in minutes duration for which we should go back in time to fetch orders
+ * Note- If duration is not passed then default value is set to 10 Minutes.
  *
- * Example: node ./executables/populate_exchange_trade_data_from_binance.js --pageLimit 1000
+ * Example: node ./executables/populate_exchange_trade_data.js --duration 100
  *
  * @module
  */
@@ -20,19 +20,21 @@ const rootPrefix = '..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   PopulateExchangeTradeDataKlass = require(rootPrefix + '/lib/price_stabilization/populate_exchange_trade_data');
 
-program.option('--pageLimit [pageLimit]', 'Page Limit').parse(process.argv);
+program.option('--duration <duration>', 'duration');
+
+program.parse(process.argv);
 
 program.on('--help', () => {
   console.log('');
   console.log('  Example:');
   console.log('');
-  console.log('    node ./executables/populate_exchange_trade_data_from_binance.js --pageLimit 1000 ');
+  console.log('    node ./executables/populate_exchange_trade_data.js --duration 10');
   console.log('');
   console.log('');
 });
 
 const populate = function() {
-  const populateExchangeTradeDataObj = new PopulateExchangeTradeDataKlass({ pageLimit: program.pageLimit });
+  const populateExchangeTradeDataObj = new PopulateExchangeTradeDataKlass({ duration: program.duration });
 
   populateExchangeTradeDataObj
     .perform()
