@@ -1,72 +1,58 @@
 'use strict';
-
 /**
  * This code acts as a worker process for block scanner, which takes the transactions from delegator
  * and processes it using block scanner class. [ lib/block_scanner/for_tx_status_and_balance_sync.js ]
  *
- * Usage: node executables/rmq_subscribers/block_scanner.js --processLock-id 1 --group-id 197 --prefetch-count 2 --benchmark-file-path [benchmarkFilePath]
+ * Usage: node executables/rmq_subscribers/block_scanner.js 1
  *
  * Command Line Parameters Description:
  * processLockId: used for ensuring that no other process with the same processLockId can run on a given machine.
- * group_id: group_id to fetch config strategy
- * prefetchCountStr: prefetch count for RMQ subscribers.
- * [benchmarkFilePath]: path to the file which is storing the benchmarking info.
  *
  * @module executables/rmq_subscribers/block_scanner
  */
 
-const rootPrefix = '../..';
-
-const program = require('commander'),
-  CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
-  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
-  CronProcessHandlerObject = new CronProcessesHandler();
-
-program
-  .option('--processLock-id <processLockId>', 'Process Lock id')
-  .option('--group-id <groupId>', 'Group id')
-  .option('--prefetch-count <prefetchCount>', 'Prefetch Count')
-  .option('--benchmark-file-path [benchmarkFilePath]', 'Path to benchmark file path');
-
-program.on('--help', () => {
-  console.log('');
-  console.log('  Example:');
-  console.log('');
-  console.log(
-    '    node executables/rmq_subscribers/block_scanner.js --processLock-id 1 --group-id 197 --prefetch-count 2 --benchmark-file-path [benchmarkFilePath]'
-  );
-  console.log('');
-  console.log('');
-});
-
-program.parse(process.argv);
-
-const InstanceComposer = require(rootPrefix + '/instance_composer'),
+const rootPrefix = '../..',
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
+  CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
   web3InteractFactory = require(rootPrefix + '/lib/web3/interact/ws_interact'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
-  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id');
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
+  CronProcessHandlerObject = new CronProcessesHandler();
+
+const usageDemo = function() {
+  logger.log('Usage:', 'node executables/rmq_subscribers/block_scanner.js processLockId');
+  logger.log(
+    '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
+  );
+};
 
 // Declare variables.
-let ic = null,
+const args = process.argv,
+  processLockId = args[2],
   cronKind = CronProcessesConstants.blockScannerWorker;
 
-// Check whether the cron can be started or not.
-CronProcessHandlerObject.canStartProcess({
-  id: +program.processLockId, // Implicit string to int conversion.
-  cron_kind: cronKind
-});
+let ic = null,
+  unAckCount = 0,
+  groupId,
+  prefetchCount,
+  benchmarkFilePath;
 
-require(rootPrefix + '/lib/block_scanner/for_tx_status_and_balance_sync');
+// Validate if processLockId was passed or not.
+if (!processLockId) {
+  logger.error('Process Lock id NOT passed in the arguments.');
+  usageDemo();
+  process.exit(1);
+}
+
 require(rootPrefix + '/lib/web3/interact/ws_interact');
+require(rootPrefix + '/lib/block_scanner/for_tx_status_and_balance_sync');
 
 // Load external packages
 const OSTBase = require('@openstfoundation/openst-base');
-
-let unAckCount = 0,
-  prefetchCountInt = parseInt(program.prefetchCount);
 
 const BlockScanner = function() {
   const oThis = this;
@@ -74,7 +60,7 @@ const BlockScanner = function() {
   oThis.PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(oThis._promiseExecutor, {
     name: 'blockscanner_promise_queue_manager',
     timeoutInMilliSecs: 3 * 60 * 1000, //3 minutes
-    maxZombieCount: Math.round(prefetchCountInt * 0.25),
+    maxZombieCount: Math.round(prefetchCount * 0.25),
     onMaxZombieCountReached: function() {
       logger.warn('e_rmqs_bs_2', 'maxZombieCount reached. Triggering SIGTERM.');
       // Trigger gracefully shutdown of process.
@@ -82,7 +68,7 @@ const BlockScanner = function() {
     }
   });
 
-  SigIntHandler.call(oThis, { id: program.processLockId });
+  SigIntHandler.call(oThis, { id: processLockId });
 };
 
 BlockScanner.prototype = Object.create(SigIntHandler.prototype);
@@ -91,7 +77,7 @@ const BlockScannerPrototype = {
   perform: async function() {
     const oThis = this;
 
-    oThis.validateAndSanitize();
+    oThis._validateAndSanitize();
 
     await oThis.warmUpGethPool();
 
@@ -99,23 +85,31 @@ const BlockScannerPrototype = {
   },
 
   /**
-   * validateAndSanitize
+   * Validates the params.
+   *
+   * @private
    */
-  validateAndSanitize: function() {
-    if (!program.processLockId || !program.groupId || !program.prefetchCount) {
-      program.help();
-      process.exit(1);
+  _validateAndSanitize: function() {
+    if (!groupId) {
+      logger.error('Group Id NOT available in cron params in the database.');
+      process.emit('SIGINT');
+    }
+
+    if (!prefetchCount) {
+      logger.error('Prefetch count NOT available in cron params in the database.');
+      process.emit('SIGINT');
     }
   },
 
   /**
-   * warmUpGethPool
+   * Warms up the geth pool.
    *
+   * @returns {Promise<any>}
    */
   warmUpGethPool: function() {
     return new Promise(async function(onResolve, onReject) {
       let utilityGethType = 'read_only',
-        strategyByGroupHelperObj = new StrategyByGroupHelper(program.groupId),
+        strategyByGroupHelperObj = new StrategyByGroupHelper(groupId),
         configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(utilityGethType),
         configStrategy = configStrategyResp.data;
 
@@ -135,8 +129,7 @@ const BlockScannerPrototype = {
   },
 
   /**
-   * Start subscription
-   *
+   * Start subscription.
    */
   startSubscription: async function() {
     const oThis = this;
@@ -149,7 +142,7 @@ const BlockScannerPrototype = {
       {
         queue: 'block_scanner_execute_' + chain_id,
         ackRequired: 1,
-        prefetch: prefetchCountInt
+        prefetch: prefetchCount
       },
       function(params) {
         // Promise is required to be returned to manually ack messages in RMQ
@@ -178,10 +171,10 @@ const BlockScannerPrototype = {
           geth_array: payload.gethArray,
           transaction_hashes: payload.transactionHashes,
           time_stamp: payload.timestamp,
-          benchmark_file_path: program.benchmarkFilePath,
+          benchmark_file_path: benchmarkFilePath,
           web3_factory_obj: web3InteractFactory,
           delegator_timestamp: payload.delegatorTimestamp,
-          process_id: program.processLockId
+          process_id: processLockId
         });
 
       try {
@@ -242,7 +235,26 @@ const BlockScannerPrototype = {
 
 Object.assign(BlockScanner.prototype, BlockScannerPrototype);
 
-let blockScanner = new BlockScanner();
-blockScanner.perform().catch(function(err) {
-  logger.error(err);
+// Check whether the cron can be started or not.
+CronProcessHandlerObject.canStartProcess({
+  id: +processLockId, // Implicit string to int conversion.
+  cron_kind: cronKind
+}).then(function(dbResponse) {
+  let cronParams;
+  const blockScanner = new BlockScanner();
+
+  try {
+    cronParams = JSON.parse(dbResponse.data.params);
+  } catch (err) {
+    logger.error('cronParams stored in INVALID format in the DB.');
+    process.emit('SIGINT');
+  }
+
+  groupId = cronParams.group_id;
+  prefetchCount = +cronParams.prefetch_count;
+  benchmarkFilePath = cronParams.benchmark_file_path;
+
+  blockScanner.perform().catch(function(err) {
+    logger.error(err);
+  });
 });

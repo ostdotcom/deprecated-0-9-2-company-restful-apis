@@ -2,10 +2,10 @@
 /**
  * This is script to start airdrop for a client token by subscribing to RMQ events.
  *
- * Usage: node executables/rmq_subscribers/start_airdrop.js processId
+ * Usage: node executables/rmq_subscribers/start_airdrop.js processLockId
  *
  * Command Line Parameters Description:
- * processId: process id to start the process
+ * processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.
  *
  * Example: node executables/rmq_subscribers/start_airdrop.js 1
  *
@@ -14,42 +14,47 @@
 
 const rootPrefix = '../..';
 
-//Always Include Module overrides First
+// Always include module overrides first.
 require(rootPrefix + '/module_overrides/index');
 
 // Include Cron Process Handler.
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  notifier = require(rootPrefix + '/helpers/notifier'),
+const notifier = require(rootPrefix + '/helpers/notifier'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
+  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
+  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
   CronProcessHandlerObject = new CronProcessesHandler();
 
-const args = process.argv,
-  processId = args[2];
+const usageDemo = function() {
+  logger.log('Usage:', 'node ./executables/rmq_subscribers/factory.js processLockId');
+  logger.log(
+    '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
+  );
+};
 
-if (!processId) {
-  logger.error('Please pass the processId.');
+// Declare variables.
+const args = process.argv,
+  processLockId = args[2],
+  cronKind = CronProcessesConstants.startAirdrop;
+
+let unAckCount = 0;
+
+// Validate if processLockId was passed or not.
+if (!processLockId) {
+  logger.error('Process Lock id NOT passed in the arguments.');
+  usageDemo();
   process.exit(1);
 }
 
-// Declare variables.
-const cronKind = CronProcessesConstants.startAirdrop;
-
 // Check whether the cron can be started or not.
 CronProcessHandlerObject.canStartProcess({
-  id: +processId, // Implicit string to int conversion.
+  id: +processLockId, // Implicit string to int conversion.
   cron_kind: cronKind
 });
 
-// All Module Requires.
-const InstanceComposer = require(rootPrefix + '/instance_composer'),
-  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
-  ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id');
-
 require(rootPrefix + '/lib/airdrop_management/distribute_tokens/start');
-
-// Declare variables.
-let unAckCount = 0;
 
 const subscribeAirdrop = async function() {
   const openStNotification = await SharedRabbitMqProvider.getInstance();
@@ -113,7 +118,7 @@ function handle() {
   const signalHandler = function() {
     if (unAckCount <= 0) {
       logger.log('SIGINT/SIGTERM handle :: No pending Promises.');
-      CronProcessHandlerObject.stopProcess(processId).then(function() {
+      CronProcessHandlerObject.stopProcess(processLockId).then(function() {
         logger.info('Status and last_end_time updated in table. Killing process.');
 
         // Stop the process only after the entry has been updated in the table.

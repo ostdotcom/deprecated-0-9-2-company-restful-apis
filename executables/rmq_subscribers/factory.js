@@ -2,20 +2,18 @@
 /**
  * This is factory for all RabbitMQ subscribers.
  *
- * Usage: node executables/rmq_subscribers/factory.js processLockId queueSuffix topicsToSubscribe
+ * Usage: node executables/rmq_subscribers/factory.js processLockId
  *
  * Command Line Parameters Description:
  * processLockId: processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.
- * queueSuffix: queueSuffix is the suffix to be used for getting the queue name.
- * topicsToSubscribe: topicsToSubscribe is a JSON stringified version of topics to be subscribed for this RMQ subscriber.
  *
- * Example: node executables/rmq_subscribers/factory.js 1 'rmq_subscribers_factory_1' '["on_boarding.#","airdrop_allocate_tokens"]'
+ * Example: node executables/rmq_subscribers/factory.js 1
  *
  * @module executables/rmq_subscribers/factory
  */
 const rootPrefix = '../..';
 
-//Always Include Module overrides First
+// Always include module overrides first.
 require(rootPrefix + '/module_overrides/index');
 
 // Load external packages
@@ -31,30 +29,28 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   CronProcessHandlerObject = new CronProcessesHandler();
 
 const usageDemo = function() {
-  logger.log('usage:', 'node ./executables/rmq_subscribers/factory.js processLockId queueSuffix topicsToSubscribe');
+  logger.log('Usage:', 'node ./executables/rmq_subscribers/factory.js processLockId');
   logger.log(
     '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
   );
-  logger.log('* queueSuffix is the suffix to be used for getting the queue name.');
-  logger.log('* topicsToSubscribe is a JSON stringified version of topics to be subscribed for this RMQ subscriber.');
 };
 
+// Declare variables.
 const args = process.argv,
   processLockId = args[2],
-  queueSuffix = args[3],
-  topicsToSubscribe = args[4];
-
-// Declare variables.
-let topicsToSubscribeArray = null,
   cronKind = CronProcessesConstants.rmqFactory;
 
-// Check whether the cron can be started or not.
-CronProcessHandlerObject.canStartProcess({
-  id: +processLockId, // Implicit string to int conversion.
-  cron_kind: cronKind
-});
+let queueName,
+  queueSuffix,
+  topicsToSubscribe,
+  topicsToSubscribeArray = null;
 
-const queueName = 'executables_rmq_subscribers_factory_' + queueSuffix;
+// Validate if processLockId was passed or not.
+if (!processLockId) {
+  logger.error('Process Lock id NOT passed in the arguments.');
+  usageDemo();
+  process.exit(1);
+}
 
 require(rootPrefix + '/lib/on_boarding/propose.js');
 require(rootPrefix + '/lib/on_boarding/deploy_airdrop.js');
@@ -120,7 +116,7 @@ const RmqFactoryPrototype = {
   perform: function() {
     const oThis = this;
 
-    // validate and sanitize the input params
+    // Validate and sanitize the input params.
     oThis._validateAndSanitize();
 
     oThis.startSubscription();
@@ -132,39 +128,28 @@ const RmqFactoryPrototype = {
    * @private
    */
   _validateAndSanitize: function() {
-    const oThis = this;
-
-    if (!processLockId) {
-      logger.error('Process Lock id NOT passed in the arguments.');
-      usageDemo();
-      process.exit(1);
-    }
-
     if (!queueSuffix) {
-      logger.error('Queue suffix NOT passed in the arguments.');
-      usageDemo();
-      process.exit(1);
+      logger.error('Queue suffix NOT available in cron params in the database.');
+      process.emit('SIGINT');
     }
 
     if (!topicsToSubscribe) {
-      logger.error('Topics to subscribe NOT passed in the arguments.');
-      usageDemo();
-      process.exit(1);
+      logger.error('Topics to subscribe NOT available in cron params in the database.');
+      process.emit('SIGINT');
     }
 
     try {
       topicsToSubscribeArray = JSON.parse(topicsToSubscribe);
     } catch (err) {
-      logger.error('Topics to subscribe passed in INVALID format.');
+      logger.error('Topics to subscribe passed in INVALID format from the database..');
       logger.error(err);
-      usageDemo();
-      process.exit(1);
+      process.emit('SIGINT');
     }
 
     if (topicsToSubscribeArray.length === 0) {
       logger.error('Topics to subscribe should have at least one topic.');
       usageDemo();
-      process.exit(1);
+      process.emit('SIGINT');
     }
   },
 
@@ -174,8 +159,7 @@ const RmqFactoryPrototype = {
    * @returns {Promise}
    */
   _promiseExecutor: function(onResolve, onReject, params) {
-    const oThis = this;
-    // factory logic for deciding what action to perform here.
+    // Factory logic for deciding what action to perform here.
     const parsedParams = JSON.parse(params),
       topics = parsedParams.topics;
 
@@ -260,13 +244,35 @@ const RmqFactoryPrototype = {
 
 Object.assign(RmqFactory.prototype, RmqFactoryPrototype);
 
-//Handler for rmq errors
+// Handler for rmq errors.
 function ostRmqError(err) {
-  logger.info('ostRmqError occured.', err);
+  logger.info('ostRmqError occurred.', err);
   process.emit('SIGINT');
 }
 
 process.on('ost_rmq_error', ostRmqError);
 
-let rmqFactory = new RmqFactory();
-rmqFactory.perform();
+// Check whether the cron can be started or not.
+CronProcessHandlerObject.canStartProcess({
+  id: +processLockId, // Implicit string to int conversion.
+  cron_kind: cronKind
+}).then(function(dbResponse) {
+  let cronParams;
+  const rmqFactory = new RmqFactory();
+
+  try {
+    cronParams = JSON.parse(dbResponse.data.params);
+  } catch (err) {
+    logger.error('cronParams stored in INVALID format in the DB.');
+    process.emit('SIGINT');
+  }
+
+  // queueSuffix is the suffix to be used for getting the queue name.
+  queueSuffix = cronParams.queue_suffix;
+  queueName = 'executables_rmq_subscribers_factory_' + queueSuffix;
+
+  // topicsToSubscribe is a JSON stringified version of topics to be subscribed for this RMQ subscriber.
+  topicsToSubscribe = cronParams.topics_to_subscribe;
+
+  rmqFactory.perform();
+});

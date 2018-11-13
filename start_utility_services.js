@@ -137,7 +137,7 @@ StartServicesKlass.prototype = {
     servicesList.push(cmd);
     oThis._asyncCommand(cmd);
 
-    logger.step('** Starting Stake & Mint Processor Intercom');
+    logger.step('** Starting Stake & Mint Processor Intercomm');
     cmd =
       'node executables/inter_comm/stake_and_mint_processor.js 2 ' +
       homeAbsolutePath +
