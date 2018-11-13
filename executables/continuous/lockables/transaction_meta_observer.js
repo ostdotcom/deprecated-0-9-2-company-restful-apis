@@ -12,9 +12,9 @@
  *  - Submitted
  *    If transaction meta says status submitted for sometime then check on geth, and resubmit if not found on geth.
  *
- * Example: node executables/continuous/lockables/transaction_meta_observer.js --process-id 123 --prefetch-count 10
+ * Example: node executables/continuous/lockables/transaction_meta_observer.js --process-id 123
  *
- * @module executables/transaction_meta_observer
+ * @module executables/continuous/lockables/transaction_meta_observer
  */
 
 const rootPrefix = '../../..';
@@ -33,31 +33,27 @@ const SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
   CronProcessHandlerObject = new CronProcessesHandler();
 
 const usageDemo = function() {
-  logger.log('usage:', 'node ./executables/continuous/lockables/transaction_meta_observer.js processLockId');
+  logger.log('Usage:', 'node ./executables/continuous/lockables/transaction_meta_observer.js processLockId');
   logger.log(
     '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
   );
 };
 
+// Declare variables.
 const args = process.argv,
   processLockId = args[2];
 
-// Declare variables.
 let runCount = 1,
   prefetchCount,
   cronKind = CronProcessesConstants.transactionMetaObserver,
   TransactionStatusHandlers = {};
 
-// Validate and sanitize the commander parameters.
-const validateAndSanitize = function() {
-  if (!processLockId) {
-    usageDemo();
-    process.emit('SIGINT');
-  }
-};
-
-// Validate and sanitize the input params.
-validateAndSanitize();
+// Validate if processLockId was passed or not.
+if (!processLockId) {
+  logger.error('Process Lock id NOT passed in the arguments.');
+  usageDemo();
+  process.exit(1);
+}
 
 const setTransactionStatusHandlers = function() {
   let invertedStatuses = transactionMetaConst.invertedStatuses;

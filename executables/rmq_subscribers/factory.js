@@ -29,21 +29,28 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   CronProcessHandlerObject = new CronProcessesHandler();
 
 const usageDemo = function() {
-  logger.log('usage:', 'node ./executables/rmq_subscribers/factory.js processLockId');
+  logger.log('Usage:', 'node ./executables/rmq_subscribers/factory.js processLockId');
   logger.log(
     '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
   );
 };
 
-const args = process.argv,
-  processLockId = args[2];
-
 // Declare variables.
+const args = process.argv,
+  processLockId = args[2],
+  cronKind = CronProcessesConstants.rmqFactory;
+
 let queueName,
   queueSuffix,
   topicsToSubscribe,
-  topicsToSubscribeArray = null,
-  cronKind = CronProcessesConstants.rmqFactory;
+  topicsToSubscribeArray = null;
+
+// Validate if processLockId was passed or not.
+if (!processLockId) {
+  logger.error('Process Lock id NOT passed in the arguments.');
+  usageDemo();
+  process.exit(1);
+}
 
 require(rootPrefix + '/lib/on_boarding/propose.js');
 require(rootPrefix + '/lib/on_boarding/deploy_airdrop.js');
@@ -121,12 +128,6 @@ const RmqFactoryPrototype = {
    * @private
    */
   _validateAndSanitize: function() {
-    if (!processLockId) {
-      logger.error('Process Lock id NOT passed in the arguments.');
-      usageDemo();
-      process.emit('SIGINT');
-    }
-
     if (!queueSuffix) {
       logger.error('Queue suffix NOT available in cron params in the database.');
       process.emit('SIGINT');
@@ -257,6 +258,7 @@ CronProcessHandlerObject.canStartProcess({
   cron_kind: cronKind
 }).then(function(dbResponse) {
   let cronParams;
+  const rmqFactory = new RmqFactory();
 
   try {
     cronParams = JSON.parse(dbResponse.data.params);
@@ -272,7 +274,5 @@ CronProcessHandlerObject.canStartProcess({
   // topicsToSubscribe is a JSON stringified version of topics to be subscribed for this RMQ subscriber.
   topicsToSubscribe = cronParams.topicsToSubscribe;
 
-  // Create object of rmqFactory.
-  const rmqFactory = new RmqFactory();
   rmqFactory.perform();
 });

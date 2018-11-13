@@ -33,16 +33,25 @@ const InstanceComposer = require(rootPrefix + '/instance_composer'),
   CronProcessHandlerObject = new CronProcessesHandler();
 
 const usageDemo = function() {
-  logger.log('usage:', 'node ./executables/inter_comm/stake_and_mint_processor.js processLockId');
+  logger.log('Usage:', 'node executables/inter_comm/stake_and_mint_processor.js processLockId');
+  logger.log(
+    '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
+  );
 };
 
 // Declare variables.
 const args = process.argv,
-  processLockId = args[2];
+  processLockId = args[2],
+  cronKind = CronProcessesConstants.stakeAndMintProcessor; // Define cronKind.
 
 let filePath, groupId;
 
-const cronKind = CronProcessesConstants.stakeAndMintProcessor; // Define cronKind.
+// Validate if processLockId was passed or not.
+if (!processLockId) {
+  logger.error('Process Lock id NOT passed in the arguments.');
+  usageDemo();
+  process.exit(1);
+}
 
 process.on('uncaughtException', function(args) {
   logger.error('Received uncaughtException', args);
@@ -80,18 +89,6 @@ const StartIntercommPrototype = {
    * @private
    */
   _validateAndSanitize: function() {
-    if (args.length < 2) {
-      logger.error('Invalid arguments !!!');
-      usageDemo();
-      process.emit('SIGINT');
-    }
-
-    if (!processLockId) {
-      logger.error('Process Lock id NOT passed in the arguments.');
-      usageDemo();
-      process.emit('SIGINT');
-    }
-
     if (!filePath) {
       logger.error('File path NOT available in cron params in the database.');
       process.emit('SIGINT');
@@ -141,6 +138,7 @@ CronProcessHandlerObject.canStartProcess({
   cron_kind: cronKind
 }).then(async function(dbResponse) {
   let cronParams;
+  const startIntercomm = new StartIntercomm();
 
   try {
     cronParams = JSON.parse(dbResponse.data.params);
@@ -155,6 +153,5 @@ CronProcessHandlerObject.canStartProcess({
   // groupId needs to be passed to fetch config strategy.
   groupId = cronParams.groupId;
 
-  const startIntercomm = new StartIntercomm();
   startIntercomm.perform();
 });
