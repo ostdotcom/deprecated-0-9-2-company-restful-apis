@@ -95,7 +95,7 @@ NOTE: Once the script runs successfully, you will get a workers contract address
 Copy that address for "OST_UTILITY_WORKERS_CONTRACT_ADDRESS" variable in the utility chain config strategy file (uc_1000.json).
 ```
 
-*** Either update the config strategy table or reRun config strategy seeder again after truncating config_strategies table
+*** Either update the config strategy table or reRun config strategy seeder again after truncating config_strategies table.
 
 * Run OpenST Payments migrations.
 ```bash
@@ -135,6 +135,11 @@ Run the following commands after creating the database.
  ```
  
 * Close all existing processes (for eg. utility chain, mysql, memcached, etc.) before proceeding further. 
+
+* Use the one-timer to fill cron_processes table. PLEASE READ THE TOP COMMENT IN THE SCRIPT BEFORE RUNNING THE COMMAND.
+```bash
+node executables/one_timers/populate_cron_processes.js
+```
                                          
 # Start SAAS Services
 * Start Memcached.
@@ -182,7 +187,7 @@ Run the following commands after creating the database.
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> node executables/inter_comm/stake_and_mint_processor.js $HOME/openst-setup/logs/stake_and_mint_processor.data group_id
+> node executables/inter_comm/stake_and_mint_processor.js 2
 ```
 
 * Start Stake Hunter Intercom in new terminal.
@@ -212,7 +217,7 @@ Use the file path in the following command:
 ```bash
 > source $HOME/openst-setup/openst_env_vars.sh
 > source set_env_vars.sh
-> node executables/rmq_subscribers/factory.js 1 'rmq_subscribers_factory_1' '["on_boarding.#","airdrop_allocate_tokens","stake_and_mint.#","event.stake_and_mint_processor.#","airdrop.approve.contract"]'
+> node executables/rmq_subscribers/factory.js 1
 ```
 
 * Start APIs in new terminal.
@@ -227,9 +232,9 @@ Use the file path in the following command:
 # Every hour
 node executables/update_price_oracle_price_points.js group_id >> log/update_price_oracle_price_points.log
 # Every five minutes
-node executables/rmq_subscribers/send_error_emails.js >> log/send_error_emails.log
+node executables/rmq_subscribers/send_error_emails.js 5 >> log/send_error_emails.log
 # Every minute
-node executables/rmq_subscribers/start_airdrop.js >> log/start_airdrop.log
+node executables/rmq_subscribers/start_airdrop.js 7 >> log/start_airdrop.log
 # Every five minutes
 node executables/fund_addresses/by_reserve/st_prime.js >> log/fund_addresses_by_reserve_st_prime.log
 # Every five minutes
@@ -269,12 +274,12 @@ NOTE: Create the file if not present.
 * Start block scanner. Change utility chain id accordingly.
 ```bash
 # Start master process for Block scanner.
-node executables/block_scanner/transaction_delegator.js --process_id  8 --group_id 197 --data_file_path $HOME/openst-setup/data/utility-chain-1000/block_scanner_execute_transaction.data --benchmark_file_path $HOME/openst-setup/logs/block_scanner_benchmark-1000.csv
+node executables/block_scanner/transaction_delegator.js 4
 ```
 
 ```bash
 # Start one worker process for block scanner.
-node executables/rmq_subscribers/block_scanner.js --processlock-id processLockId --group-id group_id --prefetch-count prefetchCount --benchmark-file-path [~/openst-setup/logs/block_scanner_benchmark-1000.csv]
+node executables/rmq_subscribers/block_scanner.js 3
 ```
 
 * Don't forget to start the cronjobs. 

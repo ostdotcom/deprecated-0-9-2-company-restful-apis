@@ -117,7 +117,7 @@ function handle() {
   logger.info('Received Signal');
   const signalHandler = function() {
     if (unAckCount <= 0) {
-      logger.log('SIGINT/SIGTERM handle :: No pending Promises.');
+      logger.info(':: No pending promises. Changing the status ');
       CronProcessHandlerObject.stopProcess(processLockId).then(function() {
         logger.info('Status and last_end_time updated in table. Killing process.');
 
