@@ -23,8 +23,7 @@ const rootPrefix = '../../..';
 require(rootPrefix + '/module_overrides/index');
 
 // Require modules.
-const program = require('commander'),
-  SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
+const SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger.js'),
   CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
   baseKlass = require(rootPrefix + '/executables/continuous/lockables/base'),
@@ -33,39 +32,27 @@ const program = require('commander'),
   transactionMetaConst = require(rootPrefix + '/lib/global_constant/transaction_meta'),
   CronProcessHandlerObject = new CronProcessesHandler();
 
-program.option('--process-id <processId>', 'Process id').option('--prefetch-count <prefetchCount>', 'Prefetch Count');
-
-program.on('--help', () => {
-  logger.log('');
-  logger.log('  Example:');
-  logger.log('');
+const usageDemo = function() {
+  logger.log('usage:', 'node ./executables/continuous/lockables/transaction_meta_observer.js processLockId');
   logger.log(
-    '    node ./executables/continuous/lockables/transaction_meta_observer.js --process-id 123 --prefetch-count 10'
+    '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
   );
-  logger.log('');
-  logger.log('');
-});
+};
 
-program.parse(process.argv);
+const args = process.argv,
+  processLockId = args[2];
 
 // Declare variables.
 let runCount = 1,
+  prefetchCount,
   cronKind = CronProcessesConstants.transactionMetaObserver,
   TransactionStatusHandlers = {};
 
-// Check whether the cron can be started or not.
-CronProcessHandlerObject.canStartProcess({
-  id: +program.processId, // Implicit string to int conversion.
-  cron_kind: cronKind
-});
-
-CronProcessHandlerObject.endAfterTime({ time_in_minutes: 40 });
-
 // Validate and sanitize the commander parameters.
 const validateAndSanitize = function() {
-  if (!program.processId) {
-    program.help();
-    process.exit(1);
+  if (!processLockId) {
+    usageDemo();
+    process.emit('SIGINT');
   }
 };
 
@@ -73,14 +60,14 @@ const validateAndSanitize = function() {
 validateAndSanitize();
 
 const setTransactionStatusHandlers = function() {
-  let is = transactionMetaConst.invertedStatuses;
-  TransactionStatusHandlers[parseInt(is[transactionMetaConst.queued])] = require(rootPrefix +
+  let invertedStatuses = transactionMetaConst.invertedStatuses;
+  TransactionStatusHandlers[parseInt(invertedStatuses[transactionMetaConst.queued])] = require(rootPrefix +
     '/lib/transaction_error_handlers/queued_handler');
-  TransactionStatusHandlers[parseInt(is[transactionMetaConst.submitted])] = require(rootPrefix +
+  TransactionStatusHandlers[parseInt(invertedStatuses[transactionMetaConst.submitted])] = require(rootPrefix +
     '/lib/transaction_error_handlers/submitted_handler');
-  TransactionStatusHandlers[parseInt(is[transactionMetaConst.geth_down])] = require(rootPrefix +
+  TransactionStatusHandlers[parseInt(invertedStatuses[transactionMetaConst.geth_down])] = require(rootPrefix +
     '/lib/transaction_error_handlers/geth_down_handler');
-  TransactionStatusHandlers[parseInt(is[transactionMetaConst.geth_out_of_sync])] = require(rootPrefix +
+  TransactionStatusHandlers[parseInt(invertedStatuses[transactionMetaConst.geth_out_of_sync])] = require(rootPrefix +
     '/lib/transaction_error_handlers/geth_down_handler');
 };
 
@@ -100,7 +87,7 @@ const TransactionMetaObserverKlass = function(params) {
   oThis.handlerPromises = [];
 
   baseKlass.call(oThis, params);
-  SigIntHandler.call(oThis, { id: program.processId });
+  SigIntHandler.call(oThis, { id: processLockId });
 };
 
 TransactionMetaObserverKlass.prototype = Object.create(baseKlass.prototype);
@@ -185,8 +172,8 @@ const TransactionMetaObserverKlassPrototype = {
 Object.assign(TransactionMetaObserverKlass.prototype, TransactionMetaObserverKlassPrototype);
 
 let txMetaObserver = new TransactionMetaObserverKlass({
-  process_id: program.processId,
-  no_of_rows_to_process: program.prefetchCount,
+  process_id: processLockId,
+  no_of_rows_to_process: prefetchCount,
   release_lock_required: false
 });
 
@@ -195,12 +182,12 @@ const runTask = async function() {
 
   function onExecutionComplete() {
     // If too much load that iteration has processed full prefetch transactions, then don't wait for much time.
-    let nextIterationTime = txMetaObserver.transactionsToProcess.length == program.prefetchCount ? 10 : 120000;
+    let nextIterationTime = txMetaObserver.transactionsToProcess.length === prefetchCount ? 10 : 120000;
 
     if (runCount >= 10) {
       // Executed 10 times now exiting
       logger.log(runCount + ' iteration is executed, Killing self now. ');
-      process.exit(1);
+      process.emit('SIGINT');
     } else {
       logger.log(runCount + ' iteration is executed, Sleeping now for seconds ' + nextIterationTime / 1000);
       runCount = runCount + 1;
@@ -217,4 +204,27 @@ const runTask = async function() {
     });
 };
 
-runTask();
+// Check whether the cron can be started or not.
+CronProcessHandlerObject.canStartProcess({
+  id: +processLockId, // Implicit string to int conversion.
+  cron_kind: cronKind
+}).then(async function(dbResponse) {
+  let cronParams;
+
+  try {
+    cronParams = JSON.parse(dbResponse.data.params);
+  } catch (err) {
+    logger.error('cronParams stored in INVALID format in the DB.');
+    process.emit('SIGINT');
+  }
+
+  prefetchCount = +cronParams.prefetchCount; // Implicit string to int conversion.
+  if (!prefetchCount) {
+    logger.error('prefetchCount NOT available in cron params in the database.');
+    process.emit('SIGINT');
+  }
+
+  await runTask();
+});
+
+CronProcessHandlerObject.endAfterTime({ time_in_minutes: 40 });

@@ -13,7 +13,7 @@
  */
 const rootPrefix = '../..';
 
-// Always Include Module overrides First
+// Always include module overrides first.
 require(rootPrefix + '/module_overrides/index');
 
 // Load external packages
