@@ -139,13 +139,7 @@ StartServicesKlass.prototype = {
 
     logger.step('** Starting Stake & Mint Processor Intercomm');
     cmd =
-      'node executables/inter_comm/stake_and_mint_processor.js 2 ' +
-      homeAbsolutePath +
-      '/openst-setup/data/utility-chain-' +
-      utilityChainId +
-      '/' +
-      'stake_and_mint_processor.data ' +
-      group_id +
+      'node executables/inter_comm/stake_and_mint_processor.js 2' +
       ' >> ' +
       homeAbsolutePath +
       '/openst-setup/logs/utility-chain-' +
