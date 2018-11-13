@@ -40,7 +40,7 @@ let ic = null,
   unAckCount = 0,
   groupId,
   prefetchCount,
-  benchMarkFilePath;
+  benchmarkFilePath;
 
 // Validate if processLockId was passed or not.
 if (!processLockId) {
@@ -250,9 +250,9 @@ CronProcessHandlerObject.canStartProcess({
     process.emit('SIGINT');
   }
 
-  groupId = cronParams.groupId;
-  prefetchCount = +cronParams.prefetchCount;
-  benchMarkFilePath = cronParams.benchMarkFilePath;
+  groupId = cronParams.group_id;
+  prefetchCount = +cronParams.prefetch_count;
+  benchmarkFilePath = cronParams.benchmark_file_path;
 
   blockScanner.perform().catch(function(err) {
     logger.error(err);

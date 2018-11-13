@@ -214,7 +214,7 @@ CronProcessHandlerObject.canStartProcess({
     process.emit('SIGINT');
   }
 
-  prefetchCount = +cronParams.prefetchCount; // Implicit string to int conversion.
+  prefetchCount = +cronParams.prefetch_count; // Implicit string to int conversion.
   if (!prefetchCount) {
     logger.error('prefetchCount NOT available in cron params in the database.');
     process.emit('SIGINT');

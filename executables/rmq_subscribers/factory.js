@@ -268,11 +268,11 @@ CronProcessHandlerObject.canStartProcess({
   }
 
   // queueSuffix is the suffix to be used for getting the queue name.
-  queueSuffix = cronParams.queueSuffix;
+  queueSuffix = cronParams.queue_suffix;
   queueName = 'executables_rmq_subscribers_factory_' + queueSuffix;
 
   // topicsToSubscribe is a JSON stringified version of topics to be subscribed for this RMQ subscriber.
-  topicsToSubscribe = cronParams.topicsToSubscribe;
+  topicsToSubscribe = cronParams.topics_to_subscribe;
 
   rmqFactory.perform();
 });

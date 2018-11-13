@@ -148,10 +148,10 @@ CronProcessHandlerObject.canStartProcess({
   }
 
   // filePath is the file path for last ProcessedBlock and last Processed Transaction Index.
-  filePath = cronParams.filePath.trim();
+  filePath = cronParams.file_path.trim();
 
   // groupId needs to be passed to fetch config strategy.
-  groupId = cronParams.groupId;
+  groupId = cronParams.group_id;
 
   startIntercomm.perform();
 });
