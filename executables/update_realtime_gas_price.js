@@ -4,15 +4,18 @@
  * This fetches an estimated gas price for which Transaction could get mined in less than 5 minutes.
  * source: 'https://ethgasstation.info/txPoolReport.php'
  *
- * Usage: node executables/update_realtime_gas_price.js processId
+ * Usage: node executables/update_realtime_gas_price.js processLockId
  *
  * Command Line Parameters Description:
- * processId: process id to start the process
+ * processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.
  *
  * Example: node executables/update_realtime_gas_price.js 12345
  *
  * @module executables/update_realtime_gas_price
  */
+
+const dynamicGasPriceProvider = require('@ostdotcom/ost-dynamic-gas-price'),
+  BigNumber = require('bignumber.js');
 
 const rootPrefix = '..',
   coreConstants = require(rootPrefix + '/config/core_constants'),
@@ -26,34 +29,24 @@ const rootPrefix = '..',
   valueChainGasPriceCacheKlass = require(rootPrefix + '/lib/shared_cache_management/estimate_value_chain_gas_price'),
   CronProcessHandlerObject = new CronProcessesHandler();
 
-const args = process.argv,
-  processId = args[2];
-
-// Usage demo.
 const usageDemo = function() {
-  logger.log('usage:', 'node executables/update_realtime_gas_price.js processId group_id');
+  logger.log('Usage:', 'node executables/update_realtime_gas_price.js processLockId group_id');
   logger.log(
-    '* processId is used for ensuring that no other process with the same processId can run on a given machine.'
+    '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
   );
 };
 
-// Validate and sanitize the command line arguments.
-const validateAndSanitize = function() {
-  if (!processId) {
-    logger.error('Process id NOT passed in the arguments.');
-    usageDemo();
-    process.exit(1);
-  }
-};
-
-// Validate and sanitize the input params.
-validateAndSanitize();
-
 // Declare variables.
-const cronKind = CronProcessesConstants.updateRealtimeGasPrice;
+const args = process.argv,
+  processLockId = args[2],
+  cronKind = CronProcessesConstants.updateRealtimeGasPrice;
 
-const dynamicGasPriceProvider = require('@ostdotcom/ost-dynamic-gas-price'),
-  BigNumber = require('bignumber.js');
+// Validate and sanitize the command line arguments.
+if (!processLockId) {
+  logger.error('Process Lock id NOT passed in the arguments.');
+  usageDemo();
+  process.exit(1);
+}
 
 /**
  *
@@ -62,7 +55,7 @@ const dynamicGasPriceProvider = require('@ostdotcom/ost-dynamic-gas-price'),
 const UpdateRealTimeGasPrice = function() {
   const oThis = this;
 
-  SigIntHandler.call(oThis, { id: processId });
+  SigIntHandler.call(oThis, { id: processLockId });
 };
 
 UpdateRealTimeGasPrice.prototype = Object.create(SigIntHandler.prototype);
@@ -137,7 +130,7 @@ Object.assign(UpdateRealTimeGasPrice.prototype, UpdateRealTimeGasPricePrototype)
 
 // Check whether the cron can be started or not.
 CronProcessHandlerObject.canStartProcess({
-  id: +processId, // Implicit string to int conversion.
+  id: +processLockId, // Implicit string to int conversion.
   cron_kind: cronKind
 }).then(function() {
   // Perform action if cron can be started.
