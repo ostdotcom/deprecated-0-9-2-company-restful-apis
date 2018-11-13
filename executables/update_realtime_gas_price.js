@@ -30,7 +30,7 @@ const rootPrefix = '..',
   CronProcessHandlerObject = new CronProcessesHandler();
 
 const usageDemo = function() {
-  logger.log('Usage:', 'node executables/update_realtime_gas_price.js processLockId group_id');
+  logger.log('Usage:', 'node executables/update_realtime_gas_price.js processLockId');
   logger.log(
     '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
   );
