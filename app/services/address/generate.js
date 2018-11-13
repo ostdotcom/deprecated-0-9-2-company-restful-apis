@@ -11,6 +11,7 @@ const rootPrefix = '../../..',
   UserEntityFormatterKlass = require(rootPrefix + '/lib/formatter/entities/latest/user'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  notifier = require(rootPrefix + '/helpers/notifier'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   EthAddrPrivateKeyCacheKlass = require(rootPrefix + '/lib/shared_cache_management/address_private_key'),
   AddressesEncryptorKlass = require(rootPrefix + '/lib/encryptors/addresses_encryptor');
@@ -192,7 +193,7 @@ GenerateAddressKlass.prototype = {
         generateAddrRsp = addrGenerator.perform();
 
       if (generateAddrRsp.isFailure()) {
-        logger.notify('s_a_g_3', 'generate address failure', generateAddrRsp, {
+        notifier.notify('s_a_g_3', 'generate address failure', generateAddrRsp, {
           clientId: clientId,
           address_type: oThis.addressType
         });
@@ -214,7 +215,7 @@ GenerateAddressKlass.prototype = {
 
     var generateSaltRsp = await oThis._generateManagedAddressSalt(clientId);
     if (generateSaltRsp.isFailure()) {
-      logger.notify('s_a_g_4', 'generate salt failure', generateSaltRsp, { clientId: clientId });
+      notifier.notify('s_a_g_4', 'generate salt failure', generateSaltRsp, { clientId: clientId });
       return Promise.reject(
         responseHelper.error({
           internal_error_identifier: 's_a_g_4',
@@ -290,7 +291,7 @@ GenerateAddressKlass.prototype = {
         );
       }
     } catch (err) {
-      logger.notify('s_a_g_6', 'address salt generation failed', err, { clientId: clientId });
+      notifier.notify('s_a_g_6', 'address salt generation failed', err, { clientId: clientId });
 
       return Promise.reject(
         responseHelper.error({

@@ -24,6 +24,7 @@ const ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/clie
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  notifier = require(rootPrefix + '/helpers/notifier'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
   errorConfig = basicHelper.fetchErrorConfig(apiVersions.general),
@@ -308,7 +309,7 @@ addMoreWorkersKlass.prototype = {
       for (let i = 0; i < promiseResolvers.length; i++) {
         let r = promiseResponses[i];
         if (r.isFailure()) {
-          logger.notify('l_sw_2', 'Set Worker Failed', r, { clientId: clientId });
+          notifier.notify('l_sw_2', 'Set Worker Failed', r, { clientId: clientId });
         } else {
           formattedPromiseResponses[workerAddressesIdToUpdateMap[workerAddrs[i]]] = r.data;
           successWorkerAddrIds.push(workerAddressesIdToUpdateMap[workerAddrs[i]]);

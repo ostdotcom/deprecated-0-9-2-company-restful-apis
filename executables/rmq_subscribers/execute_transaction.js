@@ -329,7 +329,7 @@ let init = async function() {
   let ic = new InstanceComposer(configStrategy),
     notificationProvider = ic.getNotificationProvider();
 
-  openStNotification = notificationProvider.getInstance();
+  openStNotification = await notificationProvider.getInstance();
 
   if (processStatus === processQueueAssociationConst.processKilled) {
     logger.warn('The process is in killed status in the table. Recommended to check. Continuing to start the queue.');

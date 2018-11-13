@@ -59,10 +59,8 @@ CronProcessHandlerObject.canStartProcess({
   cron_kind: cronKind
 });
 
-const openStNotification = SharedRabbitMqProvider.getInstance();
-
-require(rootPrefix + '/lib/web3/interact/ws_interact');
 require(rootPrefix + '/lib/block_scanner/for_tx_status_and_balance_sync');
+require(rootPrefix + '/lib/web3/interact/ws_interact');
 
 // Load external packages
 const OSTBase = require('@openstfoundation/openst-base');
@@ -140,11 +138,12 @@ const BlockScannerPrototype = {
    * Start subscription
    *
    */
-  startSubscription: function() {
-    const oThis = this,
-      chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
+  startSubscription: async function() {
+    const oThis = this;
 
-    // Subscribe to queue.
+    let chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
+
+    const openStNotification = await SharedRabbitMqProvider.getInstance();
     openStNotification.subscribeEvent.rabbit(
       ['block_scanner_execute_' + chain_id],
       {

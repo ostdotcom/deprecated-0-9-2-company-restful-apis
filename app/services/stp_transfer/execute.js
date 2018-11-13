@@ -316,7 +316,7 @@ ExecuteSTPTransferService.prototype = {
     let topicName = notificationTopics.stpTransfer;
 
     const notificationProvider = oThis.ic().getNotificationProvider(),
-      openStNotification = notificationProvider.getInstance({
+      openStNotification = await notificationProvider.getInstance({
         connectionWaitSeconds: ConnectionTimeoutConst.appServer
       }),
       payload = {

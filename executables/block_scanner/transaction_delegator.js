@@ -37,8 +37,6 @@ require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
 
 let configStrategy = {};
 
-const openSTNotification = SharedRabbitMqProvider.getInstance();
-
 // Validate and sanitize the command line arguments.
 const validateAndSanitize = function() {
   if (!program.groupId || !program.dataFilePath) {
@@ -273,7 +271,8 @@ const TransactionDelegatorPrototype = {
         }
       };
 
-      let setToRMQ = await openSTNotification.publishEvent.perform(messageParams);
+      let openSTNotification = await SharedRabbitMqProvider.getInstance(),
+        setToRMQ = await openSTNotification.publishEvent.perform(messageParams);
 
       //if could not set to RMQ run in async.
       if (setToRMQ.isFailure() || setToRMQ.data.publishedToRmq === 0) {

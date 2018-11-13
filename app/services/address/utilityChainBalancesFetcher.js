@@ -4,6 +4,7 @@ const rootPrefix = '../../..',
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  notifier = require(rootPrefix + '/helpers/notifier'),
   basicHelper = require(rootPrefix + '/helpers/basic');
 
 require(rootPrefix + '/lib/providers/platform');
@@ -88,7 +89,7 @@ UtilityChainBalancesFetcherKlass.prototype = {
         balance = null;
 
       if (response.isFailure()) {
-        logger.notify('ub_bf_1', 'Something Went Wrong', response, { clientId: oThis.clientId });
+        notifier.notify('ub_bf_1', 'Something Went Wrong', response, { clientId: oThis.clientId });
       } else {
         var data = response.data;
         if (data && data.balance) {
