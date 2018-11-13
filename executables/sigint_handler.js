@@ -32,9 +32,10 @@ SigIntHandler.prototype = {
           // Stop the process only after the entry has been updated in the table.
           process.exit(1);
         });
+      } else {
+        logger.info(':: There are pending tasks. Waiting for completion.');
+        setTimeout(handle, 1000);
       }
-      logger.info(':: There are pending tasks. Waiting for completion.');
-      setTimeout(handle, 1000);
     };
 
     process.on('SIGINT', handle);

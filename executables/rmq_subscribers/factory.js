@@ -109,7 +109,7 @@ const RmqFactoryPrototype = {
   perform: function() {
     const oThis = this;
 
-    // validate and sanitize the input params
+    // Validate and sanitize the input params.
     oThis._validateAndSanitize();
 
     oThis.startSubscription();
@@ -121,8 +121,6 @@ const RmqFactoryPrototype = {
    * @private
    */
   _validateAndSanitize: function() {
-    const oThis = this;
-
     if (!processLockId) {
       logger.error('Process Lock id NOT passed in the arguments.');
       usageDemo();
@@ -160,8 +158,7 @@ const RmqFactoryPrototype = {
    * @returns {Promise}
    */
   _promiseExecutor: function(onResolve, onReject, params) {
-    const oThis = this;
-    // factory logic for deciding what action to perform here.
+    // Factory logic for deciding what action to perform here.
     const parsedParams = JSON.parse(params),
       topics = parsedParams.topics;
 
