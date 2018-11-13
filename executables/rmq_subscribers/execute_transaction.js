@@ -47,6 +47,7 @@ let unAckCount = 0,
 ProcessLocker.canStartProcess({
   process_title: 'executables_rmq_subscribers_execute_transaction' + processId
 });
+ProcessLocker.endAfterTime({ time_in_minutes: 45 });
 
 // Load external packages.
 const OSTBase = require('@openstfoundation/openst-base');
