@@ -25,6 +25,7 @@ require(rootPrefix + '/module_overrides/index');
 require(rootPrefix + '/lib/providers/platform');
 
 const InstanceComposer = require(rootPrefix + '/instance_composer'),
+  coreConstants = require(rootPrefix + '/config/core_constants'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
   CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
@@ -148,7 +149,7 @@ CronProcessHandlerObject.canStartProcess({
   }
 
   // filePath is the file path for last ProcessedBlock and last Processed Transaction Index.
-  filePath = cronParams.file_path.trim();
+  filePath = coreConstants.APP_SHARED_DIRECTORY + cronParams.file_path.trim();
 
   // groupId needs to be passed to fetch config strategy.
   groupId = cronParams.group_id;

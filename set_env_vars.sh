@@ -73,3 +73,6 @@ export MAX_VALUE_GAS_PRICE='0x174876E800';
 export DEFAULT_VALUE_GAS_PRICE='0x1176592E00';
 export BUFFER_VALUE_GAS_PRICE='0xBA43B7400';
 export ENV_IDENTIFIER='mainnet_launch';
+
+# App directory path
+export APP_SHARED_DIRECTORY=$HOME/openst-setup

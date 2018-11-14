@@ -113,7 +113,9 @@ define('ADDRESSES_TO_UNLOCK_VIA_KEYSTORE_FILE_MAP', addresses_to_unlock_via_keys
 
 define('ENV_IDENTIFIER', process.env.ENV_IDENTIFIER ? process.env.ENV_IDENTIFIER : '');
 
-//Gas price for mainnet
+define('APP_SHARED_DIRECTORY', process.env.APP_SHARED_DIRECTORY);
+
+// Gas price for main-net.
 define('MIN_VALUE_GAS_PRICE', process.env.MIN_VALUE_GAS_PRICE);
 define('MAX_VALUE_GAS_PRICE', process.env.MAX_VALUE_GAS_PRICE);
 define('DEFAULT_VALUE_GAS_PRICE', process.env.DEFAULT_VALUE_GAS_PRICE);
