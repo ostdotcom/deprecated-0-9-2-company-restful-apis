@@ -139,7 +139,7 @@ CronProcessHandlerObject.canStartProcess({
   UpdateRealTimeGasPriceObj.perform().then(async function() {
     logger.info('Cron last run at: ', Date.now());
     setTimeout(function() {
-      process.exit(0);
+      process.emit('SIGINT');
     }, 5000); //To kill the process after 5 seconds expecting that the cache will be set by then.
   });
 });
