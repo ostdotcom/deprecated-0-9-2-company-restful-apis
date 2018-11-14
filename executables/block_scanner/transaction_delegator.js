@@ -430,7 +430,6 @@ CronProcessHandlerObject.canStartProcess({
   }
 
   // Perform action if cron can be started.
-  blockScannerMasterObj.registerInterruptSignalHandlers();
   blockScannerMasterObj.init().then(function(r) {
     logger.win('Blockscanner Master Process Started');
   });
