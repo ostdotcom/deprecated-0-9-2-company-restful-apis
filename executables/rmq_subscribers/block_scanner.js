@@ -252,7 +252,9 @@ CronProcessHandlerObject.canStartProcess({
 
   groupId = cronParams.group_id;
   prefetchCount = +cronParams.prefetch_count;
-  benchmarkFilePath = coreConstants.APP_SHARED_DIRECTORY + cronParams.benchmark_file_path;
+  benchmarkFilePath = cronParams.benchmark_file_path
+    ? coreConstants.APP_SHARED_DIRECTORY + cronParams.benchmark_file_path
+    : null;
 
   blockScanner.perform().catch(function(err) {
     logger.error(err);
