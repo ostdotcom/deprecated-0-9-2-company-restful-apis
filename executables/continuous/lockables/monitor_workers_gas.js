@@ -89,6 +89,9 @@ const MonitorGasOfWorkersKlass = function(params) {
   oThis.hasStPrimeBalanceProperty = new ClientWorkerManagedAddressIdModel().invertedProperties[
     clientWorkerManagedAddressConst.hasStPrimeBalanceProperty
   ];
+  oThis.invertedReserveAddressType = new ManagedAddressModel().invertedAddressTypes[
+    managedAddressesConst.reserveAddressType
+  ];
   oThis.reserveAddress = '';
 
   Object.assign(params, { release_lock_required: false });
@@ -445,15 +448,12 @@ const MonitorGasOfWorkersKlassPrototype = {
       }
 
       // Fetch client Reserve Addresses whose worker balance is low
-      let lowBalanceClientIds = cids && Object.keys(oThis.clientLowBalanceWorkerIds),
-        invertedReserveAddressType = await new ManagedAddressModel().invertedAddressTypes[
-          managedAddressesConst.reserveAddressType
-        ];
+      let lowBalanceClientIds = cids && Object.keys(oThis.clientLowBalanceWorkerIds);
 
       if (lowBalanceClientIds.length > 0) {
         let reserveAddressResp = await new ManagedAddressModel()
           .select('client_id, ethereum_address')
-          .where(['client_id IN (?) AND address_type = ?', lowBalanceClientIds, invertedReserveAddressType])
+          .where(['client_id IN (?) AND address_type = ?', lowBalanceClientIds, oThis.invertedReserveAddressType])
           .fire();
 
         let transferBalancePromises = [];
