@@ -51,7 +51,7 @@ command.on('--help', () => {
   console.log('');
   console.log('');
 });
-``;
+
 command.parse(process.argv);
 
 let runCount = 1;
