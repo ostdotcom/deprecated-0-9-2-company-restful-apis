@@ -421,7 +421,9 @@ CronProcessHandlerObject.canStartProcess({
     cronParams = JSON.parse(dbResponse.data.params);
     groupId = cronParams.group_id;
     dataFilePath = coreConstants.APP_SHARED_DIRECTORY + cronParams.data_file_path;
-    benchmarkFilePath = coreConstants.APP_SHARED_DIRECTORY + cronParams.benchmark_file_path;
+    benchmarkFilePath = cronParams.benchmark_file_path
+      ? coreConstants.APP_SHARED_DIRECTORY + cronParams.benchmark_file_path
+      : null;
 
     const params = {
       data_file_path: dataFilePath,
