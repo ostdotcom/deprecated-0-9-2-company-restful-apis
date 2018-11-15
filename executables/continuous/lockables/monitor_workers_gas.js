@@ -31,6 +31,10 @@ const baseKlass = require(rootPrefix + '/executables/continuous/lockables/base')
   clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id'),
   SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
+  hasStPrimeBalanceProperty = new ClientWorkerManagedAddressIdModel().invertedProperties[
+    clientWorkerManagedAddressConst.hasStPrimeBalanceProperty
+  ],
+  invertedReserveAddressType = new ManagedAddressModel().invertedAddressTypes[managedAddressesConst.reserveAddressType],
   WORKER_MINIMUM_BALANCE_REQUIRED = 0.1;
 
 require(rootPrefix + '/lib/providers/platform');
@@ -74,25 +78,10 @@ validateAndSanitize();
 const MonitorGasOfWorkersKlass = function(params) {
   const oThis = this;
 
-  oThis.lockId = Math.floor(new Date().getTime() / 1000);
-
   oThis.startClientId = params.from_client_id;
   oThis.endClientId = params.to_client_id;
 
-  oThis.whereClause = [];
-  oThis.reserveAddrObj = null;
-  oThis.clientIdToWorkerIdsMap = {};
-  oThis.workerIdToAddressMap = {};
-  oThis.clientLowBalanceWorkerIds = {};
-  oThis.clientIdToICPlatform = {};
-  oThis.clientIdTochainIdMap = {};
-  oThis.hasStPrimeBalanceProperty = new ClientWorkerManagedAddressIdModel().invertedProperties[
-    clientWorkerManagedAddressConst.hasStPrimeBalanceProperty
-  ];
-  oThis.invertedReserveAddressType = new ManagedAddressModel().invertedAddressTypes[
-    managedAddressesConst.reserveAddressType
-  ];
-  oThis.reserveAddress = '';
+  oThis._init();
 
   Object.assign(params, { release_lock_required: false });
 
@@ -101,9 +90,23 @@ const MonitorGasOfWorkersKlass = function(params) {
 };
 
 MonitorGasOfWorkersKlass.prototype = Object.create(baseKlass.prototype);
-Object.assign(MonitorGasOfWorkersKlass.prototype, SigIntHandler.prototype);
+Object.assign(MonitorGasOfxWorkersKlass.prototype, SigIntHandler.prototype);
 
 const MonitorGasOfWorkersKlassPrototype = {
+  /**
+   * Init everything
+   */
+  _init: function() {
+    const oThis = ths;
+    oThis.lockId = Math.floor(new Date().getTime() / 1000);
+    oThis.whereClause = [];
+    oThis.clientIdToWorkerIdsMap = {};
+    oThis.workerIdToAddressMap = {};
+    oThis.clientLowBalanceWorkerIds = {};
+    oThis.clientIdToICPlatform = {};
+    oThis.clientIdTochainIdMap = {};
+  },
+
   /**
    * Execute
    *
@@ -295,10 +298,10 @@ const MonitorGasOfWorkersKlassPrototype = {
         address: reserveAddress
       }).perform(),
       reserveBalance = basicHelper.convertToBigNumber(reserveBalanceResp.data.balance),
-      balanceToTransfer = basicHelper.transferSTPrimeToWorker(),
-      clientIdToAssociate = null;
+      balanceToTransfer = basicHelper.transferSTPrimeToWorker();
 
-    let deassociateWorkers = [];
+    let deassociateWorkers = [],
+      workerGotBalance = [];
     for (let i = 0; i < workerIds.length; i++) {
       let wi = workerIds[i],
         workerAddr = oThis.workerIdToAddressMap[wi];
@@ -317,15 +320,7 @@ const MonitorGasOfWorkersKlassPrototype = {
 
         if (resp.isSuccess()) {
           reserveBalance.minus(balanceToTransfer);
-
-          // Update worker has gas now.
-          const updateStPrimeBalancePropertyResponse = await new ClientWorkerManagedAddressIdModel()
-            .update(['properties = properties | ?', oThis.hasStPrimeBalanceProperty])
-            .where({ managed_address_id: wi })
-            .fire();
-
-          // Get processIds for this particular chain.
-          clientIdToAssociate = clientId;
+          workerGotBalance.push(wi);
         } else {
           deassociateWorkers.push(wi);
         }
@@ -333,8 +328,13 @@ const MonitorGasOfWorkersKlassPrototype = {
         deassociateWorkers.push(wi);
       }
     }
-    let promiseResp = await oThis._associateWorkers(clientIdToAssociate);
 
+    // Associate client workers to running processes
+    if (workerGotBalance.length) {
+      await oThis._associateWorkerProcesses(clientId, workerGotBalance);
+    }
+
+    // De-Associate client workers from processes
     if (deassociateWorkers.length) {
       await oThis._deassociateClientWorkers(clientId, deassociateWorkers);
     }
@@ -342,9 +342,16 @@ const MonitorGasOfWorkersKlassPrototype = {
     return Promise.resolve();
   },
 
-  _associateWorkers: async function(clientId) {
-    const oThis = this,
-      chainId = oThis.clientIdTochainIdMap[clientId], // Extract the chainId from respective map
+  _associateWorkerProcesses: async function(clientId, associateWorkers) {
+    const oThis = this;
+
+    // Update worker has gas now.
+    await new ClientWorkerManagedAddressIdModel()
+      .update(['properties = properties | ?', hasStPrimeBalanceProperty])
+      .where('managed_address_id IN (?)', associateWorkers)
+      .fire();
+
+    let chainId = oThis.clientIdTochainIdMap[clientId], // Extract the chainId from respective map
       processIdsResponse = await new ProcessQueueAssociationModel()
         .select(['process_id'])
         .where(['chain_id = ?', chainId])
@@ -453,7 +460,7 @@ const MonitorGasOfWorkersKlassPrototype = {
       if (lowBalanceClientIds.length > 0) {
         let reserveAddressResp = await new ManagedAddressModel()
           .select('client_id, ethereum_address')
-          .where(['client_id IN (?) AND address_type = ?', lowBalanceClientIds, oThis.invertedReserveAddressType])
+          .where(['client_id IN (?) AND address_type = ?', lowBalanceClientIds, invertedReserveAddressType])
           .fire();
 
         let transferBalancePromises = [];
@@ -470,7 +477,7 @@ const MonitorGasOfWorkersKlassPrototype = {
 
   pendingTasksDone: function() {
     const oThis = this;
-    return oThis.handlerPromises.length === 0;
+    return !oThis.lockAcquired;
   }
 };
 
@@ -484,17 +491,27 @@ let monitorWorkerCron = new MonitorGasOfWorkersKlass({
 });
 
 const runTask = async function() {
-  await monitorWorkerCron.perform();
+  monitorWorkerCron._init();
 
-  if (runCount >= 10) {
-    // Executed 10 times now exiting
-    logger.log(runCount + ' iteration is executed, Killing self now. ');
-    process.exit(1);
-  } else {
-    logger.log(runCount + ' iteration is executed, Sleeping now for 2 minutes.');
-    runCount = runCount + 1;
-    setTimeout(runTask, 120000);
+  function onExecutionComplete() {
+    if (runCount >= 10) {
+      // Executed 10 times now exiting
+      console.log(runCount + ' iteration is executed, Killing self now. ');
+      process.exit(1);
+    } else {
+      logger.log(runCount + ' iteration is executed, Sleeping now for 2 minutes.');
+      runCount = runCount + 1;
+      setTimeout(runTask, 120000);
+    }
   }
+  monitorWorkerCron
+    .perform()
+    .then(function() {
+      onExecutionComplete();
+    })
+    .catch(function() {
+      onExecutionComplete();
+    });
 };
 
 runTask();
