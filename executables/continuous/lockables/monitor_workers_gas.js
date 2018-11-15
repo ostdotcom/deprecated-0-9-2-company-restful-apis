@@ -83,21 +83,21 @@ const MonitorGasOfWorkersKlass = function(params) {
 
   oThis._init();
 
-  Object.assign(params, { release_lock_required: false });
+  Object.assign(params);
 
   baseKlass.call(oThis, params);
   SigIntHandler.call(oThis);
 };
 
 MonitorGasOfWorkersKlass.prototype = Object.create(baseKlass.prototype);
-Object.assign(MonitorGasOfxWorkersKlass.prototype, SigIntHandler.prototype);
+Object.assign(MonitorGasOfWorkersKlass.prototype, SigIntHandler.prototype);
 
 const MonitorGasOfWorkersKlassPrototype = {
   /**
    * Init everything
    */
   _init: function() {
-    const oThis = ths;
+    const oThis = this;
     oThis.lockId = Math.floor(new Date().getTime() / 1000);
     oThis.whereClause = [];
     oThis.clientIdToWorkerIdsMap = {};
@@ -316,6 +316,7 @@ const MonitorGasOfWorkersKlassPrototype = {
           options: { returnType: 'txReceipt', tag: '' }
         };
 
+        logger.log('Transferring ST Prime from reserve to worker with low balance.');
         const resp = await new platformObj.services.transaction.transfer.simpleTokenPrime(transferParams).perform();
 
         if (resp.isSuccess()) {
@@ -331,11 +332,13 @@ const MonitorGasOfWorkersKlassPrototype = {
 
     // Associate client workers to running processes
     if (workerGotBalance.length) {
+      logger.log('Association started.......');
       await oThis._associateWorkerProcesses(clientId, workerGotBalance);
     }
 
     // De-Associate client workers from processes
     if (deassociateWorkers.length) {
+      logger.log('De-Association started.......');
       await oThis._deassociateClientWorkers(clientId, deassociateWorkers);
     }
 
@@ -348,7 +351,7 @@ const MonitorGasOfWorkersKlassPrototype = {
     // Update worker has gas now.
     await new ClientWorkerManagedAddressIdModel()
       .update(['properties = properties | ?', hasStPrimeBalanceProperty])
-      .where('managed_address_id IN (?)', associateWorkers)
+      .where(['managed_address_id IN (?)', associateWorkers])
       .fire();
 
     let chainId = oThis.clientIdTochainIdMap[clientId], // Extract the chainId from respective map
@@ -424,7 +427,7 @@ const MonitorGasOfWorkersKlassPrototype = {
 
   _releaseLock: function(clientIds) {
     const oThis = this;
-    new ClientWorkerManagedAddressIdModel().releaseLock(oThis.getLockId(), ['client_id IN (?)', clientIds]);
+    return new ClientWorkerManagedAddressIdModel().releaseLock(oThis.getLockId(), ['client_id IN (?)', clientIds]);
   },
 
   /**
