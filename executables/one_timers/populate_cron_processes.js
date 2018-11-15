@@ -4,7 +4,7 @@
  *
  * NOTES:
  * 1. PLEASE USE THIS SCRIPT IN DEVELOPMENT MODE ONLY.
- * 2. UPDATE THE groupId, utilityChainId and homeDir path based on your systems.
+ * 2. UPDATE THE groupId and utilityChainId based on your systems.
  * 3. DO NOT CHANGE THE 'id' VALUES IN THE CODE. THESE ID VALUES ARE BEING USED IN OTHER SCRIPTS AS IS.
  *
  * @module executables/one_timers/populate_cron_processes
@@ -20,7 +20,6 @@ const populateCronProcesses = function() {
 
   oThis.groupId = 1000;
   oThis.utilityChainId = 1000;
-  oThis.homeDir = '/Users/Shlok';
 };
 
 populateCronProcesses.prototype = {
@@ -66,11 +65,7 @@ populateCronProcesses.prototype = {
     const oThis = this;
 
     const params = {
-        file_path:
-          oThis.homeDir +
-          '/openst-setup/data/utility-chain-' +
-          oThis.utilityChainId.toString() +
-          '/stake_and_mint_processor.data',
+        file_path: '/data/utility-chain-' + oThis.utilityChainId.toString() + '/stake_and_mint_processor.data',
         group_id: oThis.groupId
       },
       insertParams = {
@@ -93,8 +88,7 @@ populateCronProcesses.prototype = {
     const params = {
         group_id: oThis.groupId,
         prefetch_count: 1,
-        benchmark_file_path:
-          oThis.homeDir + '/openst-setup/logs/block_scanner_benchmark-' + oThis.utilityChainId.toString() + '.csv'
+        benchmark_file_path: '/logs/block_scanner_benchmark-' + oThis.utilityChainId.toString() + '.csv'
       },
       insertParams = {
         id: 3,
@@ -116,12 +110,8 @@ populateCronProcesses.prototype = {
     const params = {
         group_id: oThis.groupId,
         data_file_path:
-          oThis.homeDir +
-          '/openst-setup/data/utility-chain-' +
-          oThis.utilityChainId.toString() +
-          '/block_scanner_execute_transaction.data',
-        benchmark_file_path:
-          oThis.homeDir + '/openst-setup/logs/block_scanner_benchmark-' + oThis.utilityChainId.toString() + '.csv'
+          '/data/utility-chain-' + oThis.utilityChainId.toString() + '/block_scanner_execute_transaction.data',
+        benchmark_file_path: '/logs/block_scanner_benchmark-' + oThis.utilityChainId.toString() + '.csv'
       },
       insertParams = {
         id: 4,
