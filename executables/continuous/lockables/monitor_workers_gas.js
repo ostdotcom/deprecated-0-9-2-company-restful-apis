@@ -96,7 +96,6 @@ const MonitorGasOfWorkersKlassPrototype = {
     const oThis = this;
     oThis.currentTime = Math.floor(new Date().getTime() / 1000);
     oThis.lockId = new Date().getTime();
-    // oThis.whereClause = [];
     oThis.clientIdToWorkerIdsMap = {};
     oThis.workerIdToAddressMap = {};
     oThis.clientLowBalanceWorkerIds = {};
@@ -178,31 +177,6 @@ const MonitorGasOfWorkersKlassPrototype = {
 
     return 20;
   },
-
-  // /**
-  //  * This function generates client range to be passed to get workers map.
-  //  *
-  //  * @returns {Promise<Array|*|*[]>}
-  //  * @private
-  //  */
-  // _getClientIdsRange: function() {
-  //   const oThis = this;
-  //
-  //   if (oThis.startClientId && oThis.endClientId) {
-  //     oThis.whereClause = ['client_id >= ? AND client_id <= ? ', oThis.startClientId, oThis.endClientId];
-  //   } else if (oThis.startClientId === undefined && oThis.endClientId) {
-  //     oThis.whereClause = ['client_id <= ? ', oThis.endClientId];
-  //   } else if (oThis.startClientId && oThis.endClientId === undefined) {
-  //     oThis.whereClause = ['client_id >= ? ', oThis.startClientId];
-  //   } else {
-  //     oThis.whereClause = ['client_id >= ? ', 1];
-  //   }
-  //
-  //   oThis.whereClause[0] += "AND status = ?";
-  //   oThis.whereClause.push(activeWorkerStatus);
-  //
-  //   return oThis.whereClause;
-  // },
 
   /**
    * This function creates clients to workers map using client ids range.
@@ -439,7 +413,13 @@ const MonitorGasOfWorkersKlassPrototype = {
 
   _releaseLock: function(clientIds) {
     const oThis = this;
-    return new ClientWorkerManagedAddressIdModel().releaseLock(oThis.getLockId(), ['client_id IN (?)', clientIds]);
+    let next_action_time = Math.floor(Date.now() / 1000) + 1200,
+      updateOptions = ['next_action_at = ?', next_action_time];
+    return new ClientWorkerManagedAddressIdModel().releaseLock(
+      oThis.getLockId(),
+      ['client_id IN (?)', clientIds],
+      updateOptions
+    );
   },
 
   /**
