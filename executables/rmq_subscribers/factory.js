@@ -262,17 +262,20 @@ CronProcessHandlerObject.canStartProcess({
 
   try {
     cronParams = JSON.parse(dbResponse.data.params);
+
+    // queueSuffix is the suffix to be used for getting the queue name.
+    queueSuffix = cronParams.queue_suffix;
+    queueName = 'executables_rmq_subscribers_factory_' + queueSuffix;
+
+    // topicsToSubscribe is a JSON stringified version of topics to be subscribed for this RMQ subscriber.
+    topicsToSubscribe = cronParams.topics_to_subscribe;
+
+    rmqFactory.perform();
   } catch (err) {
     logger.error('cronParams stored in INVALID format in the DB.');
-    process.emit('SIGINT');
+    logger.error(
+      'The status of the cron was NOT changed to stopped. Please check the status before restarting the cron'
+    );
+    process.exit(1);
   }
-
-  // queueSuffix is the suffix to be used for getting the queue name.
-  queueSuffix = cronParams.queue_suffix;
-  queueName = 'executables_rmq_subscribers_factory_' + queueSuffix;
-
-  // topicsToSubscribe is a JSON stringified version of topics to be subscribed for this RMQ subscriber.
-  topicsToSubscribe = cronParams.topics_to_subscribe;
-
-  rmqFactory.perform();
 });

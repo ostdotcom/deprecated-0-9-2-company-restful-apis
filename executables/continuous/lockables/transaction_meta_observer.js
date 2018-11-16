@@ -12,7 +12,7 @@
  *  - Submitted
  *    If transaction meta says status submitted for sometime then check on geth, and resubmit if not found on geth.
  *
- * Example: node executables/continuous/lockables/transaction_meta_observer.js --process-id 123
+ * Example: node executables/continuous/lockables/transaction_meta_observer.js 8
  *
  * @module executables/continuous/lockables/transaction_meta_observer
  */
@@ -45,6 +45,7 @@ const args = process.argv,
 
 let runCount = 1,
   prefetchCount,
+  txMetaObserver,
   cronKind = CronProcessesConstants.transactionMetaObserver,
   TransactionStatusHandlers = {};
 
@@ -167,12 +168,6 @@ const TransactionMetaObserverKlassPrototype = {
 
 Object.assign(TransactionMetaObserverKlass.prototype, TransactionMetaObserverKlassPrototype);
 
-let txMetaObserver = new TransactionMetaObserverKlass({
-  process_id: processLockId,
-  no_of_rows_to_process: prefetchCount,
-  release_lock_required: false
-});
-
 const runTask = async function() {
   txMetaObserver.setCurrentTime();
 
@@ -209,18 +204,27 @@ CronProcessHandlerObject.canStartProcess({
 
   try {
     cronParams = JSON.parse(dbResponse.data.params);
+
+    prefetchCount = +cronParams.prefetch_count; // Implicit string to int conversion.
+
+    txMetaObserver = new TransactionMetaObserverKlass({
+      process_id: processLockId,
+      no_of_rows_to_process: prefetchCount,
+      release_lock_required: false
+    });
+
+    if (!prefetchCount) {
+      logger.error('prefetchCount NOT available in cron params in the database.');
+      process.emit('SIGINT');
+    }
+    await runTask();
   } catch (err) {
-    logger.error('cronParams stored in INVALID format in the DB.');
-    process.emit('SIGINT');
+    logger.error('Cron parameters stored in INVALID format in the DB.');
+    logger.error(
+      'The status of the cron was NOT changed to stopped. Please check the status before restarting the cron'
+    );
+    process.exit(1);
   }
-
-  prefetchCount = +cronParams.prefetch_count; // Implicit string to int conversion.
-  if (!prefetchCount) {
-    logger.error('prefetchCount NOT available in cron params in the database.');
-    process.emit('SIGINT');
-  }
-
-  await runTask();
 });
 
 CronProcessHandlerObject.endAfterTime({ time_in_minutes: 40 });

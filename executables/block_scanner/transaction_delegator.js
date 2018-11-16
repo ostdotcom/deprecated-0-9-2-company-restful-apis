@@ -412,8 +412,8 @@ CronProcessHandlerObject.canStartProcess({
       : null;
 
     const params = {
-      data_file_path: dataFilePath,
-      benchmark_file_path: benchmarkFilePath
+      dataFilePath: dataFilePath,
+      benchmarkFilePath: benchmarkFilePath
     };
 
     // We are creating the object before validation since we need to attach the methods of SigInt handler to the
@@ -426,13 +426,16 @@ CronProcessHandlerObject.canStartProcess({
       logger.error('Data file path NOT available in cron params in the database.');
       process.emit('SIGINT');
     }
-  } catch (err) {
-    logger.error('cronParams stored in INVALID format in the DB.');
-    process.emit('SIGINT');
-  }
 
-  // Perform action if cron can be started.
-  blockScannerMasterObj.init().then(function(r) {
-    logger.win('Blockscanner Master Process Started');
-  });
+    // Perform action if cron can be started.
+    blockScannerMasterObj.init().then(function(r) {
+      logger.win('Blockscanner Master Process Started');
+    });
+  } catch (err) {
+    logger.error('Cron parameters stored in INVALID format in the DB.');
+    logger.error(
+      'The status of the cron was NOT changed to stopped. Please check the status before restarting the cron'
+    );
+    process.exit(1);
+  }
 });
