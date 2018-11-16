@@ -21,8 +21,7 @@ const rootPrefix = '../..',
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
-  CronProcessHandlerObject = new CronProcessesHandler(),
-  openStNotification = SharedRabbitMqProvider.getInstance();
+  CronProcessHandlerObject = new CronProcessesHandler();
 
 const usageDemo = function() {
   logger.log('Usage:', 'node executables/rmq_subscribers/block_scanner.js processLockId');
@@ -242,7 +241,6 @@ CronProcessHandlerObject.canStartProcess({
   cron_kind: cronKind
 }).then(function(dbResponse) {
   let cronParams;
-  const blockScanner = new BlockScanner();
 
   try {
     cronParams = JSON.parse(dbResponse.data.params);
@@ -253,6 +251,7 @@ CronProcessHandlerObject.canStartProcess({
       ? coreConstants.APP_SHARED_DIRECTORY + cronParams.benchmark_file_path
       : null;
 
+    const blockScanner = new BlockScanner();
     blockScanner.perform().catch(function(err) {
       logger.error(err);
     });
