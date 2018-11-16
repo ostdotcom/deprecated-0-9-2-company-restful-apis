@@ -57,17 +57,6 @@ const OSTBase = require('@openstfoundation/openst-base');
 const BlockScanner = function() {
   const oThis = this;
 
-  oThis.PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(oThis._promiseExecutor, {
-    name: 'blockscanner_promise_queue_manager',
-    timeoutInMilliSecs: 3 * 60 * 1000, //3 minutes
-    maxZombieCount: Math.round(prefetchCount * 0.25),
-    onMaxZombieCountReached: function() {
-      logger.warn('e_rmqs_bs_2', 'maxZombieCount reached. Triggering SIGTERM.');
-      // Trigger gracefully shutdown of process.
-      process.kill(process.pid, 'SIGTERM');
-    }
-  });
-
   SigIntHandler.call(oThis, { id: processLockId });
 };
 
@@ -146,76 +135,9 @@ const BlockScannerPrototype = {
       },
       function(params) {
         // Promise is required to be returned to manually ack messages in RMQ
-        return oThis.PromiseQueueManager.createPromise(params);
+        return PromiseQueueManager.createPromise(params);
       }
     );
-  },
-
-  /**
-   * This method executes the promises.
-   *
-   * @private
-   */
-  _promiseExecutor: function(onResolve, onReject, params) {
-    unAckCount++;
-
-    // Trying because of JSON.parse.
-    try {
-      // Process request
-      const parsedParams = JSON.parse(params),
-        payload = parsedParams.message.payload;
-
-      let BlockScannerKlass = ic.getBlockScannerKlass(),
-        blockScannerObj = new BlockScannerKlass({
-          block_number: payload.blockNumber,
-          geth_array: payload.gethArray,
-          transaction_hashes: payload.transactionHashes,
-          time_stamp: payload.timestamp,
-          benchmark_file_path: benchmarkFilePath,
-          web3_factory_obj: web3InteractFactory,
-          delegator_timestamp: payload.delegatorTimestamp,
-          process_id: processLockId
-        });
-
-      try {
-        blockScannerObj
-          .perform()
-          .then(function() {
-            unAckCount--;
-            logger.debug('------ unAckCount -> ', unAckCount);
-            // ack RMQ
-            return onResolve();
-          })
-          .catch(function(err) {
-            logger.error(
-              'e_rmqs_bs_1',
-              'Something went wrong in blockscanner execution. unAckCount ->',
-              unAckCount,
-              err,
-              params
-            );
-            unAckCount--;
-            // ack RMQ
-            return onResolve();
-          });
-      } catch (err) {
-        unAckCount--;
-        logger.error('e_rmqs_bs_2', 'Listener could not process blockscanner.. Catch. unAckCount -> ', unAckCount);
-      }
-    } catch (error) {
-      unAckCount--;
-      logger.error(
-        'e_rmqs_bs_3',
-        'Error in parsing the message. unAckCount ->',
-        unAckCount,
-        'Error: ',
-        error,
-        'Params: ',
-        params
-      );
-      // ack RMQ
-      return onResolve();
-    }
   },
 
   /**
@@ -226,14 +148,92 @@ const BlockScannerPrototype = {
   pendingTasksDone: function() {
     const oThis = this;
 
-    if (unAckCount !== oThis.PromiseQueueManager.getPendingCount()) {
+    if (unAckCount !== PromiseQueueManager.getPendingCount()) {
       logger.error('ERROR :: unAckCount and pending counts are not in sync.');
     }
-    return !oThis.PromiseQueueManager.getPendingCount() && !unAckCount;
+    return !PromiseQueueManager.getPendingCount() && !unAckCount;
   }
 };
 
 Object.assign(BlockScanner.prototype, BlockScannerPrototype);
+
+/**
+ * This method executes the promises.
+ *
+ * @private
+ */
+const promiseExecutor = function(onResolve, onReject, params) {
+  unAckCount++;
+
+  // Trying because of JSON.parse.
+  try {
+    // Process request
+    const parsedParams = JSON.parse(params),
+      payload = parsedParams.message.payload;
+
+    let BlockScannerKlass = ic.getBlockScannerKlass(),
+      blockScannerObj = new BlockScannerKlass({
+        block_number: payload.blockNumber,
+        geth_array: payload.gethArray,
+        transaction_hashes: payload.transactionHashes,
+        time_stamp: payload.timestamp,
+        benchmark_file_path: benchmarkFilePath,
+        web3_factory_obj: web3InteractFactory,
+        delegator_timestamp: payload.delegatorTimestamp,
+        process_id: processLockId
+      });
+
+    try {
+      blockScannerObj
+        .perform()
+        .then(function() {
+          unAckCount--;
+          logger.debug('------ unAckCount -> ', unAckCount);
+          // ack RMQ
+          return onResolve();
+        })
+        .catch(function(err) {
+          logger.error(
+            'e_rmqs_bs_1',
+            'Something went wrong in blockscanner execution. unAckCount ->',
+            unAckCount,
+            err,
+            params
+          );
+          unAckCount--;
+          // ack RMQ
+          return onResolve();
+        });
+    } catch (err) {
+      unAckCount--;
+      logger.error('e_rmqs_bs_2', 'Listener could not process blockscanner.. Catch. unAckCount -> ', unAckCount);
+    }
+  } catch (error) {
+    unAckCount--;
+    logger.error(
+      'e_rmqs_bs_3',
+      'Error in parsing the message. unAckCount ->',
+      unAckCount,
+      'Error: ',
+      error,
+      'Params: ',
+      params
+    );
+    // ack RMQ
+    return onResolve();
+  }
+};
+
+const PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseExecutor, {
+  name: 'blockscanner_promise_queue_manager',
+  timeoutInMilliSecs: 3 * 60 * 1000, //3 minutes
+  maxZombieCount: Math.round(prefetchCount * 0.25),
+  onMaxZombieCountReached: function() {
+    logger.warn('e_rmqs_bs_2', 'maxZombieCount reached. Triggering SIGTERM.');
+    // Trigger gracefully shutdown of process.
+    process.kill(process.pid, 'SIGTERM');
+  }
+});
 
 // Check whether the cron can be started or not.
 CronProcessHandlerObject.canStartProcess({
