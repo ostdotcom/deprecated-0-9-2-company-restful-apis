@@ -34,6 +34,7 @@ populateCronProcesses.prototype = {
     await oThis.entryForUpdateRealtimeGasPrice();
     await oThis.entryForStartAirdrop();
     await oThis.entryForTransactionMetaObserver();
+    await oThis.entryForMonitorWorkersGas();
 
     logger.win('Table populated successfully.');
     process.exit(0);
@@ -170,14 +171,28 @@ populateCronProcesses.prototype = {
 
   // Kind: 14
   entryForTransactionMetaObserver: async function() {
-    const oThis = this;
-
     const params = {
         prefetch_count: 25
       },
       insertParams = {
         id: 8,
         kind: CronProcessesConstants.transactionMetaObserver,
+        ip_address: '127.0.0.1',
+        status: 'stopped',
+        group_id: null,
+        params: JSON.stringify(params)
+      };
+
+    const obj = new CronProcessesModel();
+    await obj.insertRecord(insertParams);
+  },
+
+  // Kind: 15
+  entryForMonitorWorkersGas: async function() {
+    const params = {},
+      insertParams = {
+        id: 9,
+        kind: CronProcessesConstants.monitorWorkersGas,
         ip_address: '127.0.0.1',
         status: 'stopped',
         group_id: null,

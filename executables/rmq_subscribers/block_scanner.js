@@ -245,18 +245,21 @@ CronProcessHandlerObject.canStartProcess({
 
   try {
     cronParams = JSON.parse(dbResponse.data.params);
+
+    groupId = cronParams.group_id;
+    prefetchCount = +cronParams.prefetch_count;
+    benchmarkFilePath = cronParams.benchmark_file_path
+      ? coreConstants.APP_SHARED_DIRECTORY + cronParams.benchmark_file_path
+      : null;
+
+    blockScanner.perform().catch(function(err) {
+      logger.error(err);
+    });
   } catch (err) {
     logger.error('cronParams stored in INVALID format in the DB.');
-    process.emit('SIGINT');
+    logger.error(
+      'The status of the cron was NOT changed to stopped. Please check the status before restarting the cron'
+    );
+    process.exit(1);
   }
-
-  groupId = cronParams.group_id;
-  prefetchCount = +cronParams.prefetch_count;
-  benchmarkFilePath = cronParams.benchmark_file_path
-    ? coreConstants.APP_SHARED_DIRECTORY + cronParams.benchmark_file_path
-    : null;
-
-  blockScanner.perform().catch(function(err) {
-    logger.error(err);
-  });
 });

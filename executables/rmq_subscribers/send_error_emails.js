@@ -113,7 +113,7 @@ function handle() {
 }
 
 function ostRmqError(err) {
-  logger.info('ostRmqError occured.', err);
+  logger.info('ostRmqError occurred.', err);
   process.emit('SIGINT');
 }
 

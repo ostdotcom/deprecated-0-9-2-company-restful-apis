@@ -143,16 +143,19 @@ CronProcessHandlerObject.canStartProcess({
 
   try {
     cronParams = JSON.parse(dbResponse.data.params);
+
+    // filePath is the file path for last ProcessedBlock and last Processed Transaction Index.
+    filePath = coreConstants.APP_SHARED_DIRECTORY + cronParams.file_path.trim();
+
+    // groupId needs to be passed to fetch config strategy.
+    groupId = cronParams.group_id;
+
+    startIntercomm.perform();
   } catch (err) {
     logger.error('cronParams stored in INVALID format in the DB.');
-    process.emit('SIGINT');
+    logger.error(
+      'The status of the cron was NOT changed to stopped. Please check the status before restarting the cron'
+    );
+    process.exit(1);
   }
-
-  // filePath is the file path for last ProcessedBlock and last Processed Transaction Index.
-  filePath = coreConstants.APP_SHARED_DIRECTORY + cronParams.file_path.trim();
-
-  // groupId needs to be passed to fetch config strategy.
-  groupId = cronParams.group_id;
-
-  startIntercomm.perform();
 });
