@@ -87,7 +87,7 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
 
     configStrategy = configStrategyResp.data;
 
-    for (var i in oThis._interestedUserNames) {
+    for (let i in oThis._interestedUserNames) {
       const userName = oThis._interestedUserNames[i];
 
       const minBalanceInWei = basicHelper.convertToWei(oThis._utilityChainMinBalanceFor(userName)),
@@ -104,9 +104,9 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
       }
     }
 
-    // check if utility chain owner has required min balance
-    // keep threshold for utility chain owner sufficiently high so that it is able to fund high no of refills
-    const utilityChainOwnerResponse = await oThis._checkBalanceOfChainOwner();
+    // Check if utility chain owner has required min balance.
+    // Keep threshold for utility chain owner sufficiently high so that it is able to fund high no of refills.
+    await oThis._checkBalanceOfChainOwner();
 
     logger.debug('Can exit now');
     process.exit(0);
@@ -115,7 +115,7 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
   /**
    * Check ST Prime Balance of Utility Chain Owner and notify if less
    *
-   * @returns {promise<result>}
+   * @returns {Promise<result>}
    * @private
    */
   _checkBalanceOfChainOwner: async function() {
@@ -129,7 +129,7 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
 
     if (ucOwnerBalanceBigNumberInWei.lessThan(minUCOBalanceInWei)) {
       logger.notify('e_fa_e_cboco_1', 'ST PRIME Balance Of Utility Chain Owner is LOW', {
-        utiltiy_chain_owner_utility_chain_address: oThis._utilityChainAddressFor('utilityChainOwner'),
+        utility_chain_owner_utility_chain_address: oThis._utilityChainAddressFor('utilityChainOwner'),
         utility_chain_owner_balance_st_prime: basicHelper.convertToNormal(ucOwnerBalanceBigNumberInWei),
         min_required_balance: oThis._utilityChainMinBalanceFor('utilityChainOwner')
       });
@@ -143,7 +143,7 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
    *
    * @param {string} ethereumAddress - Address to check balance for
    *
-   * @returns {promise<result>}
+   * @returns {Promise<result>}
    * @private
    */
   _getSTPrimeBalance: async function(ethereumAddress) {
@@ -173,7 +173,7 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
    * @param {string} ethereumAddress - Address to transfer ST Prime to
    * @param {string} transferAmountInWei - Amount to be transferred to the given address in Wei
    *
-   * @returns {promise<result>}
+   * @returns {Promise<result>}
    * @private
    */
   _transferSTPrimeBalance: async function(ethereumAddress, transferAmountInWei) {
@@ -250,8 +250,6 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
    *
    */
   _utilityChainBalanceRequirements: function() {
-    const oThis = this;
-
     if (basicHelper.isProduction() || basicHelper.isMainSubEnvironment()) {
       return {
         utilityChainOwner: { minBalance: '10', address: configStrategy.OST_UTILITY_CHAIN_OWNER_ADDR },
@@ -283,6 +281,6 @@ FundUsersWithSTPrimeFromUtilityChainOwnerKlass.prototype = {
   _interestedUserNames: ['staker', 'redeemer', 'utilityRegistrar', 'utilityDeployer', 'utilityOps']
 };
 
-// perform action
+// Perform action.
 const FundUsersWithSTPrimeObj = new FundUsersWithSTPrimeFromUtilityChainOwnerKlass();
 FundUsersWithSTPrimeObj.perform();

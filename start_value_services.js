@@ -103,7 +103,7 @@ StartServicesKlass.prototype = {
 
     logger.step('** Starting worker to process events');
     cmd =
-      'node executables/rmq_subscribers/factory.js 1 \'temp\' \'["on_boarding.#","airdrop_allocate_tokens","stake_and_mint.#","event.stake_and_mint_processor.#","event.block_scanner.#","airdrop.approve.contract", "transaction.stp_transfer"]\'' +
+      'node executables/rmq_subscribers/factory.js 1' +
       ' >> ' +
       homeAbsolutePath +
       '/openst-setup/logs/executables_rmq_subscribers_factory.log';
@@ -112,7 +112,7 @@ StartServicesKlass.prototype = {
 
     logger.step('** Starting allocate airdrop worker');
     cmd =
-      'node executables/rmq_subscribers/start_airdrop.js' +
+      'node executables/rmq_subscribers/start_airdrop.js 7' +
       ' >> ' +
       homeAbsolutePath +
       '/openst-setup/logs/start_airdrop.log';

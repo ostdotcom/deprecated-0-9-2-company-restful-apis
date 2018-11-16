@@ -1,56 +1,53 @@
 'use strict';
-
 /**
  * This code acts as a worker process for block scanner, which takes the transactions from delegator
  * and processes it using block scanner class. [ lib/block_scanner/for_tx_status_and_balance_sync.js ]
  *
- * Usage: node executables/rmq_subscribers/block_scanner.js processlockId group_id prefetchCountStr [benchmarkFilePath]
+ * Usage: node executables/rmq_subscribers/block_scanner.js 1
  *
  * Command Line Parameters Description:
- * processlockId: used for ensuring that no other process with the same processlockId can run on a given machine.
- * group_id: group_id to fetch config strategy
- * prefetchCountStr: prefetch count for RMQ subscribers.
- * [benchmarkFilePath]: path to the file which is storing the benchmarking info.
+ * processLockId: used for ensuring that no other process with the same processLockId can run on a given machine.
  *
  * @module executables/rmq_subscribers/block_scanner
  */
 
-const rootPrefix = '../..';
-
-const program = require('commander');
-
-program
-  .option('--processlock-id <processlockId>', 'Process Lock id')
-  .option('--group-id <groupId>', 'Group id')
-  .option('--prefetch-count <prefetchCount>', 'Prefetch Count')
-  .option('--benchmark-file-path [benchmarkFilePath]', 'Path to benchmark file path');
-
-program.on('--help', () => {
-  console.log('');
-  console.log('  Example:');
-  console.log('');
-  console.log(
-    '    node ./executables/rmq_subscribers/block_scanner.js --processlock-id 1 --group-id 197 --prefetch-count 2 --benchmark-file-path [benchmarkFilePath]'
-  );
-  console.log('');
-  console.log('');
-});
-
-program.parse(process.argv);
-
-const InstanceComposer = require(rootPrefix + '/instance_composer'),
+const rootPrefix = '../..',
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
-  ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
+  CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
+  web3InteractFactory = require(rootPrefix + '/lib/web3/interact/ws_interact'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
-  web3InteractFactory = require(rootPrefix + '/lib/web3/interact/ws_interact'),
-  SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
-  ProcessLocker = new ProcessLockerKlass(program);
+  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
+  CronProcessHandlerObject = new CronProcessesHandler(),
+  openStNotification = SharedRabbitMqProvider.getInstance();
 
-let ic = null;
+const usageDemo = function() {
+  logger.log('Usage:', 'node executables/rmq_subscribers/block_scanner.js processLockId');
+  logger.log(
+    '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
+  );
+};
 
-const openStNotification = SharedRabbitMqProvider.getInstance();
+// Declare variables.
+const args = process.argv,
+  processLockId = args[2],
+  cronKind = CronProcessesConstants.blockScannerWorker;
+
+let ic = null,
+  unAckCount = 0,
+  groupId,
+  prefetchCount,
+  benchmarkFilePath;
+
+// Validate if processLockId was passed or not.
+if (!processLockId) {
+  logger.error('Process Lock id NOT passed in the arguments.');
+  usageDemo();
+  process.exit(1);
+}
 
 require(rootPrefix + '/lib/web3/interact/ws_interact');
 require(rootPrefix + '/lib/block_scanner/for_tx_status_and_balance_sync');
@@ -58,21 +55,13 @@ require(rootPrefix + '/lib/block_scanner/for_tx_status_and_balance_sync');
 // Load external packages
 const OSTBase = require('@openstfoundation/openst-base');
 
-// Check if another process with the same title is running.
-ProcessLocker.canStartProcess({
-  process_title: 'executables_rmq_subscribers_block_scanner_' + program.groupId + '_' + program.processlockId
-});
-
-let unAckCount = 0,
-  prefetchCountInt = parseInt(program.prefetchCount);
-
 const BlockScanner = function() {
   const oThis = this;
 
   oThis.PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(oThis._promiseExecutor, {
     name: 'blockscanner_promise_queue_manager',
     timeoutInMilliSecs: 3 * 60 * 1000, //3 minutes
-    maxZombieCount: Math.round(prefetchCountInt * 0.25),
+    maxZombieCount: Math.round(prefetchCount * 0.25),
     onMaxZombieCountReached: function() {
       logger.warn('e_rmqs_bs_2', 'maxZombieCount reached. Triggering SIGTERM.');
       // Trigger gracefully shutdown of process.
@@ -80,7 +69,7 @@ const BlockScanner = function() {
     }
   });
 
-  SigIntHandler.call(oThis, {});
+  SigIntHandler.call(oThis, { id: processLockId });
 };
 
 BlockScanner.prototype = Object.create(SigIntHandler.prototype);
@@ -89,7 +78,7 @@ const BlockScannerPrototype = {
   perform: async function() {
     const oThis = this;
 
-    oThis.validateAndSanitize();
+    oThis._validateAndSanitize();
 
     await oThis.warmUpGethPool();
 
@@ -97,26 +86,31 @@ const BlockScannerPrototype = {
   },
 
   /**
-   * validateAndSanitize
+   * Validates the params.
+   *
+   * @private
    */
-  validateAndSanitize: function() {
-    const oThis = this;
-    if (!program.processlockId || !program.groupId || !program.prefetchCount) {
-      program.help();
-      process.exit(1);
+  _validateAndSanitize: function() {
+    if (!groupId) {
+      logger.error('Group Id NOT available in cron params in the database.');
+      process.emit('SIGINT');
+    }
+
+    if (!prefetchCount) {
+      logger.error('Prefetch count NOT available in cron params in the database.');
+      process.emit('SIGINT');
     }
   },
 
   /**
-   * warmUpGethPool
+   * Warms up the geth pool.
    *
+   * @returns {Promise<any>}
    */
   warmUpGethPool: function() {
-    const oThis = this;
-
     return new Promise(async function(onResolve, onReject) {
       let utilityGethType = 'read_only',
-        strategyByGroupHelperObj = new StrategyByGroupHelper(program.groupId),
+        strategyByGroupHelperObj = new StrategyByGroupHelper(groupId),
         configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(utilityGethType),
         configStrategy = configStrategyResp.data;
 
@@ -136,19 +130,19 @@ const BlockScannerPrototype = {
   },
 
   /**
-   * startSubscription
+   * Start subscription.
    */
   startSubscription: function() {
-    const oThis = this;
+    const oThis = this,
+      chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
 
-    let chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
-
+    // Subscribe to queue.
     openStNotification.subscribeEvent.rabbit(
       ['block_scanner_execute_' + chain_id],
       {
         queue: 'block_scanner_execute_' + chain_id,
         ackRequired: 1,
-        prefetch: prefetchCountInt
+        prefetch: prefetchCount
       },
       function(params) {
         // Promise is required to be returned to manually ack messages in RMQ
@@ -158,81 +152,111 @@ const BlockScannerPrototype = {
   },
 
   /**
-   * _promiseExecutor
+   * This method executes the promises.
    *
    * @private
    */
-
   _promiseExecutor: function(onResolve, onReject, params) {
-    const oThis = this;
-
     unAckCount++;
 
-    // Process request
-    // TODO: put try catch around JSON parse
-    const parsedParams = JSON.parse(params);
-
-    const payload = parsedParams.message.payload;
-
-    let BlockScannerKlass = ic.getBlockScannerKlass(),
-      blockScannerObj = new BlockScannerKlass({
-        block_number: payload.blockNumber,
-        geth_array: payload.gethArray,
-        transaction_hashes: payload.transactionHashes,
-        time_stamp: payload.timestamp,
-        benchmark_file_path: program.benchmarkFilePath,
-        web3_factory_obj: web3InteractFactory,
-        delegator_timestamp: payload.delegatorTimestamp,
-        process_id: program.processlockId
-      });
-
+    // Trying because of JSON.parse.
     try {
-      blockScannerObj
-        .perform()
-        .then(function() {
-          unAckCount--;
-          logger.debug('------ unAckCount -> ', unAckCount);
-          // ack RMQ
-          return onResolve();
-        })
-        .catch(function(err) {
-          logger.error(
-            'e_rmqs_bs_1',
-            'Something went wrong in blockscanner execution. unAckCount ->',
-            unAckCount,
-            err,
-            params
-          );
-          unAckCount--;
-          // ack RMQ
-          return onResolve();
+      // Process request
+      const parsedParams = JSON.parse(params),
+        payload = parsedParams.message.payload;
+
+      let BlockScannerKlass = ic.getBlockScannerKlass(),
+        blockScannerObj = new BlockScannerKlass({
+          block_number: payload.blockNumber,
+          geth_array: payload.gethArray,
+          transaction_hashes: payload.transactionHashes,
+          time_stamp: payload.timestamp,
+          benchmark_file_path: benchmarkFilePath,
+          web3_factory_obj: web3InteractFactory,
+          delegator_timestamp: payload.delegatorTimestamp,
+          process_id: processLockId
         });
-    } catch (err) {
+
+      try {
+        blockScannerObj
+          .perform()
+          .then(function() {
+            unAckCount--;
+            logger.debug('------ unAckCount -> ', unAckCount);
+            // ack RMQ
+            return onResolve();
+          })
+          .catch(function(err) {
+            logger.error(
+              'e_rmqs_bs_1',
+              'Something went wrong in blockscanner execution. unAckCount ->',
+              unAckCount,
+              err,
+              params
+            );
+            unAckCount--;
+            // ack RMQ
+            return onResolve();
+          });
+      } catch (err) {
+        unAckCount--;
+        logger.error('e_rmqs_bs_2', 'Listener could not process blockscanner.. Catch. unAckCount -> ', unAckCount);
+      }
+    } catch (error) {
       unAckCount--;
-      logger.error('Listener could not process blockscanner.. Catch. unAckCount -> ', unAckCount);
+      logger.error(
+        'e_rmqs_bs_3',
+        'Error in parsing the message. unAckCount ->',
+        unAckCount,
+        'Error: ',
+        error,
+        'Params: ',
+        params
+      );
+      // ack RMQ
+      return onResolve();
     }
   },
 
   /**
-   * pendingTasksDone
+   * This function checks if there are any pending tasks left or not.
+   *
+   * @returns {boolean}
    */
   pendingTasksDone: function() {
     const oThis = this;
 
-    if (unAckCount != oThis.PromiseQueueManager.getPendingCount()) {
+    if (unAckCount !== oThis.PromiseQueueManager.getPendingCount()) {
       logger.error('ERROR :: unAckCount and pending counts are not in sync.');
     }
-    if (!oThis.PromiseQueueManager.getPendingCount() && !unAckCount) {
-      return true;
-    }
-
-    return false;
+    return !oThis.PromiseQueueManager.getPendingCount() && !unAckCount;
   }
 };
 
 Object.assign(BlockScanner.prototype, BlockScannerPrototype);
 
-let blockScanner = new BlockScanner();
-blockScanner.perform().catch(function(err) {
-  logger.error(err);
+// Check whether the cron can be started or not.
+CronProcessHandlerObject.canStartProcess({
+  id: +processLockId, // Implicit string to int conversion.
+  cron_kind: cronKind
+}).then(function(dbResponse) {
+  let cronParams;
+  const blockScanner = new BlockScanner();
+
+  try {
+    cronParams = JSON.parse(dbResponse.data.params);
+  } catch (err) {
+    logger.error('cronParams stored in INVALID format in the DB.');
+    process.emit('SIGINT');
+  }
+
+  groupId = cronParams.group_id;
+  prefetchCount = +cronParams.prefetch_count;
+  benchmarkFilePath = cronParams.benchmark_file_path
+    ? coreConstants.APP_SHARED_DIRECTORY + cronParams.benchmark_file_path
+    : null;
+
+  blockScanner.perform().catch(function(err) {
+    logger.error(err);
+  });
 });

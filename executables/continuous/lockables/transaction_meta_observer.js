@@ -12,69 +12,58 @@
  *  - Submitted
  *    If transaction meta says status submitted for sometime then check on geth, and resubmit if not found on geth.
  *
- * Example: node executables/continuous/lockables/transaction_meta_observer.js
+ * Example: node executables/continuous/lockables/transaction_meta_observer.js --process-id 123
  *
- * @module executables/transaction_meta_observer
+ * @module executables/continuous/lockables/transaction_meta_observer
  */
 
 const rootPrefix = '../../..';
 
-//Always Include Module overrides First
+// Always include module overrides first.
 require(rootPrefix + '/module_overrides/index');
 
-const program = require('commander'),
-  ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
-  ProcessLocker = new ProcessLockerKlass();
+// Require modules.
+const SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger.js'),
+  CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
+  baseKlass = require(rootPrefix + '/executables/continuous/lockables/base'),
+  TransactionMetaModel = require(rootPrefix + '/app/models/transaction_meta'),
+  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
+  transactionMetaConst = require(rootPrefix + '/lib/global_constant/transaction_meta'),
+  CronProcessHandlerObject = new CronProcessesHandler();
 
-program.option('--process-id <processId>', 'Process id').option('--prefetch-count <prefetchCount>', 'Prefetch Count');
-
-program.on('--help', () => {
-  console.log('');
-  console.log('  Example:');
-  console.log('');
-  console.log(
-    '    node ./executables/continuous/lockables/transaction_meta_observer.js --process-id 123 --prefetch-count 10'
+const usageDemo = function() {
+  logger.log('Usage:', 'node ./executables/continuous/lockables/transaction_meta_observer.js processLockId');
+  logger.log(
+    '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
   );
-  console.log('');
-  console.log('');
-});
-
-program.parse(process.argv);
-
-ProcessLocker.canStartProcess({
-  process_title: 'executables_continuous_transaction_meta_observer' + program.processId
-});
-ProcessLocker.endAfterTime({ time_in_minutes: 40 });
-
-// Validate and sanitize the commander parameters.
-const validateAndSanitize = function() {
-  if (!program.processId) {
-    program.help();
-    process.exit(1);
-  }
 };
 
-// Validate and sanitize the input params.
-validateAndSanitize();
+// Declare variables.
+const args = process.argv,
+  processLockId = args[2];
 
-const baseKlass = require(rootPrefix + '/executables/continuous/lockables/base'),
-  TransactionMetaModel = require(rootPrefix + '/app/models/transaction_meta'),
-  transactionMetaConst = require(rootPrefix + '/lib/global_constant/transaction_meta'),
-  SigIntHandler = require(rootPrefix + '/executables/sigint_handler');
+let runCount = 1,
+  prefetchCount,
+  cronKind = CronProcessesConstants.transactionMetaObserver,
+  TransactionStatusHandlers = {};
 
-let runCount = 1;
-
-let TransactionStatusHandlers = {};
+// Validate if processLockId was passed or not.
+if (!processLockId) {
+  logger.error('Process Lock id NOT passed in the arguments.');
+  usageDemo();
+  process.exit(1);
+}
 
 const setTransactionStatusHandlers = function() {
-  let is = transactionMetaConst.invertedStatuses;
-  TransactionStatusHandlers[parseInt(is[transactionMetaConst.queued])] = require(rootPrefix +
+  let invertedStatuses = transactionMetaConst.invertedStatuses;
+  TransactionStatusHandlers[parseInt(invertedStatuses[transactionMetaConst.queued])] = require(rootPrefix +
     '/lib/transaction_error_handlers/queued_handler');
-  TransactionStatusHandlers[parseInt(is[transactionMetaConst.submitted])] = require(rootPrefix +
+  TransactionStatusHandlers[parseInt(invertedStatuses[transactionMetaConst.submitted])] = require(rootPrefix +
     '/lib/transaction_error_handlers/submitted_handler');
-  TransactionStatusHandlers[parseInt(is[transactionMetaConst.geth_down])] = require(rootPrefix +
+  TransactionStatusHandlers[parseInt(invertedStatuses[transactionMetaConst.geth_down])] = require(rootPrefix +
     '/lib/transaction_error_handlers/geth_down_handler');
-  TransactionStatusHandlers[parseInt(is[transactionMetaConst.geth_out_of_sync])] = require(rootPrefix +
+  TransactionStatusHandlers[parseInt(invertedStatuses[transactionMetaConst.geth_out_of_sync])] = require(rootPrefix +
     '/lib/transaction_error_handlers/geth_down_handler');
 };
 
@@ -94,7 +83,7 @@ const TransactionMetaObserverKlass = function(params) {
   oThis.handlerPromises = [];
 
   baseKlass.call(oThis, params);
-  SigIntHandler.call(oThis);
+  SigIntHandler.call(oThis, { id: processLockId });
 };
 
 TransactionMetaObserverKlass.prototype = Object.create(baseKlass.prototype);
@@ -179,8 +168,8 @@ const TransactionMetaObserverKlassPrototype = {
 Object.assign(TransactionMetaObserverKlass.prototype, TransactionMetaObserverKlassPrototype);
 
 let txMetaObserver = new TransactionMetaObserverKlass({
-  process_id: program.processId,
-  no_of_rows_to_process: program.prefetchCount,
+  process_id: processLockId,
+  no_of_rows_to_process: prefetchCount,
   release_lock_required: false
 });
 
@@ -189,14 +178,14 @@ const runTask = async function() {
 
   function onExecutionComplete() {
     // If too much load that iteration has processed full prefetch transactions, then don't wait for much time.
-    let nextIterationTime = txMetaObserver.transactionsToProcess.length == program.prefetchCount ? 10 : 120000;
+    let nextIterationTime = txMetaObserver.transactionsToProcess.length === prefetchCount ? 10 : 120000;
 
     if (runCount >= 10) {
       // Executed 10 times now exiting
-      console.log(runCount + ' iteration is executed, Killing self now. ');
-      process.exit(1);
+      logger.log(runCount + ' iteration is executed, Killing self now. ');
+      process.emit('SIGINT');
     } else {
-      console.log(runCount + ' iteration is executed, Sleeping now for seconds ' + nextIterationTime / 1000);
+      logger.log(runCount + ' iteration is executed, Sleeping now for seconds ' + nextIterationTime / 1000);
       runCount = runCount + 1;
       setTimeout(runTask, nextIterationTime);
     }
@@ -211,4 +200,27 @@ const runTask = async function() {
     });
 };
 
-runTask();
+// Check whether the cron can be started or not.
+CronProcessHandlerObject.canStartProcess({
+  id: +processLockId, // Implicit string to int conversion.
+  cron_kind: cronKind
+}).then(async function(dbResponse) {
+  let cronParams;
+
+  try {
+    cronParams = JSON.parse(dbResponse.data.params);
+  } catch (err) {
+    logger.error('cronParams stored in INVALID format in the DB.');
+    process.emit('SIGINT');
+  }
+
+  prefetchCount = +cronParams.prefetch_count; // Implicit string to int conversion.
+  if (!prefetchCount) {
+    logger.error('prefetchCount NOT available in cron params in the database.');
+    process.emit('SIGINT');
+  }
+
+  await runTask();
+});
+
+CronProcessHandlerObject.endAfterTime({ time_in_minutes: 40 });
