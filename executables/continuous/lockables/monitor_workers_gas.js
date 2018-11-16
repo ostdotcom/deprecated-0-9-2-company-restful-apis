@@ -302,7 +302,7 @@ const MonitorGasOfWorkersKlassPrototype = {
           options: { returnType: 'txReceipt', tag: '' }
         };
 
-        logger.log('Transferring ST Prime from reserve to worker with low balance.');
+        logger.step('Transferring ST Prime from reserve to worker with low balance.');
         const resp = await new platformObj.services.transaction.transfer.simpleTokenPrime(transferParams).perform();
 
         if (resp.isSuccess()) {
@@ -318,7 +318,7 @@ const MonitorGasOfWorkersKlassPrototype = {
 
     // Associate client workers to running processes
     if (workerGotBalance.length) {
-      logger.log('Association started.......');
+      logger.step('Association started');
       await oThis._associateWorkerProcesses(clientId, workerGotBalance);
     }
 
@@ -334,6 +334,7 @@ const MonitorGasOfWorkersKlassPrototype = {
   _associateWorkerProcesses: async function(clientId, associateWorkers) {
     const oThis = this;
 
+    logger.step('Updating workers property as hasStPrimeBalance for workers', associateWorkers);
     // Update worker has gas now.
     await new ClientWorkerManagedAddressIdModel()
       .update(['properties = properties | ?', hasStPrimeBalanceProperty])
@@ -371,7 +372,7 @@ const MonitorGasOfWorkersKlassPrototype = {
     if (processIdArray.length === 0) {
       return Promise.resolve({});
     }
-
+    logger.step('Association started for clientId' + clientId + 'with processes' + processIdArray);
     // If some processes are not yet associated, associate them.
     let associateWorkerParams = {
         clientId: clientId,
@@ -484,7 +485,7 @@ const runTask = async function() {
   function onExecutionComplete() {
     // If too much load that iteration has processed full prefetch transactions, then don't wait for much time.
     let nextIterationTime =
-      monitorWorkerCron.underProcessClientWorkers.length === monitorWorkerCron.getNoOfRowsToProcess ? 10 : 120000;
+      monitorWorkerCron.underProcessClientWorkers.length === monitorWorkerCron.getNoOfRowsToProcess() ? 10 : 120000;
 
     if (runCount >= 10) {
       // Executed 10 times now exiting
@@ -493,6 +494,7 @@ const runTask = async function() {
     } else {
       logger.log(runCount + ' iteration is executed, Sleeping now for seconds ' + nextIterationTime / 1000);
       runCount = runCount + 1;
+      monitorWorkerCron.underProcessClientWorkers = [];
       setTimeout(runTask, nextIterationTime);
     }
   }
