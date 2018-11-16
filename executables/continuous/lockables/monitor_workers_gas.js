@@ -193,8 +193,8 @@ const MonitorGasOfWorkersKlassPrototype = {
       .where(['lock_id = ?', oThis.getLockId()])
       .fire();
 
-    for (let i = 0; i < queryResponse.length; i++) {
-      let rawResponse = queryResponse[i];
+    for (let i = 0; i < oThis.underProcessClientWorkers.length; i++) {
+      let rawResponse = oThis.underProcessClientWorkers[i];
       oThis.clientIdToWorkerIdsMap[rawResponse.client_id] = oThis.clientIdToWorkerIdsMap[rawResponse.client_id] || [];
       oThis.clientIdToWorkerIdsMap[rawResponse.client_id].push(rawResponse.managed_address_id);
       oThis.workerIdToAddressMap[rawResponse.managed_address_id] = null;
