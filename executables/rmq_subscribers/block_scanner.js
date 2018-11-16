@@ -241,7 +241,6 @@ CronProcessHandlerObject.canStartProcess({
   cron_kind: cronKind
 }).then(function(dbResponse) {
   let cronParams;
-  const blockScanner = new BlockScanner();
 
   try {
     cronParams = JSON.parse(dbResponse.data.params);
@@ -252,6 +251,7 @@ CronProcessHandlerObject.canStartProcess({
       ? coreConstants.APP_SHARED_DIRECTORY + cronParams.benchmark_file_path
       : null;
 
+    const blockScanner = new BlockScanner();
     blockScanner.perform().catch(function(err) {
       logger.error(err);
     });
