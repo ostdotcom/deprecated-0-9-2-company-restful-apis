@@ -36,6 +36,9 @@ const baseKlass = require(rootPrefix + '/executables/continuous/lockables/base')
   hasStPrimeBalanceProperty = new ClientWorkerManagedAddressIdModel().invertedProperties[
     clientWorkerManagedAddressConst.hasStPrimeBalanceProperty
   ],
+  activeWorkerStatus = new ClientWorkerManagedAddressIdModel().invertedStatuses[
+    clientWorkerManagedAddressConst.activeStatus
+  ],
   invertedReserveAddressType = new ManagedAddressModel().invertedAddressTypes[managedAddressesConst.reserveAddressType],
   WORKER_MINIMUM_BALANCE_REQUIRED = 0.1;
 
@@ -72,6 +75,7 @@ const MonitorGasOfWorkersKlass = function(params) {
 
   oThis.startClientId = params.fromClientId;
   oThis.endClientId = params.endClientId;
+  oThis.clientIdRange = [];
 
   oThis._init();
 
@@ -90,13 +94,15 @@ const MonitorGasOfWorkersKlassPrototype = {
    */
   _init: function() {
     const oThis = this;
-    oThis.lockId = Math.floor(new Date().getTime() / 1000);
-    oThis.whereClause = [];
+    oThis.currentTime = Math.floor(new Date().getTime() / 1000);
+    oThis.lockId = new Date().getTime();
+    // oThis.whereClause = [];
     oThis.clientIdToWorkerIdsMap = {};
     oThis.workerIdToAddressMap = {};
     oThis.clientLowBalanceWorkerIds = {};
     oThis.clientIdToICPlatform = {};
     oThis.clientIdTochainIdMap = {};
+    oThis.underProcessClientWorkers = [];
   },
 
   /**
@@ -141,7 +147,18 @@ const MonitorGasOfWorkersKlassPrototype = {
   lockingConditions: function() {
     const oThis = this;
 
-    return oThis._getClientIdsRange();
+    let whereClause = [];
+
+    if (oThis.startClientId && oThis.endClientId) {
+      whereClause = ['client_id >= ? AND client_id <= ? AND ', oThis.startClientId, oThis.endClientId];
+    }
+
+    whereClause[0] = whereClause[0] || '';
+    whereClause[0] += 'status = ? AND next_action_at <= ?';
+    whereClause.push(activeWorkerStatus);
+    whereClause.push(oThis.currentTime);
+
+    return whereClause;
   },
 
   /**
@@ -159,30 +176,33 @@ const MonitorGasOfWorkersKlassPrototype = {
   getNoOfRowsToProcess: function() {
     const oThis = this;
 
-    return 1000;
+    return 20;
   },
 
-  /**
-   * This function generates client range to be passed to get workers map.
-   *
-   * @returns {Promise<Array|*|*[]>}
-   * @private
-   */
-  _getClientIdsRange: function() {
-    const oThis = this;
-
-    if (oThis.startClientId && oThis.endClientId) {
-      oThis.whereClause = ['client_id >= ? AND client_id <= ? ', oThis.startClientId, oThis.endClientId];
-    } else if (oThis.startClientId === undefined && oThis.endClientId) {
-      oThis.whereClause = ['client_id <= ? ', oThis.endClientId];
-    } else if (oThis.startClientId && oThis.endClientId === undefined) {
-      oThis.whereClause = ['client_id >= ? ', oThis.startClientId];
-    } else {
-      oThis.whereClause = ['client_id >= ?', 1];
-    }
-
-    return oThis.whereClause;
-  },
+  // /**
+  //  * This function generates client range to be passed to get workers map.
+  //  *
+  //  * @returns {Promise<Array|*|*[]>}
+  //  * @private
+  //  */
+  // _getClientIdsRange: function() {
+  //   const oThis = this;
+  //
+  //   if (oThis.startClientId && oThis.endClientId) {
+  //     oThis.whereClause = ['client_id >= ? AND client_id <= ? ', oThis.startClientId, oThis.endClientId];
+  //   } else if (oThis.startClientId === undefined && oThis.endClientId) {
+  //     oThis.whereClause = ['client_id <= ? ', oThis.endClientId];
+  //   } else if (oThis.startClientId && oThis.endClientId === undefined) {
+  //     oThis.whereClause = ['client_id >= ? ', oThis.startClientId];
+  //   } else {
+  //     oThis.whereClause = ['client_id >= ? ', 1];
+  //   }
+  //
+  //   oThis.whereClause[0] += "AND status = ?";
+  //   oThis.whereClause.push(activeWorkerStatus);
+  //
+  //   return oThis.whereClause;
+  // },
 
   /**
    * This function creates clients to workers map using client ids range.
@@ -194,7 +214,7 @@ const MonitorGasOfWorkersKlassPrototype = {
     const oThis = this;
 
     // Fetch all workers of client, so that deactivated workers can be re-activated.
-    let queryResponse = await new ClientWorkerManagedAddressIdModel()
+    oThis.underProcessClientWorkers = await new ClientWorkerManagedAddressIdModel()
       .select('client_id, managed_address_id')
       .where(['lock_id = ?', oThis.getLockId()])
       .fire();
@@ -472,7 +492,7 @@ const MonitorGasOfWorkersKlassPrototype = {
 
   pendingTasksDone: function() {
     const oThis = this;
-    return !oThis.lockAcquired;
+    return oThis.underProcessClientWorkers.length <= 0 && !oThis.lockAcquired;
   }
 };
 
@@ -482,14 +502,18 @@ const runTask = async function() {
   monitorWorkerCron._init();
 
   function onExecutionComplete() {
+    // If too much load that iteration has processed full prefetch transactions, then don't wait for much time.
+    let nextIterationTime =
+      monitorWorkerCron.underProcessClientWorkers.length === monitorWorkerCron.getNoOfRowsToProcess ? 10 : 120000;
+
     if (runCount >= 10) {
       // Executed 10 times now exiting
       logger.log(runCount + ' iteration is executed, Killing self now. ');
       process.emit('SIGINT');
     } else {
-      logger.log(runCount + ' iteration is executed, Sleeping now for 2 minutes.');
+      logger.log(runCount + ' iteration is executed, Sleeping now for seconds ' + nextIterationTime / 1000);
       runCount = runCount + 1;
-      setTimeout(runTask, 120000);
+      setTimeout(runTask, nextIterationTime);
     }
   }
   monitorWorkerCron
