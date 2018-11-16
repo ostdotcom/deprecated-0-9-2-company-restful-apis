@@ -132,11 +132,12 @@ const BlockScannerPrototype = {
   /**
    * Start subscription.
    */
-  startSubscription: function() {
-    const oThis = this,
-      chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
+  startSubscription: async function() {
+    const oThis = this;
 
-    // Subscribe to queue.
+    let chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
+
+    const openStNotification = await SharedRabbitMqProvider.getInstance();
     openStNotification.subscribeEvent.rabbit(
       ['block_scanner_execute_' + chain_id],
       {
