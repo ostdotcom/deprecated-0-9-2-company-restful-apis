@@ -57,6 +57,8 @@ const OSTBase = require('@openstfoundation/openst-base');
 const BlockScanner = function() {
   const oThis = this;
 
+  oThis.stopPickingUpNewWork = false;
+
   oThis.PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(oThis._promiseExecutor, {
     name: 'blockscanner_promise_queue_manager',
     timeoutInMilliSecs: 3 * 60 * 1000, //3 minutes
@@ -147,6 +149,9 @@ const BlockScannerPrototype = {
       function(params) {
         // Promise is required to be returned to manually ack messages in RMQ
         return oThis.PromiseQueueManager.createPromise(params);
+      },
+      function(consumerTag) {
+        oThis.consumerTag = consumerTag;
       }
     );
   },

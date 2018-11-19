@@ -49,7 +49,12 @@ SigIntHandler.prototype = {
    */
   stopPickingUpNewTasks: function() {
     const oThis = this;
+
     oThis.stopPickingUpNewWork = true;
+    if (oThis.consumerTag) {
+      logger.info(':: :: Cancelling consumption on tag=====', oThis.consumerTag);
+      process.emit('CANCEL_CONSUME', oThis.consumerTag);
+    }
   },
 
   /**
