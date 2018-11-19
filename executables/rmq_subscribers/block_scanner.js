@@ -268,3 +268,5 @@ CronProcessHandlerObject.canStartProcess({
     process.exit(1);
   }
 });
+
+CronProcessHandlerObject.endAfterTime({ time_in_minutes: 45 });
