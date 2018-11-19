@@ -486,15 +486,15 @@ const runTask = async function() {
     // If too much load that iteration has processed full prefetch transactions, then don't wait for much time.
     let nextIterationTime =
       monitorWorkerCron.underProcessClientWorkers.length === monitorWorkerCron.getNoOfRowsToProcess() ? 10 : 120000;
+    monitorWorkerCron.underProcessClientWorkers = [];
 
-    if (txMetaObserver.stopPickingUpNewTasks || runCount >= 10) {
+    if (monitorWorkerCron.stopPickingUpNewTasks || runCount >= 10) {
       // Executed 10 times now exiting
       logger.log(runCount + ' iteration is executed, Killing self now. ');
       process.emit('SIGINT');
     } else {
       logger.log(runCount + ' iteration is executed, Sleeping now for seconds ' + nextIterationTime / 1000);
       runCount = runCount + 1;
-      monitorWorkerCron.underProcessClientWorkers = [];
       setTimeout(runTask, nextIterationTime);
     }
   }
