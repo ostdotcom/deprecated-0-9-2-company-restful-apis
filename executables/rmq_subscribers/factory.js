@@ -226,6 +226,9 @@ const RmqFactoryPrototype = {
       function(params) {
         // Promise is required to be returned to manually ack messages in RMQ
         return oThis.PromiseQueueManager.createPromise(params);
+      },
+      function(consumerTag) {
+        oThis.consumerTag = consumerTag;
       }
     );
   },
