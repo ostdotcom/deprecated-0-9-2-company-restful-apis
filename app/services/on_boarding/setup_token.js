@@ -53,7 +53,7 @@ const SetupToken = function(params) {
   oThis.workerAddrUuids = [];
   oThis.newWorkerManagedAddressIds = [];
 
-  oThis.allowedWorkersCnt = 5; // check max supported in contract and populate this
+  oThis.allowedWorkersCnt = 4; // check max supported in contract and populate this
 };
 
 SetupToken.prototype = {
