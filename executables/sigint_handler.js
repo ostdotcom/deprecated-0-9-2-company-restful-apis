@@ -24,6 +24,8 @@ SigIntHandler.prototype = {
     oThis.pendingTasksDone(); // Throw if the method is not implemented by caller
 
     let handle = function() {
+      oThis.stopPickingUpNewTasks();
+
       if (oThis.pendingTasksDone()) {
         logger.info(':: No pending tasks. Changing the status ');
         cronProcessHandlerObject.stopProcess(oThis.idToBeKilled).then(function() {
@@ -40,6 +42,14 @@ SigIntHandler.prototype = {
 
     process.on('SIGINT', handle);
     process.on('SIGTERM', handle);
+  },
+
+  /**
+   * Stops consumption upon invocation
+   */
+  stopPickingUpNewTasks: function() {
+    const oThis = this;
+    oThis.stopPickingUpNewWork = true;
   },
 
   /**
