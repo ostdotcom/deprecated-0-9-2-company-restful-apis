@@ -112,7 +112,7 @@ FundUsersWithSTPrimeFromReserveKlass.prototype = {
 
         console.log('* Funding ST prime for client id:', clientId);
 
-        await new FundClientAddressKlass({ client_id: clientId }).perform();
+        await new FundClientAddressKlass({ client_id: clientId, fund_workers: false }).perform();
 
         logger.win('* DONE with ST prime funding for client id:', clientId);
       }

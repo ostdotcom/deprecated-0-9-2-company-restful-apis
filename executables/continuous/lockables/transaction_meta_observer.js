@@ -175,7 +175,7 @@ const runTask = async function() {
     // If too much load that iteration has processed full prefetch transactions, then don't wait for much time.
     let nextIterationTime = txMetaObserver.transactionsToProcess.length === prefetchCount ? 10 : 120000;
 
-    if (runCount >= 10) {
+    if (txMetaObserver.stopPickingUpNewTasks || runCount >= 10) {
       // Executed 10 times now exiting
       logger.log(runCount + ' iteration is executed, Killing self now. ');
       process.emit('SIGINT');

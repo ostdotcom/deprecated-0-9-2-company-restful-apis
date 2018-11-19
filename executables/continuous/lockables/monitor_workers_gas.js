@@ -487,7 +487,7 @@ const runTask = async function() {
     let nextIterationTime =
       monitorWorkerCron.underProcessClientWorkers.length === monitorWorkerCron.getNoOfRowsToProcess() ? 10 : 120000;
 
-    if (runCount >= 10) {
+    if (txMetaObserver.stopPickingUpNewTasks || runCount >= 10) {
       // Executed 10 times now exiting
       logger.log(runCount + ' iteration is executed, Killing self now. ');
       process.emit('SIGINT');

@@ -72,6 +72,7 @@ const TransactionDelegator = function(params) {
   oThis.interruptSignalObtained = false;
   oThis.highestBlock = 0;
   oThis.canExit = true;
+  oThis.stopPickingUpNewWork = false;
 
   SigIntHandler.call(oThis, { id: processLockId });
 };
@@ -135,6 +136,11 @@ const TransactionDelegatorPrototype = {
 
     const processNewBlocksAsync = async function() {
       try {
+        if (oThis.stopPickingUpNewWork) {
+          oThis.canExit = true;
+          return;
+        }
+
         oThis.initParams();
 
         await oThis.getGethsWithCurrentBlock();
