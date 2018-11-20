@@ -252,6 +252,14 @@ const MonitorGasOfWorkersKlassPrototype = {
     return oThis.clientIdToICPlatform[clientId];
   },
 
+  /**
+   * This method marks the property of the client workers as low STPrime balance.
+   *
+   * @param clientId
+   * @param workerId
+   * @returns {Promise<any>}
+   * @private
+   */
   _markSTPrimeBalanceLow: async function(clientId, workerId) {
     const oThis = this;
 
@@ -275,6 +283,14 @@ const MonitorGasOfWorkersKlassPrototype = {
     });
   },
 
+  /**
+   * This function grants STPrime from the reserveAddress to the client workers.
+   *
+   * @param clientId
+   * @param reserveAddress
+   * @returns {Promise<void>}
+   * @private
+   */
   _grantSTPrimeFromReserve: async function(clientId, reserveAddress) {
     const oThis = this;
 
@@ -325,12 +341,20 @@ const MonitorGasOfWorkersKlassPrototype = {
     // De-Associate client workers from processes
     if (deassociateWorkers.length) {
       logger.step('Disassociating Workers', deassociateWorkers);
-      await oThis._deassociateClientWorkers(clientId, deassociateWorkers);
+      await oThis._dissociateClientWorkers(clientId, deassociateWorkers);
     }
 
     return Promise.resolve();
   },
 
+  /**
+   * This function associates the client workers of the clientId to available processes.
+   *
+   * @param clientId
+   * @param associateWorkers
+   * @returns {Promise<{}>}
+   * @private
+   */
   _associateWorkerProcesses: async function(clientId, associateWorkers) {
     const oThis = this;
 
@@ -383,7 +407,15 @@ const MonitorGasOfWorkersKlassPrototype = {
     await associateWorkerObj.perform();
   },
 
-  _deassociateClientWorkers: async function(clientId, workersIds) {
+  /**
+   * This function disassociates the client workers of the clientId from their associated processes.
+   *
+   * @param clientId
+   * @param workersIds
+   * @returns {Promise<{}>}
+   * @private
+   */
+  _dissociateClientWorkers: async function(clientId, workersIds) {
     const oThis = this;
 
     let processIdsArray = [],
@@ -408,8 +440,7 @@ const MonitorGasOfWorkersKlassPrototype = {
     };
 
     let deAssociateObject = await new deAssociateWorker(deAssociateParams);
-
-    let deAssociateResponse = await deAssociateObject.perform();
+    await deAssociateObject.perform();
   },
 
   _releaseLock: function(clientIds) {
@@ -471,6 +502,11 @@ const MonitorGasOfWorkersKlassPrototype = {
     }
   },
 
+  /**
+   * This function checks if there are any pending tasks left or not.
+   *
+   * @returns {boolean}
+   */
   pendingTasksDone: function() {
     const oThis = this;
     return oThis.underProcessClientWorkers.length <= 0 && !oThis.lockAcquired;
