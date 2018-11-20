@@ -25,6 +25,8 @@ const args = process.argv,
   timeIntervalInHours = args[2],
   offsetToGetEndTimestamp = args[3];
 
+let statusArray, timeIntervalInSeconds, endTimeStamp, finalOffset, startTimeStamp;
+
 /**
  *
  * @constructor
@@ -35,6 +37,7 @@ const TransactionMetaArchival = function() {
   oThis.txMetaIds = [];
   oThis.batchSize = 500;
   oThis.archiveColumns = [];
+  oThis.firstTime = true;
 };
 
 TransactionMetaArchival.prototype = {
@@ -58,48 +61,66 @@ TransactionMetaArchival.prototype = {
   asyncPerform: async function() {
     const oThis = this;
 
-    await oThis._validate();
+    if (oThis.firstTime) {
+      await oThis._validate();
 
-    let statusArray = [],
+      statusArray = [];
       timeIntervalInSeconds = 0;
 
-    if (!timeIntervalInHours) {
-      //by default, this cron archives entries from two days ago.
-      timeIntervalInSeconds = 24 * 3600 * 1000;
-    } else {
-      timeIntervalInSeconds = timeIntervalInHours * 3600 * 1000;
-    }
+      if (!timeIntervalInHours) {
+        //by default, this cron archives entries from two days ago.
+        timeIntervalInSeconds = 24 * 3600 * 1000;
+      } else {
+        timeIntervalInSeconds = timeIntervalInHours * 3600 * 1000;
+      }
 
-    statusArray.push(transactionMetaConstants.invertedStatuses[transactionMetaConstants.failed]);
-    statusArray.push(transactionMetaConstants.invertedStatuses[transactionMetaConstants.mined]);
-    statusArray.push(transactionMetaConstants.invertedStatuses[transactionMetaConstants.insufficient_gas]);
+      // statusArray.push(transactionMetaConstants.invertedStatuses[transactionMetaConstants.submitted]);
+      statusArray.push(transactionMetaConstants.invertedStatuses[transactionMetaConstants.failed]);
+      statusArray.push(transactionMetaConstants.invertedStatuses[transactionMetaConstants.mined]);
+      statusArray.push(transactionMetaConstants.invertedStatuses[transactionMetaConstants.insufficient_gas]);
+      //startTimeStamp calculated as - currentTimeStamp - (archivalTimeInterval + offset)
 
-    //startTimeStamp calculated as - currentTimeStamp - (archivalTimeInterval + offset)
-    let endTimeStamp = new Date(Date.now() - oThis.offset).toLocaleString(),
-      finalOffset = oThis.offset + parseInt(timeIntervalInSeconds),
-      startTimeStamp = new Date(Date.now() - finalOffset).toLocaleString();
+      let endTime = Date.now() - oThis.offset;
 
-    logger.win('start timeStamp----', startTimeStamp);
-    logger.win('end timeStamp----', endTimeStamp);
+      endTimeStamp = new Date(endTime).toLocaleString();
+      finalOffset = oThis.offset + parseInt(timeIntervalInSeconds);
 
-    if (endTimeStamp < startTimeStamp) {
-      logger.log('Can not archive data for this Time Interval!');
-      return Promise.reject({});
+      let startTime = Date.now() - finalOffset;
+
+      startTimeStamp = new Date(startTime).toLocaleString();
+
+      logger.win('start timeStamp----', startTimeStamp);
+      logger.win('end timeStamp----', endTimeStamp);
+
+      if (endTime < startTime) {
+        logger.log('Can not archive data for this Time Interval!');
+        return Promise.reject({});
+      }
+
+      oThis.firstTime = false;
     }
 
     let whereClauseForIds = ['updated_at BETWEEN ? AND ? AND status IN (?)', startTimeStamp, endTimeStamp, statusArray];
+    // let whereClauseForIds = ['client_id = 1310 AND status IN (?)', statusArray];
 
     let queryResponseForIds = await new transactionMetaModel()
       .select('id')
       .where(whereClauseForIds)
+      .limit(1000)
       .fire();
+
+    if (queryResponseForIds.length == 0) {
+      return;
+    }
+
+    oThis.txMetaIds = [];
 
     for (let i = 0; i < queryResponseForIds.length; i++) {
       let rawResponse = queryResponseForIds[i];
       oThis.txMetaIds.push(rawResponse.id);
     }
 
-    logger.log('txMeta Ids-----', oThis.txMetaIds);
+    logger.debug('txMeta Ids-----', oThis.txMetaIds);
 
     let batchNo = 1;
 
@@ -120,7 +141,6 @@ TransactionMetaArchival.prototype = {
 
       batchNo = batchNo + 1;
     }
-
     return Promise.resolve({});
   },
 
@@ -148,14 +168,14 @@ TransactionMetaArchival.prototype = {
       .fire();
 
     if (queryResponseForMetaArchive) {
-      logger.win('TxMetaArchive Insert rsp---', queryResponseForMetaArchive);
+      logger.debug('TxMetaArchive Insert rsp---', queryResponseForMetaArchive);
 
       let queryResponseTxMetaDeletion = await new transactionMetaModel()
         .delete()
         .where(['id IN (?)', batchedTxMetaIds])
         .fire();
 
-      logger.win('TxMeta Delete rsp---', queryResponseTxMetaDeletion);
+      logger.debug('TxMeta Delete rsp---', queryResponseTxMetaDeletion);
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
@@ -197,13 +217,19 @@ TransactionMetaArchival.prototype = {
     }
 
     return Promise.resolve({});
+  },
+
+  init: async function() {
+    const oThis = this;
+    await oThis.asyncPerform();
+    return oThis.init();
   }
 };
 
 const transactionMetaArchivalObj = new TransactionMetaArchival({});
 
 transactionMetaArchivalObj
-  .perform()
+  .init()
   .then(function(r) {
     logger.win('Tx Meta Archival Done.');
     process.exit(0);
