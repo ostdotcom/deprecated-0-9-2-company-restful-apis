@@ -488,7 +488,7 @@ const runTask = async function() {
       monitorWorkerCron.underProcessClientWorkers.length === monitorWorkerCron.getNoOfRowsToProcess() ? 10 : 120000;
     monitorWorkerCron.underProcessClientWorkers = [];
 
-    if (monitorWorkerCron.stopPickingUpNewTasks || runCount >= 10) {
+    if (monitorWorkerCron.stopPickingUpNewWork || runCount >= 10) {
       // Executed 10 times now exiting
       logger.log(runCount + ' iteration is executed, Killing self now. ');
       process.emit('SIGINT');
