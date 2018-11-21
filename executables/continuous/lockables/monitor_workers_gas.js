@@ -36,11 +36,8 @@ const baseKlass = require(rootPrefix + '/executables/continuous/lockables/base')
   hasStPrimeBalanceProperty = new ClientWorkerManagedAddressIdModel().invertedProperties[
     clientWorkerManagedAddressConst.hasStPrimeBalanceProperty
   ],
-  activeWorkerStatus = new ClientWorkerManagedAddressIdModel().invertedStatuses[
-    clientWorkerManagedAddressConst.activeStatus
-  ],
   invertedReserveAddressType = new ManagedAddressModel().invertedAddressTypes[managedAddressesConst.reserveAddressType],
-  WORKER_MINIMUM_BALANCE_REQUIRED = 0.1;
+  WORKER_MINIMUM_BALANCE_REQUIRED = 0.5;
 
 require(rootPrefix + '/lib/providers/platform');
 require(rootPrefix + '/lib/cache_management/client_branded_token');
@@ -146,16 +143,21 @@ const MonitorGasOfWorkersKlassPrototype = {
   lockingConditions: function() {
     const oThis = this;
 
-    let whereClause = [];
+    let whereClause = [],
+      cwmaModel = new ClientWorkerManagedAddressIdModel(),
+      hasInitialGasProperty =
+        cwmaModel.invertedProperties[clientWorkerManagedAddressConst.initialGasTransferredProperty],
+      activeWorkerStatus = cwmaModel.invertedStatuses[clientWorkerManagedAddressConst.activeStatus];
 
     if (oThis.startClientId && oThis.endClientId) {
       whereClause = ['client_id >= ? AND client_id <= ? AND ', oThis.startClientId, oThis.endClientId];
     }
 
     whereClause[0] = whereClause[0] || '';
-    whereClause[0] += 'status = ? AND next_action_at <= ?';
+    whereClause[0] += 'status = ? AND next_action_at <= ? AND properties = properties | ?';
     whereClause.push(activeWorkerStatus);
     whereClause.push(oThis.currentTime);
+    whereClause.push(hasInitialGasProperty);
 
     return whereClause;
   },
