@@ -177,7 +177,7 @@ FundClientAddressKlass.prototype = {
 
           let newPropertiesValue = new ClientWorkerManagedAddressIdModel().setBit(
             clientWorkerManagedAddressConst.hasStPrimeBalanceProperty,
-            properties
+            dbObject.properties
           );
 
           newPropertiesValue = new ClientWorkerManagedAddressIdModel().setBit(
