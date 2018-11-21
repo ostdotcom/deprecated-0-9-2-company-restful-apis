@@ -18,6 +18,7 @@ const rootPrefix = '../..',
   transactionMetaModel = require(rootPrefix + '/app/models/transaction_meta'),
   transactionMetaArchiveModel = require(rootPrefix + '/app/models/transaction_meta_archive'),
   transactionMetaConstants = require(rootPrefix + '/lib/global_constant/transaction_meta'),
+  SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
@@ -38,9 +39,12 @@ const TransactionMetaArchival = function() {
   oThis.batchSize = 500;
   oThis.archiveColumns = [];
   oThis.firstTime = true;
+  oThis.canExit = true;
 };
 
-TransactionMetaArchival.prototype = {
+TransactionMetaArchival.prototype = Object.create(SigIntHandler.prototype);
+
+const TransactionMetaArchivalPrototype = {
   /**
    *
    * @returns {Promise<T>}
@@ -167,13 +171,16 @@ TransactionMetaArchival.prototype = {
       .insertMultiple(insertColumns, insertParams)
       .fire();
 
-    if (queryResponseForMetaArchive) {
+    if (!queryResponseForMetaArchive.isFailure()) {
+      oThis.canExit = false;
       logger.debug('TxMetaArchive Insert rsp---', queryResponseForMetaArchive);
 
       let queryResponseTxMetaDeletion = await new transactionMetaModel()
         .delete()
         .where(['id IN (?)', batchedTxMetaIds])
         .fire();
+
+      oThis.canExit = true;
 
       logger.debug('TxMeta Delete rsp---', queryResponseTxMetaDeletion);
     }
@@ -223,8 +230,19 @@ TransactionMetaArchival.prototype = {
     const oThis = this;
     await oThis.asyncPerform();
     return oThis.init();
+  },
+
+  /**
+   * Indicates whether picked up tasks are complete
+   */
+  pendingTasksDone: function() {
+    const oThis = this;
+
+    return oThis.canExit;
   }
 };
+
+Object.assign(TransactionMetaArchival.prototype, TransactionMetaArchivalPrototype);
 
 const transactionMetaArchivalObj = new TransactionMetaArchival({});
 
