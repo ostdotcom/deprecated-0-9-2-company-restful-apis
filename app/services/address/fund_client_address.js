@@ -176,9 +176,13 @@ FundClientAddressKlass.prototype = {
             .fire())[0];
 
           let newPropertiesValue = new ClientWorkerManagedAddressIdModel().setBit(
-            clientWorkerManagedAddressConst.hasStPrimeBalanceProperty &&
-              clientWorkerManagedAddressConst.initialGasTransferredProperty,
-            dbObject.properties
+            clientWorkerManagedAddressConst.hasStPrimeBalanceProperty,
+            properties
+          );
+
+          newPropertiesValue = new ClientWorkerManagedAddressIdModel().setBit(
+            clientWorkerManagedAddressConst.initialGasTransferredProperty,
+            newPropertiesValue
           );
 
           await new ClientWorkerManagedAddressIdModel()
