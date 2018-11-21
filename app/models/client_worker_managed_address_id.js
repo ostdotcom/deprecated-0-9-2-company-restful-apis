@@ -17,7 +17,8 @@ const dbName = 'saas_client_economy_' + coreConstants.SUB_ENVIRONMENT + '_' + co
   },
   invertedStatuses = util.invert(statuses),
   properties = {
-    1: clientWorkerManagedAddressConst.hasStPrimeBalanceProperty
+    1: clientWorkerManagedAddressConst.hasStPrimeBalanceProperty,
+    2: clientWorkerManagedAddressConst.initialGasTransferredProperty
   },
   invertedProperties = util.invert(properties);
 
