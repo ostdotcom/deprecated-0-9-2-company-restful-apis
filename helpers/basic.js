@@ -365,7 +365,7 @@ BasicHelperKlass.prototype = {
     if (oThis.isMainSubEnvironment()) {
       return oThis.convertToWei(0.5);
     } else {
-      return oThis.convertToWei(1);
+      return oThis.convertToWei(2);
     }
   },
 
