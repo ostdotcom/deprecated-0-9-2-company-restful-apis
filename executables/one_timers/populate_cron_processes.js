@@ -35,6 +35,7 @@ populateCronProcesses.prototype = {
     await oThis.entryForStartAirdrop();
     await oThis.entryForTransactionMetaObserver();
     await oThis.entryForMonitorWorkersGas();
+    await oThis.entryForTransactionMetaArchival();
 
     logger.win('Table populated successfully.');
     process.exit(0);
@@ -193,6 +194,25 @@ populateCronProcesses.prototype = {
       insertParams = {
         id: 9,
         kind: CronProcessesConstants.monitorWorkersGas,
+        ip_address: '127.0.0.1',
+        status: 'stopped',
+        group_id: null,
+        params: JSON.stringify(params)
+      };
+
+    const obj = new CronProcessesModel();
+    await obj.insertRecord(insertParams);
+  },
+
+  // Kind: 16
+  entryForTransactionMetaArchival: async function() {
+    const params = {
+        time_interval_in_hours: 48,
+        offset_to_get_endimestamp: 12
+      },
+      insertParams = {
+        id: 10,
+        kind: CronProcessesConstants.transactionMetaArchival,
         ip_address: '127.0.0.1',
         status: 'stopped',
         group_id: null,

@@ -10,7 +10,9 @@
  *
  * Example: node ./executables/one_timers/transaction_meta_archival.js 24 6
  *
- * NOTE:- Only Tx Meta entries with status 'failed' or 'mined' are archived.
+ * NOTE:- Only Tx Meta entries with status 'failed', 'insufficient_gas' or 'mined' are archived.
+ *
+ * sample params for cron process table - {"time_interval_in_hours": 960, "offset_to_get_endimestamp":12}
  * @module executables/one_timers/transaction_meta_archival
  */
 
@@ -20,13 +22,21 @@ const rootPrefix = '../..',
   transactionMetaConstants = require(rootPrefix + '/lib/global_constant/transaction_meta'),
   SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
+  CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
+  CronProcessHandlerObject = new CronProcessesHandler(),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger');
 
 const args = process.argv,
-  timeIntervalInHours = args[2],
-  offsetToGetEndTimestamp = args[3];
+  processLockId = args[2];
 
-let statusArray, timeIntervalInSeconds, endTimeStamp, finalOffset, startTimeStamp;
+let timeIntervalInHours,
+  offsetToGetEndTimestamp,
+  statusArray,
+  timeIntervalInSeconds,
+  endTimeStamp,
+  finalOffset,
+  startTimeStamp;
 
 /**
  *
@@ -40,6 +50,8 @@ const TransactionMetaArchival = function() {
   oThis.archiveColumns = [];
   oThis.firstTime = true;
   oThis.canExit = true;
+
+  SigIntHandler.call(oThis, { id: processLockId });
 };
 
 TransactionMetaArchival.prototype = Object.create(SigIntHandler.prototype);
@@ -114,7 +126,8 @@ const TransactionMetaArchivalPrototype = {
       .fire();
 
     if (queryResponseForIds.length == 0) {
-      return;
+      logger.log('Nothing to archived.');
+      process.emit('SIGINT');
     }
 
     oThis.txMetaIds = [];
@@ -141,7 +154,7 @@ const TransactionMetaArchivalPrototype = {
       let batchStartTime = Date.now();
       await oThis._performArchival(batchedTxIds);
 
-      logger.info(`batchTime: ${batchNo} ${Date.now() - batchStartTime} ms`);
+      logger.info(`batchTime for ${batchNo} : ${Date.now() - batchStartTime} ms`);
 
       batchNo = batchNo + 1;
     }
@@ -171,7 +184,7 @@ const TransactionMetaArchivalPrototype = {
       .insertMultiple(insertColumns, insertParams)
       .fire();
 
-    if (!queryResponseForMetaArchive.isFailure()) {
+    if (queryResponseForMetaArchive) {
       oThis.canExit = false;
       logger.debug('TxMetaArchive Insert rsp---', queryResponseForMetaArchive);
 
@@ -196,12 +209,12 @@ const TransactionMetaArchivalPrototype = {
   _validate: async function() {
     const oThis = this;
 
+    let timeConversionFactor = 3600 * 1000; //hours to millisecond conversion
     if (!offsetToGetEndTimestamp) {
-      let timeConversionFactor = 3600 * 1000; //hours to millisecond conversion
       // set to 24 hours, if not passed explicitly
       oThis.offset = 24 * timeConversionFactor;
     } else {
-      oThis.offset = offsetToGetEndTimestamp * 3600 * 1000;
+      oThis.offset = offsetToGetEndTimestamp * timeConversionFactor;
     }
 
     let queryResponseForMeta = await new transactionMetaModel().showColumns().fire(),
@@ -244,15 +257,26 @@ const TransactionMetaArchivalPrototype = {
 
 Object.assign(TransactionMetaArchival.prototype, TransactionMetaArchivalPrototype);
 
-const transactionMetaArchivalObj = new TransactionMetaArchival({});
+// Check whether the cron can be started or not.
+CronProcessHandlerObject.canStartProcess({
+  id: +processLockId, // Implicit string to int conversion.
+  cron_kind: CronProcessesConstants.transactionMetaArchival
+}).then(async function(dbResponse) {
+  let cronParams;
+  let transactionMetaArchivalObj = new TransactionMetaArchival({});
 
-transactionMetaArchivalObj
-  .init()
-  .then(function(r) {
-    logger.win('Tx Meta Archival Done.');
-    process.exit(0);
-  })
-  .catch(function(r) {
-    logger.error('Error in archival: ', r);
+  try {
+    cronParams = JSON.parse(dbResponse.data.params);
+
+    timeIntervalInHours = cronParams.time_interval_in_hours;
+    offsetToGetEndTimestamp = cronParams.offset_to_get_endimestamp;
+
+    transactionMetaArchivalObj.init();
+  } catch (err) {
+    logger.error('cronParams stored in INVALID format in the DB.');
+    logger.error(
+      'The status of the cron was NOT changed to stopped. Please check the status before restarting the cron'
+    );
     process.exit(1);
-  });
+  }
+});
