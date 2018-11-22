@@ -26,6 +26,7 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   ProcessLocker = new ProcessLockerKlass();
 
 require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
@@ -234,7 +235,9 @@ TransactionDelegator.prototype = {
         }
       };
 
-      let openSTNotification = await SharedRabbitMqProvider.getInstance(),
+      let openSTNotification = await SharedRabbitMqProvider.getInstance({
+          connectionWaitSeconds: ConnectionTimeoutConst.crons
+        }),
         setToRMQ = await openSTNotification.publishEvent.perform(messageParams);
 
       //if could not set to RMQ run in async.

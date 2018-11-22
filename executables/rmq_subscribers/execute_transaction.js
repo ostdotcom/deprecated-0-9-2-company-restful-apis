@@ -55,6 +55,7 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
   initProcessKlass = require(rootPrefix + '/lib/execute_transaction_management/init_process'),
   processQueueAssociationConst = require(rootPrefix + '/lib/global_constant/process_queue_association'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   CommandQueueProcessorKlass = require(rootPrefix + '/lib/execute_transaction_management/command_message_processor'),
   initProcess = new initProcessKlass({ process_id: processId });
 
@@ -311,7 +312,9 @@ let init = async function() {
   let ic = new InstanceComposer(configStrategy),
     notificationProvider = ic.getNotificationProvider();
 
-  openStNotification = await notificationProvider.getInstance();
+  openStNotification = await notificationProvider.getInstance({
+    connectionWaitSeconds: ConnectionTimeoutConst.crons
+  });
 
   if (processStatus === processQueueAssociationConst.processKilled) {
     logger.warn('The process is in killed status in the table. Recommended to check. Continuing to start the queue.');

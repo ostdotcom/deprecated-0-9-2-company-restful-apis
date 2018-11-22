@@ -55,6 +55,7 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   ProcessLocker = new ProcessLockerKlass(program);
 
 let ic = null,
@@ -163,7 +164,9 @@ warmUpGethPool()
 
     let chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
 
-    const openStNotification = await SharedRabbitMqProvider.getInstance();
+    const openStNotification = await SharedRabbitMqProvider.getInstance({
+      connectionWaitSeconds: ConnectionTimeoutConst.crons
+    });
 
     openStNotification.subscribeEvent.rabbit(
       ['block_scanner_execute_' + chain_id],

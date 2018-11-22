@@ -25,7 +25,8 @@ const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   notificationTopics = require(rootPrefix + '/lib/global_constant/notification_topics'),
-  IntercomStatusKlass = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js');
+  IntercomStatusKlass = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout');
 
 const usageDemo = function() {
   logger.log('usage:', 'node ./executables/rmq_subscribers/factory.js processLockId queueSuffix topicsToSubscribe');
@@ -185,7 +186,9 @@ const PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseExecutor,
 });
 
 const subscribeEvent = async function() {
-  const openStNotification = await SharedRabbitMqProvider.getInstance();
+  const openStNotification = await SharedRabbitMqProvider.getInstance({
+    connectionWaitSeconds: ConnectionTimeoutConst.crons
+  });
 
   openStNotification.subscribeEvent.rabbit(
     topicsToSubscribeArray,

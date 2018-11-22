@@ -19,6 +19,7 @@ ProcessLocker.endAfterTime({ time_in_minutes: 60 });
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   applicationMailerKlass = require(rootPrefix + '/lib/application_mailer'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   applicationMailer = new applicationMailerKlass();
 
 // Global variable defined for email aggregation
@@ -28,7 +29,9 @@ global.emailsAggregator = {};
 let waitingForEmail = false;
 
 const subscribeForErrorEmail = async function() {
-  const openStNotification = await SharedRabbitMqProvider.getInstance();
+  const openStNotification = await SharedRabbitMqProvider.getInstance({
+    connectionWaitSeconds: ConnectionTimeoutConst.crons
+  });
 
   openStNotification.subscribeEvent
     .rabbit(['email_error.#'], { queue: 'send_error_email_from_restful_apis' }, function(msgContent) {

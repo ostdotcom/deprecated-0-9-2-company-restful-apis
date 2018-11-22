@@ -24,6 +24,7 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   notifier = require(rootPrefix + '/helpers/notifier'),
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id');
 
 require(rootPrefix + '/lib/airdrop_management/distribute_tokens/start');
@@ -32,7 +33,9 @@ require(rootPrefix + '/lib/airdrop_management/distribute_tokens/start');
 let unAckCount = 0;
 
 const subscribeAirdrop = async function() {
-  const openStNotification = await SharedRabbitMqProvider.getInstance();
+  const openStNotification = await SharedRabbitMqProvider.getInstance({
+    connectionWaitSeconds: ConnectionTimeoutConst.crons
+  });
 
   openStNotification.subscribeEvent
     .rabbit(

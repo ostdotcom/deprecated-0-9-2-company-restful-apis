@@ -8,6 +8,7 @@ const rootPrefix = '..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
   packageName = coreConstants.PACKAGE_NAME,
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification');
 
 const NotifierKlass = function() {};
@@ -18,7 +19,9 @@ NotifierKlass.prototype = {
    */
   notify: async function(code, msg, errData, debugData) {
     const oThis = this;
-    const openSTNotification = await SharedRabbitMqProvider.getInstance();
+    const openSTNotification = await SharedRabbitMqProvider.getInstance({
+      connectionWaitSeconds: ConnectionTimeoutConst.appServer
+    });
     // convert the custom error object to formatted object.
     if (responseHelper.isCustomResult(errData)) {
       let formattedError = errData.toHash();
