@@ -24,6 +24,7 @@ const InstanceComposer = require(rootPrefix + '/instance_composer'),
   CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
   CronProcessHandlerObject = new CronProcessesHandler();
 
@@ -57,7 +58,9 @@ CronProcessHandlerObject.canStartProcess({
 require(rootPrefix + '/lib/airdrop_management/distribute_tokens/start');
 
 const subscribeAirdrop = async function() {
-  const openStNotification = await SharedRabbitMqProvider.getInstance();
+  const openStNotification = await SharedRabbitMqProvider.getInstance({
+    connectionWaitSeconds: ConnectionTimeoutConst.crons
+  });
 
   openStNotification.subscribeEvent
     .rabbit(

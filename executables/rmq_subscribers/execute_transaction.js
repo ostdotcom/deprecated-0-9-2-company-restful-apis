@@ -63,6 +63,7 @@ const InstanceComposer = require(rootPrefix + '/instance_composer'),
   initProcessKlass = require(rootPrefix + '/lib/execute_transaction_management/init_process'),
   transactionMetaConstants = require(rootPrefix + '/lib/global_constant/transaction_meta.js'),
   processQueueAssociationConst = require(rootPrefix + '/lib/global_constant/process_queue_association'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   CommandQueueProcessorKlass = require(rootPrefix + '/lib/execute_transaction_management/command_message_processor'),
   recognizedInternalErrorIdentifiers = require(rootPrefix +
     '/lib/global_constant/recognized_internal_error_identifiers'),
@@ -339,7 +340,9 @@ let init = async function() {
   let ic = new InstanceComposer(configStrategy),
     notificationProvider = ic.getNotificationProvider();
 
-  openStNotification = await notificationProvider.getInstance();
+  openStNotification = await notificationProvider.getInstance({
+    connectionWaitSeconds: ConnectionTimeoutConst.crons
+  });
 
   if (processStatus === processQueueAssociationConst.processKilled) {
     logger.warn('The process is in killed status in the table. Recommended to check. Continuing to start the queue.');

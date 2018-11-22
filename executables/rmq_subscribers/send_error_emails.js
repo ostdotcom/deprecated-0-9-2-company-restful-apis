@@ -14,6 +14,7 @@ const rootPrefix = '../..',
   applicationMailerKlass = require(rootPrefix + '/lib/application_mailer'),
   CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
   applicationMailer = new applicationMailerKlass(),
   CronProcessHandlerObject = new CronProcessesHandler();
@@ -52,7 +53,9 @@ global.emailsAggregator = {};
 let waitingForEmail = false;
 
 const subscribeForErrorEmail = async function() {
-  const openStNotification = await SharedRabbitMqProvider.getInstance();
+  const openStNotification = await SharedRabbitMqProvider.getInstance({
+    connectionWaitSeconds: ConnectionTimeoutConst.crons
+  });
 
   openStNotification.subscribeEvent
     .rabbit(['email_error.#'], { queue: 'send_error_email_from_restful_apis' }, function(msgContent) {

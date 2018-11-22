@@ -21,6 +21,7 @@ const rootPrefix = '../..',
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   CronProcessHandlerObject = new CronProcessesHandler();
 
 const usageDemo = function() {
@@ -138,7 +139,9 @@ const BlockScannerPrototype = {
 
     let chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
 
-    const openStNotification = await SharedRabbitMqProvider.getInstance();
+    const openStNotification = await SharedRabbitMqProvider.getInstance({
+      connectionWaitSeconds: ConnectionTimeoutConst.crons
+    });
     openStNotification.subscribeEvent
       .rabbit(
         ['block_scanner_execute_' + chain_id],

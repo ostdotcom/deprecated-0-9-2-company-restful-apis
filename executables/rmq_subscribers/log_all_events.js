@@ -25,6 +25,7 @@ ProcessLocker.endAfterTime({ time_in_minutes: 60 });
 // All Module Requires.
 const EventLogModel = require(rootPrefix + '/app/models/event_logs'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification');
 
 // Global variable defined for events aggregation
@@ -35,7 +36,9 @@ let tasksPending = 0,
   waitingForEvents = false;
 
 const subscribeForLogEvent = async function() {
-  const openStNotification = await SharedRabbitMqProvider.getInstance();
+  const openStNotification = await SharedRabbitMqProvider.getInstance({
+    connectionWaitSeconds: ConnectionTimeoutConst.crons
+  });
 
   openStNotification.subscribeEvent
     .rabbit(['#'], { queue: 'log_all_events_from_restful_apis' }, function(eventContent) {
