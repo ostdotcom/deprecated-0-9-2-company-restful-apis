@@ -523,7 +523,7 @@ const runTask = async function() {
   function onExecutionComplete() {
     // If too much load that iteration has processed full prefetch transactions, then don't wait for much time.
     let nextIterationTime =
-      monitorWorkerCron.underProcessClientWorkers.length === monitorWorkerCron.getNoOfRowsToProcess() ? 10 : 120000;
+      monitorWorkerCron.underProcessClientWorkers.length === monitorWorkerCron.getNoOfRowsToProcess() ? 10 : 120;
     monitorWorkerCron.underProcessClientWorkers = [];
 
     if (monitorWorkerCron.stopPickingUpNewWork || runCount >= 10) {
