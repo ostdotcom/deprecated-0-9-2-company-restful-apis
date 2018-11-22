@@ -194,21 +194,26 @@ const subscribeTxQueue = async function(qNameSuffix, chainId) {
     if (intentToConsumerTagMap.exTxQueue) {
       process.emit('RESUME_CONSUME', intentToConsumerTagMap.exTxQueue);
     } else {
-      await openStNotification.subscribeEvent.rabbit(
-        [rmqQueueConstants.executeTxTopicPrefix + chainId + '.' + qNameSuffix],
-        {
-          queue: rmqQueueConstants.executeTxQueuePrefix + '_' + chainId + '_' + qNameSuffix,
-          ackRequired: 1,
-          prefetch: txQueuePrefetchCount
-        },
-        function(params) {
-          // Promise is required to be returned to manually ack messages in RMQ
-          return PromiseQueueManager.createPromise(params);
-        },
-        function(consumerTag) {
-          intentToConsumerTagMap.exTxQueue = consumerTag;
-        }
-      );
+      await openStNotification.subscribeEvent
+        .rabbit(
+          [rmqQueueConstants.executeTxTopicPrefix + chainId + '.' + qNameSuffix],
+          {
+            queue: rmqQueueConstants.executeTxQueuePrefix + '_' + chainId + '_' + qNameSuffix,
+            ackRequired: 1,
+            prefetch: txQueuePrefetchCount
+          },
+          function(params) {
+            // Promise is required to be returned to manually ack messages in RMQ
+            return PromiseQueueManager.createPromise(params);
+          },
+          function(consumerTag) {
+            intentToConsumerTagMap.exTxQueue = consumerTag;
+          }
+        )
+        .catch(function(err) {
+          logger.error('Error in subscription. ', err);
+          ostRmqError(err);
+        });
     }
     txQueueSubscribed = true;
   }
@@ -241,22 +246,27 @@ const commandQueueExecutor = function(params) {
  */
 const subscribeCommandQueue = async function(qNameSuffix, chainId) {
   if (!commandQueueSubscribed) {
-    await openStNotification.subscribeEvent.rabbit(
-      [rmqQueueConstants.commandMessageTopicPrefix + chainId + '.' + qNameSuffix],
-      {
-        queue: rmqQueueConstants.commandMessageQueuePrefix + '_' + chainId + '_' + qNameSuffix,
-        ackRequired: 1,
-        prefetch: cmdQueuePrefetchCount
-      },
-      function(params) {
-        unAckCommandMessages++;
-        // Promise is required to be returned to manually ack messages in RMQ
-        return commandQueueExecutor(params);
-      },
-      function(consumerTag) {
-        intentToConsumerTagMap.cmdQueue = consumerTag;
-      }
-    );
+    await openStNotification.subscribeEvent
+      .rabbit(
+        [rmqQueueConstants.commandMessageTopicPrefix + chainId + '.' + qNameSuffix],
+        {
+          queue: rmqQueueConstants.commandMessageQueuePrefix + '_' + chainId + '_' + qNameSuffix,
+          ackRequired: 1,
+          prefetch: cmdQueuePrefetchCount
+        },
+        function(params) {
+          unAckCommandMessages++;
+          // Promise is required to be returned to manually ack messages in RMQ
+          return commandQueueExecutor(params);
+        },
+        function(consumerTag) {
+          intentToConsumerTagMap.cmdQueue = consumerTag;
+        }
+      )
+      .catch(function(err) {
+        logger.error('Error in subscription. ', err);
+        ostRmqError(err);
+      });
     commandQueueSubscribed = true;
   }
 };

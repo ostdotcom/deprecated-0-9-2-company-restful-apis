@@ -179,7 +179,8 @@ warmUpGethPool()
     );
   })
   .catch(function(error) {
-    logger.error(error);
+    logger.error('Error in subscription', error);
+    ostRmqError();
   });
 
 // Using a single function to handle multiple signals
@@ -205,6 +206,11 @@ function handle() {
   };
 
   setTimeout(f, 1000);
+}
+
+function ostRmqError(err) {
+  logger.info('ostRmqError occured.', err);
+  process.emit('SIGINT');
 }
 
 // handling gracefully process exit on getting SIGINT, SIGTERM.
