@@ -170,24 +170,14 @@ FundClientAddressKlass.prototype = {
         );
 
         if (transferBalanceResponse.isSuccess()) {
-          const dbObject = (await new ClientWorkerManagedAddressIdModel()
-            .select('id, properties')
-            .where({ client_id: oThis.clientId, managed_address_id: workerAddrObj.id })
-            .fire())[0];
-
-          let newPropertiesValue = new ClientWorkerManagedAddressIdModel().setBit(
-            clientWorkerManagedAddressConst.hasStPrimeBalanceProperty,
-            dbObject.properties
-          );
-
-          newPropertiesValue = new ClientWorkerManagedAddressIdModel().setBit(
-            clientWorkerManagedAddressConst.initialGasTransferredProperty,
-            newPropertiesValue
-          );
+          let cwmap = new ClientWorkerManagedAddressIdModel().invertedProperties,
+            newPropertiesValue =
+              parseInt(cwmap[clientWorkerManagedAddressConst.hasStPrimeBalanceProperty]) +
+              parseInt(cwmap[clientWorkerManagedAddressConst.initialGasTransferredProperty]);
 
           await new ClientWorkerManagedAddressIdModel()
-            .update({ properties: newPropertiesValue })
-            .where({ id: dbObject.id })
+            .update(['properties = properties | ?', newPropertiesValue])
+            .where({ client_id: oThis.clientId, managed_address_id: workerAddrObj.id })
             .fire();
 
           new ClientActiveWorkerUuidCacheKlass({ client_id: oThis.clientId }).clear();
