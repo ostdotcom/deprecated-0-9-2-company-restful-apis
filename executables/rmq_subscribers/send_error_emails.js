@@ -30,32 +30,35 @@ let waitingForEmail = false;
 const subscribeForErrorEmail = async function() {
   const openStNotification = await SharedRabbitMqProvider.getInstance();
 
-  openStNotification.subscribeEvent.rabbit(['email_error.#'], { queue: 'send_error_email_from_restful_apis' }, function(
-    msgContent
-  ) {
-    msgContent = JSON.parse(msgContent);
-    logger.debug('Consumed error message -> ', msgContent);
+  openStNotification.subscribeEvent
+    .rabbit(['email_error.#'], { queue: 'send_error_email_from_restful_apis' }, function(msgContent) {
+      msgContent = JSON.parse(msgContent);
+      logger.debug('Consumed error message -> ', msgContent);
 
-    const emailPayload = msgContent.message.payload;
-    let emailSubject = emailPayload.subject;
+      const emailPayload = msgContent.message.payload;
+      let emailSubject = emailPayload.subject;
 
-    // aggregate same errors for a while
-    if (global.emailsAggregator[emailSubject]) {
-      global.emailsAggregator[emailSubject].count++;
-    } else {
-      global.emailsAggregator[emailSubject] = emailPayload;
-      global.emailsAggregator[emailSubject].count = 1;
-    }
+      // aggregate same errors for a while
+      if (global.emailsAggregator[emailSubject]) {
+        global.emailsAggregator[emailSubject].count++;
+      } else {
+        global.emailsAggregator[emailSubject] = emailPayload;
+        global.emailsAggregator[emailSubject].count = 1;
+      }
 
-    // Wait for 3 sec to aggregate emails with subject line
-    if (!waitingForEmail) {
-      waitingForEmail = true;
-      setTimeout(function() {
-        sendAggregatedEmail();
-        waitingForEmail = false;
-      }, 30000);
-    }
-  });
+      // Wait for 3 sec to aggregate emails with subject line
+      if (!waitingForEmail) {
+        waitingForEmail = true;
+        setTimeout(function() {
+          sendAggregatedEmail();
+          waitingForEmail = false;
+        }, 30000);
+      }
+    })
+    .catch(function(err) {
+      logger.error('Error in subscription. ', err);
+      ostRmqError(err);
+    });
 };
 
 /**

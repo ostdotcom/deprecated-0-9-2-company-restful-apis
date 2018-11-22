@@ -34,57 +34,62 @@ let unAckCount = 0;
 const subscribeAirdrop = async function() {
   const openStNotification = await SharedRabbitMqProvider.getInstance();
 
-  openStNotification.subscribeEvent.rabbit(
-    ['airdrop.start.#'],
-    {
-      queue: 'start_airdrop_from_restful_apis',
-      ackRequired: 1,
-      prefetch: 5
-    },
-    function(params) {
-      // Promise is required to be returned to manually ack messages in RMQ
-      return new Promise(async function(onResolve, onReject) {
-        unAckCount++;
-        // Process request
-        const parsedParams = JSON.parse(params);
-        logger.step('Consumed airdrop start params -> ', parsedParams);
+  openStNotification.subscribeEvent
+    .rabbit(
+      ['airdrop.start.#'],
+      {
+        queue: 'start_airdrop_from_restful_apis',
+        ackRequired: 1,
+        prefetch: 5
+      },
+      function(params) {
+        // Promise is required to be returned to manually ack messages in RMQ
+        return new Promise(async function(onResolve, onReject) {
+          unAckCount++;
+          // Process request
+          const parsedParams = JSON.parse(params);
+          logger.step('Consumed airdrop start params -> ', parsedParams);
 
-        const payload = parsedParams.message.payload,
-          clientAirdropId = payload.client_airdrop_id,
-          criticalInteractionLogId = payload.critical_chain_interaction_log_id,
-          userIds = payload.user_ids;
+          const payload = parsedParams.message.payload,
+            clientAirdropId = payload.client_airdrop_id,
+            criticalInteractionLogId = payload.critical_chain_interaction_log_id,
+            userIds = payload.user_ids;
 
-        let configStrategyHelper = new ConfigStrategyHelperKlass(payload.client_id);
-        configStrategyHelper.get().then(function(configStrategyRsp) {
-          let ic = new InstanceComposer(configStrategyRsp.data),
-            startAirdropKlass = ic.getDistributeTokensStartClass(),
-            startAirdrop = new startAirdropKlass({
-              client_airdrop_id: clientAirdropId,
-              critical_chain_interaction_log_id: criticalInteractionLogId,
-              user_ids: userIds
-            });
+          let configStrategyHelper = new ConfigStrategyHelperKlass(payload.client_id);
+          configStrategyHelper.get().then(function(configStrategyRsp) {
+            let ic = new InstanceComposer(configStrategyRsp.data),
+              startAirdropKlass = ic.getDistributeTokensStartClass(),
+              startAirdrop = new startAirdropKlass({
+                client_airdrop_id: clientAirdropId,
+                critical_chain_interaction_log_id: criticalInteractionLogId,
+                user_ids: userIds
+              });
 
-          startAirdrop
-            .perform()
-            .then(function(response) {
-              if (!response.isSuccess()) {
-                notifier.notify('e_rmqs_sa_1', 'Something went wrong in airdrop distribution', response, params);
-              }
-              unAckCount--;
-              // ack RMQ
-              return onResolve();
-            })
-            .catch(function(err) {
-              notifier.notify('e_rmqs_sa_2', 'Something went wrong in airdrop distribution', err, params);
+            startAirdrop
+              .perform()
+              .then(function(response) {
+                if (!response.isSuccess()) {
+                  notifier.notify('e_rmqs_sa_1', 'Something went wrong in airdrop distribution', response, params);
+                }
+                unAckCount--;
+                // ack RMQ
+                return onResolve();
+              })
+              .catch(function(err) {
+                notifier.notify('e_rmqs_sa_2', 'Something went wrong in airdrop distribution', err, params);
 
-              unAckCount--;
-              // ack RMQ
-              return onResolve();
-            });
+                unAckCount--;
+                // ack RMQ
+                return onResolve();
+              });
+          });
         });
-      });
-    }
-  );
+      }
+    )
+    .catch(function(err) {
+      logger.error('Error in subscription. ', err);
+      ostRmqError(err);
+    });
 };
 
 // Using a single function to handle multiple signals.

@@ -38,23 +38,56 @@ program.on('--help', () => {
 
 program.parse(process.argv);
 
-const InstanceComposer = require(rootPrefix + '/instance_composer'),
+// Validate and sanitize the commander parameters.
+const validateAndSanitize = function() {
+  if (!program.processlockId || !program.groupId || !program.prefetchCount) {
+    program.help();
+    process.exit(1);
+  }
+};
+
+// Validate and sanitize the input params.
+validateAndSanitize();
+
+const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
-  ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
-  web3InteractFactory = require(rootPrefix + '/lib/web3/interact/ws_interact'),
-  SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
+  ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
+  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   ProcessLocker = new ProcessLockerKlass(program);
 
-let ic = null;
+let ic = null,
+  web3InteractFactory = null;
 
 require(rootPrefix + '/lib/block_scanner/for_tx_status_and_balance_sync');
 require(rootPrefix + '/lib/web3/interact/ws_interact');
 
 // Load external packages
 const OSTBase = require('@openstfoundation/openst-base');
+
+const warmUpGethPool = function() {
+  return new Promise(async function(onResolve, onReject) {
+    let utilityGethType = 'read_only',
+      strategyByGroupHelperObj = new StrategyByGroupHelper(program.groupId),
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(utilityGethType),
+      configStrategy = configStrategyResp.data;
+
+    ic = new InstanceComposer(configStrategy);
+    web3InteractFactory = ic.getWeb3InteractHelper();
+
+    let web3PoolSize = coreConstants.OST_WEB3_POOL_SIZE;
+
+    for (let ind = 0; ind < configStrategy.OST_UTILITY_GETH_WS_PROVIDERS.length; ind++) {
+      let provider = configStrategy.OST_UTILITY_GETH_WS_PROVIDERS[ind];
+      for (let i = 0; i < web3PoolSize; i++) {
+        web3InteractFactory.getInstance('utility', provider);
+      }
+    }
+
+    return onResolve();
+  });
+};
 
 // Check if another process with the same title is running.
 ProcessLocker.canStartProcess({
@@ -64,84 +97,74 @@ ProcessLocker.canStartProcess({
 let unAckCount = 0,
   prefetchCountInt = parseInt(program.prefetchCount);
 
-const BlockScanner = function() {
+const promiseExecutor = async function(onResolve, onReject, params) {
   const oThis = this;
 
-  oThis.PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(oThis._promiseExecutor, {
-    name: 'blockscanner_promise_queue_manager',
-    timeoutInMilliSecs: 3 * 60 * 1000, //3 minutes
-    maxZombieCount: Math.round(prefetchCountInt * 0.25),
-    onMaxZombieCountReached: function() {
-      logger.warn('e_rmqs_bs_2', 'maxZombieCount reached. Triggering SIGTERM.');
-      // Trigger gracefully shutdown of process.
-      process.kill(process.pid, 'SIGTERM');
-    }
-  });
+  unAckCount++;
 
-  SigIntHandler.call(oThis, {});
+  // Process request
+  // TODO: put try catch around JSON parse
+  const parsedParams = JSON.parse(params);
+
+  const payload = parsedParams.message.payload;
+
+  let BlockScannerKlass = ic.getBlockScannerKlass(),
+    blockScannerObj = new BlockScannerKlass({
+      block_number: payload.blockNumber,
+      geth_array: payload.gethArray,
+      transaction_hashes: payload.transactionHashes,
+      time_stamp: payload.timestamp,
+      benchmark_file_path: program.benchmarkFilePath,
+      web3_factory_obj: web3InteractFactory,
+      delegator_timestamp: payload.delegatorTimestamp
+    });
+
+  try {
+    blockScannerObj
+      .perform()
+      .then(function() {
+        unAckCount--;
+        logger.debug('------ unAckCount -> ', unAckCount);
+        // ack RMQ
+        return onResolve();
+      })
+      .catch(function(err) {
+        logger.error(
+          'e_rmqs_bs_1',
+          'Something went wrong in blockscanner execution. unAckCount ->',
+          unAckCount,
+          err,
+          params
+        );
+        unAckCount--;
+        // ack RMQ
+        return onResolve();
+      });
+  } catch (err) {
+    unAckCount--;
+    logger.error('Listener could not process blockscanner.. Catch. unAckCount -> ', unAckCount);
+  }
 };
 
-BlockScanner.prototype = Object.create(SigIntHandler.prototype);
+let PromiseQueueManager = null;
 
-const BlockScannerPrototype = {
-  perform: async function() {
-    const oThis = this;
-
-    oThis.validateAndSanitize();
-
-    await oThis.warmUpGethPool();
-
-    oThis.startSubscription();
-  },
-
-  /**
-   * validateAndSanitize
-   */
-  validateAndSanitize: function() {
-    const oThis = this;
-    if (!program.processlockId || !program.groupId || !program.prefetchCount) {
-      program.help();
-      process.exit(1);
-    }
-  },
-
-  /**
-   * warmUpGethPool
-   *
-   */
-  warmUpGethPool: function() {
-    const oThis = this;
-
-    return new Promise(async function(onResolve, onReject) {
-      let utilityGethType = 'read_only',
-        strategyByGroupHelperObj = new StrategyByGroupHelper(program.groupId),
-        configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(utilityGethType),
-        configStrategy = configStrategyResp.data;
-
-      ic = new InstanceComposer(configStrategy);
-
-      let web3PoolSize = coreConstants.OST_WEB3_POOL_SIZE;
-
-      for (let ind = 0; ind < configStrategy.OST_UTILITY_GETH_WS_PROVIDERS.length; ind++) {
-        let provider = configStrategy.OST_UTILITY_GETH_WS_PROVIDERS[ind];
-        for (let i = 0; i < web3PoolSize; i++) {
-          web3InteractFactory.getInstance('utility', provider);
-        }
+warmUpGethPool()
+  .then(async function() {
+    PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseExecutor, {
+      name: 'blockscanner_promise_queue_manager',
+      timeoutInMilliSecs: 3 * 60 * 1000, //3 minutes
+      maxZombieCount: Math.round(prefetchCountInt * 0.25),
+      onMaxZombieCountReached: function() {
+        logger.warn('e_rmqs_bs_2', 'maxZombieCount reached. Triggering SIGTERM.');
+        // Trigger gracefully shutdown of process.
+        process.kill(process.pid, 'SIGTERM');
       }
-
-      return onResolve();
     });
-  },
-
-  /**
-   * startSubscription
-   */
-  startSubscription: async function() {
-    const oThis = this;
 
     let chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
 
     const openStNotification = await SharedRabbitMqProvider.getInstance();
+
     openStNotification.subscribeEvent.rabbit(
       ['block_scanner_execute_' + chain_id],
       {
@@ -151,87 +174,46 @@ const BlockScannerPrototype = {
       },
       function(params) {
         // Promise is required to be returned to manually ack messages in RMQ
-        return oThis.PromiseQueueManager.createPromise(params);
+        return PromiseQueueManager.createPromise(params);
       }
     );
-  },
+  })
+  .catch(function(error) {
+    logger.error('Error in subscription', error);
+    ostRmqError();
+  });
 
-  /**
-   * _promiseExecutor
-   *
-   * @private
-   */
+// Using a single function to handle multiple signals
+function handle() {
+  logger.info('Received Signal');
 
-  _promiseExecutor: function(onResolve, onReject, params) {
-    const oThis = this;
+  if (!PromiseQueueManager.getPendingCount() && !unAckCount) {
+    console.log('SIGINT/SIGTERM handle :: No pending Promises.');
+    process.exit(1);
+  }
 
-    unAckCount++;
-
-    // Process request
-    // TODO: put try catch around JSON parse
-    const parsedParams = JSON.parse(params);
-
-    const payload = parsedParams.message.payload;
-
-    let BlockScannerKlass = ic.getBlockScannerKlass(),
-      blockScannerObj = new BlockScannerKlass({
-        block_number: payload.blockNumber,
-        geth_array: payload.gethArray,
-        transaction_hashes: payload.transactionHashes,
-        time_stamp: payload.timestamp,
-        benchmark_file_path: program.benchmarkFilePath,
-        web3_factory_obj: web3InteractFactory,
-        delegator_timestamp: payload.delegatorTimestamp,
-        process_id: program.processlockId
-      });
-
-    try {
-      blockScannerObj
-        .perform()
-        .then(function() {
-          unAckCount--;
-          logger.debug('------ unAckCount -> ', unAckCount);
-          // ack RMQ
-          return onResolve();
-        })
-        .catch(function(err) {
-          logger.error(
-            'e_rmqs_bs_1',
-            'Something went wrong in blockscanner execution. unAckCount ->',
-            unAckCount,
-            err,
-            params
-          );
-          unAckCount--;
-          // ack RMQ
-          return onResolve();
-        });
-    } catch (err) {
-      unAckCount--;
-      logger.error('Listener could not process blockscanner.. Catch. unAckCount -> ', unAckCount);
-    }
-  },
-
-  /**
-   * pendingTasksDone
-   */
-  pendingTasksDone: function() {
-    const oThis = this;
-
-    if (unAckCount != oThis.PromiseQueueManager.getPendingCount()) {
+  let f = function() {
+    if (unAckCount != PromiseQueueManager.getPendingCount()) {
       logger.error('ERROR :: unAckCount and pending counts are not in sync.');
     }
-    if (!oThis.PromiseQueueManager.getPendingCount() && !unAckCount) {
-      return true;
+    if (PromiseQueueManager.getPendingCount() <= 0 || unAckCount <= 0) {
+      console.log('SIGINT/SIGTERM handle :: No pending Promises.');
+      process.exit(1);
+    } else {
+      logger.info('waiting for open tasks to be done.');
+      setTimeout(f, 1000);
     }
+  };
 
-    return false;
-  }
-};
+  setTimeout(f, 1000);
+}
 
-Object.assign(BlockScanner.prototype, BlockScannerPrototype);
+function ostRmqError(err) {
+  logger.info('ostRmqError occured.', err);
+  process.emit('SIGINT');
+}
 
-let blockScanner = new BlockScanner();
-blockScanner.perform().catch(function(err) {
-  logger.error(err);
-});
+// handling gracefully process exit on getting SIGINT, SIGTERM.
+// Once signal found programme will stop consuming new messages. But need to clear running messages.
+process.on('SIGINT', handle);
+process.on('SIGTERM', handle);
