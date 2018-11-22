@@ -447,7 +447,7 @@ const MonitorGasOfWorkersKlassPrototype = {
 
   _releaseLock: function(clientIds) {
     const oThis = this;
-    let next_action_time = Math.floor(Date.now() / 1000) + 1200,
+    let next_action_time = Math.floor(Date.now() / 1000) + 120,
       updateOptions = ['next_action_at = ?', next_action_time];
     return new ClientWorkerManagedAddressIdModel().releaseLock(
       oThis.getLockId(),
@@ -523,7 +523,7 @@ const runTask = async function() {
   function onExecutionComplete() {
     // If too much load that iteration has processed full prefetch transactions, then don't wait for much time.
     let nextIterationTime =
-      monitorWorkerCron.underProcessClientWorkers.length === monitorWorkerCron.getNoOfRowsToProcess() ? 10 : 120;
+      monitorWorkerCron.underProcessClientWorkers.length === monitorWorkerCron.getNoOfRowsToProcess() ? 10 : 120000;
     monitorWorkerCron.underProcessClientWorkers = [];
 
     if (monitorWorkerCron.stopPickingUpNewWork || runCount >= 10) {
