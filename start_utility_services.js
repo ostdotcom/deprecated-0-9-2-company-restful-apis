@@ -50,8 +50,8 @@ StartServicesKlass.prototype = {
       configStrategy = configStrategyResp.data,
       ic = new InstanceComposer(configStrategy),
       platformProvider = ic.getPlatformProvider(),
-      openSTPlaform = platformProvider.getInstance(),
-      utilityChainStatus = openSTPlaform.services.utils.utilityChainStatus,
+      openSTPlatform = platformProvider.getInstance(),
+      utilityChainStatus = openSTPlatform.services.utils.utilityChainStatus,
       utilityChainId = configStrategy.OST_UTILITY_CHAIN_ID,
       servicesList = [];
 
@@ -137,15 +137,9 @@ StartServicesKlass.prototype = {
     servicesList.push(cmd);
     oThis._asyncCommand(cmd);
 
-    logger.step('** Starting Stake & Mint Processor Intercom');
+    logger.step('** Starting Stake & Mint Processor Intercomm');
     cmd =
-      'node executables/inter_comm/stake_and_mint_processor.js ' +
-      homeAbsolutePath +
-      '/openst-setup/data/utility-chain-' +
-      utilityChainId +
-      '/' +
-      'stake_and_mint_processor.data ' +
-      group_id +
+      'node executables/inter_comm/stake_and_mint_processor.js 2' +
       ' >> ' +
       homeAbsolutePath +
       '/openst-setup/logs/utility-chain-' +

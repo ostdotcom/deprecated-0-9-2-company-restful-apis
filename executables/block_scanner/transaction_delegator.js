@@ -1,49 +1,59 @@
 'use strict';
-
 /**
  * This code acts as a master process to block scanner, which delegates the transactions from a block to block scanner worker processes
  *
- * Usage: node executables/block_scanner/transaction_delegator.js group_id datafilePath [benchmarkFilePath]
+ * Usage: node executables/block_scanner/transaction_delegator.js 1
  *
  * Command Line Parameters Description:
- * group_id: group_id to fetch config strategy
- * datafilePath: path to the file which is storing the last block scanned info.
- * [benchmarkFilePath]: path to the file which is storing the benchmarking info.
+ * processLockId: used for ensuring that no other process with the same processLockId can run on a given machine.
  *
  * @module executables/block_scanner/transaction_delegator
  */
 
-const rootPrefix = '../..';
+const fs = require('fs');
 
-const program = require('commander'),
-  fs = require('fs');
+const rootPrefix = '../..',
+  InstanceComposer = require(rootPrefix + '/instance_composer'),
+  coreConstants = require(rootPrefix + '/config/core_constants'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
+  CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
+  web3InteractFactory = require(rootPrefix + '/lib/web3/interact/ws_interact'),
+  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
+  CronProcessHandlerObject = new CronProcessesHandler();
+
+require(rootPrefix + '/lib/web3/interact/ws_interact');
+require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
+
+const usageDemo = function() {
+  logger.log('Usage:', 'node executables/block_scanner/transaction_delegator.js processLockId');
+  logger.log(
+    '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
+  );
+};
+
+// Declare variables.
+const args = process.argv,
+  processLockId = args[2],
+  cronKind = CronProcessesConstants.blockScannerTxDelegator;
+
+let groupId,
+  dataFilePath,
+  benchmarkFilePath,
+  configStrategy = {};
 
 const MAX_TXS_PER_WORKER = 60,
   MIN_TXS_PER_WORKER = 10,
   FAILURE_CODE = -1;
 
-const InstanceComposer = require(rootPrefix + '/instance_composer'),
-  coreConstants = require(rootPrefix + '/config/core_constants'),
-  ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
-  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
-  SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
-  web3InteractFactory = require(rootPrefix + '/lib/web3/interact/ws_interact'),
-  ProcessLocker = new ProcessLockerKlass();
-
-require(rootPrefix + '/lib/web3/interact/ws_interact');
-require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
-
-let configStrategy = {};
-
-// Validate and sanitize the command line arguments.
-const validateAndSanitize = function() {
-  if (!program.groupId || !program.dataFilePath) {
-    program.help();
-    process.exit(1);
-  }
-};
+// Validate if processLockId was passed or not.
+if (!processLockId) {
+  logger.error('Process Lock id NOT passed in the arguments.');
+  usageDemo();
+  process.exit(1);
+}
 
 /**
  *
@@ -62,8 +72,9 @@ const TransactionDelegator = function(params) {
   oThis.interruptSignalObtained = false;
   oThis.highestBlock = 0;
   oThis.canExit = true;
+  oThis.stopPickingUpNewWork = false;
 
-  SigIntHandler.call(oThis, {});
+  SigIntHandler.call(oThis, { id: processLockId });
 };
 
 TransactionDelegator.prototype = Object.create(SigIntHandler.prototype);
@@ -94,7 +105,7 @@ const TransactionDelegatorPrototype = {
   warmUpWeb3Pool: async function() {
     const oThis = this,
       utilityGethType = 'read_only',
-      strategyByGroupHelperObj = new StrategyByGroupHelper(program.groupId),
+      strategyByGroupHelperObj = new StrategyByGroupHelper(groupId),
       configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(utilityGethType);
 
     if (configStrategyResp.isFailure()) {
@@ -118,13 +129,18 @@ const TransactionDelegatorPrototype = {
   },
 
   /**
-   * Check for new blocks
+   * Check for new blocks.
    */
   checkForNewBlocks: async function() {
     const oThis = this;
 
     const processNewBlocksAsync = async function() {
       try {
+        if (oThis.stopPickingUpNewWork) {
+          oThis.canExit = true;
+          return;
+        }
+
         oThis.initParams();
 
         await oThis.getGethsWithCurrentBlock();
@@ -192,7 +208,9 @@ const TransactionDelegatorPrototype = {
   },
 
   /**
-   * Get Geth servers array with the current block
+   * Get Geth servers array with the current block.
+   *
+   * @returns {Promise<void>}
    */
   getGethsWithCurrentBlock: async function() {
     const oThis = this;
@@ -214,8 +232,9 @@ const TransactionDelegatorPrototype = {
   },
 
   /**
-   * Distribute transactions to different queues
+   * Distribute transactions to different queues.
    *
+   * @returns {Promise<never>}
    */
   distributeTransactions: async function() {
     const oThis = this;
@@ -317,7 +336,7 @@ const TransactionDelegatorPrototype = {
   },
 
   /**
-   * Update scanner data file
+   * Update scanner data file.
    */
   updateScannerDataFile: function() {
     const oThis = this;
@@ -383,33 +402,46 @@ const TransactionDelegatorPrototype = {
 
 Object.assign(TransactionDelegator.prototype, TransactionDelegatorPrototype);
 
-program
-  .option('--group-id <groupId>', 'Group Id')
-  .option('--data-file-path <dataFilePath>', 'Path to the file which contains the last processed block')
-  .option('--benchmark-file-path [benchmarkFilePath]', 'Path to the file to store benchmark data. (Optional)');
+// Check whether the cron can be started or not.
+CronProcessHandlerObject.canStartProcess({
+  id: +processLockId, // Implicit string to int conversion
+  cron_kind: cronKind
+}).then(function(dbResponse) {
+  let cronParams, blockScannerMasterObj;
 
-program.on('--help', function() {
-  console.log('  Example:');
-  console.log('');
-  console.log(
-    '    node executables/block_scanner/transaction_delegator.js --group-id 197 --data-file-path /home/block_scanner.json --benchmark-file-path [/home/benchmark.csv]'
-  );
-  console.log('');
-  console.log('');
-});
+  try {
+    cronParams = JSON.parse(dbResponse.data.params);
+    groupId = cronParams.group_id;
+    dataFilePath = coreConstants.APP_SHARED_DIRECTORY + cronParams.data_file_path;
+    benchmarkFilePath = cronParams.benchmark_file_path
+      ? coreConstants.APP_SHARED_DIRECTORY + cronParams.benchmark_file_path
+      : null;
 
-program.parse(process.argv);
+    const params = {
+      dataFilePath: dataFilePath,
+      benchmarkFilePath: benchmarkFilePath
+    };
 
-// Check if another process with the same title is running.
-ProcessLocker.canStartProcess({
-  process_title: 'executables_transaction_delegator_' + program.groupId
-});
+    // We are creating the object before validation since we need to attach the methods of SigInt handler to the
+    // prototype of this class.
+    blockScannerMasterObj = new TransactionDelegator(params);
 
-// Validate and sanitize the input params.
-validateAndSanitize();
+    // Validate if the dataFilePath exists in the DB or not. We are not validating benchmarkFilePath as it is an
+    // optional parameter.
+    if (!dataFilePath) {
+      logger.error('Data file path NOT available in cron params in the database.');
+      process.emit('SIGINT');
+    }
 
-const blockScannerMasterObj = new TransactionDelegator(program);
-
-blockScannerMasterObj.init().then(function(r) {
-  logger.win('Blockscanner Master Process Started');
+    // Perform action if cron can be started.
+    blockScannerMasterObj.init().then(function(r) {
+      logger.win('Blockscanner Master Process Started');
+    });
+  } catch (err) {
+    logger.error('Cron parameters stored in INVALID format in the DB.');
+    logger.error(
+      'The status of the cron was NOT changed to stopped. Please check the status before restarting the cron'
+    );
+    process.exit(1);
+  }
 });
