@@ -63,6 +63,7 @@ const InstanceComposer = require(rootPrefix + '/instance_composer'),
   initProcessKlass = require(rootPrefix + '/lib/execute_transaction_management/init_process'),
   transactionMetaConstants = require(rootPrefix + '/lib/global_constant/transaction_meta.js'),
   processQueueAssociationConst = require(rootPrefix + '/lib/global_constant/process_queue_association'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   CommandQueueProcessorKlass = require(rootPrefix + '/lib/execute_transaction_management/command_message_processor'),
   recognizedInternalErrorIdentifiers = require(rootPrefix +
     '/lib/global_constant/recognized_internal_error_identifiers'),
@@ -222,21 +223,26 @@ const subscribeTxQueue = async function(qNameSuffix, chainId) {
     if (intentToConsumerTagMap.exTxQueue) {
       process.emit('RESUME_CONSUME', intentToConsumerTagMap.exTxQueue);
     } else {
-      await openStNotification.subscribeEvent.rabbit(
-        [rmqQueueConstants.executeTxTopicPrefix + chainId + '.' + qNameSuffix],
-        {
-          queue: rmqQueueConstants.executeTxQueuePrefix + '_' + chainId + '_' + qNameSuffix,
-          ackRequired: 1,
-          prefetch: txQueuePrefetchCount
-        },
-        function(params) {
-          // Promise is required to be returned to manually ack messages in RMQ
-          return PromiseQueueManager.createPromise(params);
-        },
-        function(consumerTag) {
-          intentToConsumerTagMap.exTxQueue = consumerTag;
-        }
-      );
+      await openStNotification.subscribeEvent
+        .rabbit(
+          [rmqQueueConstants.executeTxTopicPrefix + chainId + '.' + qNameSuffix],
+          {
+            queue: rmqQueueConstants.executeTxQueuePrefix + '_' + chainId + '_' + qNameSuffix,
+            ackRequired: 1,
+            prefetch: txQueuePrefetchCount
+          },
+          function(params) {
+            // Promise is required to be returned to manually ack messages in RMQ
+            return PromiseQueueManager.createPromise(params);
+          },
+          function(consumerTag) {
+            intentToConsumerTagMap.exTxQueue = consumerTag;
+          }
+        )
+        .catch(function(err) {
+          logger.error('Error in subscription. ', err);
+          ostRmqError(err);
+        });
     }
     txQueueSubscribed = true;
   }
@@ -269,22 +275,27 @@ const commandQueueExecutor = function(params) {
  */
 const subscribeCommandQueue = async function(qNameSuffix, chainId) {
   if (!commandQueueSubscribed) {
-    await openStNotification.subscribeEvent.rabbit(
-      [rmqQueueConstants.commandMessageTopicPrefix + chainId + '.' + qNameSuffix],
-      {
-        queue: rmqQueueConstants.commandMessageQueuePrefix + '_' + chainId + '_' + qNameSuffix,
-        ackRequired: 1,
-        prefetch: cmdQueuePrefetchCount
-      },
-      function(params) {
-        unAckCommandMessages++;
-        // Promise is required to be returned to manually ack messages in RMQ
-        return commandQueueExecutor(params);
-      },
-      function(consumerTag) {
-        intentToConsumerTagMap.cmdQueue = consumerTag;
-      }
-    );
+    await openStNotification.subscribeEvent
+      .rabbit(
+        [rmqQueueConstants.commandMessageTopicPrefix + chainId + '.' + qNameSuffix],
+        {
+          queue: rmqQueueConstants.commandMessageQueuePrefix + '_' + chainId + '_' + qNameSuffix,
+          ackRequired: 1,
+          prefetch: cmdQueuePrefetchCount
+        },
+        function(params) {
+          unAckCommandMessages++;
+          // Promise is required to be returned to manually ack messages in RMQ
+          return commandQueueExecutor(params);
+        },
+        function(consumerTag) {
+          intentToConsumerTagMap.cmdQueue = consumerTag;
+        }
+      )
+      .catch(function(err) {
+        logger.error('Error in subscription. ', err);
+        ostRmqError(err);
+      });
     commandQueueSubscribed = true;
   }
 };
@@ -329,7 +340,9 @@ let init = async function() {
   let ic = new InstanceComposer(configStrategy),
     notificationProvider = ic.getNotificationProvider();
 
-  openStNotification = await notificationProvider.getInstance();
+  openStNotification = await notificationProvider.getInstance({
+    connectionWaitSeconds: ConnectionTimeoutConst.crons
+  });
 
   if (processStatus === processQueueAssociationConst.processKilled) {
     logger.warn('The process is in killed status in the table. Recommended to check. Continuing to start the queue.');

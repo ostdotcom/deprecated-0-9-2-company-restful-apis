@@ -14,6 +14,7 @@ const rootPrefix = '../..',
   applicationMailerKlass = require(rootPrefix + '/lib/application_mailer'),
   CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
   applicationMailer = new applicationMailerKlass(),
   CronProcessHandlerObject = new CronProcessesHandler();
@@ -52,34 +53,39 @@ global.emailsAggregator = {};
 let waitingForEmail = false;
 
 const subscribeForErrorEmail = async function() {
-  const openStNotification = await SharedRabbitMqProvider.getInstance();
-
-  openStNotification.subscribeEvent.rabbit(['email_error.#'], { queue: 'send_error_email_from_restful_apis' }, function(
-    msgContent
-  ) {
-    msgContent = JSON.parse(msgContent);
-    logger.debug('Consumed error message -> ', msgContent);
-
-    const emailPayload = msgContent.message.payload;
-    let emailSubject = emailPayload.subject;
-
-    // aggregate same errors for a while
-    if (global.emailsAggregator[emailSubject]) {
-      global.emailsAggregator[emailSubject].count++;
-    } else {
-      global.emailsAggregator[emailSubject] = emailPayload;
-      global.emailsAggregator[emailSubject].count = 1;
-    }
-
-    // Wait for 3 sec to aggregate emails with subject line
-    if (!waitingForEmail) {
-      waitingForEmail = true;
-      setTimeout(function() {
-        sendAggregatedEmail();
-        waitingForEmail = false;
-      }, 30000);
-    }
+  const openStNotification = await SharedRabbitMqProvider.getInstance({
+    connectionWaitSeconds: ConnectionTimeoutConst.crons
   });
+
+  openStNotification.subscribeEvent
+    .rabbit(['email_error.#'], { queue: 'send_error_email_from_restful_apis' }, function(msgContent) {
+      msgContent = JSON.parse(msgContent);
+      logger.debug('Consumed error message -> ', msgContent);
+
+      const emailPayload = msgContent.message.payload;
+      let emailSubject = emailPayload.subject;
+
+      // aggregate same errors for a while
+      if (global.emailsAggregator[emailSubject]) {
+        global.emailsAggregator[emailSubject].count++;
+      } else {
+        global.emailsAggregator[emailSubject] = emailPayload;
+        global.emailsAggregator[emailSubject].count = 1;
+      }
+
+      // Wait for 3 sec to aggregate emails with subject line
+      if (!waitingForEmail) {
+        waitingForEmail = true;
+        setTimeout(function() {
+          sendAggregatedEmail();
+          waitingForEmail = false;
+        }, 30000);
+      }
+    })
+    .catch(function(err) {
+      logger.error('Error in subscription. ', err);
+      ostRmqError(err);
+    });
 };
 
 /**

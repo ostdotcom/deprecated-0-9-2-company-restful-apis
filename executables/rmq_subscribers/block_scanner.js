@@ -21,6 +21,7 @@ const rootPrefix = '../..',
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   CronProcessHandlerObject = new CronProcessesHandler();
 
 const usageDemo = function() {
@@ -138,22 +139,29 @@ const BlockScannerPrototype = {
 
     let chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
 
-    const openStNotification = await SharedRabbitMqProvider.getInstance();
-    openStNotification.subscribeEvent.rabbit(
-      ['block_scanner_execute_' + chain_id],
-      {
-        queue: 'block_scanner_execute_' + chain_id,
-        ackRequired: 1,
-        prefetch: prefetchCount
-      },
-      function(params) {
-        // Promise is required to be returned to manually ack messages in RMQ
-        return oThis.PromiseQueueManager.createPromise(params);
-      },
-      function(consumerTag) {
-        oThis.consumerTag = consumerTag;
-      }
-    );
+    const openStNotification = await SharedRabbitMqProvider.getInstance({
+      connectionWaitSeconds: ConnectionTimeoutConst.crons
+    });
+    openStNotification.subscribeEvent
+      .rabbit(
+        ['block_scanner_execute_' + chain_id],
+        {
+          queue: 'block_scanner_execute_' + chain_id,
+          ackRequired: 1,
+          prefetch: prefetchCount
+        },
+        function(params) {
+          // Promise is required to be returned to manually ack messages in RMQ
+          return oThis.PromiseQueueManager.createPromise(params);
+        },
+        function(consumerTag) {
+          oThis.consumerTag = consumerTag;
+        }
+      )
+      .catch(function(error) {
+        logger.error('Error in subscription', error);
+        ostRmqError();
+      });
   },
 
   /**
@@ -268,5 +276,10 @@ CronProcessHandlerObject.canStartProcess({
     process.exit(1);
   }
 });
+
+function ostRmqError(err) {
+  logger.info('ostRmqError occured.', err);
+  process.emit('SIGINT');
+}
 
 CronProcessHandlerObject.endAfterTime({ time_in_minutes: 45 });

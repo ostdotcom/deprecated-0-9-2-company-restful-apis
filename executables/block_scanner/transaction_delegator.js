@@ -21,6 +21,7 @@ const rootPrefix = '../..',
   web3InteractFactory = require(rootPrefix + '/lib/web3/interact/ws_interact'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
   CronProcessHandlerObject = new CronProcessesHandler();
 
@@ -290,7 +291,9 @@ const TransactionDelegatorPrototype = {
         }
       };
 
-      let openSTNotification = await SharedRabbitMqProvider.getInstance(),
+      let openSTNotification = await SharedRabbitMqProvider.getInstance({
+          connectionWaitSeconds: ConnectionTimeoutConst.crons
+        }),
         setToRMQ = await openSTNotification.publishEvent.perform(messageParams);
 
       //if could not set to RMQ run in async.

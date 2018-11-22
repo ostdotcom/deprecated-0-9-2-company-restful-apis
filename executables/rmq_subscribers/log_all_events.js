@@ -25,6 +25,7 @@ ProcessLocker.endAfterTime({ time_in_minutes: 60 });
 // All Module Requires.
 const EventLogModel = require(rootPrefix + '/app/models/event_logs'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification');
 
 // Global variable defined for events aggregation
@@ -35,26 +36,31 @@ let tasksPending = 0,
   waitingForEvents = false;
 
 const subscribeForLogEvent = async function() {
-  const openStNotification = await SharedRabbitMqProvider.getInstance();
-
-  openStNotification.subscribeEvent.rabbit(['#'], { queue: 'log_all_events_from_restful_apis' }, function(
-    eventContent
-  ) {
-    eventContent = JSON.parse(eventContent);
-    logger.debug('Consumed event -> ', eventContent);
-
-    global.eventsAggregator.push(eventContent);
-
-    // Wait for 30 sec to aggregate events for bulk insert
-    if (!waitingForEvents) {
-      waitingForEvents = true;
-      setTimeout(function() {
-        tasksPending += 1;
-        bulkInsertInLog();
-        waitingForEvents = false;
-      }, 30000);
-    }
+  const openStNotification = await SharedRabbitMqProvider.getInstance({
+    connectionWaitSeconds: ConnectionTimeoutConst.crons
   });
+
+  openStNotification.subscribeEvent
+    .rabbit(['#'], { queue: 'log_all_events_from_restful_apis' }, function(eventContent) {
+      eventContent = JSON.parse(eventContent);
+      logger.debug('Consumed event -> ', eventContent);
+
+      global.eventsAggregator.push(eventContent);
+
+      // Wait for 30 sec to aggregate events for bulk insert
+      if (!waitingForEvents) {
+        waitingForEvents = true;
+        setTimeout(function() {
+          tasksPending += 1;
+          bulkInsertInLog();
+          waitingForEvents = false;
+        }, 30000);
+      }
+    })
+    .catch(function(err) {
+      logger.error('Error in subscription. ', err);
+      ostRmqError(err);
+    });
 };
 
 subscribeForLogEvent();
