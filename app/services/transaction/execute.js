@@ -754,6 +754,13 @@ ExecuteTransactionService.prototype = {
       })
       .catch(function(err) {
         logger.error('Message for execute transaction was not published. Payload: ', payload, ' Error: ', err);
+        return Promise.reject(
+          responseHelper.error({
+            internal_error_identifier: 's_t_e_19',
+            api_error_identifier: 'something_went_wrong',
+            debug_options: {}
+          })
+        );
       });
 
     //if could not set to RMQ run in async.
