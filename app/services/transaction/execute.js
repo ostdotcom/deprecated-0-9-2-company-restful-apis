@@ -752,11 +752,12 @@ ExecuteTransactionService.prototype = {
           payload: payload
         }
       })
-      .catch(function(err) {
+      .catch(async function(err) {
+        await oThis._markFailedInTransactionMeta(oThis.transactionUuid);
         logger.error('Message for execute transaction was not published. Payload: ', payload, ' Error: ', err);
         return Promise.reject(
           responseHelper.error({
-            internal_error_identifier: 's_t_e_19',
+            internal_error_identifier: 's_t_e_31',
             api_error_identifier: 'something_went_wrong',
             debug_options: {}
           })
@@ -765,6 +766,7 @@ ExecuteTransactionService.prototype = {
 
     //if could not set to RMQ run in async.
     if (setToRMQ.isFailure() || setToRMQ.data.publishedToRmq == 0) {
+      await oThis._markFailedInTransactionMeta(oThis.transactionUuid);
       return Promise.reject(
         responseHelper.error({
           internal_error_identifier: 's_t_e_18',
@@ -775,6 +777,28 @@ ExecuteTransactionService.prototype = {
     }
 
     return Promise.resolve(responseHelper.successWithData({}));
+  },
+
+  _markFailedInTransactionMeta: async function(transactionUuid) {
+    const oThis = this;
+
+    if (!transactionUuid) {
+      logger.error('transactionUuid was not passed');
+      return Promise.reject(
+        responseHelper.error({
+          internal_error_identifier: 's_t_e_32',
+          api_error_identifier: 'something_went_wrong',
+          debug_options: {}
+        })
+      );
+    }
+    await new TransactionMetaModel()
+      .update({
+        next_action_at: null,
+        status: transactionMetaConstants.invertedStatuses[transactionMetaConstants.failed]
+      })
+      .where(['transaction_uuid = ?', transactionUuid])
+      .fire();
   },
 
   /**
