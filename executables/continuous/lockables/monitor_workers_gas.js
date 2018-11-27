@@ -447,7 +447,7 @@ const MonitorGasOfWorkersKlassPrototype = {
 
   _releaseLock: function(clientIds) {
     const oThis = this;
-    let next_action_time = Math.floor(Date.now() / 1000) + 1200,
+    let next_action_time = Math.floor(Date.now() / 1000) + 120,
       updateOptions = ['next_action_at = ?', next_action_time];
     return new ClientWorkerManagedAddressIdModel().releaseLock(
       oThis.getLockId(),
