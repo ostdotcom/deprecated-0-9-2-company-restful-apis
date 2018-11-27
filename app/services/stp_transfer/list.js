@@ -276,7 +276,7 @@ ListStpTransfersService.prototype = {
 
     let transfersFetchResponse = await new transactionLogCache({
       client_id: oThis.client_id,
-      uuids: [oThis.transferUuids]
+      uuids: oThis.transferUuids
     }).fetch();
 
     if (transfersFetchResponse.isFailure() || !transfersFetchResponse.data) {
