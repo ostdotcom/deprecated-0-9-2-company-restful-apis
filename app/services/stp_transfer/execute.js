@@ -317,7 +317,8 @@ ExecuteSTPTransferService.prototype = {
 
     const notificationProvider = oThis.ic().getNotificationProvider(),
       openStNotification = await notificationProvider.getInstance({
-        connectionWaitSeconds: ConnectionTimeoutConst.appServer
+        connectionWaitSeconds: ConnectionTimeoutConst.appServer,
+        switchConnectionWaitSeconds: ConnectionTimeoutConst.switchConnectionAppServer
       }),
       payload = {
         transaction_uuid: oThis.transactionUuid,

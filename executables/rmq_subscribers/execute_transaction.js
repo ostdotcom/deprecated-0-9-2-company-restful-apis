@@ -341,7 +341,8 @@ let init = async function() {
     notificationProvider = ic.getNotificationProvider();
 
   openStNotification = await notificationProvider.getInstance({
-    connectionWaitSeconds: ConnectionTimeoutConst.crons
+    connectionWaitSeconds: ConnectionTimeoutConst.crons,
+    switchConnectionWaitSeconds: ConnectionTimeoutConst.switchConnectionCrons
   });
 
   if (processStatus === processQueueAssociationConst.processKilled) {

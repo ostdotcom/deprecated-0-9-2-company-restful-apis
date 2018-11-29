@@ -202,7 +202,8 @@ EditBrandedTokenKlass.prototype = {
     }
 
     const openStNotification = await SharedRabbitMqProvider.getInstance({
-        connectionWaitSeconds: ConnectionTimeoutConst.appServer
+        connectionWaitSeconds: ConnectionTimeoutConst.appServer,
+        switchConnectionWaitSeconds: ConnectionTimeoutConst.switchConnectionAppServer
       }),
       payload = {
         entity: 'branded_token',

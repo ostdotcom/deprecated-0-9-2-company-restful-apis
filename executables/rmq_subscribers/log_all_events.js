@@ -37,7 +37,8 @@ let tasksPending = 0,
 
 const subscribeForLogEvent = async function() {
   const openStNotification = await SharedRabbitMqProvider.getInstance({
-    connectionWaitSeconds: ConnectionTimeoutConst.crons
+    connectionWaitSeconds: ConnectionTimeoutConst.crons,
+    switchConnectionWaitSeconds: ConnectionTimeoutConst.switchConnectionCrons
   });
 
   openStNotification.subscribeEvent

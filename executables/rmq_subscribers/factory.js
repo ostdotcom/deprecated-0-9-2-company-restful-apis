@@ -215,7 +215,8 @@ const RmqFactoryPrototype = {
   startSubscription: async function() {
     const oThis = this,
       openStNotification = await SharedRabbitMqProvider.getInstance({
-        connectionWaitSeconds: ConnectionTimeoutConst.crons
+        connectionWaitSeconds: ConnectionTimeoutConst.crons,
+        switchConnectionWaitSeconds: ConnectionTimeoutConst.switchConnectionCrons
       });
 
     openStNotification.subscribeEvent.rabbit(
