@@ -59,7 +59,8 @@ require(rootPrefix + '/lib/airdrop_management/distribute_tokens/start');
 
 const subscribeAirdrop = async function() {
   const openStNotification = await SharedRabbitMqProvider.getInstance({
-    connectionWaitSeconds: ConnectionTimeoutConst.crons
+    connectionWaitSeconds: ConnectionTimeoutConst.crons,
+    switchConnectionWaitSeconds: ConnectionTimeoutConst.switchConnectionCrons
   });
 
   openStNotification.subscribeEvent

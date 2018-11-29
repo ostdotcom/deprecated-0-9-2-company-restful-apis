@@ -20,7 +20,8 @@ NotifierKlass.prototype = {
   notify: async function(code, msg, errData, debugData) {
     const oThis = this;
     const openSTNotification = await SharedRabbitMqProvider.getInstance({
-      connectionWaitSeconds: ConnectionTimeoutConst.appServer
+      connectionWaitSeconds: ConnectionTimeoutConst.appServer,
+      switchConnectionWaitSeconds: ConnectionTimeoutConst.switchConnectionAppServer
     });
     // convert the custom error object to formatted object.
     if (responseHelper.isCustomResult(errData)) {

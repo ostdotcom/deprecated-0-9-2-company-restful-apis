@@ -28,8 +28,6 @@ const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   IntercomStatusKlass = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js'),
   CronProcessHandlerObject = new CronProcessesHandler(),
   ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout');
-;
-
 const usageDemo = function() {
   logger.log('Usage:', 'node ./executables/rmq_subscribers/factory.js processLockId');
   logger.log(
@@ -217,7 +215,8 @@ const RmqFactoryPrototype = {
   startSubscription: async function() {
     const oThis = this,
       openStNotification = await SharedRabbitMqProvider.getInstance({
-        connectionWaitSeconds: ConnectionTimeoutConst.crons
+        connectionWaitSeconds: ConnectionTimeoutConst.crons,
+        switchConnectionWaitSeconds: ConnectionTimeoutConst.switchConnectionCrons
       });
 
     openStNotification.subscribeEvent.rabbit(

@@ -140,7 +140,8 @@ const BlockScannerPrototype = {
     let chain_id = ic.configStrategy.OST_UTILITY_CHAIN_ID;
 
     const openStNotification = await SharedRabbitMqProvider.getInstance({
-      connectionWaitSeconds: ConnectionTimeoutConst.crons
+      connectionWaitSeconds: ConnectionTimeoutConst.crons,
+      switchConnectionWaitSeconds: ConnectionTimeoutConst.switchConnectionCrons
     });
     openStNotification.subscribeEvent
       .rabbit(

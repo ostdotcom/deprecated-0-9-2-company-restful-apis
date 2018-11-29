@@ -54,7 +54,8 @@ let waitingForEmail = false;
 
 const subscribeForErrorEmail = async function() {
   const openStNotification = await SharedRabbitMqProvider.getInstance({
-    connectionWaitSeconds: ConnectionTimeoutConst.crons
+    connectionWaitSeconds: ConnectionTimeoutConst.crons,
+    switchConnectionWaitSeconds: ConnectionTimeoutConst.switchConnectionCrons
   });
 
   openStNotification.subscribeEvent

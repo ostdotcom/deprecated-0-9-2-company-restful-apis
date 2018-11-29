@@ -733,7 +733,8 @@ ExecuteTransactionService.prototype = {
 
     const notificationProvider = ic.getNotificationProvider(),
       openStNotification = await notificationProvider.getInstance({
-        connectionWaitSeconds: ConnectionTimeoutConst.appServer
+        connectionWaitSeconds: ConnectionTimeoutConst.appServer,
+        switchConnectionWaitSeconds: ConnectionTimeoutConst.switchConnectionAppServer
       }),
       payload = {
         transaction_uuid: oThis.transactionUuid,

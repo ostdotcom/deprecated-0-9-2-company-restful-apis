@@ -292,7 +292,8 @@ const TransactionDelegatorPrototype = {
       };
 
       let openSTNotification = await SharedRabbitMqProvider.getInstance({
-          connectionWaitSeconds: ConnectionTimeoutConst.crons
+          connectionWaitSeconds: ConnectionTimeoutConst.crons,
+          switchConnectionWaitSeconds: ConnectionTimeoutConst.switchConnectionCrons
         }),
         setToRMQ = await openSTNotification.publishEvent.perform(messageParams);
 
