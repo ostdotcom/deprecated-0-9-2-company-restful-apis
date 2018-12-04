@@ -58,6 +58,7 @@ var ContractDeploy = function(groupId) {
 
 ContractDeploy.prototype = {
   // This function is for contract deployment based on the input of contract name
+
   makeStatusFile: async function(listOfTasks, statusFile) {
     if (!fs.existsSync(statusFile)) {
       let statusJson = {};
@@ -247,6 +248,7 @@ ContractDeploy.prototype = {
     }
   },
 
+  // Deploy all value contracts in a order
   deployValue: async function() {
     let rsp;
     await oThis.makeStatusFile(valueContractsList, valueStatusFile);
@@ -266,6 +268,8 @@ ContractDeploy.prototype = {
     }
     return true;
   },
+
+  // Deploy all utility contracts in a order
 
   deployUtility: async function() {
     let rsp;

@@ -14,6 +14,7 @@ const contractDeploy = require('./contract_deploy/contract_deploy.js');
 const templateFile = './contract_deploy/configTemplate.json';
 
 // Parsing of arguments using the commmander module
+
 program
   .option('-c, --config-file [value]', 'Init with config strategy')
   .option('-v, --deploy-value', 'Deploy value contracts')
@@ -25,6 +26,7 @@ program.on('--help', function() {
 });
 
 program.parse(process.argv);
+
 const groupId = program.groupId;
 
 var ChainSetup = function() {};

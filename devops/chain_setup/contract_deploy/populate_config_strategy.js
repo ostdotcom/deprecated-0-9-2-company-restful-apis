@@ -14,6 +14,7 @@ var populateConfig = function() {
 };
 
 populateConfig.prototype = {
+  //Generate managed address salt id
   init: async function() {
     const KMSObject = new kmsWrapperKlass('managedAddresses');
     const newKey2 = await KMSObject.generateDataKey();
@@ -22,6 +23,8 @@ populateConfig.prototype = {
     oThis.managedAddress = insertedRec.insertId;
     console.log('ManagedAddress Salt ID: ', insertedRec.insertId);
   },
+
+  // Generate address  required for contract deployment
 
   generateTempAdd: async function(addresses_count) {
     var InstanceComposer = require(rootPrefix + '/instance_composer');
@@ -37,6 +40,8 @@ populateConfig.prototype = {
       process.exit(1);
     }
   },
+
+  // Map config strategy to devops config file
 
   variableMapping: async function(templateConfig, devopsConfig) {
     var key_arr = await keys(templateConfig.generate_addr_template);
@@ -66,6 +71,7 @@ populateConfig.prototype = {
     return updatedConfig;
   },
 
+  //Populate config strategy for a given kind
   populateKind: async function(templateConfig, devopsConfig, groupId) {
     var ConfigStrategyObj = new ConfigStrategyOps(groupId);
     let getRsp = await ConfigStrategyObj.getConfigStrategy(templateConfig.name);
