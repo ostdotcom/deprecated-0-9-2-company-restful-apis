@@ -17,7 +17,7 @@ ConfigStrategyKlass.prototype = {
   /**
    * Get final hash of config strategy
    * @param {number} clientId: client ID whose config strategy hash is needed.
-   *
+   * @param {String} gethEndPointType: type of geth endpoint.
    *
    * @return {Promise<Object>} Hash of config strategy
    */

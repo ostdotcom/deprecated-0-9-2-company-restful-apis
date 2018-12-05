@@ -1,14 +1,16 @@
 'use strict';
 
 /**
- * Refill ST PRIME to required client addresses
+ * Refill ST PRIME to client addresses.
  *
  * Reserve funds following addresses with ST Prime:
  * 1. Airdrop fund manager address
  * 2. Worker address
  *
- * Here we go in batches for client ids and for each client id, the respective reserve funds the respective
- * client addresses with ST Prime.
+ * NOTE - This script refills ST prime for clients present in active config group only,
+ * clients from deactivated config strategy group_ids are ignored.
+ *
+ * Usage: node executables/fund_addresses/by_reserve/st_prime.js
  *
  * @module executables/fund_addresses/by_reserve/st_prime
  */
@@ -18,10 +20,11 @@ const rootPrefix = '../../..';
 //Always Include Module overrides First
 require(rootPrefix + '/module_overrides/index');
 
-const ClientBrandedTokenModel = require(rootPrefix + '/app/models/client_branded_token'),
-  InstanceComposer = require(rootPrefix + '/instance_composer'),
+const InstanceComposer = require(rootPrefix + '/instance_composer'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger');
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  ConfigStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
+  ClientConfigStrategyModel = require(rootPrefix + '/app/models/client_config_strategies');
 
 require(rootPrefix + '/app/services/address/fund_client_address');
 
@@ -54,30 +57,50 @@ FundUsersWithSTPrimeFromReserveKlass.prototype = {
    * @return {promise<result>}
    */
   asyncPerform: async function() {
-    const oThis = this,
-      batchSize = 100;
+    const oThis = this;
 
-    let pageNo = 1;
+    let distinctGroupIdsResponse = await new ConfigStrategyModel().getDistinctActiveGroupIds(),
+      distinctGroupIdsArray = distinctGroupIdsResponse.data,
+      indexOfNull = distinctGroupIdsArray.indexOf(null);
 
-    while (true) {
-      const offset = (pageNo - 1) * batchSize;
+    distinctGroupIdsArray.splice(indexOfNull, 1);
 
-      const clientBrandedTokenRecords = await new ClientBrandedTokenModel()
-        .select(['airdrop_contract_addr', 'client_id'])
-        .limit(batchSize)
-        .offset(offset)
+    let configStrategyIds = [],
+      whereClause = ['group_id IN (?)', distinctGroupIdsArray],
+      strategyIdsQueryResponse = await new ConfigStrategyModel()
+        .select('id')
+        .where(whereClause)
         .fire();
 
-      if (clientBrandedTokenRecords.length === 0) break;
+    for (let index in strategyIdsQueryResponse) {
+      configStrategyIds.push(strategyIdsQueryResponse[index].id);
+    }
 
-      pageNo = pageNo + 1;
+    let clientIds = [],
+      clientIdQueryResponse = await new ClientConfigStrategyModel()
+        .select(['client_id'])
+        .where(['config_strategy_id IN (?)', configStrategyIds])
+        .group_by('client_id')
+        .fire();
 
-      for (let i = 0; i < clientBrandedTokenRecords.length; i++) {
-        if (!clientBrandedTokenRecords[i].airdrop_contract_addr) continue;
+    for (let index in clientIdQueryResponse) {
+      clientIds.push(clientIdQueryResponse[index].client_id);
+    }
 
-        const clientId = clientBrandedTokenRecords[i].client_id;
+    let batchSize = 25,
+      batchNo = 1;
 
-        let configStrategyHelper = new ConfigStrategyHelperKlass(clientId),
+    while (true) {
+      let offset = (batchNo - 1) * batchSize,
+        batchedClientIds = clientIds.slice(offset, batchSize + offset);
+
+      if (batchedClientIds.length === 0) break;
+
+      logger.win(`starting checking for batch: ${batchNo} of clientIds: ${batchedClientIds}`);
+
+      for (let i = 0; i < batchedClientIds.length; i++) {
+        let clientId = batchedClientIds[i],
+          configStrategyHelper = new ConfigStrategyHelperKlass(clientId),
           getConfigStrategyRsp = await configStrategyHelper.get();
 
         if (getConfigStrategyRsp.isFailure()) {
@@ -89,10 +112,12 @@ FundUsersWithSTPrimeFromReserveKlass.prototype = {
 
         console.log('* Funding ST prime for client id:', clientId);
 
-        await new FundClientAddressKlass({ client_id: clientId }).perform();
+        await new FundClientAddressKlass({ client_id: clientId, fund_workers: false }).perform();
 
         logger.win('* DONE with ST prime funding for client id:', clientId);
       }
+
+      batchNo = batchNo + 1;
     }
 
     logger.step('* Exiting after all funding done.');

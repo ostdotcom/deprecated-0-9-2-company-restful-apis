@@ -18,7 +18,9 @@ const rootPrefix = '../../..',
   ManagedAddressModel = require(rootPrefix + '/app/models/managed_address'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  notifier = require(rootPrefix + '/helpers/notifier'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
+  commonValidator = require(rootPrefix + '/lib/validators/common'),
   managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
   ClientWorkerManagedAddressIdModel = require(rootPrefix + '/app/models/client_worker_managed_address_id'),
   clientWorkerManagedAddressConst = require(rootPrefix + '/lib/global_constant/client_worker_managed_address_id'),
@@ -38,6 +40,7 @@ require(rootPrefix + '/lib/cache_management/client_active_worker_uuid');
 const FundClientAddressKlass = function(params) {
   const oThis = this;
   oThis.clientId = params.client_id;
+  oThis.fundWorkers = params.fund_workers;
 
   oThis.reserveAddrObj = null;
   oThis.airdropHolderAddrObj = null;
@@ -107,8 +110,14 @@ FundClientAddressKlass.prototype = {
       ),
       workerManagedAddressIds = [];
 
-    for (let i = 0; i < existingWorkerManagedAddresses.length; i++) {
-      workerManagedAddressIds.push(existingWorkerManagedAddresses[i].managed_address_id);
+    if (commonValidator.isVarNull(oThis.fundWorkers)) {
+      oThis.fundWorkers = true;
+    }
+
+    if (oThis.fundWorkers) {
+      for (let i = 0; i < existingWorkerManagedAddresses.length; i++) {
+        workerManagedAddressIds.push(existingWorkerManagedAddresses[i].managed_address_id);
+      }
     }
 
     const reserveAddressType = new ManagedAddressModel().invertedAddressTypes[managedAddressesConst.reserveAddressType],
@@ -162,19 +171,14 @@ FundClientAddressKlass.prototype = {
         );
 
         if (transferBalanceResponse.isSuccess()) {
-          const dbObject = (await new ClientWorkerManagedAddressIdModel()
-            .select('id, properties')
-            .where({ client_id: oThis.clientId, managed_address_id: workerAddrObj.id })
-            .fire())[0];
-
-          let newPropertiesValue = new ClientWorkerManagedAddressIdModel().setBit(
-            clientWorkerManagedAddressConst.hasStPrimeBalanceProperty,
-            dbObject.properties
-          );
+          let cwmap = new ClientWorkerManagedAddressIdModel().invertedProperties,
+            newPropertiesValue =
+              parseInt(cwmap[clientWorkerManagedAddressConst.hasStPrimeBalanceProperty]) +
+              parseInt(cwmap[clientWorkerManagedAddressConst.initialGasTransferredProperty]);
 
           await new ClientWorkerManagedAddressIdModel()
-            .update({ properties: newPropertiesValue })
-            .where({ id: dbObject.id })
+            .update(['properties = properties | ?', newPropertiesValue])
+            .where({ client_id: oThis.clientId, managed_address_id: workerAddrObj.id })
             .fire();
 
           new ClientActiveWorkerUuidCacheKlass({ client_id: oThis.clientId }).clear();
@@ -244,7 +248,7 @@ FundClientAddressKlass.prototype = {
       balanceResponse = await fetchBalanceObj.perform();
 
     if (balanceResponse.isFailure()) {
-      logger.notify('e_fa_e_ceb_1', 'Error in fetching balance of Address - ' + ethereumAddress, balanceResponse, {
+      notifier.notify('e_fa_e_ceb_1', 'Error in fetching balance of Address - ' + ethereumAddress, balanceResponse, {
         clientId: oThis.clientId,
         ethereum_address: ethereumAddress
       });
@@ -289,7 +293,7 @@ FundClientAddressKlass.prototype = {
     const transferResponse = await transferSTPrimeBalanceObj.perform();
 
     if (transferResponse.isFailure()) {
-      logger.notify(
+      notifier.notify(
         'a_fca_tb_1',
         'Error in transfer of ' + transferAmountInWei + ' Wei Eth to Address - ' + recipientAddress,
         transferResponse,

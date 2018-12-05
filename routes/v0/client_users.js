@@ -5,6 +5,7 @@ const express = require('express');
 const rootPrefix = '../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  notifier = require(rootPrefix + '/helpers/notifier'),
   ucBalanceFetcherKlass = require(rootPrefix + '/app/services/address/utilityChainBalancesFetcher'),
   managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
   routeHelper = require(rootPrefix + '/routes/helper'),
@@ -236,7 +237,7 @@ router.get('/get-st-prime-balance', function(req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function(err) {
-    logger.notify('r_cu_8', 'Something went wrong', err);
+    notifier.notify('r_cu_8', 'Something went wrong', err);
 
     responseHelper.error('r_cu_8', 'Something went wrong').renderResponse(res, errorConfig);
   });

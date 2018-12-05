@@ -6,10 +6,10 @@
  *
  * You can compare and find mismatched balances from this script: executables/check_balances.js
  *
- * Usage: node executables/sync_ddb_balance_with_chain.js configStrategyFilePath
+ * Usage: node executables/sync_ddb_balance_with_chain.js group_id
  *
  * Command Line Parameters Description:
- * configStrategyFilePath: path to the file which is storing the config strategy info.
+ * group_id: Group id for fetching the config strategy
  *
  * It takes erc20 address to ethereum adresses map as input params
  *
@@ -20,6 +20,7 @@ const rootPrefix = '..',
   InstanceComposer = require(rootPrefix + '/instance_composer'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   configStrategyHelper = require(rootPrefix + '/helpers/config_strategy/by_client_id');
 
 require(rootPrefix + '/lib/providers/platform');
@@ -27,25 +28,23 @@ require(rootPrefix + '/lib/providers/storage');
 require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
 
 const args = process.argv,
-  configStrategyFilePath = args[2];
+  group_id = args[2];
 
 let configStrategy = {};
 
 // Usage demo.
 const usageDemo = function() {
-  logger.log('usage:', 'node ./executables/sync_ddb_balance_with_chain.js configStrategyFilePath');
-  logger.log('* configStrategyFilePath is the path to the file which is storing the config strategy info.');
+  logger.log('usage:', 'node ./executables/sync_ddb_balance_with_chain.js group_id');
+  logger.log('* grou_id is required to fetch config strategy');
 };
 
 // Validate and sanitize the command line arguments.
 const validateAndSanitize = function() {
-  if (!configStrategyFilePath) {
-    logger.error('Config strategy file path is NOT passed in the arguments.');
+  if (!group_id) {
+    logger.error('Group id is not passed in the input');
     usageDemo();
     process.exit(1);
   }
-
-  configStrategy = require(configStrategyFilePath);
 };
 
 // Validate and sanitize the input params.
@@ -110,8 +109,13 @@ SyncDdbBalancesWithChain.prototype = {
    * @returns {promise}
    */
   _syncForClient: async function(erc20Address, userAddresses) {
-    const oThis = this,
-      batchSize = 25,
+    const oThis = this;
+
+    let strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(),
+      configStrategy = configStrategyResp.data;
+
+    const batchSize = 25,
       ic = new InstanceComposer(configStrategy),
       platformProvider = ic.getPlatformProvider(),
       openSTPlaform = platformProvider.getInstance(),
@@ -132,7 +136,7 @@ SyncDdbBalancesWithChain.prototype = {
     }
 
     let erc20ContractAddressesData = cacheFetchRsp.data,
-      knownBTContractData = erc20ContractAddressesData[erc20Address],
+      knownBTContractData = erc20ContractAddressesData[erc20Address.toLowerCase()],
       clientId = knownBTContractData['client_id'];
 
     let configStrategyHashRsp = await new configStrategyHelper(clientId).get(),
@@ -188,7 +192,7 @@ SyncDdbBalancesWithChain.prototype = {
 
 // const jsonStr = '{"0x4F739d40dB7509Fac8789a9Ff7bd3f86132738E2":["0xdcb2ec51c8c4632ae0039befef861fd1de2cd616","0xb9f6d4c885e8653f66fbf4f1a87d2db0835c70e8","0x16b8e5c5cf4532969746d9c97c5c233b3647c105","0x06c18b69b13b38a2ed0d0c1146c2ed340ed4e7e5","0x8837741e2ede243927679e2b9c290243140dafc7","0x8187f120d3d2aa0fd32df04bc1cf8a148beadf1f","0x924efb75845b8a5b93e00f864391894360315bdb","0x79f720d773619edea6aa91ce9553983bf36ce87f","0xab3e3db1362b2b91663b22ff277f039eaf1b8cdb","0xfec3033dd1e9de348e13169ed7c53dd6e03b28a1","0xb5c0d3fc77ec5422c0a16cdf652c764d29df5961","0x53dd4f876e922877ba57921ee2f8200bc4ce9963","0x1cb5860593729a7ff4d0ca7d0bc101a4544b19a9"]}';
 const erc20AddressToAdressesMapStr =
-  '{"0x8a5a8cf3913d6886053d2e7217e13d26decd00d6": ["0x88fc4c810b9d83ffff4a791a484e8003905aae97","0x3fe697ff4655288086864492f1307eef32979b76"]}';
+  '{"0xDb5a4aBF3e8335348675aeD0a99FFe7E53b7078b":["0x2bfd54ee25772d1073825bd2cbd6535562a71edf","0xcf9a55caa91e6f0f9b620f530004fa25f64f2a9d","0x2ac5ce74c7257d7451d83d03f4b576c5dc8641d6","0xfca56a28087223a72241a9dd748dc1fbc55c047d"]}';
 const object = new SyncDdbBalancesWithChain(JSON.parse(erc20AddressToAdressesMapStr));
 object
   .perform()

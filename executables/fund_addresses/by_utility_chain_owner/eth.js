@@ -29,6 +29,7 @@ require(rootPrefix + '/lib/providers/platform');
 
 // Load Packages
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  notifier = require(rootPrefix + '/helpers/notifier'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
@@ -130,7 +131,7 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
     const ucOwnerBalanceBigNumberInWei = ucOwnerBalanceResponse.data.balance;
 
     if (ucOwnerBalanceBigNumberInWei.lessThan(minUCOBalanceInWei)) {
-      logger.notify('e_fa_e_cboco_1', 'ETHER Balance Of Utility Chain Owner is LOW', {
+      notifier.notify('e_fa_e_cboco_1', 'ETHER Balance Of Utility Chain Owner is LOW', {
         utiltiy_chain_owner_value_chain_address: oThis._valueChainAddressFor('utilityChainOwner'),
         utility_chain_owner_balance_eth: basicHelper.convertToNormal(ucOwnerBalanceBigNumberInWei),
         min_required_balance: oThis._valueChainMinBalanceFor('utilityChainOwner')
@@ -158,7 +159,7 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
     oThis.openStPlatform = openStPlatform; // For later use
 
     if (balanceResponse.isFailure()) {
-      logger.notify('e_fa_e_ceb_1', 'Error in fetching balance of Address', balanceResponse, {
+      notifier.notify('e_fa_e_ceb_1', 'Error in fetching balance of Address', balanceResponse, {
         ethereum_address: ethereumAddress
       });
       return Promise.resolve(balanceResponse);
@@ -190,7 +191,7 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
     const transferResponse = await transferEthBalanceObj.perform();
 
     if (transferResponse.isFailure()) {
-      logger.notify(
+      notifier.notify(
         'e_fa_e_teb_1',
         'Error in transfer of ' + transferAmountInWei + 'Wei Eth to Address - ' + ethereumAddress,
         transferResponse
@@ -215,7 +216,7 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
       nameData = valueChainBalance[name];
 
     if (!nameData) {
-      logger.notify('e_fa_e_vcbb_1', 'Invalid user name passed for getting data - ' + name);
+      notifier.notify('e_fa_e_vcbb_1', 'Invalid user name passed for getting data - ' + name);
 
       throw 'Invalid user name passed for getting data - ' + name;
     }
@@ -237,7 +238,7 @@ FundUsersWithEthFromUtilityChainOwnerKlass.prototype = {
       nameData = valueChainBalance[name];
 
     if (!nameData) {
-      logger.notify('e_fa_e_vcaf_1', 'Invalid user name passed for getting data - ' + name);
+      notifier.notify('e_fa_e_vcaf_1', 'Invalid user name passed for getting data - ' + name);
 
       throw 'Invalid user name passed for getting data - ' + name;
     }

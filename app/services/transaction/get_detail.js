@@ -99,7 +99,7 @@ GetTransactionDetailKlass.prototype = {
    */
   _getTransactionData: async function() {
     const oThis = this,
-      transactionLogModel = oThis.ic().getTransactionLogModel();
+      transactionLogCache = oThis.ic().getTransactionLogCache();
 
     if (typeof oThis.transactionUuids != typeof []) {
       return Promise.reject(
@@ -112,10 +112,10 @@ GetTransactionDetailKlass.prototype = {
       );
     }
 
-    let transactionFetchResponse = await new transactionLogModel({
+    let transactionFetchResponse = await new transactionLogCache({
       client_id: oThis.clientId,
-      shard_name: oThis.ic().configStrategy.TRANSACTION_LOG_SHARD_NAME
-    }).batchGetItem(oThis.transactionUuids);
+      uuids: oThis.transactionUuids
+    }).fetch();
 
     let transactionLogRecordsHash = transactionFetchResponse.data;
 

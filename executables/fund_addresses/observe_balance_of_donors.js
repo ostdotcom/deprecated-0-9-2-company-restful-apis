@@ -12,6 +12,7 @@
 
 const rootPrefix = '../..',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  notifier = require(rootPrefix + '/helpers/notifier'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
@@ -64,7 +65,7 @@ balanceObserververKlass.prototype = {
     await oThis._observeUtilityChainOwnerEthBalance();
 
     if (Object.keys(oThis.notifyLogs) > 0) {
-      logger.notify('e_fa_1', 'Critical: Balances Too Low For Critical Addresses', oThis.notifyLogs);
+      notifier.notify('e_fa_1', 'Critical: Balances Too Low For Critical Addresses', oThis.notifyLogs);
     }
 
     process.exit(1);

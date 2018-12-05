@@ -12,6 +12,7 @@ const uuid = require('uuid');
 const rootPrefix = '../../..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  notifier = require(rootPrefix + '/helpers/notifier'),
   managedAddressesConst = require(rootPrefix + '/lib/global_constant/managed_addresses'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
@@ -160,7 +161,7 @@ CreateDummyUsers.prototype = {
 
     for (var i = 0; i < resolversData.length; i++) {
       if (resolversData[i].isFailure()) {
-        logger.notify('c_d_u_1', 'Something Went Wrong', resolversData[i], { clientId: oThis.clientId });
+        notifier.notify('c_d_u_1', 'Something Went Wrong', resolversData[i], { clientId: oThis.clientId });
       }
     }
 

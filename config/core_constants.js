@@ -33,12 +33,6 @@ define('SUB_ENVIRONMENT_SHORT', process.env.CR_SUB_ENVIRONMENT.substring(0, 2));
 define('OST_UTILITY_GAS_PRICE', process.env.OST_UTILITY_GAS_PRICE);
 define('OST_VALUE_GAS_PRICE', process.env.OST_VALUE_GAS_PRICE);
 
-// Redis details
-define('OST_REDIS_HOST', process.env.OST_REDIS_HOST);
-define('OST_REDIS_PORT', process.env.OST_REDIS_PORT);
-define('OST_REDIS_PASS', process.env.OST_REDIS_PASS);
-define('OST_REDIS_TLS_ENABLED', process.env.OST_REDIS_TLS_ENABLED);
-
 // MySQL details
 define('MYSQL_CONNECTION_POOL_SIZE', process.env.CR_MYSQL_CONNECTION_POOL_SIZE);
 
@@ -68,6 +62,10 @@ define('CA_SHARED_MYSQL_HOST', process.env.CR_CA_SHARED_MYSQL_HOST);
 define('CA_SHARED_MYSQL_USER', process.env.CR_CA_SHARED_MYSQL_USER);
 define('CA_SHARED_MYSQL_PASSWORD', process.env.CR_CA_SHARED_MYSQL_PASSWORD);
 
+define('CR_SAAS_ANALYTICS_DB_HOST', process.env.CR_SAAS_ANALYTICS_DB_HOST);
+define('CR_SAAS_ANALYTICS_DB_USER', process.env.CR_SAAS_ANALYTICS_DB_USER);
+define('CR_SAAS_ANALYTICS_DB_PASSWORD', process.env.CR_SAAS_ANALYTICS_DB_PASSWORD);
+
 // AWS details
 define('AWS_ACCESS_KEY', process.env.CR_AWS_ACCESS_KEY);
 define('AWS_SECRET_KEY', process.env.CR_AWS_SECRET_KEY);
@@ -78,6 +76,17 @@ define('KMS_API_KEY_ARN', process.env.CR_API_KEY_KMS_ARN);
 define('KMS_API_KEY_ID', process.env.CR_API_KEY_KMS_ID);
 define('KMS_MANAGED_ADDR_KEY_ARN', process.env.CR_MANAGED_ADDRESS_KMS_ARN);
 define('KMS_MANAGED_ADDR_KEY_ID', process.env.CR_MANAGED_ADDRESS_KMS_ID);
+
+// Binance API Credentials
+define('BINANCE_API_KEY', process.env.CR_BINANCE_API_KEY);
+define('BINANCE_API_SECRET', process.env.CR_BINANCE_API_SECRET);
+
+// Coinmarketcap API Credentials
+define('COINMARKETCAP_API_KEY', process.env.CR_COINMARKETCAP_API_KEY);
+
+// Binance API Credentials
+define('KRAKEN_API_KEY', process.env.CR_KRAKEN_API_KEY);
+define('KRAKEN_API_SECRET', process.env.CR_KRAKEN_API_SECRET);
 
 // JWT details
 define('SAAS_API_SECRET_KEY', process.env.CA_SAAS_API_SECRET_KEY);
@@ -101,10 +110,6 @@ define('SHARED_MEMCACHE_KEY_PREFIX', 'ca_sa_shared_');
 
 define('CONFIG_STRATEGY_SALT', 'config_strategy_salt');
 
-define('DYNAMODB_TABLE_NAME_PREFIX', process.env.OS_DYNAMODB_TABLE_NAME_PREFIX
-  ? process.env.OS_DYNAMODB_TABLE_NAME_PREFIX
-  : '');
-
 define('OST_WEB3_POOL_SIZE', process.env.OST_WEB3_POOL_SIZE);
 
 // Map of all addresses which would be needed to unlocked via Key Store File.
@@ -123,7 +128,9 @@ define('ADDRESSES_TO_UNLOCK_VIA_KEYSTORE_FILE_MAP', addresses_to_unlock_via_keys
 
 define('ENV_IDENTIFIER', process.env.ENV_IDENTIFIER ? process.env.ENV_IDENTIFIER : '');
 
-//Gas price for mainnet
+define('APP_SHARED_DIRECTORY', process.env.APP_SHARED_DIRECTORY);
+
+// Gas price for main-net.
 define('MIN_VALUE_GAS_PRICE', process.env.MIN_VALUE_GAS_PRICE);
 define('MAX_VALUE_GAS_PRICE', process.env.MAX_VALUE_GAS_PRICE);
 define('DEFAULT_VALUE_GAS_PRICE', process.env.DEFAULT_VALUE_GAS_PRICE);

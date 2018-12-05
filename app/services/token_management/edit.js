@@ -201,8 +201,9 @@ EditBrandedTokenKlass.prototype = {
       return Promise.resolve(responseHelper.successWithData({}));
     }
 
-    const openStNotification = SharedRabbitMqProvider.getInstance({
-        connectionWaitSeconds: ConnectionTimeoutConst.appServer
+    const openStNotification = await SharedRabbitMqProvider.getInstance({
+        connectionWaitSeconds: ConnectionTimeoutConst.appServer,
+        switchConnectionWaitSeconds: ConnectionTimeoutConst.switchConnectionAppServer
       }),
       payload = {
         entity: 'branded_token',

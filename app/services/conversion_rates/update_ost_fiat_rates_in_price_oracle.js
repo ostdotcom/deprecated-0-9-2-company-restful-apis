@@ -12,6 +12,7 @@ const request = require('request-promise'),
 const rootPrefix = '../../..',
   exchangeUrl = 'https://api.coinmarketcap.com/v1/ticker/simple-token',
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  notifier = require(rootPrefix + '/helpers/notifier'),
   CurrencyConversionRateModel = require(rootPrefix + '/app/models/currency_conversion_rate'),
   conversionRateConstants = require(rootPrefix + '/lib/global_constant/conversion_rates'),
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
@@ -75,7 +76,7 @@ UpdateOstFiatInPriceOracleKlass.prototype = {
     oThis.parseResponse(response);
 
     if (!oThis.currentOstValue) {
-      logger.notify('f_c_o_p_1', 'Invalid Response from CoinMarket', response);
+      notifier.notify('f_c_o_p_1', 'Invalid Response from CoinMarket', response);
       return;
     }
 
@@ -96,7 +97,7 @@ UpdateOstFiatInPriceOracleKlass.prototype = {
     // Set current price in contract
     var contractResponse = await oThis.setPriceInContract();
     if (contractResponse.isFailure()) {
-      logger.notify('f_c_o_p_2', 'Error while setting price in contract.', response);
+      notifier.notify('f_c_o_p_2', 'Error while setting price in contract.', response);
 
       return;
     }
@@ -124,13 +125,13 @@ UpdateOstFiatInPriceOracleKlass.prototype = {
       var ostValue = JSON.parse(response)[0];
       logger.debug('OST Value From CoinMarketCap:', ostValue);
       if (!ostValue || ostValue.symbol != conversionRateConstants.ost_currency()) {
-        logger.notify('f_c_o_p_3', 'Invalid OST Value', response);
+        notifier.notify('f_c_o_p_3', 'Invalid OST Value', response);
 
         return;
       }
       var pricePoint = ostValue['price_' + oThis.quoteCurrency.toLowerCase()];
       if (!pricePoint || pricePoint < 0) {
-        logger.notify('f_c_o_p_4', 'Invalid OST Price', response);
+        notifier.notify('f_c_o_p_4', 'Invalid OST Price', response);
 
         return;
       }
@@ -144,7 +145,7 @@ UpdateOstFiatInPriceOracleKlass.prototype = {
 
       return;
     } catch (err) {
-      logger.notify('f_c_o_p_5', 'Invalid Response from CoinMarket', response);
+      notifier.notify('f_c_o_p_5', 'Invalid Response from CoinMarket', response);
 
       return;
     }
@@ -198,7 +199,7 @@ UpdateOstFiatInPriceOracleKlass.prototype = {
     return new Promise(function(onResolve, onReject) {
       let loopCompareContractPrice = async function() {
         if (oThis.attemptCountForVerifyPriceInContract > oThis.maxRetryCountForVerifyPriceInContract) {
-          logger.notify('f_c_o_p_8', 'Something Is Wrong', {
+          notifier.notify('f_c_o_p_8', 'Something Is Wrong', {
             dbRowId: dbRowId
           });
           return onReject(`dbRowId: ${dbRowId} maxRetryCountForVerifyPriceInContract reached`);
@@ -211,7 +212,7 @@ UpdateOstFiatInPriceOracleKlass.prototype = {
         );
 
         if (priceInDecimal.isFailure()) {
-          logger.notify('f_c_o_p_6', 'Error while getting price from contract.', priceInDecimal);
+          notifier.notify('f_c_o_p_6', 'Error while getting price from contract.', priceInDecimal);
           return onResolve('error');
         } else if (priceInDecimal.isSuccess() && priceInDecimal.data.price == conversionRate) {
           await new CurrencyConversionRateModel().updateStatus(dbRowId, conversionRateConstants.active_status());

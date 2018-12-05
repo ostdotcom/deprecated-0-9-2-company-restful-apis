@@ -11,15 +11,13 @@ const rootPrefix = '../../..';
 require(rootPrefix + '/module_overrides/index');
 
 const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   InstanceComposer = require(rootPrefix + '/instance_composer');
 
 require(rootPrefix + '/lib/providers/price_oracle');
 
 const args = process.argv,
-  configStrategyFilePath = args[2],
-  configStrategy = require(configStrategyFilePath),
-  instanceComposer = new InstanceComposer(configStrategy),
-  DeployAndSetOpsKlass = instanceComposer.getPriceOracleProvider().getInstance().deployAndSetOps;
+  group_id = args[2];
 
 /**
  * Deploy Price Oracle contract for OST and USD
@@ -35,7 +33,16 @@ DeployPriceOracleKlass.prototype = {
    * @return {Promise<void>}
    */
   perform: async function() {
+    const oThis = this,
+      strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
+      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(),
+      configStrategy = configStrategyResp.data;
+
+    let instanceComposer = new InstanceComposer(configStrategy),
+      DeployAndSetOpsKlass = instanceComposer.getPriceOracleProvider().getInstance().deployAndSetOps;
+
     const deployerObj = new DeployAndSetOpsKlass();
+
     var resp = await deployerObj.perform({
       gasPrice: configStrategy.OST_UTILITY_GAS_PRICE,
       baseCurrency: 'OST',
@@ -44,6 +51,7 @@ DeployPriceOracleKlass.prototype = {
 
     logger.debug(' ********* Response *****');
     logger.debug(resp);
+
     process.exit(0);
   }
 };

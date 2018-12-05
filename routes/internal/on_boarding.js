@@ -6,6 +6,7 @@ const rootPrefix = '../..',
   apiVersions = require(rootPrefix + '/lib/global_constant/api_versions'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   errorConfig = basicHelper.fetchErrorConfig(apiVersions.internal),
+  notifier = require(rootPrefix + '/helpers/notifier'),
   AssignStrategiesKlass = require(rootPrefix + '/lib/on_boarding/assign_strategies');
 
 const router = express.Router();
@@ -85,7 +86,7 @@ router.post('/assign-strategies', function(req, res, next) {
   };
 
   Promise.resolve(performer()).catch(function(err) {
-    logger.notify('r_ob_10', 'Something went wrong', err);
+    notifier.notify('r_ob_10', 'Something went wrong', err);
 
     responseHelper.error('r_ob_10', 'Something went wrong').renderResponse(res, errorConfig);
   });

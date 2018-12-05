@@ -2,90 +2,55 @@
 /**
  * This is factory for all RabbitMQ subscribers.
  *
- * Usage: node executables/rmq_subscribers/factory.js processLockId queueSuffix topicsToSubscribe
+ * Usage: node executables/rmq_subscribers/factory.js processLockId
  *
  * Command Line Parameters Description:
  * processLockId: processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.
- * queueSuffix: queueSuffix is the suffix to be used for getting the queue name.
- * topicsToSubscribe: topicsToSubscribe is a JSON stringified version of topics to be subscribed for this RMQ subscriber.
  *
- * Example: node executables/rmq_subscribers/factory.js 1 'rmq_subscribers_factory_1' '["on_boarding.#","airdrop_allocate_tokens"]'
+ * Example: node executables/rmq_subscribers/factory.js 1
  *
  * @module executables/rmq_subscribers/factory
  */
 const rootPrefix = '../..';
 
-//Always Include Module overrides First
+// Always include module overrides first.
 require(rootPrefix + '/module_overrides/index');
 
 // Load external packages
 const OSTBase = require('@openstfoundation/openst-base');
 
-const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
-  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
+  CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
+  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
   notificationTopics = require(rootPrefix + '/lib/global_constant/notification_topics'),
-  IntercomStatusKlass = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js');
-
+  IntercomStatusKlass = require(rootPrefix + '/lib/stake_and_mint/intercomm_status.js'),
+  CronProcessHandlerObject = new CronProcessesHandler(),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout');
 const usageDemo = function() {
-  logger.log('usage:', 'node ./executables/rmq_subscribers/factory.js processLockId queueSuffix topicsToSubscribe');
+  logger.log('Usage:', 'node ./executables/rmq_subscribers/factory.js processLockId');
   logger.log(
     '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
   );
-  logger.log('* queueSuffix is the suffix to be used for getting the queue name.');
-  logger.log('* topicsToSubscribe is a JSON stringified version of topics to be subscribed for this RMQ subscriber.');
 };
 
-const ProcessLocker = new ProcessLockerKlass(),
-  args = process.argv,
+// Declare variables.
+const args = process.argv,
   processLockId = args[2],
-  queueSuffix = args[3],
-  topicsToSubscribe = args[4];
+  cronKind = CronProcessesConstants.rmqFactory;
 
-let topicsToSubscribeArray = null;
+let queueName,
+  queueSuffix,
+  topicsToSubscribe,
+  topicsToSubscribeArray = null;
 
-// Validate and sanitize the command line arguments.
-const validateAndSanitize = function() {
-  if (!processLockId) {
-    logger.error('Process Lock id NOT passed in the arguments.');
-    usageDemo();
-    process.exit(1);
-  }
-
-  if (!queueSuffix) {
-    logger.error('Queue suffix NOT passed in the arguments.');
-    usageDemo();
-    process.exit(1);
-  }
-
-  if (!topicsToSubscribe) {
-    logger.error('Topics to subscribe NOT passed in the arguments.');
-    usageDemo();
-    process.exit(1);
-  }
-
-  try {
-    topicsToSubscribeArray = JSON.parse(topicsToSubscribe);
-  } catch (err) {
-    logger.error('Topics to subscribe passed in INVALID format.');
-    logger.error(err);
-    usageDemo();
-    process.exit(1);
-  }
-
-  if (topicsToSubscribeArray.length === 0) {
-    logger.error('Topics to subscribe should have at least one topic.');
-    usageDemo();
-    process.exit(1);
-  }
-};
-
-// validate and sanitize the input params
-validateAndSanitize();
-
-ProcessLocker.canStartProcess({ process_title: 'executables_rmq_subscribers_factory' + processLockId });
-
-const queueName = 'executables_rmq_subscribers_factory_' + queueSuffix;
+// Validate if processLockId was passed or not.
+if (!processLockId) {
+  logger.error('Process Lock id NOT passed in the arguments.');
+  usageDemo();
+  process.exit(1);
+}
 
 require(rootPrefix + '/lib/on_boarding/propose.js');
 require(rootPrefix + '/lib/on_boarding/deploy_airdrop.js');
@@ -129,42 +94,82 @@ nonIcDrivenPerformers[notificationTopics.claimTokenOnUcDone] = IntercomStatusKla
 const InstanceComposer = require(rootPrefix + '/instance_composer'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id');
 
-const promiseExecutor = function(onResolve, onReject, params) {
-  // factory logic for deciding what action to perform here.
-  const parsedParams = JSON.parse(params),
-    topics = parsedParams.topics;
+const RmqFactory = function() {
+  const oThis = this;
 
-  // Only one topic is supported here. Neglecting the unsupported cases.
-  if (topics.length !== 1) return Promise.resolve();
+  oThis.PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(oThis._promiseExecutor, {
+    name: 'executables_rmq_subscribers_factory',
+    timeoutInMilliSecs: -1
+  });
 
-  let topic = topics[0];
+  SigIntHandler.call(oThis, { id: processLockId });
+};
 
-  if (nonIcDrivenPerformers.hasOwnProperty(topic)) {
-    let PerformerKlass = nonIcDrivenPerformers[topic];
+RmqFactory.prototype = Object.create(SigIntHandler.prototype);
 
-    return new PerformerKlass(parsedParams.message.payload)
-      .perform()
-      .then(onResolve)
-      .catch(function(error) {
-        logger.error('error in processor', error);
-        return onResolve();
-      });
-  } else if (icDrivenTopicPerformers.hasOwnProperty(topic)) {
-    let configStrategyHelper = new ConfigStrategyHelperKlass(parsedParams.message.payload.client_id);
+const RmqFactoryPrototype = {
+  /**
+   * perform
+   *
+   * @returns {Promise}
+   */
+  perform: function() {
+    const oThis = this;
 
-    configStrategyHelper.get().then(function(configStrategyRsp) {
-      if (configStrategyRsp.isFailure()) {
-        return onReject(configStrategyRsp);
-      }
+    // Validate and sanitize the input params.
+    oThis._validateAndSanitize();
 
-      let instanceComposer = new InstanceComposer(configStrategyRsp.data);
+    oThis.startSubscription();
+  },
 
-      let getterMethod = instanceComposer[icDrivenTopicPerformers[topic]];
-      let PerformerKlass = getterMethod.apply(instanceComposer);
+  /**
+   * _validateAndSanitize
+   *
+   * @private
+   */
+  _validateAndSanitize: function() {
+    if (!queueSuffix) {
+      logger.error('Queue suffix NOT available in cron params in the database.');
+      process.emit('SIGINT');
+    }
 
-      if (!PerformerKlass) {
-        return onReject(`no performer Klass Found for ${icDrivenTopicPerformers[topic]}`);
-      }
+    if (!topicsToSubscribe) {
+      logger.error('Topics to subscribe NOT available in cron params in the database.');
+      process.emit('SIGINT');
+    }
+
+    try {
+      topicsToSubscribeArray = JSON.parse(topicsToSubscribe);
+    } catch (err) {
+      logger.error('Topics to subscribe passed in INVALID format from the database..');
+      logger.error(err);
+      process.emit('SIGINT');
+    }
+
+    if (topicsToSubscribeArray.length === 0) {
+      logger.error('Topics to subscribe should have at least one topic.');
+      usageDemo();
+      process.emit('SIGINT');
+    }
+  },
+
+  /**
+   * _promiseExecutor
+   *
+   * @returns {Promise}
+   */
+  _promiseExecutor: function(onResolve, onReject, params) {
+    // Factory logic for deciding what action to perform here.
+    const parsedParams = JSON.parse(params),
+      topics = parsedParams.topics;
+
+    // Only one topic is supported here. Neglecting the unsupported cases.
+    if (topics.length !== 1) return Promise.resolve();
+
+    let topic = topics[0];
+
+    if (nonIcDrivenPerformers.hasOwnProperty(topic)) {
+      let PerformerKlass = nonIcDrivenPerformers[topic];
 
       return new PerformerKlass(parsedParams.message.payload)
         .perform()
@@ -173,61 +178,110 @@ const promiseExecutor = function(onResolve, onReject, params) {
           logger.error('error in processor', error);
           return onResolve();
         });
-    });
-  } else {
-    return onReject(`no performer Klass Found for ${topic}`);
+    } else if (icDrivenTopicPerformers.hasOwnProperty(topic)) {
+      let configStrategyHelper = new ConfigStrategyHelperKlass(parsedParams.message.payload.client_id);
+
+      configStrategyHelper.get().then(function(configStrategyRsp) {
+        if (configStrategyRsp.isFailure()) {
+          return onReject(configStrategyRsp);
+        }
+
+        let instanceComposer = new InstanceComposer(configStrategyRsp.data);
+
+        let getterMethod = instanceComposer[icDrivenTopicPerformers[topic]];
+        let PerformerKlass = getterMethod.apply(instanceComposer);
+
+        if (!PerformerKlass) {
+          return onReject(`no performer Klass Found for ${icDrivenTopicPerformers[topic]}`);
+        }
+
+        return new PerformerKlass(parsedParams.message.payload)
+          .perform()
+          .then(onResolve)
+          .catch(function(error) {
+            logger.error('error in processor', error);
+            return onResolve();
+          });
+      });
+    } else {
+      return onReject(`no performer Klass Found for ${topic}`);
+    }
+  },
+
+  /**
+   * startSubscription
+   *
+   */
+  startSubscription: async function() {
+    const oThis = this,
+      openStNotification = await SharedRabbitMqProvider.getInstance({
+        connectionWaitSeconds: ConnectionTimeoutConst.crons,
+        switchConnectionWaitSeconds: ConnectionTimeoutConst.switchConnectionCrons
+      });
+
+    openStNotification.subscribeEvent.rabbit(
+      topicsToSubscribeArray,
+      {
+        queue: queueName,
+        ackRequired: 1,
+        prefetch: 25
+      },
+      function(params) {
+        // Promise is required to be returned to manually ack messages in RMQ
+        return oThis.PromiseQueueManager.createPromise(params);
+      },
+      function(consumerTag) {
+        oThis.consumerTag = consumerTag;
+      }
+    );
+  },
+
+  /**
+   * pendingTasksDone
+   *
+   * @returns {Boolean}
+   */
+  pendingTasksDone: function() {
+    const oThis = this;
+
+    return oThis.PromiseQueueManager.getPendingCount() <= 0;
   }
 };
 
-const PromiseQueueManager = new OSTBase.OSTPromise.QueueManager(promiseExecutor, {
-  name: 'executables_rmq_subscribers_factory',
-  timeoutInMilliSecs: -1
-});
+Object.assign(RmqFactory.prototype, RmqFactoryPrototype);
 
-const openStNotification = SharedRabbitMqProvider.getInstance();
-
-openStNotification.subscribeEvent.rabbit(
-  topicsToSubscribeArray,
-  {
-    queue: queueName,
-    ackRequired: 1,
-    prefetch: 25
-  },
-  function(params) {
-    // Promise is required to be returned to manually ack messages in RMQ
-    return PromiseQueueManager.createPromise(params);
-  }
-);
-
-// Using a single function to handle multiple signals
-function handle() {
-  logger.info('Received Signal');
-
-  if (!PromiseQueueManager.getPendingCount()) {
-    logger.log('SIGINT/SIGTERM handle :: No pending Promises.');
-    process.exit(1);
-  }
-
-  const checkForUnAckTasks = function() {
-    if (PromiseQueueManager.getPendingCount() <= 0) {
-      logger.log('SIGINT/SIGTERM handle :: No pending Promises.');
-      process.exit(1);
-    } else {
-      logger.info('waiting for open tasks to be done.');
-      setTimeout(checkForUnAckTasks, 1000);
-    }
-  };
-
-  setTimeout(checkForUnAckTasks, 1000);
-}
-
+// Handler for rmq errors.
 function ostRmqError(err) {
-  logger.info('ostRmqError occured.', err);
+  logger.info('ostRmqError occurred.', err);
   process.emit('SIGINT');
 }
 
-// Handling graceful process exit on getting SIGINT, SIGTERM.
-// Once signal found programme will stop consuming new messages. But need to clear running messages.
-process.on('SIGINT', handle);
-process.on('SIGTERM', handle);
 process.on('ost_rmq_error', ostRmqError);
+
+// Check whether the cron can be started or not.
+CronProcessHandlerObject.canStartProcess({
+  id: +processLockId, // Implicit string to int conversion.
+  cron_kind: cronKind
+}).then(function(dbResponse) {
+  let cronParams;
+  const rmqFactory = new RmqFactory();
+
+  try {
+    cronParams = JSON.parse(dbResponse.data.params);
+
+    // queueSuffix is the suffix to be used for getting the queue name.
+    queueSuffix = cronParams.queue_suffix;
+    queueName = 'executables_rmq_subscribers_factory_' + queueSuffix;
+
+    // topicsToSubscribe is a JSON stringified version of topics to be subscribed for this RMQ subscriber.
+    topicsToSubscribe = cronParams.topics_to_subscribe;
+
+    rmqFactory.perform();
+  } catch (err) {
+    logger.error('cronParams stored in INVALID format in the DB.');
+    logger.error(
+      'The status of the cron was NOT changed to stopped. Please check the status before restarting the cron'
+    );
+    process.exit(1);
+  }
+});

@@ -20,10 +20,16 @@ require(rootPrefix + '/module_overrides/index');
 
 // Include Process Locker File
 const ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
   ProcessLocker = new ProcessLockerKlass();
 
 const args = process.argv,
   processId = args[2];
+
+if (!processId) {
+  logger.error('Please pass the processId.');
+  process.exit(1);
+}
 
 // Declare variables.
 const txQueuePrefetchCount = 100,
@@ -41,21 +47,26 @@ let unAckCount = 0,
 ProcessLocker.canStartProcess({
   process_title: 'executables_rmq_subscribers_execute_transaction' + processId
 });
+ProcessLocker.endAfterTime({ time_in_minutes: 45 });
 
 // Load external packages.
 const OSTBase = require('@openstfoundation/openst-base');
 
 // All Module Requires.
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
-  InstanceComposer = require(rootPrefix + '/instance_composer'),
-  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+const InstanceComposer = require(rootPrefix + '/instance_composer'),
   ConfigStrategyModel = require(rootPrefix + '/app/models/config_strategy'),
   rmqQueueConstants = require(rootPrefix + '/lib/global_constant/rmq_queue'),
+  TransactionMetaModel = require(rootPrefix + '/app/models/transaction_meta'),
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
   ConfigStrategyHelperKlass = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
   initProcessKlass = require(rootPrefix + '/lib/execute_transaction_management/init_process'),
+  transactionMetaConstants = require(rootPrefix + '/lib/global_constant/transaction_meta.js'),
   processQueueAssociationConst = require(rootPrefix + '/lib/global_constant/process_queue_association'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
   CommandQueueProcessorKlass = require(rootPrefix + '/lib/execute_transaction_management/command_message_processor'),
+  recognizedInternalErrorIdentifiers = require(rootPrefix +
+    '/lib/global_constant/recognized_internal_error_identifiers'),
   initProcess = new initProcessKlass({ process_id: processId });
 
 require(rootPrefix + '/lib/providers/notification');
@@ -94,9 +105,22 @@ const commandResponseActions = async function(commandProcessorResponse) {
 const promiseTxExecutor = function(onResolve, onReject, params) {
   unAckCount++;
   // Process request
-  const parsedParams = JSON.parse(params),
-    kind = parsedParams.message.kind,
+  let parsedParams = {},
+    kind = {},
+    payload = {};
+  try {
+    parsedParams = JSON.parse(params);
+    kind = parsedParams.message.kind;
     payload = parsedParams.message.payload;
+  } catch (err) {
+    logger.error('Error in parsing the message. Error: ', err);
+    unAckCount--;
+    // ack RMQ
+    return onResolve();
+  }
+
+  //Update in transaction meta
+  logger.debug('Updating transaction in transaction meta table');
 
   let errorMsgType = '',
     msgExecutorObject = {};
@@ -128,6 +152,11 @@ const promiseTxExecutor = function(onResolve, onReject, params) {
         .perform()
         .then(function(response) {
           if (!response.isSuccess()) {
+            if (response.internalErrorCode.includes(recognizedInternalErrorIdentifiers.ddbDownError)) {
+              logger.error('Dynamo DB down');
+              //queuing the same message again in queue(UnAck)
+              return onReject();
+            }
             logger.error(
               'e_rmqs_et_1',
               'Something went wrong in ',
@@ -194,21 +223,26 @@ const subscribeTxQueue = async function(qNameSuffix, chainId) {
     if (intentToConsumerTagMap.exTxQueue) {
       process.emit('RESUME_CONSUME', intentToConsumerTagMap.exTxQueue);
     } else {
-      await openStNotification.subscribeEvent.rabbit(
-        [rmqQueueConstants.executeTxTopicPrefix + chainId + '.' + qNameSuffix],
-        {
-          queue: rmqQueueConstants.executeTxQueuePrefix + '_' + chainId + '_' + qNameSuffix,
-          ackRequired: 1,
-          prefetch: txQueuePrefetchCount
-        },
-        function(params) {
-          // Promise is required to be returned to manually ack messages in RMQ
-          return PromiseQueueManager.createPromise(params);
-        },
-        function(consumerTag) {
-          intentToConsumerTagMap.exTxQueue = consumerTag;
-        }
-      );
+      await openStNotification.subscribeEvent
+        .rabbit(
+          [rmqQueueConstants.executeTxTopicPrefix + chainId + '.' + qNameSuffix],
+          {
+            queue: rmqQueueConstants.executeTxQueuePrefix + '_' + chainId + '_' + qNameSuffix,
+            ackRequired: 1,
+            prefetch: txQueuePrefetchCount
+          },
+          function(params) {
+            // Promise is required to be returned to manually ack messages in RMQ
+            return PromiseQueueManager.createPromise(params);
+          },
+          function(consumerTag) {
+            intentToConsumerTagMap.exTxQueue = consumerTag;
+          }
+        )
+        .catch(function(err) {
+          logger.error('Error in subscription. ', err);
+          ostRmqError(err);
+        });
     }
     txQueueSubscribed = true;
   }
@@ -241,22 +275,27 @@ const commandQueueExecutor = function(params) {
  */
 const subscribeCommandQueue = async function(qNameSuffix, chainId) {
   if (!commandQueueSubscribed) {
-    await openStNotification.subscribeEvent.rabbit(
-      [rmqQueueConstants.commandMessageTopicPrefix + chainId + '.' + qNameSuffix],
-      {
-        queue: rmqQueueConstants.commandMessageQueuePrefix + '_' + chainId + '_' + qNameSuffix,
-        ackRequired: 1,
-        prefetch: cmdQueuePrefetchCount
-      },
-      function(params) {
-        unAckCommandMessages++;
-        // Promise is required to be returned to manually ack messages in RMQ
-        return commandQueueExecutor(params);
-      },
-      function(consumerTag) {
-        intentToConsumerTagMap.cmdQueue = consumerTag;
-      }
-    );
+    await openStNotification.subscribeEvent
+      .rabbit(
+        [rmqQueueConstants.commandMessageTopicPrefix + chainId + '.' + qNameSuffix],
+        {
+          queue: rmqQueueConstants.commandMessageQueuePrefix + '_' + chainId + '_' + qNameSuffix,
+          ackRequired: 1,
+          prefetch: cmdQueuePrefetchCount
+        },
+        function(params) {
+          unAckCommandMessages++;
+          // Promise is required to be returned to manually ack messages in RMQ
+          return commandQueueExecutor(params);
+        },
+        function(consumerTag) {
+          intentToConsumerTagMap.cmdQueue = consumerTag;
+        }
+      )
+      .catch(function(err) {
+        logger.error('Error in subscription. ', err);
+        ostRmqError(err);
+      });
     commandQueueSubscribed = true;
   }
 };
@@ -301,7 +340,10 @@ let init = async function() {
   let ic = new InstanceComposer(configStrategy),
     notificationProvider = ic.getNotificationProvider();
 
-  openStNotification = notificationProvider.getInstance();
+  openStNotification = await notificationProvider.getInstance({
+    connectionWaitSeconds: ConnectionTimeoutConst.crons,
+    switchConnectionWaitSeconds: ConnectionTimeoutConst.switchConnectionCrons
+  });
 
   if (processStatus === processQueueAssociationConst.processKilled) {
     logger.warn('The process is in killed status in the table. Recommended to check. Continuing to start the queue.');

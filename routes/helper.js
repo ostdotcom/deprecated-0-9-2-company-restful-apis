@@ -3,6 +3,7 @@
 const rootPrefix = '..',
   responseHelper = require(rootPrefix + '/lib/formatter/response'),
   logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  notifier = require(rootPrefix + '/helpers/notifier'),
   basicHelper = require(rootPrefix + '/helpers/basic'),
   apiParamsValidator = require(rootPrefix + '/lib/validators/api_params'),
   ConfigStrategyHelper = require(rootPrefix + '/helpers/config_strategy/by_client_id'),
@@ -19,7 +20,7 @@ const routeMethods = {
         if (responseHelper.isCustomResult(error)) {
           error.renderResponse(res, errorConfig);
         } else {
-          logger.notify(errorCode, 'Something went wrong', error);
+          notifier.notify(errorCode, 'Something went wrong', error);
 
           responseHelper
             .error({

@@ -1,49 +1,68 @@
 'use strict';
-
 /**
  * This code acts as a master process to block scanner, which delegates the transactions from a block to block scanner worker processes
  *
- * Usage: node executables/block_scanner/transaction_delegator.js group_id datafilePath [benchmarkFilePath]
+ * Usage: node executables/block_scanner/transaction_delegator.js 1
  *
  * Command Line Parameters Description:
- * group_id: group_id to fetch config strategy
- * datafilePath: path to the file which is storing the last block scanned info.
- * [benchmarkFilePath]: path to the file which is storing the benchmarking info.
+ * processLockId: used for ensuring that no other process with the same processLockId can run on a given machine.
  *
  * @module executables/block_scanner/transaction_delegator
  */
 
-const rootPrefix = '../..';
+const fs = require('fs');
 
-const program = require('commander'),
-  fs = require('fs');
-
-const MAX_TXS_PER_WORKER = 60,
-  MIN_TXS_PER_WORKER = 10;
-
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+const rootPrefix = '../..',
   InstanceComposer = require(rootPrefix + '/instance_composer'),
-  ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
-  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
   coreConstants = require(rootPrefix + '/config/core_constants'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger'),
+  SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
+  CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
+  web3InteractFactory = require(rootPrefix + '/lib/web3/interact/ws_interact'),
   SharedRabbitMqProvider = require(rootPrefix + '/lib/providers/shared_notification'),
-  ProcessLocker = new ProcessLockerKlass();
+  StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
+  ConnectionTimeoutConst = require(rootPrefix + '/lib/global_constant/connection_timeout'),
+  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
+  CronProcessHandlerObject = new CronProcessesHandler();
 
-require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
 require(rootPrefix + '/lib/web3/interact/ws_interact');
+require(rootPrefix + '/lib/cache_multi_management/erc20_contract_address');
 
-let configStrategy = {};
-
-const openSTNotification = SharedRabbitMqProvider.getInstance();
-
-// Validate and sanitize the command line arguments.
-const validateAndSanitize = function() {
-  if (!program.groupId || !program.dataFilePath) {
-    program.help();
-    process.exit(1);
-  }
+const usageDemo = function() {
+  logger.log('Usage:', 'node executables/block_scanner/transaction_delegator.js processLockId');
+  logger.log(
+    '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
+  );
 };
 
+// Declare variables.
+const args = process.argv,
+  processLockId = args[2],
+  cronKind = CronProcessesConstants.blockScannerTxDelegator;
+
+let groupId,
+  dataFilePath,
+  benchmarkFilePath,
+  configStrategy = {};
+
+const MAX_TXS_PER_WORKER = 60,
+  MIN_TXS_PER_WORKER = 10,
+  FAILURE_CODE = -1;
+
+// Validate if processLockId was passed or not.
+if (!processLockId) {
+  logger.error('Process Lock id NOT passed in the arguments.');
+  usageDemo();
+  process.exit(1);
+}
+
+/**
+ *
+ * @param {Object} params
+ * @param {String} params.dataFilePath
+ * @param {String} params.benchmarkFilePath
+ * @constructor
+ */
 const TransactionDelegator = function(params) {
   const oThis = this;
 
@@ -53,9 +72,15 @@ const TransactionDelegator = function(params) {
   oThis.scannerData = {};
   oThis.interruptSignalObtained = false;
   oThis.highestBlock = 0;
+  oThis.canExit = true;
+  oThis.stopPickingUpNewWork = false;
+
+  SigIntHandler.call(oThis, { id: processLockId });
 };
 
-TransactionDelegator.prototype = {
+TransactionDelegator.prototype = Object.create(SigIntHandler.prototype);
+
+const TransactionDelegatorPrototype = {
   /**
    * Intentional block delay.
    */
@@ -81,15 +106,20 @@ TransactionDelegator.prototype = {
   warmUpWeb3Pool: async function() {
     const oThis = this,
       utilityGethType = 'read_only',
-      strategyByGroupHelperObj = new StrategyByGroupHelper(program.groupId),
+      strategyByGroupHelperObj = new StrategyByGroupHelper(groupId),
       configStrategyResp = await strategyByGroupHelperObj.getCompleteHash(utilityGethType);
+
+    if (configStrategyResp.isFailure()) {
+      logger.log('=====');
+      process.exit(1);
+    }
 
     configStrategy = configStrategyResp.data;
     oThis.ic = new InstanceComposer(configStrategy);
 
-    let web3InteractFactory = oThis.ic.getWeb3InteractHelper();
-
     let web3PoolSize = coreConstants.OST_WEB3_POOL_SIZE;
+
+    logger.log('====Warming up geth pool for providers', configStrategy.OST_UTILITY_GETH_WS_PROVIDERS);
 
     for (let ind = 0; ind < configStrategy.OST_UTILITY_GETH_WS_PROVIDERS.length; ind++) {
       let provider = configStrategy.OST_UTILITY_GETH_WS_PROVIDERS[ind];
@@ -100,13 +130,18 @@ TransactionDelegator.prototype = {
   },
 
   /**
-   * Check for new blocks
+   * Check for new blocks.
    */
   checkForNewBlocks: async function() {
     const oThis = this;
 
     const processNewBlocksAsync = async function() {
       try {
+        if (oThis.stopPickingUpNewWork) {
+          oThis.canExit = true;
+          return;
+        }
+
         oThis.initParams();
 
         await oThis.getGethsWithCurrentBlock();
@@ -115,16 +150,27 @@ TransactionDelegator.prototype = {
           oThis.granularTimeTaken.push('getGethsWithCurrentBlock-' + (Date.now() - oThis.startTime) + 'ms');
 
         // return if nothing more to do, as of now.
-        if (oThis.gethArray.length === 0) return oThis.schedule();
+        if (oThis.gethArray.length === 0) {
+          logger.info('==== No geths with block', oThis.scannerData.lastProcessedBlock + 1, '==rescheduling...');
+          return oThis.schedule();
+        }
+
+        oThis.canExit = false;
 
         oThis.currentBlock = oThis.scannerData.lastProcessedBlock + 1;
 
         logger.log('Current Block =', oThis.currentBlock);
 
-        await oThis.distributeTransactions();
+        let response = await oThis.distributeTransactions();
 
         if (oThis.benchmarkFilePath)
           oThis.granularTimeTaken.push('distributeTransactions-' + (Date.now() - oThis.startTime) + 'ms');
+
+        // Do this before block number update in the file
+        if (response == FAILURE_CODE) {
+          oThis.canExit = true;
+          return oThis.schedule();
+        }
 
         oThis.updateScannerDataFile();
 
@@ -137,13 +183,9 @@ TransactionDelegator.prototype = {
         oThis.schedule();
       } catch (err) {
         logger.error('Exception:', err);
+        oThis.canExit = true;
 
-        if (oThis.interruptSignalObtained) {
-          logger.win('* Exiting Process after interrupt signal obtained.');
-          process.exit(1);
-        } else {
-          oThis.reInit();
-        }
+        oThis.reInit(); // Restarts block scanning after 1 sec
       }
     };
 
@@ -151,7 +193,6 @@ TransactionDelegator.prototype = {
       logger.error('executables/block_scanner/transaction_delegator.js::processNewBlocksAsync::catch');
       logger.error(error);
 
-      // TODO - error handling to be introduced to avoid double settlement.
       oThis.schedule();
     });
   },
@@ -168,7 +209,9 @@ TransactionDelegator.prototype = {
   },
 
   /**
-   * Get Geth servers array with the current block
+   * Get Geth servers array with the current block.
+   *
+   * @returns {Promise<void>}
    */
   getGethsWithCurrentBlock: async function() {
     const oThis = this;
@@ -185,19 +228,25 @@ TransactionDelegator.prototype = {
         oThis.gethArray.push(provider);
       }
     }
+
+    logger.log('====Block', oThis.scannerData.lastProcessedBlock + 1, '==is found on ', oThis.gethArray);
   },
 
   /**
-   * Distribute transactions to different queues
+   * Distribute transactions to different queues.
    *
+   * @returns {Promise<never>}
    */
   distributeTransactions: async function() {
     const oThis = this;
 
-    const web3InteractFactory = oThis.ic.getWeb3InteractHelper();
     let web3Interact = web3InteractFactory.getInstance('utility', oThis.gethArray[0]);
 
     oThis.currentBlockInfo = await web3Interact.getBlock(oThis.currentBlock);
+
+    if (!oThis.currentBlockInfo) {
+      return FAILURE_CODE;
+    }
 
     let totalTransactionCount = oThis.currentBlockInfo.transactions.length;
     if (totalTransactionCount === 0) return;
@@ -213,6 +262,8 @@ TransactionDelegator.prototype = {
 
     let noOfBatches = parseInt(totalTransactionCount / perBatchCount);
     noOfBatches += totalTransactionCount % perBatchCount ? 1 : 0;
+
+    logger.log('====Batch count', noOfBatches, '====Txs per batch', perBatchCount);
 
     let loopCount = 0;
 
@@ -240,37 +291,22 @@ TransactionDelegator.prototype = {
         }
       };
 
-      let setToRMQ = await openSTNotification.publishEvent.perform(messageParams);
+      let openSTNotification = await SharedRabbitMqProvider.getInstance({
+          connectionWaitSeconds: ConnectionTimeoutConst.crons,
+          switchConnectionWaitSeconds: ConnectionTimeoutConst.switchConnectionCrons
+        }),
+        setToRMQ = await openSTNotification.publishEvent.perform(messageParams);
 
       //if could not set to RMQ run in async.
       if (setToRMQ.isFailure() || setToRMQ.data.publishedToRmq === 0) {
-        return Promise.reject(
-          responseHelper.error({
-            internal_error_identifier: 'e_bs_td_1',
-            api_error_identifier: 'something_went_wrong',
-            debug_options: {}
-          })
-        );
+        logger.error("====Couldn't publish the message to RMQ====");
+        return FAILURE_CODE;
       }
+
+      logger.debug('===published======txHashes', txHashes, '====from block', oThis.currentBlock);
+      logger.log('==== published', txHashes.length, 'transactions', '====from block', oThis.currentBlock);
       loopCount++;
     }
-  },
-
-  /**
-   * Register interrupt signal handlers
-   */
-  registerInterruptSignalHandlers: function() {
-    const oThis = this;
-
-    process.on('SIGINT', function() {
-      logger.win('* Received SIGINT. Signal registerred.');
-      oThis.interruptSignalObtained = true;
-    });
-
-    process.on('SIGTERM', function() {
-      logger.win('* Received SIGTERM. Signal registerred.');
-      oThis.interruptSignalObtained = true;
-    });
   },
 
   /**
@@ -293,7 +329,7 @@ TransactionDelegator.prototype = {
   },
 
   /**
-   * Re init
+   * Re-initialize the delegator.
    */
   reInit: function() {
     const oThis = this;
@@ -304,7 +340,7 @@ TransactionDelegator.prototype = {
   },
 
   /**
-   * Update scanner data file
+   * Update scanner data file.
    */
   updateScannerDataFile: function() {
     const oThis = this;
@@ -317,14 +353,11 @@ TransactionDelegator.prototype = {
 
     logger.win('* Updated last processed block = ', oThis.scannerData.lastProcessedBlock);
 
-    if (oThis.interruptSignalObtained) {
-      logger.win('* Exiting Process after interrupt signal obtained.');
-      process.exit(1);
-    }
+    oThis.canExit = true;
   },
 
   /**
-   * Update executation statistics to benchmark file.
+   * Update execution statistics to benchmark file.
    */
   updateBenchmarkFile: function() {
     const oThis = this;
@@ -339,11 +372,12 @@ TransactionDelegator.prototype = {
 
   /**
    * Get highest block
+   *
+   * @param {String} provider: gethProvider
+   * @returns {Promise<any>}
    */
   refreshHighestBlock: async function(provider) {
     const oThis = this;
-
-    const web3InteractFactory = oThis.ic.getWeb3InteractHelper();
 
     let web3Interact = web3InteractFactory.getInstance('utility', provider);
 
@@ -356,37 +390,62 @@ TransactionDelegator.prototype = {
     logger.win('* Obtained highest block on', provider, 'as', oThis.highestBlock);
 
     return Promise.resolve(highestBlockOfProvider);
+  },
+
+  /**
+   * Returns a boolean which checks whether all the pending tasks are done or not.
+   *
+   * @returns {boolean}
+   */
+  pendingTasksDone: function() {
+    const oThis = this;
+
+    return oThis.canExit;
   }
 };
 
-program
-  .option('--group-id <groupId>', 'Group Id')
-  .option('--data-file-path <dataFilePath>', 'Path to the file which contains the last processed block')
-  .option('--benchmark-file-path [benchmarkFilePath]', 'Path to the file to store benchmark data. (Optional)');
+Object.assign(TransactionDelegator.prototype, TransactionDelegatorPrototype);
 
-program.on('--help', function() {
-  console.log('  Example:');
-  console.log('');
-  console.log(
-    '    node executables/block_scanner/transaction_delegator.js --group-id 197 --data-file-path /home/block_scanner.json --benchmark-file-path [/home/benchmark.csv]'
-  );
-  console.log('');
-  console.log('');
-});
+// Check whether the cron can be started or not.
+CronProcessHandlerObject.canStartProcess({
+  id: +processLockId, // Implicit string to int conversion
+  cron_kind: cronKind
+}).then(function(dbResponse) {
+  let cronParams, blockScannerMasterObj;
 
-program.parse(process.argv);
+  try {
+    cronParams = JSON.parse(dbResponse.data.params);
+    groupId = cronParams.group_id;
+    dataFilePath = coreConstants.APP_SHARED_DIRECTORY + cronParams.data_file_path;
+    benchmarkFilePath = cronParams.benchmark_file_path
+      ? coreConstants.APP_SHARED_DIRECTORY + cronParams.benchmark_file_path
+      : null;
 
-// Check if another process with the same title is running.
-ProcessLocker.canStartProcess({
-  process_title: 'executables_transaction_delegator_' + program.groupId
-});
+    const params = {
+      dataFilePath: dataFilePath,
+      benchmarkFilePath: benchmarkFilePath
+    };
 
-// Validate and sanitize the input params.
-validateAndSanitize();
+    // We are creating the object before validation since we need to attach the methods of SigInt handler to the
+    // prototype of this class.
+    blockScannerMasterObj = new TransactionDelegator(params);
 
-const blockScannerMasterObj = new TransactionDelegator(program);
+    // Validate if the dataFilePath exists in the DB or not. We are not validating benchmarkFilePath as it is an
+    // optional parameter.
+    if (!dataFilePath) {
+      logger.error('Data file path NOT available in cron params in the database.');
+      process.emit('SIGINT');
+    }
 
-blockScannerMasterObj.registerInterruptSignalHandlers();
-blockScannerMasterObj.init().then(function(r) {
-  logger.win('Blockscanner Master Process Started');
+    // Perform action if cron can be started.
+    blockScannerMasterObj.init().then(function(r) {
+      logger.win('Blockscanner Master Process Started');
+    });
+  } catch (err) {
+    logger.error('Cron parameters stored in INVALID format in the DB.');
+    logger.error(
+      'The status of the cron was NOT changed to stopped. Please check the status before restarting the cron'
+    );
+    process.exit(1);
+  }
 });

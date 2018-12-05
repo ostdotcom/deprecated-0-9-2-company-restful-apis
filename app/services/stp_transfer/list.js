@@ -14,7 +14,7 @@ const rootPrefix = '../../..',
   basicHelper = require(rootPrefix + '/helpers/basic'),
   transactionLogConst = require(rootPrefix + '/lib/global_constant/transaction_log');
 
-require(rootPrefix + '/app/models/transaction_log');
+require(rootPrefix + '/lib/cache_multi_management/transaction_log');
 require(rootPrefix + '/lib/elasticsearch_saas/search');
 
 /**
@@ -264,7 +264,7 @@ ListStpTransfersService.prototype = {
    */
   _getDataForUuids: async function() {
     const oThis = this,
-      transactionLogModel = oThis.ic().getTransactionLogModel();
+      transactionLogCache = oThis.ic().getTransactionLogCache();
 
     let transferLogData = {};
 
@@ -274,12 +274,12 @@ ListStpTransfersService.prototype = {
 
     let configStrategy = oThis.ic().configStrategy;
 
-    let transactionResponse = await new transactionLogModel({
-      client_id: oThis.clientId,
-      shard_name: configStrategy.TRANSACTION_LOG_SHARD_NAME
-    }).batchGetItem(oThis.transferUuids);
+    let transfersFetchResponse = await new transactionLogCache({
+      client_id: oThis.client_id,
+      uuids: oThis.transferUuids
+    }).fetch();
 
-    if (!transactionResponse.data) {
+    if (transfersFetchResponse.isFailure() || !transfersFetchResponse.data) {
       return Promise.reject(
         responseHelper.error({
           internal_error_identifier: 's_stp_l_6',
@@ -289,14 +289,14 @@ ListStpTransfersService.prototype = {
       );
     }
 
-    for (let transaction_uuid in transactionResponse['data']) {
-      let transaction_data = transactionResponse['data'][transaction_uuid];
+    for (let transaction_uuid in transfersFetchResponse['data']) {
+      let transaction_data = transfersFetchResponse['data'][transaction_uuid];
       if (transaction_data) {
         transaction_data['utility_chain_id'] = configStrategy.OST_UTILITY_CHAIN_ID;
       }
     }
 
-    return Promise.resolve(responseHelper.successWithData(transactionResponse.data));
+    return Promise.resolve(responseHelper.successWithData(transfersFetchResponse.data));
   }
 };
 

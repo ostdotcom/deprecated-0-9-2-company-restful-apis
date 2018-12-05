@@ -46,6 +46,13 @@ const mysqlConfig = {
         user: coreConstants.CR_TRANSACTION_DB_MYSQL_USER,
         password: coreConstants.CR_TRANSACTION_DB_MYSQL_PASSWORD
       }
+    },
+    cluster5: {
+      master: {
+        host: coreConstants.CR_SAAS_ANALYTICS_DB_HOST,
+        user: coreConstants.CR_SAAS_ANALYTICS_DB_USER,
+        password: coreConstants.CR_SAAS_ANALYTICS_DB_PASSWORD
+      }
     }
   },
   databases: {}
@@ -72,5 +79,7 @@ mysqlConfig['databases']['company_saas_shared_' + coreConstants.SUB_ENVIRONMENT 
 mysqlConfig['databases']['saas_config_' + coreConstants.SUB_ENVIRONMENT + '_' + coreConstants.ENVIRONMENT] = [
   'cluster3'
 ];
+
+mysqlConfig['databases']['saas_analytics_' + coreConstants.ENVIRONMENT] = ['cluster5'];
 
 module.exports = mysqlConfig;

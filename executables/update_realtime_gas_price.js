@@ -4,64 +4,49 @@
  * This fetches an estimated gas price for which Transaction could get mined in less than 5 minutes.
  * source: 'https://ethgasstation.info/txPoolReport.php'
  *
- * Usage: node executables/update_realtime_gas_price.js processId group_id
+ * Usage: node executables/update_realtime_gas_price.js processLockId
  *
  * Command Line Parameters Description:
- * processId: process id to start the process
- * group_id: group id for fetching config strategy
+ * processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.
  *
- * Example: node executables/update_realtime_gas_price.js 12345 ~/config.js
+ * Example: node executables/update_realtime_gas_price.js 12345
  *
  * @module executables/update_realtime_gas_price
  */
 
-const rootPrefix = '..',
-  ProcessLockerKlass = require(rootPrefix + '/lib/process_locker'),
-  ProcessLocker = new ProcessLockerKlass();
-
-const args = process.argv,
-  processId = args[2],
-  group_id = args[3];
-
-ProcessLocker.canStartProcess({ process_title: 'update_realtime_gasprice-' + processId });
-
 const dynamicGasPriceProvider = require('@ostdotcom/ost-dynamic-gas-price'),
   BigNumber = require('bignumber.js');
 
-const logger = require(rootPrefix + '/lib/logger/custom_console_logger.js'),
-  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+const rootPrefix = '..',
   coreConstants = require(rootPrefix + '/config/core_constants'),
+  responseHelper = require(rootPrefix + '/lib/formatter/response'),
+  SigIntHandler = require(rootPrefix + '/executables/sigint_handler'),
+  logger = require(rootPrefix + '/lib/logger/custom_console_logger.js'),
+  CronProcessesHandler = require(rootPrefix + '/lib/cron_processes_handler'),
   StrategyByGroupHelper = require(rootPrefix + '/helpers/config_strategy/by_group_id'),
-  valueChainGasPriceCacheKlass = require(rootPrefix + '/lib/shared_cache_management/estimate_value_chain_gas_price');
+  CronProcessesConstants = require(rootPrefix + '/lib/global_constant/cron_processes'),
+  configStrategyConstants = require(rootPrefix + '/lib/global_constant/config_strategy'),
+  valueChainGasPriceCacheKlass = require(rootPrefix + '/lib/shared_cache_management/estimate_value_chain_gas_price'),
+  CronProcessHandlerObject = new CronProcessesHandler();
 
-let configStrategy = {};
-
-// Usage demo.
 const usageDemo = function() {
-  logger.log('usage:', 'node executables/update_realtime_gas_price.js processId group_id');
+  logger.log('Usage:', 'node executables/update_realtime_gas_price.js processLockId');
   logger.log(
-    '* processId is used for ensuring that no other process with the same processId can run on a given machine.'
+    '* processLockId is used for ensuring that no other process with the same processLockId can run on a given machine.'
   );
-  logger.log('* group_id is needed for fetching config strategy');
 };
+
+// Declare variables.
+const args = process.argv,
+  processLockId = args[2],
+  cronKind = CronProcessesConstants.updateRealtimeGasPrice;
 
 // Validate and sanitize the command line arguments.
-const validateAndSanitize = function() {
-  if (!processId) {
-    logger.error('Process id NOT passed in the arguments.');
-    usageDemo();
-    process.exit(1);
-  }
-
-  if (!group_id) {
-    logger.error('group_id is not passed');
-    usageDemo();
-    process.exit(1);
-  }
-};
-
-// Validate and sanitize the input params.
-validateAndSanitize();
+if (!processLockId) {
+  logger.error('Process Lock id NOT passed in the arguments.');
+  usageDemo();
+  process.exit(1);
+}
 
 /**
  *
@@ -69,26 +54,40 @@ validateAndSanitize();
  */
 const UpdateRealTimeGasPrice = function() {
   const oThis = this;
+
+  SigIntHandler.call(oThis, { id: processLockId });
 };
 
-UpdateRealTimeGasPrice.prototype = {
+UpdateRealTimeGasPrice.prototype = Object.create(SigIntHandler.prototype);
+
+// Prototype for UpdateRealTimeGasPrice.
+const UpdateRealTimeGasPricePrototype = {
+  /**
+   * Main performer for this class.
+   *
+   * @returns {Promise<any>}
+   */
   perform: async function() {
-    const oThis = this,
-      strategyByGroupHelperObj = new StrategyByGroupHelper(group_id),
-      configStrategyResp = await strategyByGroupHelperObj.getCompleteHash();
+    // Fetch configStrategy.
+    const strategyByGroupHelperObj = new StrategyByGroupHelper(),
+      configStrategyResp = await strategyByGroupHelperObj.getForKind(configStrategyConstants.value_geth);
 
-    configStrategy = configStrategyResp.data;
+    let chainIdInternal,
+      configStrategy = configStrategyResp.data;
+    for (let strategyId in configStrategy) {
+      chainIdInternal = configStrategy[strategyId].OST_VALUE_CHAIN_ID;
+    }
 
+    // Declare variables.
     let estimatedGasPriceFloat = 0,
       valueChainGasPriceCacheObj = new valueChainGasPriceCacheKlass(),
-      chainIdInternal = configStrategy.OST_VALUE_CHAIN_ID,
-      retrycount = 10;
+      retryCount = 10;
 
-    while (retrycount > 0 && estimatedGasPriceFloat == 0) {
+    while (retryCount > 0 && estimatedGasPriceFloat === 0) {
       estimatedGasPriceFloat = await dynamicGasPriceProvider.dynamicGasPrice.get(chainIdInternal);
-      retrycount = retrycount - 1;
+      retryCount = retryCount - 1;
     }
-    //All constants will be stored in gwei
+    // All constants will be stored in Gwei.
     if (estimatedGasPriceFloat > 0) {
       let estimatedGasPrice = Math.ceil(estimatedGasPriceFloat),
         gasPriceToBeSubmittedHex = null,
@@ -115,14 +114,32 @@ UpdateRealTimeGasPrice.prototype = {
     }
     logger.info('Value chain gas price cache is not set');
     return Promise.resolve(responseHelper.successWithData({}));
+  },
+
+  /**
+   * Returns a boolean which checks whether all the pending tasks are done or not.
+   *
+   * @returns {boolean}
+   */
+  pendingTasksDone: function() {
+    return true;
   }
 };
 
-// perform action
-const UpdateRealTimeGasPriceObj = new UpdateRealTimeGasPrice();
-UpdateRealTimeGasPriceObj.perform().then(async function(a) {
-  logger.info('Cron last run at', Date.now());
-  setTimeout(function() {
-    process.exit(0);
-  }, 5000); //To kill the process after 5 seconds expecting that the cache will be set by then.
+Object.assign(UpdateRealTimeGasPrice.prototype, UpdateRealTimeGasPricePrototype);
+
+// Check whether the cron can be started or not.
+CronProcessHandlerObject.canStartProcess({
+  id: +processLockId, // Implicit string to int conversion.
+  cron_kind: cronKind
+}).then(function() {
+  // Perform action if cron can be started.
+  const UpdateRealTimeGasPriceObj = new UpdateRealTimeGasPrice();
+
+  UpdateRealTimeGasPriceObj.perform().then(async function() {
+    logger.info('Cron last run at: ', Date.now());
+    setTimeout(function() {
+      process.emit('SIGINT');
+    }, 5000); //To kill the process after 5 seconds expecting that the cache will be set by then.
+  });
 });
